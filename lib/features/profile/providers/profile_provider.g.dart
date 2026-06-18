@@ -97,4 +97,4 @@ final class UnitPreferenceProvider
   }
 }
 
-String _$unitPreferenceHash() => r'3f7fc88cc8c339d6db30b3a5484a6b474e16234a';
+String _$unitPreferenceHash() => r'985ab02fbfe91f93b0a64c3324597d363701a1d3';
