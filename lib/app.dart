@@ -1,17 +1,92 @@
 import 'package:flutter/material.dart';
-import 'core/theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class NomorexApp extends StatelessWidget {
+import 'core/constants/app_constants.dart';
+import 'core/theme/app_theme.dart';
+import 'features/auth/providers/auth_provider.dart';
+import 'features/auth/screens/landing_screen.dart';
+import 'features/auth/screens/login_screen.dart';
+import 'features/shell/app_shell.dart';
+import 'features/dashboard/screens/dashboard_screen.dart';
+import 'features/personal_bests/screens/my_prs_screen.dart';
+import 'features/personal_bests/screens/add_pr_screen.dart';
+
+part 'app.g.dart';
+
+class RouterNotifier extends ChangeNotifier {
+  RouterNotifier(this._ref) {
+    _ref.listen(authStateProvider, (_, _) => notifyListeners());
+  }
+
+  final Ref _ref;
+
+  String? redirect(BuildContext context, GoRouterState state) {
+    final session = Supabase.instance.client.auth.currentSession;
+    final isAuthenticated = session != null;
+    final loc = state.matchedLocation;
+    final isPublicRoute = loc == AppConstants.routeLanding ||
+        loc == AppConstants.routeLogin;
+
+    if (!isAuthenticated && !isPublicRoute) return AppConstants.routeLanding;
+    if (isAuthenticated && isPublicRoute) return AppConstants.routeHome;
+    return null;
+  }
+}
+
+@Riverpod(keepAlive: true)
+GoRouter router(Ref ref) {
+  final notifier = RouterNotifier(ref);
+  return GoRouter(
+    refreshListenable: notifier,
+    redirect: notifier.redirect,
+    initialLocation: AppConstants.routeLanding,
+    routes: [
+      GoRoute(
+        path: AppConstants.routeLanding,
+        builder: (_, _) => const LandingScreen(),
+      ),
+      GoRoute(
+        path: AppConstants.routeLogin,
+        builder: (_, _) => const LoginScreen(),
+      ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, shell) => AppShell(shell: shell),
+        branches: [
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: AppConstants.routeHome,
+              builder: (_, _) => const DashboardScreen(),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: AppConstants.routePrs,
+              builder: (_, _) => const MyPrsScreen(),
+            ),
+          ]),
+        ],
+      ),
+      GoRoute(
+        path: AppConstants.routeAddPr,
+        builder: (_, _) => const AddPrScreen(),
+      ),
+    ],
+  );
+}
+
+class NomorexApp extends ConsumerWidget {
   const NomorexApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+    return MaterialApp.router(
       title: 'NoMoreX',
       theme: AppTheme.light(),
-      home: const Scaffold(
-        body: Center(child: Text('Loading...')),
-      ),
+      routerConfig: router,
     );
   }
 }
