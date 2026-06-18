@@ -90,10 +90,8 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                   selected: _selectedExercise,
                   onSelected: (ex) => setState(() => _selectedExercise = ex),
                   onAddCustom: (name) async {
-                    await ref.read(exercisesProvider.notifier).addCustomExercise(name);
-                    final updated = ref.read(exercisesProvider).asData?.value ?? [];
-                    final newEx = updated.where((e) => e.name == name).firstOrNull;
-                    if (newEx != null) setState(() => _selectedExercise = newEx);
+                    final newEx = await ref.read(exercisesProvider.notifier).addCustomExercise(name);
+                    if (mounted) setState(() => _selectedExercise = newEx);
                   },
                 ),
                 const SizedBox(height: 16),

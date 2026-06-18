@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/profile.dart';
+import '../../auth/providers/auth_provider.dart';
 
 part 'profile_provider.g.dart';
 
@@ -8,6 +9,8 @@ part 'profile_provider.g.dart';
 class ProfileNotifier extends _$ProfileNotifier {
   @override
   Future<Profile?> build() async {
+    // Rebuild whenever auth state changes (prevents cross-user data leaks)
+    ref.watch(authStateProvider);
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return null;
 

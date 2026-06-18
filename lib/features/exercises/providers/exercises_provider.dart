@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/exercise.dart';
+import '../../../features/auth/providers/auth_provider.dart';
 
 part 'exercises_provider.g.dart';
 
@@ -8,6 +9,8 @@ part 'exercises_provider.g.dart';
 class ExercisesNotifier extends _$ExercisesNotifier {
   @override
   Future<List<Exercise>> build() async {
+    // Rebuild whenever auth state changes (prevents cross-user data leaks)
+    ref.watch(authStateProvider);
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return [];
 
@@ -22,17 +25,23 @@ class ExercisesNotifier extends _$ExercisesNotifier {
         .toList();
   }
 
-  Future<void> addCustomExercise(String name) async {
+  Future<Exercise> addCustomExercise(String name) async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return;
+    if (userId == null) throw Exception('Not authenticated');
 
-    await Supabase.instance.client.from('exercises').insert({
-      'name': name,
-      'is_predefined': false,
-      'user_id': userId,
-    });
+    final response = await Supabase.instance.client
+        .from('exercises')
+        .insert({
+          'name': name,
+          'is_predefined': false,
+          'user_id': userId,
+        })
+        .select()
+        .single();
 
     ref.invalidateSelf();
     await future;
+
+    return Exercise.fromJson(response);
   }
 }

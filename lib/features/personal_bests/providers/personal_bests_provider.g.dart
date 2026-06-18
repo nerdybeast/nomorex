@@ -34,7 +34,7 @@ final class PersonalBestsNotifierProvider
 }
 
 String _$personalBestsNotifierHash() =>
-    r'083a0f1a98046e712ea5a6af9217864a65c56e1b';
+    r'e9aeb525042356e792a39cfd6279f9ea46ff4c40';
 
 abstract class _$PersonalBestsNotifier
     extends $AsyncNotifier<List<PersonalBest>> {
