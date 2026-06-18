@@ -206,11 +206,10 @@ class _ExercisePicker extends StatefulWidget {
 }
 
 class _ExercisePickerState extends State<_ExercisePicker> {
-  final _controller = TextEditingController();
+  TextEditingController? _fieldController;
 
   @override
   void dispose() {
-    _controller.dispose();
     super.dispose();
   }
 
@@ -225,14 +224,14 @@ class _ExercisePickerState extends State<_ExercisePicker> {
         );
       },
       fieldViewBuilder: (context, controller, focusNode, onSubmit) {
+        _fieldController = controller;
         return TextFormField(
           controller: controller,
           focusNode: focusNode,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             labelText: 'Exercise',
-            border: const OutlineInputBorder(),
+            border: OutlineInputBorder(),
             hintText: 'Search exercises...',
-            errorText: widget.selected == null && controller.text.isNotEmpty ? null : null,
           ),
           validator: (_) => widget.selected == null ? 'Select an exercise' : null,
         );
@@ -256,12 +255,13 @@ class _ExercisePickerState extends State<_ExercisePicker> {
                       leading: const Icon(Icons.add),
                       title: const Text('Add custom exercise'),
                       onTap: () async {
-                        // Get the typed text from the field via the options view state
-                        // We use a dialog to confirm the name
+                        // Pre-fill dialog with text from the autocomplete field
                         final name = await showDialog<String>(
                           context: context,
                           builder: (ctx) {
-                            final nameCtrl = TextEditingController();
+                            final nameCtrl = TextEditingController(
+                              text: _fieldController?.text ?? '',
+                            );
                             return AlertDialog(
                               title: const Text('Custom Exercise'),
                               content: TextField(
