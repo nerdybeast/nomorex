@@ -78,6 +78,20 @@ Schema is managed as code under `supabase/migrations/`.
 3. Write SQL. Any new table in `public` MUST enable RLS and add ownership
    policies (`TO authenticated using ((select auth.uid()) = user_id)`;
    UPDATE needs both `USING` and `WITH CHECK`).
+
+   ```sql
+   -- Example ownership policies for a table with a user_id column:
+   alter table widgets enable row level security;
+
+   create policy "owner_select" on widgets for select
+     to authenticated using ((select auth.uid()) = user_id);
+
+   create policy "owner_update" on widgets for update
+     to authenticated
+     using ((select auth.uid()) = user_id)
+     with check ((select auth.uid()) = user_id);
+   ```
+
 4. `supabase db reset` — replays all migrations from scratch to verify.
 5. Commit and open a PR. CI runs `db reset` + `db lint`.
 
