@@ -63,3 +63,25 @@ For GitHub Actions (or any CI system), pass the values as secrets. Store `SUPABA
 ## A Note on the Anon Key
 
 The Supabase anon key is designed to be public — it is safe to ship inside an app binary. Security is enforced server-side via Row Level Security (RLS) policies on the database. Keeping it out of source control is good practice, but it is not a secret in the same way a private API key would be.
+
+## Database migrations
+
+Schema is managed as code under `supabase/migrations/`.
+
+### One-time setup
+- Install the Supabase CLI and start Docker.
+- `supabase login` then `supabase link --project-ref <ref>`.
+
+### Making a schema change
+1. `supabase start` — boot the local stack.
+2. `supabase migration new <name>` — never hand-name files.
+3. Write SQL. Any new table in `public` MUST enable RLS and add ownership
+   policies (`TO authenticated using ((select auth.uid()) = user_id)`;
+   UPDATE needs both `USING` and `WITH CHECK`).
+4. `supabase db reset` — replays all migrations from scratch to verify.
+5. Commit and open a PR. CI runs `db reset` + `db lint`.
+
+### Deployment
+On merge to `main`, CI applies pending migrations to production
+(`supabase db push`) and only then builds and deploys the web app to
+GitHub Pages.
