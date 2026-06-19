@@ -1,0 +1,65 @@
+# Build Process
+
+## Compile-Time Environment Variables
+
+This app uses Dart's `String.fromEnvironment()` in `lib/main.dart` to read configuration values at build time:
+
+```dart
+await Supabase.initialize(
+  url: const String.fromEnvironment('SUPABASE_URL'),
+  publishableKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+);
+```
+
+These are **compile-time constants**, not runtime environment variables. The values are baked into the binary during `flutter build` — they do not exist as named variables in the finished app. If they are not supplied at build time, they default to empty strings (no error, but the app will fail to connect to Supabase).
+
+## Local Development
+
+A `.env.json` file at the project root supplies these values locally. It is gitignored (covered by the `.env*` pattern) and must be created manually on each machine.
+
+`.env.json`:
+```json
+{
+  "SUPABASE_URL": "https://<project-ref>.supabase.co",
+  "SUPABASE_ANON_KEY": "<your-anon-key>"
+}
+```
+
+Pass the file to any `flutter` command using the `--dart-define-from-file` flag:
+
+```bash
+# Run the app
+flutter run --dart-define-from-file=.env.json
+
+# Build a debug APK
+flutter build apk --debug --dart-define-from-file=.env.json
+
+# Build a release APK
+flutter build apk --release --dart-define-from-file=.env.json
+```
+
+Alternatively, you can pass values inline without the file:
+
+```bash
+flutter run \
+  --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=<your-anon-key>
+```
+
+## CI / CD
+
+For GitHub Actions (or any CI system), pass the values as secrets. Store `SUPABASE_URL` and `SUPABASE_ANON_KEY` as repository secrets in GitHub, then reference them in the workflow:
+
+```yaml
+- name: Build APK (debug)
+  run: flutter build apk --debug
+  env:
+    SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+    SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+```
+
+> Note: Dart's `--dart-define` reads from the build command, not from OS environment variables. For CI, pass them explicitly via `--dart-define` flags or `--dart-define-from-file` pointed at a generated file.
+
+## A Note on the Anon Key
+
+The Supabase anon key is designed to be public — it is safe to ship inside an app binary. Security is enforced server-side via Row Level Security (RLS) policies on the database. Keeping it out of source control is good practice, but it is not a secret in the same way a private API key would be.
