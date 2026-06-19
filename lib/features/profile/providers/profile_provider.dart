@@ -30,8 +30,7 @@ class ProfileNotifier extends _$ProfileNotifier {
 
     await Supabase.instance.client
         .from('profiles')
-        .update({'unit_preference': unit})
-        .eq('id', userId);
+        .upsert({'id': userId, 'unit_preference': unit});
 
     ref.invalidateSelf();
     await future;

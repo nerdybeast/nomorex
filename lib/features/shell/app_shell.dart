@@ -36,8 +36,6 @@ class AppShell extends StatelessWidget {
       return Scaffold(
         body: shell,
         bottomNavigationBar: BottomAppBar(
-          shape: const CircularNotchedRectangle(),
-          notchMargin: 8.0,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -48,7 +46,7 @@ class AppShell extends StatelessWidget {
                 onPressed: () => shell.goBranch(0),
                 tooltip: 'Home',
               ),
-              const SizedBox(width: 48), // space for FAB notch
+              const SizedBox(width: 48),
               IconButton(
                 icon: Icon(
                   shell.currentIndex == 1 ? Icons.list : Icons.list_outlined,
@@ -64,7 +62,7 @@ class AppShell extends StatelessWidget {
           tooltip: 'Add',
           child: const Icon(Icons.add),
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       );
     }
 

@@ -35,7 +35,11 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ),
         data: (allPrs) {
-          final prs = allPrs.take(5).toList();
+          final seen = <String>{};
+          final prs = allPrs
+              .where((pr) => seen.add(pr.exerciseId))
+              .take(5)
+              .toList();
           if (prs.isEmpty) {
             return const Center(
               child: Padding(
