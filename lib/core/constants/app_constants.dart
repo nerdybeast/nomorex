@@ -8,4 +8,10 @@ class AppConstants {
   static const String routeHome = '/shell/home';
   static const String routePrs = '/shell/prs';
   static const String routeAddPr = '/prs/add';
+
+  static const String routeWorkouts = '/shell/workouts';
+  static const String routeWorkoutNew = '/workouts/new';
+  // detail: /workouts/:id ; edit: /workouts/:id/edit
+  static String routeWorkoutDetail(String id) => '/workouts/$id';
+  static String routeWorkoutEdit(String id) => '/workouts/$id/edit';
 }

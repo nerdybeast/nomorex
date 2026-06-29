@@ -22,6 +22,14 @@ class AppShell extends StatelessWidget {
                 context.push(AppConstants.routeAddPr);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.fitness_center_outlined),
+              title: const Text('New Workout'),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push(AppConstants.routeWorkoutNew);
+              },
+            ),
           ],
         ),
       ),
@@ -53,6 +61,15 @@ class AppShell extends StatelessWidget {
                 ),
                 onPressed: () => shell.goBranch(1),
                 tooltip: 'My PRs',
+              ),
+              IconButton(
+                icon: Icon(
+                  shell.currentIndex == 2
+                      ? Icons.fitness_center
+                      : Icons.fitness_center_outlined,
+                ),
+                onPressed: () => shell.goBranch(2),
+                tooltip: 'Workouts',
               ),
             ],
           ),
@@ -90,6 +107,11 @@ class AppShell extends StatelessWidget {
                 icon: Icon(Icons.list_outlined),
                 selectedIcon: Icon(Icons.list),
                 label: Text('My PRs'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.fitness_center_outlined),
+                selectedIcon: Icon(Icons.fitness_center),
+                label: Text('Workouts'),
               ),
             ],
           ),
