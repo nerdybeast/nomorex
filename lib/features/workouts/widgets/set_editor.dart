@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/weight_converter.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../utils/set_builder_parser.dart';
@@ -22,46 +23,50 @@ class SetEditor extends StatelessWidget {
 
   Future<void> _showSetBuilder(BuildContext context) async {
     final controller = TextEditingController();
-    String? error;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: const Text('Add sets'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: controller,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: 'e.g. 4 x 2 @ 65-68-71-68',
-                  errorText: error,
+    try {
+      String? error;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx, setState) => AlertDialog(
+            title: const Text('Add sets'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: 'e.g. 4 x 2 @ 65-68-71-68',
+                    errorText: error,
+                  ),
                 ),
+                const SizedBox(height: 8),
+                const Text('A single percentage (3 x 5 @ 80) applies to all sets.',
+                    style: TextStyle(fontSize: 12)),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              FilledButton(
+                onPressed: () {
+                  try {
+                    final parsed = parseSetBuilder(controller.text);
+                    onAddPercentageSets(parsed);
+                    Navigator.pop(ctx);
+                  } on FormatException catch (e) {
+                    setState(() => error = e.message);
+                  }
+                },
+                child: const Text('Add'),
               ),
-              const SizedBox(height: 8),
-              const Text('A single percentage (3 x 5 @ 80) applies to all sets.',
-                  style: TextStyle(fontSize: 12)),
             ],
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: () {
-                try {
-                  final parsed = parseSetBuilder(controller.text);
-                  onAddPercentageSets(parsed);
-                  Navigator.pop(ctx);
-                } on FormatException catch (e) {
-                  setState(() => error = e.message);
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
         ),
-      ),
-    );
+      );
+    } finally {
+      controller.dispose();
+    }
   }
 
   @override
@@ -110,7 +115,9 @@ class _SetRow extends StatelessWidget {
     final isPct = set.weightMode == 'percentage';
     final valueLabel = isPct
         ? '${set.percentage?.toStringAsFixed(0) ?? '?'}%'
-        : '${set.absoluteWeightKg?.toStringAsFixed(1) ?? '?'} kg';
+        : (set.absoluteWeightKg != null
+            ? formatWeight(set.absoluteWeightKg!, unit)
+            : '? $unit');
     return ListTile(
       dense: true,
       leading: Text('${set.targetReps ?? '-'} reps'),

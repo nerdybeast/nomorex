@@ -44,7 +44,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-    if (picked != null) setState(() => _date = picked);
+    if (picked != null && mounted) setState(() => _date = picked);
   }
 
   Future<void> _createThenEdit() async {
