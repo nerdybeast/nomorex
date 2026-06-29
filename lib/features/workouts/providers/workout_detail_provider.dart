@@ -54,6 +54,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
 
   Future<void> addPercentageSets(
       String workoutExerciseId, List<ParsedSet> parsed) async {
+    if (parsed.isEmpty) return;
     final current = await future;
     final ex = current.exercises.firstWhere((e) => e.id == workoutExerciseId);
     var pos = ex.sets.length;
