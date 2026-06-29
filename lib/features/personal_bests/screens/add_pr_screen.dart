@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/personal_bests_provider.dart';
 import '../../exercises/models/exercise.dart';
 import '../../exercises/providers/exercises_provider.dart';
+import '../../exercises/widgets/exercise_picker.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
@@ -85,7 +86,7 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Exercise picker
-                _ExercisePicker(
+                ExercisePicker(
                   exercises: exercises,
                   selected: _selectedExercise,
                   onSelected: (ex) => setState(() => _selectedExercise = ex),
@@ -181,120 +182,6 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Autocomplete-style exercise picker with "Add custom" fallback.
-class _ExercisePicker extends StatefulWidget {
-  const _ExercisePicker({
-    required this.exercises,
-    required this.selected,
-    required this.onSelected,
-    required this.onAddCustom,
-  });
-
-  final List<Exercise> exercises;
-  final Exercise? selected;
-  final ValueChanged<Exercise> onSelected;
-  final Future<void> Function(String name) onAddCustom;
-
-  @override
-  State<_ExercisePicker> createState() => _ExercisePickerState();
-}
-
-class _ExercisePickerState extends State<_ExercisePicker> {
-  TextEditingController? _fieldController;
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Autocomplete<Exercise>(
-      displayStringForOption: (e) => e.name,
-      optionsBuilder: (textEditingValue) {
-        if (textEditingValue.text.isEmpty) return widget.exercises;
-        return widget.exercises.where(
-          (e) => e.name.toLowerCase().contains(textEditingValue.text.toLowerCase()),
-        );
-      },
-      fieldViewBuilder: (context, controller, focusNode, onSubmit) {
-        _fieldController = controller;
-        return TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          decoration: const InputDecoration(
-            labelText: 'Exercise',
-            border: OutlineInputBorder(),
-            hintText: 'Search exercises...',
-          ),
-          validator: (_) => widget.selected == null ? 'Select an exercise' : null,
-        );
-      },
-      onSelected: widget.onSelected,
-      optionsViewBuilder: (context, onSelected, options) {
-        final optionList = options.toList();
-        return Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 200),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: optionList.length + 1, // +1 for "Add custom" option
-                itemBuilder: (context, index) {
-                  if (index == optionList.length) {
-                    // "Add custom exercise" option — always shown at the bottom
-                    return ListTile(
-                      leading: const Icon(Icons.add),
-                      title: const Text('Add custom exercise'),
-                      onTap: () async {
-                        // Pre-fill dialog with text from the autocomplete field
-                        final name = await showDialog<String>(
-                          context: context,
-                          builder: (ctx) {
-                            final nameCtrl = TextEditingController(
-                              text: _fieldController?.text ?? '',
-                            );
-                            return AlertDialog(
-                              title: const Text('Custom Exercise'),
-                              content: TextField(
-                                controller: nameCtrl,
-                                decoration: const InputDecoration(labelText: 'Exercise name'),
-                                autofocus: true,
-                              ),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                                FilledButton(
-                                  onPressed: () => Navigator.pop(ctx, nameCtrl.text.trim()),
-                                  child: const Text('Add'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                        if (name != null && name.isNotEmpty) {
-                          await widget.onAddCustom(name);
-                        }
-                      },
-                    );
-                  }
-                  final option = optionList[index];
-                  return ListTile(
-                    title: Text(option.name),
-                    subtitle: option.isPredefined ? null : const Text('Custom'),
-                    onTap: () => onSelected(option),
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }
