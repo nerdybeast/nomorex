@@ -31,6 +31,11 @@
 
   <title>nomorex</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Corbado Passkeys Web SDK: required by passkeys_web (transitive via
+       supabase_flutter). Must load before Flutter bootstraps so the web
+       plugin registrant can initialize it. -->
+  <script src="passkeys_bundle.js"></script>
 </head>
 <body>
   <!--
