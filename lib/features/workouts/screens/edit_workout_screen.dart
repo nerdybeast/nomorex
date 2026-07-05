@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
-import '../../exercises/models/exercise.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/workouts_provider.dart';
 import '../providers/workout_detail_provider.dart';
@@ -125,25 +124,48 @@ class _ExerciseEditor extends ConsumerWidget {
   final String workoutId;
 
   Future<void> _addExercise(BuildContext context, WidgetRef ref) async {
-    final exercises = ref.read(exercisesProvider).asData?.value ?? [];
-    Exercise? selected;
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Add exercise'),
         content: SizedBox(
           width: 320,
-          child: ExercisePicker(
-            exercises: exercises,
-            selected: selected,
-            onSelected: (ex) async {
-              Navigator.pop(ctx);
-              await ref.read(workoutDetailProvider(workoutId).notifier).addExercise(ex.id);
-            },
-            onAddCustom: (name) async {
-              final newEx = await ref.read(exercisesProvider.notifier).addCustomExercise(name);
-              if (ctx.mounted) Navigator.pop(ctx);
-              await ref.read(workoutDetailProvider(workoutId).notifier).addExercise(newEx.id);
+          // Watch the exercises reactively: the list is often still loading
+          // when this dialog opens, and RawAutocomplete shows no options (not
+          // even "Add custom") for an empty list. A Consumer rebuilds the
+          // picker once the exercises arrive.
+          child: Consumer(
+            builder: (context, ref, _) {
+              final exercisesAsync = ref.watch(exercisesProvider);
+              return exercisesAsync.when(
+                loading: () => const SizedBox(
+                  height: 72,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (e, _) => SizedBox(
+                  height: 72,
+                  child: Center(child: Text('Could not load exercises: $e')),
+                ),
+                data: (exercises) => ExercisePicker(
+                  exercises: exercises,
+                  selected: null,
+                  onSelected: (ex) async {
+                    Navigator.pop(ctx);
+                    await ref
+                        .read(workoutDetailProvider(workoutId).notifier)
+                        .addExercise(ex.id);
+                  },
+                  onAddCustom: (name) async {
+                    final newEx = await ref
+                        .read(exercisesProvider.notifier)
+                        .addCustomExercise(name);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    await ref
+                        .read(workoutDetailProvider(workoutId).notifier)
+                        .addExercise(newEx.id);
+                  },
+                ),
+              );
             },
           ),
         ),
