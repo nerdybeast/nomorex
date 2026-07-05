@@ -15,6 +15,7 @@ class WorkoutsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Workouts')),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'workoutsNewFab',
         onPressed: () => context.push(AppConstants.routeWorkoutNew),
         icon: const Icon(Icons.add),
         label: const Text('New workout'),

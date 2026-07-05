@@ -75,6 +75,7 @@ class AppShell extends StatelessWidget {
           ),
         ),
         floatingActionButton: FloatingActionButton(
+          heroTag: 'shellAddFab',
           onPressed: () => _showAddMenu(context),
           tooltip: 'Add',
           child: const Icon(Icons.add),
@@ -92,6 +93,7 @@ class AppShell extends StatelessWidget {
             onDestinationSelected: shell.goBranch,
             labelType: NavigationRailLabelType.all,
             leading: FloatingActionButton(
+              heroTag: 'shellAddFabRail',
               onPressed: () => _showAddMenu(context),
               mini: true,
               tooltip: 'Add',

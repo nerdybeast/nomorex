@@ -189,6 +189,7 @@ class _ExerciseEditor extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'editWorkoutFab',
         onPressed: () => _addExercise(context, ref),
         icon: const Icon(Icons.add),
         label: const Text('Exercise'),
