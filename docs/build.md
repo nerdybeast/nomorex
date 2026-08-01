@@ -7,7 +7,7 @@ This app uses Dart's `String.fromEnvironment()` in `lib/main.dart` to read confi
 ```dart
 await Supabase.initialize(
   url: const String.fromEnvironment('SUPABASE_URL'),
-  publishableKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+  publishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
 );
 ```
 
@@ -18,10 +18,11 @@ These are **compile-time constants**, not runtime environment variables. The val
 A `.env.json` file at the project root supplies these values locally. It is gitignored (covered by the `.env*` pattern) and must be created manually on each machine.
 
 `.env.json`:
+
 ```json
 {
   "SUPABASE_URL": "https://<project-ref>.supabase.co",
-  "SUPABASE_ANON_KEY": "<your-anon-key>"
+  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_<your-publishable-key>"
 }
 ```
 
@@ -43,36 +44,40 @@ Alternatively, you can pass values inline without the file:
 ```bash
 flutter run \
   --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=<your-anon-key>
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_<your-publishable-key>
 ```
 
 ## CI / CD
 
-For GitHub Actions (or any CI system), pass the values as secrets. Store `SUPABASE_URL` and `SUPABASE_ANON_KEY` as repository secrets in GitHub, then reference them in the workflow:
+For GitHub Actions (or any CI system), pass the values as secrets. Store `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` as repository secrets in GitHub, then reference them in the workflow:
 
 ```yaml
 - name: Build APK (debug)
   run: flutter build apk --debug
   env:
     SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-    SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+    SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
 ```
 
 > Note: Dart's `--dart-define` reads from the build command, not from OS environment variables. For CI, pass them explicitly via `--dart-define` flags or `--dart-define-from-file` pointed at a generated file.
 
-## A Note on the Anon Key
+## A Note on the Publishable Key
 
-The Supabase anon key is designed to be public — it is safe to ship inside an app binary. Security is enforced server-side via Row Level Security (RLS) policies on the database. Keeping it out of source control is good practice, but it is not a secret in the same way a private API key would be.
+The Supabase publishable key (`sb_publishable_...`) is designed to be public — it is safe to ship inside an app binary. Security is enforced server-side via Row Level Security (RLS) policies on the database. Keeping it out of source control is good practice, but it is not a secret in the same way a secret API key (`sb_secret_...`) would be.
+
+It replaces the older JWT-based anon key: `supabase_flutter` now takes it via the `publishableKey:` parameter, and `anonKey:` is deprecated. Publishable keys can also be rotated independently of the project's JWT secret.
 
 ## Database migrations
 
 Schema is managed as code under `supabase/migrations/`.
 
 ### One-time setup
+
 - Install the Supabase CLI and start Docker.
 - `supabase login` then `supabase link --project-ref <ref>`.
 
 ### Making a schema change
+
 1. `supabase start` — boot the local stack.
 2. `supabase migration new <name>` — never hand-name files.
 3. Write SQL. Any new table in `public` MUST enable RLS and add ownership
@@ -96,6 +101,7 @@ Schema is managed as code under `supabase/migrations/`.
 5. Commit and open a PR. CI runs `db reset` + `db lint`.
 
 ### Deployment
+
 On merge to `main`, CI applies pending migrations to production
 (`supabase db push`) and only then builds and deploys the web app to
 GitHub Pages.

@@ -7,7 +7,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(
     url: const String.fromEnvironment('SUPABASE_URL'),
-    publishableKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+    publishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
   );
   runApp(const ProviderScope(child: NomorexApp()));
 }
