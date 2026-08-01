@@ -53,11 +53,33 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # An unset secret expands to an empty string rather than failing the build,
+      # which would publish a web app that silently cannot reach Supabase.
+      - name: Verify Supabase build secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          missing=()
+          [ -n "$SUPABASE_URL" ] || missing+=(SUPABASE_URL)
+          [ -n "$SUPABASE_PUBLISHABLE_KEY" ] || missing+=(SUPABASE_PUBLISHABLE_KEY)
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo "::error::Missing repository secrets: ${missing[*]}. Set them under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          case "$SUPABASE_URL" in
+            https://*) ;;
+            *) echo "::error::SUPABASE_URL must start with https:// (got a value of length ${#SUPABASE_URL})"; exit 1 ;;
+          esac
+
       - name: Build web
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
           flutter build web --release \
-            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
