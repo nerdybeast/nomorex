@@ -22,6 +22,13 @@ class ExercisePicker extends StatefulWidget {
   State<ExercisePicker> createState() => _ExercisePickerState();
 }
 
+// RawAutocomplete hides its options overlay entirely whenever optionsBuilder
+// returns an empty iterable (see _canShowOptionsView in the framework). That
+// would hide the "Add custom exercise" tile below whenever a typed name
+// matches nothing, so this sentinel is appended to keep the overlay open; it
+// is filtered back out before the visible list is built.
+const _keepOverlayOpenSentinel = Exercise(id: '__keep_overlay_open__', name: '', isPredefined: false);
+
 class _ExercisePickerState extends State<ExercisePicker> {
   TextEditingController? _fieldController;
 
@@ -30,10 +37,12 @@ class _ExercisePickerState extends State<ExercisePicker> {
     return Autocomplete<Exercise>(
       displayStringForOption: (e) => e.name,
       optionsBuilder: (textEditingValue) {
-        if (textEditingValue.text.isEmpty) return widget.exercises;
-        return widget.exercises.where(
-          (e) => e.name.toLowerCase().contains(textEditingValue.text.toLowerCase()),
-        );
+        final matches = textEditingValue.text.isEmpty
+            ? widget.exercises
+            : widget.exercises.where(
+                (e) => e.name.toLowerCase().contains(textEditingValue.text.toLowerCase()),
+              );
+        return [...matches, _keepOverlayOpenSentinel];
       },
       fieldViewBuilder: (context, controller, focusNode, onSubmit) {
         _fieldController = controller;
@@ -50,7 +59,7 @@ class _ExercisePickerState extends State<ExercisePicker> {
       },
       onSelected: widget.onSelected,
       optionsViewBuilder: (context, onSelected, options) {
-        final optionList = options.toList();
+        final optionList = options.where((e) => e != _keepOverlayOpenSentinel).toList();
         return Align(
           alignment: Alignment.topLeft,
           child: Material(
