@@ -28,16 +28,17 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
   }
 
   Future<String> createWorkout({
-    required String title,
-    required DateTime date,
+    String title = 'New Workout',
     String? notes,
+    bool isPublic = false,
   }) async {
     final userId = _db.auth.currentUser!.id;
     final row = await _db.from('workouts').insert({
       'user_id': userId,
       'title': title,
-      'date': date.toIso8601String().split('T').first,
+      'date': DateTime.now().toIso8601String().split('T').first,
       if (notes != null && notes.isNotEmpty) 'notes': notes,
+      'is_public': isPublic,
     }).select('id').single();
 
     ref.invalidateSelf();

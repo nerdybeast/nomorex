@@ -40,6 +40,15 @@ class WorkoutDetailScreen extends ConsumerWidget {
           children: [
             Text(workout.title, style: Theme.of(context).textTheme.headlineSmall),
             Text(formatDate(workout.date)),
+            if (workout.notes != null && workout.notes!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(workout.notes!),
+            ],
+            const SizedBox(height: 4),
+            Text(
+              'Last edited ${formatDate(workout.updatedAt)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: 16),
             for (final ex in workout.exercises)
               _ExerciseCard(

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/workout.dart';
 import '../utils/parsed_set.dart';
 import '../../auth/providers/auth_provider.dart';
+import 'workouts_provider.dart';
 
 part 'workout_detail_provider.g.dart';
 
@@ -116,6 +117,27 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
       'actual_weight_kg': weightKg,
       'actual_reps': reps,
     }).eq('id', setId);
+    await _refresh();
+  }
+
+  Future<void> updateVisibility(bool isPublic) async {
+    await _db.from('workouts').update({'is_public': isPublic}).eq('id', workoutId);
+    ref.invalidate(workoutsProvider);
+    await _refresh();
+  }
+
+  Future<void> updateTitle(String title) async {
+    await _db.from('workouts').update({'title': title}).eq('id', workoutId);
+    ref.invalidate(workoutsProvider);
+    await _refresh();
+  }
+
+  // "Description" in the UI maps to the pre-existing `notes` column.
+  Future<void> updateDescription(String? description) async {
+    await _db
+        .from('workouts')
+        .update({'notes': (description != null && description.isEmpty) ? null : description})
+        .eq('id', workoutId);
     await _refresh();
   }
 }

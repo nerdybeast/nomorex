@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'workouts_provider.dart';
+part of 'community_workouts_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,33 +9,35 @@ part of 'workouts_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(WorkoutsNotifier)
-final workoutsProvider = WorkoutsNotifierProvider._();
+@ProviderFor(CommunityWorkoutsNotifier)
+final communityWorkoutsProvider = CommunityWorkoutsNotifierProvider._();
 
-final class WorkoutsNotifierProvider
-    extends $AsyncNotifierProvider<WorkoutsNotifier, List<Workout>> {
-  WorkoutsNotifierProvider._()
+final class CommunityWorkoutsNotifierProvider
+    extends $AsyncNotifierProvider<CommunityWorkoutsNotifier, List<Workout>> {
+  CommunityWorkoutsNotifierProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'workoutsProvider',
+        name: r'communityWorkoutsProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$workoutsNotifierHash();
+  String debugGetCreateSourceHash() => _$communityWorkoutsNotifierHash();
 
   @$internal
   @override
-  WorkoutsNotifier create() => WorkoutsNotifier();
+  CommunityWorkoutsNotifier create() => CommunityWorkoutsNotifier();
 }
 
-String _$workoutsNotifierHash() => r'45565e78d6cefb2ebf3d8c9d8cee914fc501e9e9';
+String _$communityWorkoutsNotifierHash() =>
+    r'c7507f6d20cd8ef4b333df3879cbbae535502891';
 
-abstract class _$WorkoutsNotifier extends $AsyncNotifier<List<Workout>> {
+abstract class _$CommunityWorkoutsNotifier
+    extends $AsyncNotifier<List<Workout>> {
   FutureOr<List<Workout>> build();
   @$mustCallSuper
   @override

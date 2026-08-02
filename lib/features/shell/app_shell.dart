@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
+import '../workouts/providers/workouts_provider.dart';
 
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
-  void _showAddMenu(BuildContext context) {
+  void _showAddMenu(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -25,9 +27,10 @@ class AppShell extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.fitness_center_outlined),
               title: const Text('New Workout'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(ctx);
-                context.push(AppConstants.routeWorkoutNew);
+                final id = await ref.read(workoutsProvider.notifier).createWorkout();
+                if (context.mounted) context.push(AppConstants.routeWorkoutEdit(id));
               },
             ),
           ],
@@ -37,7 +40,7 @@ class AppShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isMobile = MediaQuery.sizeOf(context).width < AppConstants.kMobileBreakpoint;
 
     if (isMobile) {
@@ -71,12 +74,19 @@ class AppShell extends StatelessWidget {
                 onPressed: () => shell.goBranch(2),
                 tooltip: 'Workouts',
               ),
+              IconButton(
+                icon: Icon(
+                  shell.currentIndex == 3 ? Icons.public : Icons.public_outlined,
+                ),
+                onPressed: () => shell.goBranch(3),
+                tooltip: 'Community',
+              ),
             ],
           ),
         ),
         floatingActionButton: FloatingActionButton(
           heroTag: 'shellAddFab',
-          onPressed: () => _showAddMenu(context),
+          onPressed: () => _showAddMenu(context, ref),
           tooltip: 'Add',
           child: const Icon(Icons.add),
         ),
@@ -94,7 +104,7 @@ class AppShell extends StatelessWidget {
             labelType: NavigationRailLabelType.all,
             leading: FloatingActionButton(
               heroTag: 'shellAddFabRail',
-              onPressed: () => _showAddMenu(context),
+              onPressed: () => _showAddMenu(context, ref),
               mini: true,
               tooltip: 'Add',
               child: const Icon(Icons.add),
@@ -114,6 +124,11 @@ class AppShell extends StatelessWidget {
                 icon: Icon(Icons.fitness_center_outlined),
                 selectedIcon: Icon(Icons.fitness_center),
                 label: Text('Workouts'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.public_outlined),
+                selectedIcon: Icon(Icons.public),
+                label: Text('Community'),
               ),
             ],
           ),
