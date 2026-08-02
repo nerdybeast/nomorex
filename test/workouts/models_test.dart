@@ -1,0 +1,55 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:nomorex/features/workouts/models/workout.dart';
+
+void main() {
+  test('Workout.fromJson parses nested exercises and sets', () {
+    final json = {
+      'id': 'w1',
+      'user_id': 'u1',
+      'title': 'Day 1',
+      'date': '2026-06-28',
+      'notes': null,
+      'workout_exercises': [
+        {
+          'id': 'we1',
+          'workout_id': 'w1',
+          'exercise_id': 'e1',
+          'position': 0,
+          'notes': 'build to a heavy triple',
+          'exercises': {'name': 'Snatch'},
+          'workout_sets': [
+            {
+              'id': 's1',
+              'workout_exercise_id': 'we1',
+              'position': 0,
+              'target_reps': 5,
+              'weight_mode': 'percentage',
+              'percentage': 80,
+              'absolute_weight_kg': null,
+              'note': null,
+              'completed': false,
+              'actual_weight_kg': null,
+              'actual_reps': null,
+            },
+          ],
+        },
+      ],
+    };
+
+    final w = Workout.fromJson(json);
+    expect(w.title, 'Day 1');
+    expect(w.date.year, 2026);
+    expect(w.exercises.single.exerciseName, 'Snatch');
+    final s = w.exercises.single.sets.single;
+    expect(s.weightMode, 'percentage');
+    expect(s.percentage, 80);
+    expect(s.targetReps, 5);
+  });
+
+  test('Workout.fromJson tolerates missing nested collections', () {
+    final w = Workout.fromJson({
+      'id': 'w1', 'user_id': 'u1', 'title': 'Empty', 'date': '2026-06-28',
+    });
+    expect(w.exercises, isEmpty);
+  });
+}
