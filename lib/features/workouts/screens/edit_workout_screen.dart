@@ -238,7 +238,9 @@ class _ExerciseEditor extends ConsumerWidget {
                           unit: unit,
                           onAddPercentageSets: (parsed) =>
                               notifier.addPercentageSets(ex.id, parsed),
-                          onAddAbsoluteSet: () => notifier.addAbsoluteSet(ex.id),
+                          onAddAbsoluteSets: (sets, reps, weightKg) =>
+                              notifier.addAbsoluteSets(ex.id,
+                                  sets: sets, reps: reps, weightKg: weightKg),
                           onDeleteSet: notifier.deleteSet,
                         ),
                       ],

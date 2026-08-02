@@ -1,7 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/workout.dart';
-import '../utils/set_builder_parser.dart';
+import '../utils/parsed_set.dart';
 import '../../auth/providers/auth_provider.dart';
 
 part 'workout_detail_provider.g.dart';
@@ -72,17 +72,27 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     await _refresh();
   }
 
-  Future<void> addAbsoluteSet(String workoutExerciseId) async {
+  Future<void> addAbsoluteSets(
+      String workoutExerciseId, {
+      required int sets,
+      required int reps,
+      required double weightKg,
+      }) async {
+    if (sets <= 0) return;
     final current = await future;
     final ex = current.exercises.firstWhere((e) => e.id == workoutExerciseId);
-    await _db.from('workout_sets').insert({
-      'workout_exercise_id': workoutExerciseId,
-      'user_id': _userId,
-      'position': ex.sets.length,
-      'target_reps': 1,
-      'weight_mode': 'absolute',
-      'absolute_weight_kg': 0,
-    });
+    var pos = ex.sets.length;
+    await _db.from('workout_sets').insert([
+      for (var i = 0; i < sets; i++)
+        {
+          'workout_exercise_id': workoutExerciseId,
+          'user_id': _userId,
+          'position': pos++,
+          'target_reps': reps,
+          'weight_mode': 'absolute',
+          'absolute_weight_kg': weightKg,
+        },
+    ]);
     await _refresh();
   }
 
