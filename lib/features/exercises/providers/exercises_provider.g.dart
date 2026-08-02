@@ -33,7 +33,7 @@ final class ExercisesNotifierProvider
   ExercisesNotifier create() => ExercisesNotifier();
 }
 
-String _$exercisesNotifierHash() => r'52ef3ac56142cb4c44b1320ac540362c3d91ac36';
+String _$exercisesNotifierHash() => r'57c4a5a65744d01a4a177957728079c9047e09e7';
 
 abstract class _$ExercisesNotifier extends $AsyncNotifier<List<Exercise>> {
   FutureOr<List<Exercise>> build();

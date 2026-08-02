@@ -6,8 +6,10 @@ class Workout {
     required this.userId,
     required this.title,
     required this.date,
+    required this.updatedAt,
     this.notes,
     this.exercises = const [],
+    this.isPublic = false,
   });
 
   final String id;
@@ -16,6 +18,8 @@ class Workout {
   final DateTime date;
   final String? notes;
   final List<WorkoutExercise> exercises;
+  final bool isPublic;
+  final DateTime updatedAt;
 
   factory Workout.fromJson(Map<String, dynamic> json) {
     final rawExercises = (json['workout_exercises'] as List?) ?? const [];
@@ -28,8 +32,10 @@ class Workout {
       userId: json['user_id'] as String,
       title: json['title'] as String,
       date: DateTime.parse(json['date'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
       notes: json['notes'] as String?,
       exercises: exercises,
+      isPublic: (json['is_public'] as bool?) ?? false,
     );
   }
 }

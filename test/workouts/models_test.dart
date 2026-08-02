@@ -8,6 +8,7 @@ void main() {
       'user_id': 'u1',
       'title': 'Day 1',
       'date': '2026-06-28',
+      'updated_at': '2026-06-29T12:00:00Z',
       'notes': null,
       'workout_exercises': [
         {
@@ -48,8 +49,36 @@ void main() {
 
   test('Workout.fromJson tolerates missing nested collections', () {
     final w = Workout.fromJson({
-      'id': 'w1', 'user_id': 'u1', 'title': 'Empty', 'date': '2026-06-28',
+      'id': 'w1',
+      'user_id': 'u1',
+      'title': 'Empty',
+      'date': '2026-06-28',
+      'updated_at': '2026-06-28T00:00:00Z',
     });
     expect(w.exercises, isEmpty);
+    expect(w.isPublic, isFalse);
+  });
+
+  test('Workout.fromJson parses is_public', () {
+    final w = Workout.fromJson({
+      'id': 'w1',
+      'user_id': 'u1',
+      'title': 'Public workout',
+      'date': '2026-06-28',
+      'updated_at': '2026-06-28T00:00:00Z',
+      'is_public': true,
+    });
+    expect(w.isPublic, isTrue);
+  });
+
+  test('Workout.fromJson parses updated_at', () {
+    final w = Workout.fromJson({
+      'id': 'w1',
+      'user_id': 'u1',
+      'title': 'Day 1',
+      'date': '2026-06-28',
+      'updated_at': '2026-07-02T08:30:00Z',
+    });
+    expect(w.updatedAt, DateTime.parse('2026-07-02T08:30:00Z'));
   });
 }

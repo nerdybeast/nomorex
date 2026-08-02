@@ -52,6 +52,7 @@ void main() {
       userId: 'u1',
       title: 'Day 1',
       date: DateTime(2026, 7, 5),
+      updatedAt: DateTime(2026, 7, 5),
     );
     await tester.pumpWidget(
       ProviderScope(

@@ -16,6 +16,8 @@ import 'features/personal_bests/screens/add_pr_screen.dart';
 import 'features/workouts/screens/workouts_screen.dart';
 import 'features/workouts/screens/edit_workout_screen.dart';
 import 'features/workouts/screens/workout_detail_screen.dart';
+import 'features/community/screens/community_screen.dart';
+import 'features/community/screens/community_workout_detail_screen.dart';
 
 part 'app.g.dart';
 
@@ -76,6 +78,12 @@ GoRouter router(Ref ref) {
               builder: (_, _) => const WorkoutsScreen(),
             ),
           ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: AppConstants.routeCommunity,
+              builder: (_, _) => const CommunityScreen(),
+            ),
+          ]),
         ],
       ),
       GoRoute(
@@ -83,18 +91,19 @@ GoRouter router(Ref ref) {
         builder: (_, _) => const AddPrScreen(),
       ),
       GoRoute(
-        path: AppConstants.routeWorkoutNew,
-        builder: (_, _) => const EditWorkoutScreen(workoutId: null),
-      ),
-      GoRoute(
         path: '/workouts/:id/edit',
         builder: (_, state) =>
-            EditWorkoutScreen(workoutId: state.pathParameters['id']),
+            EditWorkoutScreen(workoutId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/workouts/:id',
         builder: (_, state) =>
             WorkoutDetailScreen(workoutId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/community/:id',
+        builder: (_, state) =>
+            CommunityWorkoutDetailScreen(workoutId: state.pathParameters['id']!),
       ),
     ],
   );

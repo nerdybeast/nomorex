@@ -50,6 +50,7 @@ void main() {
         userId: 'u1',
         title: 'Day 1',
         date: DateTime(2026, 7, 5),
+        updatedAt: DateTime(2026, 7, 5),
       );
 
       await tester.pumpWidget(
@@ -81,8 +82,16 @@ void main() {
       ]);
       await tester.pumpAndSettle();
 
-      // Type into the picker and expect the option to surface.
-      await tester.enterText(find.byType(TextFormField), 'Bench');
+      // Type into the picker and expect the option to surface. Scope to the
+      // dialog since the screen now also has Title/Description TextFormFields
+      // in the background.
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(TextFormField),
+        ),
+        'Bench',
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Bench Press'), findsOneWidget);
@@ -98,6 +107,7 @@ void main() {
         userId: 'u1',
         title: 'Day 1',
         date: DateTime(2026, 7, 5),
+        updatedAt: DateTime(2026, 7, 5),
       );
       String? addedName;
       String? addedExerciseId;
@@ -133,8 +143,16 @@ void main() {
 
       // Typed name matches no existing exercise (no "Bench" substring), so
       // the autocomplete's options list would previously become empty —
-      // hiding the whole overlay, including "Add custom exercise".
-      await tester.enterText(find.byType(TextFormField), 'Overhead Squat');
+      // hiding the whole overlay, including "Add custom exercise". Scope to
+      // the dialog since the screen now also has Title/Description
+      // TextFormFields in the background.
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(TextFormField),
+        ),
+        'Overhead Squat',
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Add custom exercise'), findsOneWidget);

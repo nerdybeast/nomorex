@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'workout_detail_provider.dart';
+part of 'community_workout_detail_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,39 +9,40 @@ part of 'workout_detail_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(WorkoutDetailNotifier)
-final workoutDetailProvider = WorkoutDetailNotifierFamily._();
+@ProviderFor(CommunityWorkoutDetailNotifier)
+final communityWorkoutDetailProvider = CommunityWorkoutDetailNotifierFamily._();
 
-final class WorkoutDetailNotifierProvider
-    extends $AsyncNotifierProvider<WorkoutDetailNotifier, Workout> {
-  WorkoutDetailNotifierProvider._({
-    required WorkoutDetailNotifierFamily super.from,
+final class CommunityWorkoutDetailNotifierProvider
+    extends $AsyncNotifierProvider<CommunityWorkoutDetailNotifier, Workout> {
+  CommunityWorkoutDetailNotifierProvider._({
+    required CommunityWorkoutDetailNotifierFamily super.from,
     required String super.argument,
   }) : super(
          retry: null,
-         name: r'workoutDetailProvider',
+         name: r'communityWorkoutDetailProvider',
          isAutoDispose: false,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
 
   @override
-  String debugGetCreateSourceHash() => _$workoutDetailNotifierHash();
+  String debugGetCreateSourceHash() => _$communityWorkoutDetailNotifierHash();
 
   @override
   String toString() {
-    return r'workoutDetailProvider'
+    return r'communityWorkoutDetailProvider'
         ''
         '($argument)';
   }
 
   @$internal
   @override
-  WorkoutDetailNotifier create() => WorkoutDetailNotifier();
+  CommunityWorkoutDetailNotifier create() => CommunityWorkoutDetailNotifier();
 
   @override
   bool operator ==(Object other) {
-    return other is WorkoutDetailNotifierProvider && other.argument == argument;
+    return other is CommunityWorkoutDetailNotifierProvider &&
+        other.argument == argument;
   }
 
   @override
@@ -50,35 +51,36 @@ final class WorkoutDetailNotifierProvider
   }
 }
 
-String _$workoutDetailNotifierHash() =>
-    r'a004b5788173586846360e63d918345b30bb0ca0';
+String _$communityWorkoutDetailNotifierHash() =>
+    r'7bf8ce58aa99b8ca6c9dde074977f4a788efdf91';
 
-final class WorkoutDetailNotifierFamily extends $Family
+final class CommunityWorkoutDetailNotifierFamily extends $Family
     with
         $ClassFamilyOverride<
-          WorkoutDetailNotifier,
+          CommunityWorkoutDetailNotifier,
           AsyncValue<Workout>,
           Workout,
           FutureOr<Workout>,
           String
         > {
-  WorkoutDetailNotifierFamily._()
+  CommunityWorkoutDetailNotifierFamily._()
     : super(
         retry: null,
-        name: r'workoutDetailProvider',
+        name: r'communityWorkoutDetailProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
         isAutoDispose: false,
       );
 
-  WorkoutDetailNotifierProvider call(String workoutId) =>
-      WorkoutDetailNotifierProvider._(argument: workoutId, from: this);
+  CommunityWorkoutDetailNotifierProvider call(String workoutId) =>
+      CommunityWorkoutDetailNotifierProvider._(argument: workoutId, from: this);
 
   @override
-  String toString() => r'workoutDetailProvider';
+  String toString() => r'communityWorkoutDetailProvider';
 }
 
-abstract class _$WorkoutDetailNotifier extends $AsyncNotifier<Workout> {
+abstract class _$CommunityWorkoutDetailNotifier
+    extends $AsyncNotifier<Workout> {
   late final _$args = ref.$arg as String;
   String get workoutId => _$args;
 
