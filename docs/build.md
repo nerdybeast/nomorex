@@ -39,6 +39,26 @@ flutter build apk --debug --dart-define-from-file=.env.json
 flutter build apk --release --dart-define-from-file=.env.json
 ```
 
+### Targeting the local Supabase stack
+
+`.env.json` points at **production**. To develop against the local stack from
+`supabase start`, use `.env.local.json` instead (also gitignored):
+
+```json
+{
+  "SUPABASE_URL": "http://127.0.0.1:54321",
+  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_<local-key>"
+}
+```
+
+```bash
+flutter run --dart-define-from-file=.env.local.json
+```
+
+The local keys are fixed demo credentials — identical on every machine and not
+secret. Run `supabase status` to print the current values. Note that Android
+emulators reach the host at `10.0.2.2`, not `127.0.0.1`.
+
 Alternatively, you can pass values inline without the file:
 
 ```bash
@@ -102,6 +122,10 @@ Schema is managed as code under `supabase/migrations/`.
 
 ### Deployment
 
-On merge to `main`, CI applies pending migrations to production
-(`supabase db push`) and only then builds and deploys the web app to
-GitHub Pages.
+Migrations are applied to production by the **Supabase GitHub integration**,
+which watches `supabase/` and deploys on push to `main`. The `Deploy` workflow
+in `.github/workflows/deploy.yml` only builds and publishes the web app; it no
+longer runs `supabase db push`.
+
+The two run independently, so a schema change and the app build that depends on
+it are not ordered. Ship additive migrations ahead of the code that needs them.
