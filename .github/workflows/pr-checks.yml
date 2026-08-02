@@ -34,6 +34,15 @@ jobs:
       - name: Build APK (debug)
         run: flutter build apk --debug
 
+      # Deploy builds a release web bundle (see deploy.yml); this only proves
+      # that target still compiles in release mode, so the values just need
+      # to be well-formed, not real.
+      - name: Build web (release)
+        run: |
+          flutter build web --release \
+            --dart-define=SUPABASE_URL=https://placeholder.supabase.co \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
+
   db-validate:
     name: Validate DB migrations
     runs-on: ubuntu-latest
