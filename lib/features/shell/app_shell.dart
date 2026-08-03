@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
-import '../workouts/providers/workouts_provider.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
-  void _showAddMenu(BuildContext context, WidgetRef ref) {
+  void _showAddMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -27,10 +26,9 @@ class AppShell extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.fitness_center_outlined),
               title: const Text('New Workout'),
-              onTap: () async {
+              onTap: () {
                 Navigator.pop(ctx);
-                final id = await ref.read(workoutsProvider.notifier).createWorkout();
-                if (context.mounted) context.push(AppConstants.routeWorkoutEdit(id));
+                context.push(AppConstants.routeWorkoutNew);
               },
             ),
           ],
@@ -86,7 +84,7 @@ class AppShell extends ConsumerWidget {
         ),
         floatingActionButton: FloatingActionButton(
           heroTag: 'shellAddFab',
-          onPressed: () => _showAddMenu(context, ref),
+          onPressed: () => _showAddMenu(context),
           tooltip: 'Add',
           child: const Icon(Icons.add),
         ),
@@ -104,7 +102,7 @@ class AppShell extends ConsumerWidget {
             labelType: NavigationRailLabelType.all,
             leading: FloatingActionButton(
               heroTag: 'shellAddFabRail',
-              onPressed: () => _showAddMenu(context, ref),
+              onPressed: () => _showAddMenu(context),
               mini: true,
               tooltip: 'Add',
               child: const Icon(Icons.add),

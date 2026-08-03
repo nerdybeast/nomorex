@@ -14,6 +14,7 @@ import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/personal_bests/screens/my_prs_screen.dart';
 import 'features/personal_bests/screens/add_pr_screen.dart';
 import 'features/workouts/screens/workouts_screen.dart';
+import 'features/workouts/screens/new_workout_screen.dart';
 import 'features/workouts/screens/edit_workout_screen.dart';
 import 'features/workouts/screens/workout_detail_screen.dart';
 import 'features/community/screens/community_screen.dart';
@@ -89,6 +90,10 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: AppConstants.routeAddPr,
         builder: (_, _) => const AddPrScreen(),
+      ),
+      GoRoute(
+        path: AppConstants.routeWorkoutNew,
+        builder: (_, _) => const NewWorkoutScreen(),
       ),
       GoRoute(
         path: '/workouts/:id/edit',
