@@ -23,10 +23,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
       appBar: AppBar(title: const Text('Workouts')),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'workoutsNewFab',
-        onPressed: () async {
-          final id = await ref.read(workoutsProvider.notifier).createWorkout();
-          if (context.mounted) context.push(AppConstants.routeWorkoutEdit(id));
-        },
+        onPressed: () => context.push(AppConstants.routeWorkoutNew),
         icon: const Icon(Icons.add),
         label: const Text('New workout'),
       ),
