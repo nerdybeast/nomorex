@@ -52,7 +52,7 @@ final class CommunityWorkoutDetailNotifierProvider
 }
 
 String _$communityWorkoutDetailNotifierHash() =>
-    r'7bf8ce58aa99b8ca6c9dde074977f4a788efdf91';
+    r'747bab29e135e187aa6d03db1d5d095c463238d3';
 
 final class CommunityWorkoutDetailNotifierFamily extends $Family
     with

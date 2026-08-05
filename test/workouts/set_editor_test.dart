@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/core/utils/weight_converter.dart';
-import 'package:nomorex/features/workouts/models/workout_exercise.dart';
+import 'package:nomorex/features/exercises/models/exercise.dart';
+import 'package:nomorex/features/exercises/providers/exercises_provider.dart';
 import 'package:nomorex/features/workouts/utils/parsed_set.dart';
 import 'package:nomorex/features/workouts/widgets/set_editor.dart';
+import 'package:nomorex/shared/models/editable_set_row.dart';
 
-const _exercise = WorkoutExercise(
-  id: 'we1',
-  workoutId: 'w1',
-  exerciseId: 'e1',
-  exerciseName: 'Back Squat',
-  position: 0,
-);
+const _otherExercise = Exercise(id: 'e2', name: 'Front Squat', isPredefined: true);
+
+class _StubExercisesNotifier extends ExercisesNotifier {
+  @override
+  Future<List<Exercise>> build() async => const [_otherExercise];
+}
+
+Widget _wrap(Widget child) => ProviderScope(
+      overrides: [
+        exercisesProvider.overrideWith(() => _StubExercisesNotifier()),
+      ],
+      child: MaterialApp(home: Scaffold(body: child)),
+    );
 
 Future<void> _tapStepper(
   WidgetTester tester, {
@@ -32,18 +41,15 @@ void main() {
     List<ParsedSet>? added;
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SetEditor(
-            exercise: _exercise,
-            unit: 'kg',
-            onAddPercentageSets: (parsed) => added = parsed,
-            onAddAbsoluteSets: (_, _, _) {},
-            onDeleteSet: (_) {},
-          ),
-        ),
-      ),
+      _wrap(SetEditor(
+        sets: const [],
+        unit: 'kg',
+        onAddPercentageSets: (parsed) => added = parsed,
+        onAddAbsoluteSets: (_, _, _) {},
+        onDeleteSet: (_) {},
+      )),
     );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Add sets (%)'));
     await tester.pumpAndSettle();
@@ -63,6 +69,39 @@ void main() {
     expect(added, isNotNull);
     expect(added!.map((s) => s.targetReps), [1, 1, 1]);
     expect(added!.map((s) => s.percentage), [70, 75, 70]);
+    expect(added!.map((s) => s.basisExerciseId), [null, null, null]);
+  });
+
+  testWidgets('"Based on" defaults to this exercise and flows through when changed',
+      (tester) async {
+    List<ParsedSet>? added;
+
+    await tester.pumpWidget(
+      _wrap(SetEditor(
+        sets: const [],
+        unit: 'kg',
+        onAddPercentageSets: (parsed) => added = parsed,
+        onAddAbsoluteSets: (_, _, _) {},
+        onDeleteSet: (_) {},
+      )),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add sets (%)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('This exercise'), findsOneWidget);
+
+    await tester.tap(find.text('This exercise'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Front Squat').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(added, isNotNull);
+    expect(added!.single.basisExerciseId, 'e2');
   });
 
   testWidgets('Add sets (weight) collects sets/reps/weight and converts lbs to kg',
@@ -72,22 +111,19 @@ void main() {
     double? capturedWeightKg;
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SetEditor(
-            exercise: _exercise,
-            unit: 'lbs',
-            onAddPercentageSets: (_) {},
-            onAddAbsoluteSets: (sets, reps, weightKg) {
-              capturedSets = sets;
-              capturedReps = reps;
-              capturedWeightKg = weightKg;
-            },
-            onDeleteSet: (_) {},
-          ),
-        ),
-      ),
+      _wrap(SetEditor(
+        sets: const [],
+        unit: 'lbs',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (sets, reps, weightKg) {
+          capturedSets = sets;
+          capturedReps = reps;
+          capturedWeightKg = weightKg;
+        },
+        onDeleteSet: (_) {},
+      )),
     );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Add sets (weight)'));
     await tester.pumpAndSettle();
@@ -110,18 +146,15 @@ void main() {
     double? capturedWeightKg;
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SetEditor(
-            exercise: _exercise,
-            unit: 'kg',
-            onAddPercentageSets: (_) {},
-            onAddAbsoluteSets: (_, _, weightKg) => capturedWeightKg = weightKg,
-            onDeleteSet: (_) {},
-          ),
-        ),
-      ),
+      _wrap(SetEditor(
+        sets: const [],
+        unit: 'kg',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (_, _, weightKg) => capturedWeightKg = weightKg,
+        onDeleteSet: (_) {},
+      )),
     );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Add sets (weight)'));
     await tester.pumpAndSettle();
@@ -142,18 +175,15 @@ void main() {
 
   testWidgets('sets stepper cannot go below 1', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SetEditor(
-            exercise: _exercise,
-            unit: 'kg',
-            onAddPercentageSets: (_) {},
-            onAddAbsoluteSets: (_, _, _) {},
-            onDeleteSet: (_) {},
-          ),
-        ),
-      ),
+      _wrap(SetEditor(
+        sets: const [],
+        unit: 'kg',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (_, _, _) {},
+        onDeleteSet: (_) {},
+      )),
     );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Add sets (weight)'));
     await tester.pumpAndSettle();
@@ -164,5 +194,29 @@ void main() {
       matching: find.byType(IconButton),
     );
     expect(tester.widget<IconButton>(decrement).onPressed, isNull);
+  });
+
+  testWidgets('renders "% of <basis>" when a set has a basis exercise', (tester) async {
+    await tester.pumpWidget(
+      _wrap(SetEditor(
+        sets: const [
+          EditableSetRow(
+            id: 's1',
+            weightMode: 'percentage',
+            targetReps: 5,
+            percentage: 85,
+            basisExerciseId: 'e2',
+            basisExerciseName: 'Front Squat',
+          ),
+        ],
+        unit: 'kg',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (_, _, _) {},
+        onDeleteSet: (_) {},
+      )),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('85% of Front Squat'), findsOneWidget);
   });
 }

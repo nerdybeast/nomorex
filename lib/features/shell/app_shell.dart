@@ -31,6 +31,14 @@ class AppShell extends ConsumerWidget {
                 context.push(AppConstants.routeWorkoutNew);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.checklist_outlined),
+              title: const Text('New Program'),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push(AppConstants.routeProgramNew);
+              },
+            ),
           ],
         ),
       ),
@@ -78,6 +86,13 @@ class AppShell extends ConsumerWidget {
                 ),
                 onPressed: () => shell.goBranch(3),
                 tooltip: 'Community',
+              ),
+              IconButton(
+                icon: Icon(
+                  shell.currentIndex == 4 ? Icons.checklist : Icons.checklist_outlined,
+                ),
+                onPressed: () => shell.goBranch(4),
+                tooltip: 'Programs',
               ),
             ],
           ),
@@ -127,6 +142,11 @@ class AppShell extends ConsumerWidget {
                 icon: Icon(Icons.public_outlined),
                 selectedIcon: Icon(Icons.public),
                 label: Text('Community'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.checklist_outlined),
+                selectedIcon: Icon(Icons.checklist),
+                label: Text('Programs'),
               ),
             ],
           ),

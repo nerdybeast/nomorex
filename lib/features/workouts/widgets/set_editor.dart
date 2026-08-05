@@ -1,30 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/weight_converter.dart';
-import '../models/workout_exercise.dart';
-import '../models/workout_set.dart';
+import '../../../shared/models/editable_set_row.dart';
+import '../../exercises/models/exercise.dart';
+import '../../exercises/providers/exercises_provider.dart';
 import '../utils/parsed_set.dart';
 
-/// Editable list of sets for a single exercise, plus add controls.
-class SetEditor extends StatelessWidget {
+/// Editable list of sets for a single exercise, plus add controls. Works
+/// against [EditableSetRow] rather than a concrete `WorkoutSet`/`ProgramSet`
+/// so it's shared between editing a logged workout and authoring a program.
+class SetEditor extends ConsumerWidget {
   const SetEditor({
     super.key,
-    required this.exercise,
+    required this.sets,
     required this.unit,
     required this.onAddPercentageSets,
     required this.onAddAbsoluteSets,
     required this.onDeleteSet,
   });
 
-  final WorkoutExercise exercise;
+  final List<EditableSetRow> sets;
   final String unit;
   final void Function(List<ParsedSet>) onAddPercentageSets;
   final void Function(int sets, int reps, double weightKg) onAddAbsoluteSets;
   final void Function(String setId) onDeleteSet;
 
-  Future<void> _showPercentageSetDialog(BuildContext context) async {
+  Future<void> _showPercentageSetDialog(
+    BuildContext context,
+    List<Exercise> exercises,
+  ) async {
     var sets = 1;
     var reps = 1;
     var percentages = <double>[70];
+    Exercise? basisExercise;
 
     await showDialog<void>(
       context: context,
@@ -35,6 +43,19 @@ class SetEditor extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                DropdownButtonFormField<Exercise?>(
+                  initialValue: basisExercise,
+                  decoration: const InputDecoration(labelText: 'Based on'),
+                  items: [
+                    const DropdownMenuItem<Exercise?>(
+                      child: Text('This exercise'),
+                    ),
+                    for (final ex in exercises)
+                      DropdownMenuItem<Exercise?>(value: ex, child: Text(ex.name)),
+                  ],
+                  onChanged: (v) => setState(() => basisExercise = v),
+                ),
+                const SizedBox(height: 8),
                 _NumberField(
                   label: 'Sets',
                   value: sets.toDouble(),
@@ -83,7 +104,7 @@ class SetEditor extends StatelessWidget {
             FilledButton(
               onPressed: () {
                 onAddPercentageSets([
-                  for (final p in percentages) ParsedSet(reps, p),
+                  for (final p in percentages) ParsedSet(reps, p, basisExercise?.id),
                 ]);
                 Navigator.pop(ctx);
               },
@@ -152,11 +173,12 @@ class SetEditor extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final exercises = ref.watch(exercisesProvider).asData?.value ?? const <Exercise>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final s in exercise.sets)
+        for (final s in sets)
           _SetRow(
             set: s,
             unit: unit,
@@ -165,7 +187,7 @@ class SetEditor extends StatelessWidget {
         Row(
           children: [
             TextButton.icon(
-              onPressed: () => _showPercentageSetDialog(context),
+              onPressed: () => _showPercentageSetDialog(context, exercises),
               icon: const Icon(Icons.add),
               label: const Text('Add sets (%)'),
             ),
@@ -188,7 +210,7 @@ class _SetRow extends StatelessWidget {
     required this.onDelete,
   });
 
-  final WorkoutSet set;
+  final EditableSetRow set;
   final String unit;
   final VoidCallback onDelete;
 
@@ -200,10 +222,13 @@ class _SetRow extends StatelessWidget {
         : (set.absoluteWeightKg != null
             ? formatWeight(set.absoluteWeightKg!, unit)
             : '? $unit');
+    final basisLabel = set.basisExerciseId != null
+        ? (set.basisExerciseName ?? '1RM')
+        : '1RM';
     return ListTile(
       dense: true,
       leading: Text('${set.targetReps ?? '-'} reps'),
-      title: Text(isPct ? '$valueLabel of 1RM' : valueLabel),
+      title: Text(isPct ? '$valueLabel of $basisLabel' : valueLabel),
       trailing: IconButton(
         icon: const Icon(Icons.close),
         onPressed: onDelete,

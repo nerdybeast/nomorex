@@ -19,6 +19,10 @@ import 'features/workouts/screens/edit_workout_screen.dart';
 import 'features/workouts/screens/workout_detail_screen.dart';
 import 'features/community/screens/community_screen.dart';
 import 'features/community/screens/community_workout_detail_screen.dart';
+import 'features/programs/screens/programs_screen.dart';
+import 'features/programs/screens/new_program_screen.dart';
+import 'features/programs/screens/program_edit_screen.dart';
+import 'features/programs/screens/program_detail_screen.dart';
 
 part 'app.g.dart';
 
@@ -85,6 +89,12 @@ GoRouter router(Ref ref) {
               builder: (_, _) => const CommunityScreen(),
             ),
           ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: AppConstants.routePrograms,
+              builder: (_, _) => const ProgramsScreen(),
+            ),
+          ]),
         ],
       ),
       GoRoute(
@@ -109,6 +119,20 @@ GoRouter router(Ref ref) {
         path: '/community/:id',
         builder: (_, state) =>
             CommunityWorkoutDetailScreen(workoutId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: AppConstants.routeProgramNew,
+        builder: (_, _) => const NewProgramScreen(),
+      ),
+      GoRoute(
+        path: '/programs/:id/edit',
+        builder: (_, state) =>
+            ProgramEditScreen(programId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/programs/:id',
+        builder: (_, state) =>
+            ProgramDetailScreen(programId: state.pathParameters['id']!),
       ),
     ],
   );

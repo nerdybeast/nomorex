@@ -17,7 +17,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     ref.watch(authStateProvider);
     final data = await _db
         .from('workouts')
-        .select('*, workout_exercises(*, exercises(name), workout_sets(*))')
+        .select('*, workout_exercises(*, exercises(name), workout_sets(*, exercises(name)))')
         .eq('id', workoutId)
         .single();
     return Workout.fromJson(data);
@@ -68,6 +68,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
           'target_reps': p.targetReps,
           'weight_mode': 'percentage',
           'percentage': p.percentage,
+          'basis_exercise_id': p.basisExerciseId,
         },
     ]);
     await _refresh();
