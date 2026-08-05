@@ -141,6 +141,43 @@ void main() {
   });
 
   testWidgets(
+      'Add sets (weight) unit toggle lets weight be entered in kg even when '
+      'the profile preference is lbs', (tester) async {
+    double? capturedWeightKg;
+
+    await tester.pumpWidget(
+      _wrap(SetEditor(
+        sets: const [],
+        unit: 'lbs',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (_, _, weightKg) => capturedWeightKg = weightKg,
+        onDeleteSet: (_) {},
+      )),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add sets (weight)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Weight (lbs)'), findsOneWidget);
+
+    await tester.tap(find.text('kg'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Weight (kg)'), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, '0.0'), '100');
+    final repsRow = find.ancestor(of: find.text('Reps'), matching: find.byType(Row));
+    await tester.tap(find.descendant(of: repsRow, matching: find.byType(TextField)));
+    await tester.pump();
+
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(capturedWeightKg, 100);
+  });
+
+  testWidgets(
       'typing a weight directly and moving focus away commits it, even '
       'without pressing enter', (tester) async {
     double? capturedWeightKg;
