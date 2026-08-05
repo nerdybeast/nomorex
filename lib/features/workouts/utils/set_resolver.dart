@@ -1,3 +1,12 @@
+import '../models/workout_exercise.dart';
+import '../models/workout_set.dart';
+
+/// The exercise id whose 1RM a set's percentage should resolve against:
+/// the set's own [WorkoutSet.basisExerciseId] if one was chosen, otherwise
+/// the exercise the set belongs to (today's only behavior).
+String resolveBasisExerciseId(WorkoutSet set, WorkoutExercise exercise) =>
+    set.basisExerciseId ?? exercise.exerciseId;
+
 /// Resolves a set's working weight in kg.
 ///
 /// - `absolute` mode returns [absoluteWeightKg] (the user typed a fixed load).

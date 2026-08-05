@@ -146,7 +146,7 @@ class EditWorkoutScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 8),
                           SetEditor(
-                            exercise: ex,
+                            sets: ex.sets.map((s) => s.toEditableRow()).toList(),
                             unit: unit,
                             onAddPercentageSets: (parsed) =>
                                 notifier.addPercentageSets(ex.id, parsed),

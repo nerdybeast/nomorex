@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/features/workouts/models/workout.dart';
+import 'package:nomorex/features/workouts/models/workout_set.dart';
 
 void main() {
   test('Workout.fromJson parses nested exercises and sets', () {
@@ -80,5 +81,31 @@ void main() {
       'updated_at': '2026-07-02T08:30:00Z',
     });
     expect(w.updatedAt, DateTime.parse('2026-07-02T08:30:00Z'));
+  });
+
+  test('WorkoutSet.fromJson parses basis_exercise_id and its joined name', () {
+    final s = WorkoutSet.fromJson({
+      'id': 's1',
+      'workout_exercise_id': 'we1',
+      'position': 0,
+      'weight_mode': 'percentage',
+      'percentage': 85,
+      'basis_exercise_id': 'e2',
+      'exercises': {'name': 'Clean and Jerk'},
+    });
+    expect(s.basisExerciseId, 'e2');
+    expect(s.basisExerciseName, 'Clean and Jerk');
+  });
+
+  test('WorkoutSet.fromJson tolerates a missing basis_exercise_id/join', () {
+    final s = WorkoutSet.fromJson({
+      'id': 's1',
+      'workout_exercise_id': 'we1',
+      'position': 0,
+      'weight_mode': 'absolute',
+      'absolute_weight_kg': 60,
+    });
+    expect(s.basisExerciseId, isNull);
+    expect(s.basisExerciseName, isNull);
   });
 }

@@ -14,7 +14,7 @@ class CommunityWorkoutDetailNotifier extends _$CommunityWorkoutDetailNotifier {
     ref.watch(authStateProvider);
     final data = await _db
         .from('workouts')
-        .select('*, workout_exercises(*, exercises(name), workout_sets(*))')
+        .select('*, workout_exercises(*, exercises(name), workout_sets(*, exercises(name)))')
         .eq('id', workoutId)
         .single();
     return Workout.fromJson(data);

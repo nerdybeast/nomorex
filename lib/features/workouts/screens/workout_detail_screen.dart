@@ -53,7 +53,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
             for (final ex in workout.exercises)
               _ExerciseCard(
                 exercise: ex,
-                oneRepMaxKg: maxes[ex.exerciseId],
+                oneRepMaxes: maxes,
                 unit: unit,
                 onToggle: (setId, value) => notifier.setCompleted(setId, value),
               ),
@@ -67,13 +67,13 @@ class WorkoutDetailScreen extends ConsumerWidget {
 class _ExerciseCard extends StatelessWidget {
   const _ExerciseCard({
     required this.exercise,
-    required this.oneRepMaxKg,
+    required this.oneRepMaxes,
     required this.unit,
     required this.onToggle,
   });
 
   final WorkoutExercise exercise;
-  final double? oneRepMaxKg;
+  final Map<String, double> oneRepMaxes;
   final String unit;
   final void Function(String setId, bool value) onToggle;
 
@@ -94,7 +94,12 @@ class _ExerciseCard extends StatelessWidget {
               ),
             const SizedBox(height: 4),
             for (final s in exercise.sets)
-              _SetTile(set: s, oneRepMaxKg: oneRepMaxKg, unit: unit, onToggle: onToggle),
+              _SetTile(
+                set: s,
+                oneRepMaxKg: oneRepMaxes[resolveBasisExerciseId(s, exercise)],
+                unit: unit,
+                onToggle: onToggle,
+              ),
           ],
         ),
       ),
@@ -124,11 +129,13 @@ class _SetTile extends StatelessWidget {
       oneRepMaxKg: oneRepMaxKg,
     );
 
+    final basisSuffix =
+        set.basisExerciseId != null ? ' of ${set.basisExerciseName ?? '1RM'}' : '';
     final String trailingText;
     if (set.weightMode == 'percentage') {
       trailingText = resolvedKg == null
-          ? '${set.percentage?.toStringAsFixed(0)}% — set a 1RM'
-          : '${set.percentage?.toStringAsFixed(0)}% · ${formatWeight(resolvedKg, unit)}';
+          ? '${set.percentage?.toStringAsFixed(0)}%$basisSuffix — set a 1RM'
+          : '${set.percentage?.toStringAsFixed(0)}%$basisSuffix · ${formatWeight(resolvedKg, unit)}';
     } else {
       trailingText = formatWeight(resolvedKg ?? 0, unit);
     }

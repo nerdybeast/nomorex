@@ -92,6 +92,7 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
             'weight_mode': s.weightMode,
             'percentage': s.percentage,
             'absolute_weight_kg': s.absoluteWeightKg,
+            'basis_exercise_id': s.basisExerciseId,
             'note': s.note,
           },
       ]);
