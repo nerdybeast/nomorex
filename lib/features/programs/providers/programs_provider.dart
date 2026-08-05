@@ -15,9 +15,10 @@ class ProgramsNotifier extends _$ProgramsNotifier {
     final userId = _db.auth.currentUser?.id;
     if (userId == null) return [];
 
+    // Shallow: program + its weeks (no days/exercises/sets) for a "N weeks" count/summary.
     final data = await _db
         .from('programs')
-        .select()
+        .select('*, program_weeks(*)')
         .eq('user_id', userId)
         .eq('is_archived', false)
         .order('created_at', ascending: false);
