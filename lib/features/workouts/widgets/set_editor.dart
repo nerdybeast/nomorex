@@ -120,7 +120,7 @@ class SetEditor extends ConsumerWidget {
     var sets = 1;
     var reps = 1;
     var weightDisplay = 0.0;
-    final step = unit == 'lbs' ? 5.0 : 2.5;
+    var dialogUnit = unit;
 
     await showDialog<void>(
       context: context,
@@ -146,11 +146,35 @@ class SetEditor extends ConsumerWidget {
                 decimals: 0,
                 onChanged: (v) => setState(() => reps = v.round()),
               ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Expanded(child: Text('Unit')),
+                  SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'kg', label: Text('kg')),
+                      ButtonSegment(value: 'lbs', label: Text('lbs')),
+                    ],
+                    selected: {dialogUnit},
+                    onSelectionChanged: (selection) => setState(() {
+                      final newUnit = selection.first;
+                      if (newUnit == dialogUnit) return;
+                      weightDisplay = newUnit == 'lbs'
+                          ? kgToLbs(weightDisplay)
+                          : lbsToKg(weightDisplay);
+                      dialogUnit = newUnit;
+                    }),
+                    style: const ButtonStyle(
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              ),
               _NumberField(
-                label: 'Weight ($unit)',
+                label: 'Weight ($dialogUnit)',
                 value: weightDisplay,
                 min: 0,
-                step: step,
+                step: dialogUnit == 'lbs' ? 5.0 : 2.5,
                 decimals: 1,
                 onChanged: (v) => setState(() => weightDisplay = v),
               ),
@@ -160,7 +184,7 @@ class SetEditor extends ConsumerWidget {
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             FilledButton(
               onPressed: () {
-                final weightKg = unit == 'lbs' ? lbsToKg(weightDisplay) : weightDisplay;
+                final weightKg = dialogUnit == 'lbs' ? lbsToKg(weightDisplay) : weightDisplay;
                 onAddAbsoluteSets(sets, reps, weightKg);
                 Navigator.pop(ctx);
               },
