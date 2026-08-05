@@ -2,18 +2,80 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../models/program_day.dart';
 import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
+import '../providers/program_instances_provider.dart';
+import '../utils/program_day_date.dart';
 
 /// Read-only rollup of an authored program (mirrors WorkoutDetailScreen's
-/// read affordances). Starting the program is wired in separately once the
-/// materialization RPC exists.
+/// read affordances), plus the "Start Program" call to action that
+/// materializes it into logged workouts via the start_program RPC.
 class ProgramDetailScreen extends ConsumerWidget {
   const ProgramDetailScreen({super.key, required this.programId});
   final String programId;
+
+  Future<void> _startProgram(BuildContext context, WidgetRef ref, int dayCount) async {
+    var startDate = DateTime.now();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('Start Program'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Start date'),
+                subtitle: Text(formatDate(startDate)),
+                trailing: const Icon(Icons.calendar_today_outlined),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: ctx,
+                    initialDate: startDate,
+                    firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                    lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                  );
+                  if (picked != null) setState(() => startDate = picked);
+                },
+              ),
+              if (dayCount > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Ends around ${formatDate(programDayDate(startDate, dayCount - 1))}.',
+                    style: Theme.of(ctx).textTheme.bodySmall,
+                  ),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Start')),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(programInstancesProvider.notifier).startProgram(programId, startDate);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Program started — check your workouts.')),
+      );
+      context.go(AppConstants.routeWorkouts);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not start program: $e')));
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -49,8 +111,19 @@ class ProgramDetailScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             if (program.weeks.isEmpty)
               const Center(child: Text('This program has no weeks yet.'))
-            else
+            else ...[
+              FilledButton.icon(
+                onPressed: () => _startProgram(
+                  context,
+                  ref,
+                  program.weeks.fold<int>(0, (sum, w) => sum + w.days.length),
+                ),
+                icon: const Icon(Icons.play_arrow),
+                label: const Text('Start Program'),
+              ),
+              const SizedBox(height: 16),
               for (final week in program.weeks) _WeekSection(week: week, unit: unit),
+            ],
           ],
         ),
       ),
