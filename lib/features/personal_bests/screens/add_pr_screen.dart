@@ -157,6 +157,7 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                 // Notes
                 TextFormField(
                   controller: _notesController,
+                  textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(
                     labelText: 'Notes (optional)',
                     border: OutlineInputBorder(),

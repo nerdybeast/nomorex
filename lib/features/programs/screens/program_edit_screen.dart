@@ -80,6 +80,7 @@ class ProgramEditScreen extends ConsumerWidget {
               TextField(
                 controller: controller,
                 autofocus: true,
+                textCapitalization: TextCapitalization.sentences,
                 decoration: const InputDecoration(labelText: 'Title (e.g. Day 1)'),
               ),
               SwitchListTile(
@@ -399,6 +400,7 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
       controller: _controller,
       focusNode: _focusNode,
       maxLines: widget.maxLines,
+      textCapitalization: TextCapitalization.sentences,
       decoration: InputDecoration(
         labelText: widget.labelText,
         border: const OutlineInputBorder(),

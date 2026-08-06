@@ -66,6 +66,7 @@ class _NewProgramScreenState extends ConsumerState<NewProgramScreen> {
                 TextFormField(
                   controller: _nameController,
                   autofocus: true,
+                  textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(
                     labelText: 'Name (e.g. ZT 6 Week Program)',
                     border: OutlineInputBorder(),
@@ -77,6 +78,7 @@ class _NewProgramScreenState extends ConsumerState<NewProgramScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descriptionController,
+                  textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(
                     labelText: 'Description',
                     border: OutlineInputBorder(),

@@ -85,6 +85,7 @@ class _ExercisePickerState extends State<ExercisePicker> {
                               title: const Text('Custom Exercise'),
                               content: TextField(
                                 controller: nameCtrl,
+                                textCapitalization: TextCapitalization.sentences,
                                 decoration: const InputDecoration(labelText: 'Exercise name'),
                                 autofocus: true,
                               ),

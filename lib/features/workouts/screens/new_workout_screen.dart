@@ -66,6 +66,7 @@ class _NewWorkoutScreenState extends ConsumerState<NewWorkoutScreen> {
                 TextFormField(
                   controller: _titleController,
                   autofocus: true,
+                  textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(
                     labelText: 'Title (e.g. Day 1)',
                     border: OutlineInputBorder(),
@@ -77,6 +78,7 @@ class _NewWorkoutScreenState extends ConsumerState<NewWorkoutScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descriptionController,
+                  textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(
                     labelText: 'Description',
                     border: OutlineInputBorder(),

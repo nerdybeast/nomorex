@@ -230,6 +230,7 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
       controller: _controller,
       focusNode: _focusNode,
       maxLines: widget.maxLines,
+      textCapitalization: TextCapitalization.sentences,
       decoration: InputDecoration(
         labelText: widget.labelText,
         border: const OutlineInputBorder(),
