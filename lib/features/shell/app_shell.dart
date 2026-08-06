@@ -54,45 +54,64 @@ class AppShell extends ConsumerWidget {
         body: shell,
         bottomNavigationBar: BottomAppBar(
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              IconButton(
-                icon: Icon(
-                  shell.currentIndex == 0 ? Icons.home : Icons.home_outlined,
+              Expanded(
+                child: Center(
+                  child: IconButton(
+                    icon: Icon(
+                      shell.currentIndex == 0 ? Icons.home : Icons.home_outlined,
+                    ),
+                    onPressed: () => shell.goBranch(0),
+                    tooltip: 'Home',
+                  ),
                 ),
-                onPressed: () => shell.goBranch(0),
-                tooltip: 'Home',
+              ),
+              Expanded(
+                child: Center(
+                  child: IconButton(
+                    icon: Icon(
+                      shell.currentIndex == 1 ? Icons.list : Icons.list_outlined,
+                    ),
+                    onPressed: () => shell.goBranch(1),
+                    tooltip: 'My PRs',
+                  ),
+                ),
               ),
               const SizedBox(width: 48),
-              IconButton(
-                icon: Icon(
-                  shell.currentIndex == 1 ? Icons.list : Icons.list_outlined,
+              Expanded(
+                child: Center(
+                  child: IconButton(
+                    icon: Icon(
+                      shell.currentIndex == 2
+                          ? Icons.fitness_center
+                          : Icons.fitness_center_outlined,
+                    ),
+                    onPressed: () => shell.goBranch(2),
+                    tooltip: 'Workouts',
+                  ),
                 ),
-                onPressed: () => shell.goBranch(1),
-                tooltip: 'My PRs',
               ),
-              IconButton(
-                icon: Icon(
-                  shell.currentIndex == 2
-                      ? Icons.fitness_center
-                      : Icons.fitness_center_outlined,
+              Expanded(
+                child: Center(
+                  child: IconButton(
+                    icon: Icon(
+                      shell.currentIndex == 3 ? Icons.public : Icons.public_outlined,
+                    ),
+                    onPressed: () => shell.goBranch(3),
+                    tooltip: 'Community',
+                  ),
                 ),
-                onPressed: () => shell.goBranch(2),
-                tooltip: 'Workouts',
               ),
-              IconButton(
-                icon: Icon(
-                  shell.currentIndex == 3 ? Icons.public : Icons.public_outlined,
+              Expanded(
+                child: Center(
+                  child: IconButton(
+                    icon: Icon(
+                      shell.currentIndex == 4 ? Icons.checklist : Icons.checklist_outlined,
+                    ),
+                    onPressed: () => shell.goBranch(4),
+                    tooltip: 'Programs',
+                  ),
                 ),
-                onPressed: () => shell.goBranch(3),
-                tooltip: 'Community',
-              ),
-              IconButton(
-                icon: Icon(
-                  shell.currentIndex == 4 ? Icons.checklist : Icons.checklist_outlined,
-                ),
-                onPressed: () => shell.goBranch(4),
-                tooltip: 'Programs',
               ),
             ],
           ),
