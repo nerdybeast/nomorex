@@ -7,3 +7,11 @@ String formatWeight(double weightKg, String unit) {
   final value = unit == 'lbs' ? kgToLbs(weightKg) : weightKg;
   return '${value.toStringAsFixed(1)} $unit';
 }
+
+/// Formats a weight stored in kg for display in both units at once,
+/// rounded to whole numbers (e.g. "192 lbs / 87 kg").
+String formatWeightBoth(double weightKg) {
+  final lbs = kgToLbs(weightKg).round();
+  final kg = weightKg.round();
+  return '$lbs lbs / $kg kg';
+}

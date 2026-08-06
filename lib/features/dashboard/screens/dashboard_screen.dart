@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/widgets/pr_card.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
-import '../../profile/providers/profile_provider.dart';
 import '../../personal_bests/providers/personal_bests_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -13,7 +12,6 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final prsAsync = ref.watch(personalBestsProvider);
-    final unit = ref.watch(unitPreferenceProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -60,7 +58,7 @@ class DashboardScreen extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: PrCard(
                   exerciseName: pr.exerciseName,
-                  weightDisplay: formatWeight(pr.weightKg, unit),
+                  weightDisplay: formatWeightBoth(pr.weightKg),
                   reps: pr.reps,
                   dateDisplay: formatDate(pr.date),
                 ),
