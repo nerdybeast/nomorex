@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/weight_converter.dart';
-import '../../profile/providers/profile_provider.dart';
 import '../models/program_day.dart';
 import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
@@ -80,7 +79,6 @@ class ProgramDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(programDetailProvider(programId));
-    final unit = ref.watch(unitPreferenceProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -122,7 +120,7 @@ class ProgramDetailScreen extends ConsumerWidget {
                 label: const Text('Start Program'),
               ),
               const SizedBox(height: 16),
-              for (final week in program.weeks) _WeekSection(week: week, unit: unit),
+              for (final week in program.weeks) _WeekSection(week: week),
             ],
           ],
         ),
@@ -132,10 +130,9 @@ class ProgramDetailScreen extends ConsumerWidget {
 }
 
 class _WeekSection extends StatelessWidget {
-  const _WeekSection({required this.week, required this.unit});
+  const _WeekSection({required this.week});
 
   final ProgramWeek week;
-  final String unit;
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +151,7 @@ class _WeekSection extends StatelessWidget {
               child: Text(week.notes!, style: Theme.of(context).textTheme.bodySmall),
             ),
           const SizedBox(height: 8),
-          for (final day in week.days) _DaySection(day: day, unit: unit),
+          for (final day in week.days) _DaySection(day: day),
         ],
       ),
     );
@@ -162,10 +159,9 @@ class _WeekSection extends StatelessWidget {
 }
 
 class _DaySection extends StatelessWidget {
-  const _DaySection({required this.day, required this.unit});
+  const _DaySection({required this.day});
 
   final ProgramDay day;
-  final String unit;
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +197,7 @@ class _DaySection extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(left: 8, top: 2),
                           child: Text(
-                            '${s.targetReps ?? '-'} reps · ${_valueLabel(s.weightMode, s.percentage, s.absoluteWeightKg, s.basisExerciseId, s.basisExerciseName, unit)}',
+                            '${s.targetReps ?? '-'} reps · ${_valueLabel(s.weightMode, s.percentage, s.absoluteWeightKg, s.basisExerciseId, s.basisExerciseName)}',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ),
@@ -221,12 +217,11 @@ class _DaySection extends StatelessWidget {
     double? absoluteWeightKg,
     String? basisExerciseId,
     String? basisExerciseName,
-    String unit,
   ) {
     if (weightMode == 'percentage') {
       final basisLabel = basisExerciseId != null ? (basisExerciseName ?? '1RM') : '1RM';
       return '${percentage?.toStringAsFixed(0) ?? '?'}% of $basisLabel';
     }
-    return absoluteWeightKg != null ? formatWeight(absoluteWeightKg, unit) : '? $unit';
+    return absoluteWeightKg != null ? formatWeightBoth(absoluteWeightKg) : '? lbs / ? kg';
   }
 }
