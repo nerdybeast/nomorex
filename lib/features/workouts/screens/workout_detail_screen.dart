@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/weight_converter.dart';
-import '../../profile/providers/profile_provider.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../providers/one_rep_max_provider.dart';
@@ -19,7 +18,6 @@ class WorkoutDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(workoutDetailProvider(workoutId));
     final maxes = ref.watch(oneRepMaxProvider).asData?.value ?? const {};
-    final unit = ref.watch(unitPreferenceProvider);
     final notifier = ref.read(workoutDetailProvider(workoutId).notifier);
 
     return Scaffold(
@@ -54,7 +52,6 @@ class WorkoutDetailScreen extends ConsumerWidget {
               _ExerciseCard(
                 exercise: ex,
                 oneRepMaxes: maxes,
-                unit: unit,
                 onToggle: (setId, value) => notifier.setCompleted(setId, value),
               ),
           ],
@@ -68,13 +65,11 @@ class _ExerciseCard extends StatelessWidget {
   const _ExerciseCard({
     required this.exercise,
     required this.oneRepMaxes,
-    required this.unit,
     required this.onToggle,
   });
 
   final WorkoutExercise exercise;
   final Map<String, double> oneRepMaxes;
-  final String unit;
   final void Function(String setId, bool value) onToggle;
 
   @override
@@ -97,7 +92,6 @@ class _ExerciseCard extends StatelessWidget {
               _SetTile(
                 set: s,
                 oneRepMaxKg: oneRepMaxes[resolveBasisExerciseId(s, exercise)],
-                unit: unit,
                 onToggle: onToggle,
               ),
           ],
@@ -111,13 +105,11 @@ class _SetTile extends StatelessWidget {
   const _SetTile({
     required this.set,
     required this.oneRepMaxKg,
-    required this.unit,
     required this.onToggle,
   });
 
   final WorkoutSet set;
   final double? oneRepMaxKg;
-  final String unit;
   final void Function(String setId, bool value) onToggle;
 
   @override
@@ -135,9 +127,9 @@ class _SetTile extends StatelessWidget {
     if (set.weightMode == 'percentage') {
       trailingText = resolvedKg == null
           ? '${set.percentage?.toStringAsFixed(0)}%$basisSuffix — set a 1RM'
-          : '${set.percentage?.toStringAsFixed(0)}%$basisSuffix · ${formatWeight(resolvedKg, unit)}';
+          : '${set.percentage?.toStringAsFixed(0)}%$basisSuffix · ${formatWeightBoth(resolvedKg)}';
     } else {
-      trailingText = formatWeight(resolvedKg ?? 0, unit);
+      trailingText = formatWeightBoth(resolvedKg ?? 0);
     }
 
     return CheckboxListTile(

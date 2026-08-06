@@ -205,7 +205,6 @@ class SetEditor extends ConsumerWidget {
         for (final s in sets)
           _SetRow(
             set: s,
-            unit: unit,
             onDelete: () => onDeleteSet(s.id),
           ),
         Row(
@@ -230,12 +229,10 @@ class SetEditor extends ConsumerWidget {
 class _SetRow extends StatelessWidget {
   const _SetRow({
     required this.set,
-    required this.unit,
     required this.onDelete,
   });
 
   final EditableSetRow set;
-  final String unit;
   final VoidCallback onDelete;
 
   @override
@@ -244,8 +241,8 @@ class _SetRow extends StatelessWidget {
     final valueLabel = isPct
         ? '${set.percentage?.toStringAsFixed(0) ?? '?'}%'
         : (set.absoluteWeightKg != null
-            ? formatWeight(set.absoluteWeightKg!, unit)
-            : '? $unit');
+            ? formatWeightBoth(set.absoluteWeightKg!)
+            : '? lbs / ? kg');
     final basisLabel = set.basisExerciseId != null
         ? (set.basisExerciseName ?? '1RM')
         : '1RM';
