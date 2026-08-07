@@ -32,7 +32,10 @@ class PrCard extends StatelessWidget {
                 children: [
                   Text(exerciseName, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Text(dateDisplay, style: theme.textTheme.bodySmall),
+                  Text(
+                    dateDisplay,
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  ),
                 ],
               ),
             ),
@@ -40,7 +43,10 @@ class PrCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(weightDisplay, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                Text(reps == 1 ? '1 rep' : '$reps reps', style: theme.textTheme.bodySmall),
+                Text(
+                  reps == 1 ? '1 rep' : '$reps reps',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
               ],
             ),
           ],

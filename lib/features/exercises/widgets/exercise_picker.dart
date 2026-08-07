@@ -51,7 +51,6 @@ class _ExercisePickerState extends State<ExercisePicker> {
           focusNode: focusNode,
           decoration: InputDecoration(
             labelText: widget.labelText,
-            border: const OutlineInputBorder(),
             hintText: 'Search exercises...',
           ),
           validator: (_) => widget.selected == null ? 'Select an exercise' : null,
@@ -60,10 +59,17 @@ class _ExercisePickerState extends State<ExercisePicker> {
       onSelected: widget.onSelected,
       optionsViewBuilder: (context, onSelected, options) {
         final optionList = options.where((e) => e != _keepOverlayOpenSentinel).toList();
+        final colorScheme = Theme.of(context).colorScheme;
         return Align(
           alignment: Alignment.topLeft,
           child: Material(
             elevation: 4,
+            color: colorScheme.surfaceContainerHigh,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: colorScheme.outline),
+            ),
+            clipBehavior: Clip.antiAlias,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 200),
               child: ListView.builder(

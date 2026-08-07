@@ -6,8 +6,10 @@ import '../../exercises/models/exercise.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../../core/theme/dark_theme.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../shared/widgets/number_stepper_field.dart';
 
 class AddPrScreen extends ConsumerStatefulWidget {
   const AddPrScreen({super.key});
@@ -19,8 +21,8 @@ class AddPrScreen extends ConsumerStatefulWidget {
 class _AddPrScreenState extends ConsumerState<AddPrScreen> {
   final _formKey = GlobalKey<FormState>();
   Exercise? _selectedExercise;
-  final _weightController = TextEditingController();
-  final _repsController = TextEditingController(text: '1');
+  double _weight = 0;
+  int _reps = 1;
   final _notesController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   bool _loading = false;
@@ -28,8 +30,6 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
 
   @override
   void dispose() {
-    _weightController.dispose();
-    _repsController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -49,16 +49,14 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
     if (_selectedExercise == null) return;
 
     final unit = ref.read(unitPreferenceProvider);
-    final enteredWeight = double.tryParse(_weightController.text) ?? 0;
-    final weightKg = unit == 'lbs' ? lbsToKg(enteredWeight) : enteredWeight;
-    final reps = int.tryParse(_repsController.text) ?? 1;
+    final weightKg = unit == 'lbs' ? lbsToKg(_weight) : _weight;
 
     setState(() { _loading = true; _error = null; });
     try {
       await ref.read(personalBestsProvider.notifier).addPr(
         exerciseId: _selectedExercise!.id,
         weightKg: weightKg,
-        reps: reps,
+        reps: _reps,
         date: _selectedDate,
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
       );
@@ -74,111 +72,121 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
   Widget build(BuildContext context) {
     final exercises = ref.watch(exercisesProvider).asData?.value ?? [];
     final unit = ref.watch(unitPreferenceProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
+    final overline = tokens?.overline;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('New Personal Best')),
+      appBar: AppBar(title: const Text('NEW PERSONAL BEST')),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Exercise picker
-                ExercisePicker(
-                  exercises: exercises,
-                  selected: _selectedExercise,
-                  onSelected: (ex) => setState(() => _selectedExercise = ex),
-                  onAddCustom: (name) async {
-                    final newEx = await ref.read(exercisesProvider.notifier).addCustomExercise(name);
-                    if (mounted) setState(() => _selectedExercise = newEx);
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Weight + unit toggle
-                Row(
+          padding: const EdgeInsets.all(20),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _weightController,
-                        decoration: InputDecoration(
-                          labelText: 'Weight ($unit)',
-                          border: const OutlineInputBorder(),
+                    // Exercise picker
+                    ExercisePicker(
+                      exercises: exercises,
+                      selected: _selectedExercise,
+                      onSelected: (ex) => setState(() => _selectedExercise = ex),
+                      onAddCustom: (name) async {
+                        final newEx = await ref.read(exercisesProvider.notifier).addCustomExercise(name);
+                        if (mounted) setState(() => _selectedExercise = newEx);
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    // Weight header (label + unit toggle) sits above the
+                    // stepper, not inline with it — inline would give
+                    // the weight and reps steppers different available
+                    // widths (only weight shares its row with the unit
+                    // toggle), so their -/value/+ clusters wouldn't
+                    // line up between rows.
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Weight ($unit)'.toUpperCase(), style: overline),
+                        _UnitToggle(
+                          currentUnit: unit,
+                          onChanged: (newUnit) async {
+                            await ref.read(profileProvider.notifier).setUnitPreference(newUnit);
+                          },
                         ),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Required';
-                          if (double.tryParse(v) == null) return 'Enter a number';
-                          if (double.parse(v) <= 0) return 'Must be > 0';
-                          return null;
-                        },
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    NumberStepperField(
+                      label: '',
+                      value: _weight,
+                      min: 0,
+                      step: unit == 'lbs' ? 5 : 2.5,
+                      decimals: unit == 'lbs' ? 0 : 1,
+                      onChanged: (v) => setState(() => _weight = v),
+                      valueTextStyle: tokens?.stepperValue,
+                      valueDecoration: tokens?.stepperValueDecoration,
+                      decrementButtonStyle: tokens?.stepperDecrementStyle,
+                      incrementButtonStyle: tokens?.stepperIncrementStyle,
+                    ),
+                    const SizedBox(height: 20),
+                    // Reps
+                    Text('Reps'.toUpperCase(), style: overline),
+                    const SizedBox(height: 8),
+                    NumberStepperField(
+                      label: '',
+                      value: _reps.toDouble(),
+                      min: 1,
+                      step: 1,
+                      decimals: 0,
+                      onChanged: (v) => setState(() => _reps = v.round()),
+                      valueTextStyle: tokens?.stepperValue,
+                      valueDecoration: tokens?.stepperValueDecoration,
+                      decrementButtonStyle: tokens?.stepperDecrementStyle,
+                      incrementButtonStyle: tokens?.stepperIncrementStyle,
+                    ),
+                    const SizedBox(height: 20),
+                    // Date
+                    InkWell(
+                      onTap: _pickDate,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Date',
+                          suffixIcon: Icon(Icons.calendar_today_outlined),
+                        ),
+                        child: Text(formatDate(_selectedDate)),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    _UnitToggle(
-                      currentUnit: unit,
-                      onChanged: (newUnit) async {
-                        await ref.read(profileProvider.notifier).setUnitPreference(newUnit);
-                      },
+                    const SizedBox(height: 20),
+                    // Notes
+                    TextFormField(
+                      controller: _notesController,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        labelText: 'Notes (optional)',
+                      ),
+                      minLines: 3,
+                      maxLines: 3,
+                    ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _error!,
+                        style: TextStyle(color: colorScheme.error),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: (_loading || _selectedExercise == null) ? null : _submit,
+                      child: _loading
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Save Personal Best'),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                // Reps
-                TextFormField(
-                  controller: _repsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Reps',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Required';
-                    final n = int.tryParse(v);
-                    if (n == null || n < 1) return 'Must be at least 1';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Date
-                InkWell(
-                  onTap: _pickDate,
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Date',
-                      border: OutlineInputBorder(),
-                      suffixIcon: Icon(Icons.calendar_today_outlined),
-                    ),
-                    child: Text(formatDate(_selectedDate)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Notes
-                TextFormField(
-                  controller: _notesController,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes (optional)',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 2,
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _error!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: (_loading || _selectedExercise == null) ? null : _submit,
-                  child: _loading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Text('Save Personal Best'),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -187,7 +195,10 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
   }
 }
 
-/// kg / lbs toggle chip widget.
+/// kg / lbs pill toggle matching the Sleek Orange unit switch: a filled
+/// track with a solid-color selected segment (not a bordered segmented
+/// control, so this is a small bespoke widget rather than a themed
+/// [SegmentedButton]).
 class _UnitToggle extends StatelessWidget {
   const _UnitToggle({required this.currentUnit, required this.onChanged});
 
@@ -196,15 +207,41 @@ class _UnitToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SegmentedButton<String>(
-      segments: const [
-        ButtonSegment(value: 'kg', label: Text('kg')),
-        ButtonSegment(value: 'lbs', label: Text('lbs')),
-      ],
-      selected: {currentUnit},
-      onSelectionChanged: (set) => onChanged(set.first),
-      style: const ButtonStyle(
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final u in const ['kg', 'lbs']) _segment(context, colorScheme, u),
+        ],
+      ),
+    );
+  }
+
+  Widget _segment(BuildContext context, ColorScheme colorScheme, String u) {
+    final selected = u == currentUnit;
+    return InkWell(
+      onTap: selected ? null : () => onChanged(u),
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        decoration: BoxDecoration(
+          color: selected ? colorScheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          u,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: selected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
     );
   }

@@ -20,10 +20,11 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
   Widget build(BuildContext context) {
     final programsAsync =
         ref.watch(_showArchived ? archivedProgramsProvider : programsProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_showArchived ? 'Archived Programs' : 'Programs'),
+        title: Text(_showArchived ? 'ARCHIVED PROGRAMS' : 'PROGRAMS'),
         actions: [
           IconButton(
             icon: Icon(_showArchived ? Icons.archive : Icons.archive_outlined),
@@ -42,7 +43,7 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
             ),
       body: programsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
         data: (programs) {
           if (programs.isEmpty) {
             return Center(

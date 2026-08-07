@@ -98,7 +98,7 @@ void main() {
 
     await tester.enterText(find.byType(TextFormField).at(0), '  Heavy Day  ');
     await tester.enterText(find.byType(TextFormField).at(1), 'Build to a heavy triple');
-    await tester.tap(find.byType(SwitchListTile));
+    await tester.tap(find.byType(Switch));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 

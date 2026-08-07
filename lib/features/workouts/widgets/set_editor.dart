@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/dark_theme.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../shared/models/editable_set_row.dart';
+import '../../../shared/widgets/number_stepper_field.dart';
 import '../../exercises/models/exercise.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../utils/parsed_set.dart';
@@ -33,6 +35,7 @@ class SetEditor extends ConsumerWidget {
     var reps = 1;
     var percentages = <double>[70];
     Exercise? basisExercise;
+    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
 
     await showDialog<void>(
       context: context,
@@ -56,7 +59,7 @@ class SetEditor extends ConsumerWidget {
                   onChanged: (v) => setState(() => basisExercise = v),
                 ),
                 const SizedBox(height: 8),
-                _NumberField(
+                NumberStepperField(
                   label: 'Sets',
                   value: sets.toDouble(),
                   min: 1,
@@ -75,26 +78,38 @@ class SetEditor extends ConsumerWidget {
                     }
                     sets = newSets;
                   }),
+                  valueTextStyle: tokens?.stepperValue,
+                  valueDecoration: tokens?.stepperValueDecoration,
+                  decrementButtonStyle: tokens?.stepperDecrementStyle,
+                  incrementButtonStyle: tokens?.stepperIncrementStyle,
                 ),
-                _NumberField(
+                NumberStepperField(
                   label: 'Reps',
                   value: reps.toDouble(),
                   min: 1,
                   step: 1,
                   decimals: 0,
                   onChanged: (v) => setState(() => reps = v.round()),
+                  valueTextStyle: tokens?.stepperValue,
+                  valueDecoration: tokens?.stepperValueDecoration,
+                  decrementButtonStyle: tokens?.stepperDecrementStyle,
+                  incrementButtonStyle: tokens?.stepperIncrementStyle,
                 ),
                 const SizedBox(height: 8),
                 // One stepper per set (rather than a single shared value) so
                 // wave-loading (a different %1RM per set) stays possible.
                 for (var i = 0; i < percentages.length; i++)
-                  _NumberField(
+                  NumberStepperField(
                     label: 'Set ${i + 1} %1RM',
                     value: percentages[i],
                     min: 0,
                     step: 5,
                     decimals: 0,
                     onChanged: (v) => setState(() => percentages[i] = v),
+                    valueTextStyle: tokens?.stepperValue,
+                    valueDecoration: tokens?.stepperValueDecoration,
+                    decrementButtonStyle: tokens?.stepperDecrementStyle,
+                    incrementButtonStyle: tokens?.stepperIncrementStyle,
                   ),
               ],
             ),
@@ -121,6 +136,7 @@ class SetEditor extends ConsumerWidget {
     var reps = 1;
     var weightDisplay = 0.0;
     var dialogUnit = unit;
+    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
 
     await showDialog<void>(
       context: context,
@@ -130,21 +146,29 @@ class SetEditor extends ConsumerWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _NumberField(
+              NumberStepperField(
                 label: 'Sets',
                 value: sets.toDouble(),
                 min: 1,
                 step: 1,
                 decimals: 0,
                 onChanged: (v) => setState(() => sets = v.round()),
+                valueTextStyle: tokens?.stepperValue,
+                valueDecoration: tokens?.stepperValueDecoration,
+                decrementButtonStyle: tokens?.stepperDecrementStyle,
+                incrementButtonStyle: tokens?.stepperIncrementStyle,
               ),
-              _NumberField(
+              NumberStepperField(
                 label: 'Reps',
                 value: reps.toDouble(),
                 min: 1,
                 step: 1,
                 decimals: 0,
                 onChanged: (v) => setState(() => reps = v.round()),
+                valueTextStyle: tokens?.stepperValue,
+                valueDecoration: tokens?.stepperValueDecoration,
+                decrementButtonStyle: tokens?.stepperDecrementStyle,
+                incrementButtonStyle: tokens?.stepperIncrementStyle,
               ),
               const SizedBox(height: 8),
               Row(
@@ -170,13 +194,17 @@ class SetEditor extends ConsumerWidget {
                   ),
                 ],
               ),
-              _NumberField(
+              NumberStepperField(
                 label: 'Weight ($dialogUnit)',
                 value: weightDisplay,
                 min: 0,
                 step: dialogUnit == 'lbs' ? 5.0 : 2.5,
                 decimals: 1,
                 onChanged: (v) => setState(() => weightDisplay = v),
+                valueTextStyle: tokens?.stepperValue,
+                valueDecoration: tokens?.stepperValueDecoration,
+                decrementButtonStyle: tokens?.stepperDecrementStyle,
+                incrementButtonStyle: tokens?.stepperIncrementStyle,
               ),
             ],
           ),
@@ -253,100 +281,6 @@ class _SetRow extends StatelessWidget {
       trailing: IconButton(
         icon: const Icon(Icons.close),
         onPressed: onDelete,
-      ),
-    );
-  }
-}
-
-/// A labeled numeric input with tap-to-adjust [-] / [+] buttons, floored at
-/// [min]; the middle field also accepts direct typed entry.
-class _NumberField extends StatefulWidget {
-  const _NumberField({
-    required this.label,
-    required this.value,
-    required this.min,
-    required this.step,
-    required this.decimals,
-    required this.onChanged,
-  });
-
-  final String label;
-  final double value;
-  final double min;
-  final double step;
-  final int decimals;
-  final ValueChanged<double> onChanged;
-
-  @override
-  State<_NumberField> createState() => _NumberFieldState();
-}
-
-class _NumberFieldState extends State<_NumberField> {
-  late final _controller = TextEditingController(text: _format(widget.value));
-  final _focusNode = FocusNode();
-
-  String _format(double v) => v.toStringAsFixed(widget.decimals);
-
-  @override
-  void initState() {
-    super.initState();
-    // Tabbing or clicking away doesn't fire onSubmitted (that only fires on
-    // Enter/"done"), so a typed value would otherwise be silently dropped.
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus) _commitTyped();
-    });
-  }
-
-  @override
-  void didUpdateWidget(_NumberField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.value != widget.value) {
-      _controller.text = _format(widget.value);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _commitTyped() => _apply(double.tryParse(_controller.text) ?? widget.value);
-
-  void _apply(double next) {
-    final clamped = next < widget.min ? widget.min : next;
-    widget.onChanged(double.parse(clamped.toStringAsFixed(widget.decimals)));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Expanded(child: Text(widget.label)),
-          IconButton(
-            icon: const Icon(Icons.remove_circle_outline),
-            onPressed: widget.value - widget.step < widget.min
-                ? null
-                : () => _apply(widget.value - widget.step),
-          ),
-          SizedBox(
-            width: 64,
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              textAlign: TextAlign.center,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onSubmitted: (_) => _commitTyped(),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            onPressed: () => _apply(widget.value + widget.step),
-          ),
-        ],
       ),
     );
   }

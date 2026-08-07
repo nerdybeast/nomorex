@@ -5,7 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/constants/app_constants.dart';
-import 'core/theme/app_theme.dart';
+import 'core/theme/dark_theme.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/screens/landing_screen.dart';
 import 'features/auth/screens/login_screen.dart';
@@ -146,7 +146,7 @@ class NomorexApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
       title: 'NoMoreX',
-      theme: AppTheme.light(),
+      theme: AppDarkTheme.sleekOrange(),
       routerConfig: router,
     );
   }

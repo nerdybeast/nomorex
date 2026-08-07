@@ -19,10 +19,11 @@ class WorkoutDetailScreen extends ConsumerWidget {
     final detail = ref.watch(workoutDetailProvider(workoutId));
     final maxes = ref.watch(oneRepMaxProvider).asData?.value ?? const {};
     final notifier = ref.read(workoutDetailProvider(workoutId).notifier);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Workout'),
+        title: const Text('WORKOUT'),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -32,7 +33,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
       ),
       body: detail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
         data: (workout) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -45,7 +46,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
             const SizedBox(height: 4),
             Text(
               'Last edited ${formatDate(workout.updatedAt)}',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 16),
             for (final ex in workout.exercises)

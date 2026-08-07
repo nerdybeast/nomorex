@@ -48,78 +48,77 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isMobile = MediaQuery.sizeOf(context).width < AppConstants.kMobileBreakpoint;
+    final colorScheme = Theme.of(context).colorScheme;
 
     if (isMobile) {
       return Scaffold(
         body: shell,
-        bottomNavigationBar: BottomAppBar(
-          child: Row(
-            children: [
-              Expanded(
-                child: Center(
-                  child: IconButton(
-                    icon: Icon(
-                      shell.currentIndex == 0 ? Icons.home : Icons.home_outlined,
+        bottomNavigationBar: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 56,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _NavItem(
+                      icon: Icons.home_outlined,
+                      selectedIcon: Icons.home,
+                      label: 'Home',
+                      selected: shell.currentIndex == 0,
+                      onTap: () => shell.goBranch(0),
                     ),
-                    onPressed: () => shell.goBranch(0),
-                    tooltip: 'Home',
                   ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: IconButton(
-                    icon: Icon(
-                      shell.currentIndex == 1 ? Icons.list : Icons.list_outlined,
+                  Expanded(
+                    child: _NavItem(
+                      icon: Icons.list_outlined,
+                      selectedIcon: Icons.list,
+                      label: 'My PRs',
+                      selected: shell.currentIndex == 1,
+                      onTap: () => shell.goBranch(1),
                     ),
-                    onPressed: () => shell.goBranch(1),
-                    tooltip: 'My PRs',
                   ),
-                ),
-              ),
-              const SizedBox(width: 48),
-              Expanded(
-                child: Center(
-                  child: IconButton(
-                    icon: Icon(
-                      shell.currentIndex == 2
-                          ? Icons.fitness_center
-                          : Icons.fitness_center_outlined,
+                  Expanded(
+                    child: _NavItem(
+                      icon: Icons.fitness_center_outlined,
+                      selectedIcon: Icons.fitness_center,
+                      label: 'Workouts',
+                      selected: shell.currentIndex == 2,
+                      onTap: () => shell.goBranch(2),
                     ),
-                    onPressed: () => shell.goBranch(2),
-                    tooltip: 'Workouts',
                   ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: IconButton(
-                    icon: Icon(
-                      shell.currentIndex == 3 ? Icons.public : Icons.public_outlined,
+                  Expanded(
+                    child: _NavItem(
+                      icon: Icons.public_outlined,
+                      selectedIcon: Icons.public,
+                      label: 'Community',
+                      selected: shell.currentIndex == 3,
+                      onTap: () => shell.goBranch(3),
                     ),
-                    onPressed: () => shell.goBranch(3),
-                    tooltip: 'Community',
                   ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: IconButton(
-                    icon: Icon(
-                      shell.currentIndex == 4 ? Icons.checklist : Icons.checklist_outlined,
+                  Expanded(
+                    child: _NavItem(
+                      icon: Icons.checklist_outlined,
+                      selectedIcon: Icons.checklist,
+                      label: 'Programs',
+                      selected: shell.currentIndex == 4,
+                      onTap: () => shell.goBranch(4),
                     ),
-                    onPressed: () => shell.goBranch(4),
-                    tooltip: 'Programs',
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
         floatingActionButton: FloatingActionButton(
           heroTag: 'shellAddFab',
           onPressed: () => _showAddMenu(context),
           tooltip: 'Add',
+          shape: const CircleBorder(),
           child: const Icon(Icons.add),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -139,6 +138,7 @@ class AppShell extends ConsumerWidget {
               onPressed: () => _showAddMenu(context),
               mini: true,
               tooltip: 'Add',
+              shape: const CircleBorder(),
               child: const Icon(Icons.add),
             ),
             destinations: const [
@@ -169,8 +169,48 @@ class AppShell extends ConsumerWidget {
               ),
             ],
           ),
-          const VerticalDivider(thickness: 1, width: 1),
+          VerticalDivider(thickness: 1, width: 1, color: colorScheme.outlineVariant),
           Expanded(child: shell),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(selected ? selectedIcon : icon, size: 20, color: color),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
+            ),
+          ),
         ],
       ),
     );

@@ -13,17 +13,32 @@ class CommunityWorkoutDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(communityWorkoutDetailProvider(workoutId));
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Workout')),
+      appBar: AppBar(
+        title: const Text('WORKOUT'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: Center(child: _Badge('Read only')),
+          ),
+        ],
+      ),
       body: detail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(
+          child: Text('Error: $e', style: TextStyle(color: colorScheme.error)),
+        ),
         data: (workout) => ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           children: [
             Text(workout.title, style: Theme.of(context).textTheme.headlineSmall),
-            Text(formatDate(workout.date)),
+            const SizedBox(height: 4),
+            Text(
+              formatDate(workout.date),
+              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+            ),
             if (workout.notes != null && workout.notes!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(workout.notes!),
@@ -32,6 +47,27 @@ class CommunityWorkoutDetailScreen extends ConsumerWidget {
             for (final ex in workout.exercises) _ExerciseCard(exercise: ex),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  const _Badge(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
       ),
     );
   }
