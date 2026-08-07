@@ -212,7 +212,7 @@ class _WeekCard extends ConsumerWidget {
         ),
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: _AutoSaveField(
               key: ValueKey('${week.id}-label'),
               initialValue: week.label,
