@@ -31,7 +31,7 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
           );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My PRs')),
+      appBar: AppBar(title: const Text('MY PRS')),
       body: Column(
         children: [
           Padding(
@@ -40,7 +40,6 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
               decoration: const InputDecoration(
                 hintText: 'Search exercises...',
                 prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
                 isDense: true,
               ),
               onChanged: (v) => setState(() => _searchQuery = v),
@@ -52,7 +51,11 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
               error: (e, _) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(32),
-                  child: Text('Failed to load PRs: $e', textAlign: TextAlign.center),
+                  child: Text(
+                    'Failed to load PRs: $e',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
                 ),
               ),
               data: (_) {

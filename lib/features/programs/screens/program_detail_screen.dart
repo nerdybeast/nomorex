@@ -79,10 +79,11 @@ class ProgramDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(programDetailProvider(programId));
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Program'),
+        title: const Text('PROGRAM'),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -92,7 +93,7 @@ class ProgramDetailScreen extends ConsumerWidget {
       ),
       body: detail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
         data: (program) => ListView(
           padding: const EdgeInsets.all(16),
           children: [

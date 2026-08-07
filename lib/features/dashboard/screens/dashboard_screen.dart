@@ -15,7 +15,7 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Text('DASHBOARD'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -29,7 +29,11 @@ class DashboardScreen extends ConsumerWidget {
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
-            child: Text('Failed to load PRs: $e', textAlign: TextAlign.center),
+            child: Text(
+              'Failed to load PRs: $e',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ),
         ),
         data: (allPrs) {

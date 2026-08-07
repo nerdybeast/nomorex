@@ -18,9 +18,10 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
     final workoutsAsync = ref.watch(communityWorkoutsProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Community')),
+      appBar: AppBar(title: const Text('COMMUNITY')),
       body: Column(
         children: [
           Padding(
@@ -29,7 +30,6 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
               decoration: const InputDecoration(
                 hintText: 'Search public workouts...',
                 prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
                 isDense: true,
               ),
               onChanged: (v) => setState(() => _searchQuery = v),
@@ -38,7 +38,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
           Expanded(
             child: workoutsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
               data: (workouts) {
                 if (workouts.isEmpty) {
                   return const Center(child: Text('No public workouts yet.'));

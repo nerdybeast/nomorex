@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../../shared/widgets/toggle_card.dart';
 import '../../workouts/utils/parsed_set.dart';
 import '../../workouts/widgets/set_editor.dart';
 import '../models/program_day.dart';
@@ -111,10 +112,11 @@ class ProgramEditScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(programDetailProvider(programId));
     final unit = ref.watch(unitPreferenceProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Program'),
+        title: const Text('EDIT PROGRAM'),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
@@ -130,7 +132,7 @@ class ProgramEditScreen extends ConsumerWidget {
       ),
       body: detail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
         data: (program) {
           final notifier = ref.read(programDetailProvider(programId).notifier);
           return ListView(
@@ -151,10 +153,9 @@ class ProgramEditScreen extends ConsumerWidget {
                 maxLines: 3,
                 onChanged: (v) => notifier.updateProgramMeta(description: v),
               ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Public'),
-                subtitle: const Text('Other users can view this program'),
+              ToggleCard(
+                title: 'Public',
+                subtitle: 'Other users can view this program',
                 value: program.isPublic,
                 onChanged: (v) => notifier.updateVisibility(v),
               ),
@@ -401,10 +402,7 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
       focusNode: _focusNode,
       maxLines: widget.maxLines,
       textCapitalization: TextCapitalization.sentences,
-      decoration: InputDecoration(
-        labelText: widget.labelText,
-        border: const OutlineInputBorder(),
-      ),
+      decoration: InputDecoration(labelText: widget.labelText),
       onFieldSubmitted: (_) => _commit(),
     );
   }

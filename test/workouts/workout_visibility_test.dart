@@ -66,10 +66,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final switchTile = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
-    expect(switchTile.value, isFalse);
+    final switchWidget = tester.widget<Switch>(find.byType(Switch));
+    expect(switchWidget.value, isFalse);
 
-    await tester.tap(find.byType(SwitchListTile));
+    await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();
 
     expect(toggledTo, isTrue);

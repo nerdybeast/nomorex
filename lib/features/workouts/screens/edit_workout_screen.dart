@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../../shared/widgets/toggle_card.dart';
 import '../providers/workout_detail_provider.dart';
 import '../widgets/set_editor.dart';
 
@@ -66,9 +67,11 @@ class EditWorkoutScreen extends ConsumerWidget {
     final detail = ref.watch(workoutDetailProvider(workoutId));
     final unit = ref.watch(unitPreferenceProvider);
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Workout'),
+        title: const Text('EDIT WORKOUT'),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
@@ -84,7 +87,7 @@ class EditWorkoutScreen extends ConsumerWidget {
       ),
       body: detail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
         data: (workout) {
           final notifier = ref.read(workoutDetailProvider(workoutId).notifier);
           return ListView(
@@ -105,10 +108,9 @@ class EditWorkoutScreen extends ConsumerWidget {
                 maxLines: 3,
                 onChanged: notifier.updateDescription,
               ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Public'),
-                subtitle: const Text('Other users can view this workout'),
+              ToggleCard(
+                title: 'Public',
+                subtitle: 'Other users can view this workout',
                 value: workout.isPublic,
                 onChanged: (v) => notifier.updateVisibility(v),
               ),
@@ -231,10 +233,7 @@ class _AutoSaveFieldState extends State<_AutoSaveField> {
       focusNode: _focusNode,
       maxLines: widget.maxLines,
       textCapitalization: TextCapitalization.sentences,
-      decoration: InputDecoration(
-        labelText: widget.labelText,
-        border: const OutlineInputBorder(),
-      ),
+      decoration: InputDecoration(labelText: widget.labelText),
       onFieldSubmitted: (_) => _commit(),
     );
   }
