@@ -48,17 +48,21 @@ class SetEditor extends ConsumerWidget {
               children: [
                 DropdownButtonFormField<Exercise?>(
                   initialValue: basisExercise,
+                  isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Based on'),
                   items: [
                     const DropdownMenuItem<Exercise?>(
-                      child: Text('This exercise'),
+                      child: Text('This exercise', overflow: TextOverflow.ellipsis),
                     ),
                     for (final ex in exercises)
-                      DropdownMenuItem<Exercise?>(value: ex, child: Text(ex.name)),
+                      DropdownMenuItem<Exercise?>(
+                        value: ex,
+                        child: Text(ex.name, overflow: TextOverflow.ellipsis),
+                      ),
                   ],
                   onChanged: (v) => setState(() => basisExercise = v),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 NumberStepperField(
                   label: 'Sets',
                   value: sets.toDouble(),
@@ -83,6 +87,7 @@ class SetEditor extends ConsumerWidget {
                   decrementButtonStyle: tokens?.stepperDecrementStyle,
                   incrementButtonStyle: tokens?.stepperIncrementStyle,
                 ),
+                const SizedBox(height: 12),
                 NumberStepperField(
                   label: 'Reps',
                   value: reps.toDouble(),
@@ -95,21 +100,24 @@ class SetEditor extends ConsumerWidget {
                   decrementButtonStyle: tokens?.stepperDecrementStyle,
                   incrementButtonStyle: tokens?.stepperIncrementStyle,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 // One stepper per set (rather than a single shared value) so
                 // wave-loading (a different %1RM per set) stays possible.
                 for (var i = 0; i < percentages.length; i++)
-                  NumberStepperField(
-                    label: 'Set ${i + 1} %1RM',
-                    value: percentages[i],
-                    min: 0,
-                    step: 5,
-                    decimals: 0,
-                    onChanged: (v) => setState(() => percentages[i] = v),
-                    valueTextStyle: tokens?.stepperValue,
-                    valueDecoration: tokens?.stepperValueDecoration,
-                    decrementButtonStyle: tokens?.stepperDecrementStyle,
-                    incrementButtonStyle: tokens?.stepperIncrementStyle,
+                  Padding(
+                    padding: EdgeInsets.only(top: i == 0 ? 0 : 12),
+                    child: NumberStepperField(
+                      label: 'Set ${i + 1} %1RM',
+                      value: percentages[i],
+                      min: 0,
+                      step: 5,
+                      decimals: 0,
+                      onChanged: (v) => setState(() => percentages[i] = v),
+                      valueTextStyle: tokens?.stepperValue,
+                      valueDecoration: tokens?.stepperValueDecoration,
+                      decrementButtonStyle: tokens?.stepperDecrementStyle,
+                      incrementButtonStyle: tokens?.stepperIncrementStyle,
+                    ),
                   ),
               ],
             ),
@@ -158,6 +166,7 @@ class SetEditor extends ConsumerWidget {
                 decrementButtonStyle: tokens?.stepperDecrementStyle,
                 incrementButtonStyle: tokens?.stepperIncrementStyle,
               ),
+              const SizedBox(height: 12),
               NumberStepperField(
                 label: 'Reps',
                 value: reps.toDouble(),
@@ -170,7 +179,7 @@ class SetEditor extends ConsumerWidget {
                 decrementButtonStyle: tokens?.stepperDecrementStyle,
                 incrementButtonStyle: tokens?.stepperIncrementStyle,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   const Expanded(child: Text('Unit')),
@@ -194,6 +203,7 @@ class SetEditor extends ConsumerWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
               NumberStepperField(
                 label: 'Weight ($dialogUnit)',
                 value: weightDisplay,

@@ -108,6 +108,7 @@ class EditWorkoutScreen extends ConsumerWidget {
                 maxLines: 3,
                 onChanged: notifier.updateDescription,
               ),
+              const SizedBox(height: 16),
               ToggleCard(
                 title: 'Public',
                 subtitle: 'Other users can view this workout',

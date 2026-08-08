@@ -153,6 +153,7 @@ class ProgramEditScreen extends ConsumerWidget {
                 maxLines: 3,
                 onChanged: (v) => notifier.updateProgramMeta(description: v),
               ),
+              const SizedBox(height: 16),
               ToggleCard(
                 title: 'Public',
                 subtitle: 'Other users can view this program',
