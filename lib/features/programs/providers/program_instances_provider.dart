@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../workouts/providers/workouts_provider.dart';
+import 'program_instances_list_provider.dart';
 
 part 'program_instances_provider.g.dart';
 
@@ -22,7 +22,7 @@ class ProgramInstancesNotifier extends _$ProgramInstancesNotifier {
       'p_program_id': programId,
       'p_start_date': startDate.toIso8601String().substring(0, 10),
     }) as String;
-    ref.invalidate(workoutsProvider);
+    ref.invalidate(currentProgramInstancesProvider);
     return instanceId;
   }
 

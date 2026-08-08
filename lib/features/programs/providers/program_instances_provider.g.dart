@@ -48,7 +48,7 @@ final class ProgramInstancesNotifierProvider
 }
 
 String _$programInstancesNotifierHash() =>
-    r'75b127e43661f996ddc4a9541ac5f54171122064';
+    r'f032dc6e44bae0b5ffd52ef94e8aea230166867e';
 
 /// Action-only notifier (no state of its own) for the "Start Program" flow
 /// and running-instance status updates — mirrors AuthNotifier's shape.

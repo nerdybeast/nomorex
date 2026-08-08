@@ -10,6 +10,8 @@ class Workout {
     this.notes,
     this.exercises = const [],
     this.isPublic = false,
+    this.programInstanceId,
+    this.programDayId,
   });
 
   final String id;
@@ -20,6 +22,8 @@ class Workout {
   final List<WorkoutExercise> exercises;
   final bool isPublic;
   final DateTime updatedAt;
+  final String? programInstanceId;
+  final String? programDayId;
 
   factory Workout.fromJson(Map<String, dynamic> json) {
     final rawExercises = (json['workout_exercises'] as List?) ?? const [];
@@ -36,6 +40,8 @@ class Workout {
       notes: json['notes'] as String?,
       exercises: exercises,
       isPublic: (json['is_public'] as bool?) ?? false,
+      programInstanceId: json['program_instance_id'] as String?,
+      programDayId: json['program_day_id'] as String?,
     );
   }
 }

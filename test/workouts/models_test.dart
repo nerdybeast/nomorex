@@ -72,6 +72,32 @@ void main() {
     expect(w.isPublic, isTrue);
   });
 
+  test('Workout.fromJson parses program_instance_id and program_day_id', () {
+    final w = Workout.fromJson({
+      'id': 'w1',
+      'user_id': 'u1',
+      'title': 'Day 1',
+      'date': '2026-06-28',
+      'updated_at': '2026-06-28T00:00:00Z',
+      'program_instance_id': 'pi1',
+      'program_day_id': 'pd1',
+    });
+    expect(w.programInstanceId, 'pi1');
+    expect(w.programDayId, 'pd1');
+  });
+
+  test('Workout.fromJson tolerates missing program linkage', () {
+    final w = Workout.fromJson({
+      'id': 'w1',
+      'user_id': 'u1',
+      'title': 'Day 1',
+      'date': '2026-06-28',
+      'updated_at': '2026-06-28T00:00:00Z',
+    });
+    expect(w.programInstanceId, isNull);
+    expect(w.programDayId, isNull);
+  });
+
   test('Workout.fromJson parses updated_at', () {
     final w = Workout.fromJson({
       'id': 'w1',

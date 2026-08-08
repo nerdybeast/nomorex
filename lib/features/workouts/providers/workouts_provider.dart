@@ -16,10 +16,13 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
     if (userId == null) return [];
 
     // Shallow: workout + its exercises (with names) for counts/summary.
+    // Excludes workouts materialized from a program (program_instance_id set) —
+    // those surface via the program instance's own screen, not this list.
     final data = await _db
         .from('workouts')
         .select('*, workout_exercises(*, exercises(name))')
         .eq('user_id', userId)
+        .filter('program_instance_id', 'is', null)
         .order('date', ascending: false);
 
     return (data as List)

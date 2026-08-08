@@ -20,7 +20,11 @@ class AppConstants {
 
   static const String routePrograms = '/shell/programs';
   // new: /programs/new ; detail: /programs/:id ; edit: /programs/:id/edit
+  // day preview: /programs/:id/days/:dayId ; running instance: /program-instances/:id
   static const String routeProgramNew = '/programs/new';
   static String routeProgramDetail(String id) => '/programs/$id';
   static String routeProgramEdit(String id) => '/programs/$id/edit';
+  static String routeProgramDayDetail(String programId, String dayId) =>
+      '/programs/$programId/days/$dayId';
+  static String routeProgramInstanceDetail(String id) => '/program-instances/$id';
 }

@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../models/program.dart';
+import '../models/program_instance.dart';
+import '../providers/program_instances_list_provider.dart';
 import '../providers/programs_provider.dart';
+import '../utils/program_progress.dart';
 
 class ProgramsScreen extends ConsumerStatefulWidget {
   const ProgramsScreen({super.key});
@@ -74,12 +77,37 @@ class _ProgramTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weekCount = program.weeks.length;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    ProgramInstance? activeInstance;
+    if (!showArchived) {
+      final instances = ref.watch(currentProgramInstancesProvider).asData?.value ?? const [];
+      for (final instance in instances) {
+        if (instance.programId == program.id) {
+          activeInstance = instance;
+          break;
+        }
+      }
+    }
+
     return ListTile(
       title: Text(program.name),
-      subtitle: Text(
-        showArchived
-            ? 'Archived ${program.archivedAt != null ? formatDate(program.archivedAt!) : ''}'
-            : '${formatDate(program.createdAt)} · $weekCount ${weekCount == 1 ? 'week' : 'weeks'}',
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            showArchived
+                ? 'Archived ${program.archivedAt != null ? formatDate(program.archivedAt!) : ''}'
+                : '${formatDate(program.createdAt)} · $weekCount ${weekCount == 1 ? 'week' : 'weeks'}',
+          ),
+          if (activeInstance != null)
+            Text(
+              isProgramUpcoming(activeInstance.startedAt)
+                  ? 'Upcoming — starts ${formatDate(activeInstance.startedAt)}'
+                  : 'In progress — started ${formatDate(activeInstance.startedAt)}',
+              style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
+            ),
+        ],
       ),
       onTap: () => context.push(AppConstants.routeProgramDetail(program.id)),
       trailing: PopupMenuButton<String>(

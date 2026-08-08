@@ -3,12 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
-import '../../../core/utils/weight_converter.dart';
-import '../models/program_day.dart';
+import '../models/program_instance.dart';
 import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
+import '../providers/program_instances_list_provider.dart';
 import '../providers/program_instances_provider.dart';
 import '../utils/program_day_date.dart';
+import '../utils/program_day_summary.dart';
+import '../utils/program_progress.dart';
+import '../widgets/program_day_card.dart';
 
 /// Read-only rollup of an authored program (mirrors WorkoutDetailScreen's
 /// read affordances), plus the "Start Program" call to action that
@@ -63,12 +66,13 @@ class ProgramDetailScreen extends ConsumerWidget {
     if (confirmed != true) return;
 
     try {
-      await ref.read(programInstancesProvider.notifier).startProgram(programId, startDate);
+      final instanceId =
+          await ref.read(programInstancesProvider.notifier).startProgram(programId, startDate);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Program started — check your workouts.')),
+        const SnackBar(content: Text('Program started.')),
       );
-      context.go(AppConstants.routeWorkouts);
+      context.pushReplacement(AppConstants.routeProgramInstanceDetail(instanceId));
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context)
@@ -80,6 +84,15 @@ class ProgramDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(programDetailProvider(programId));
     final colorScheme = Theme.of(context).colorScheme;
+
+    final activeInstances = ref.watch(currentProgramInstancesProvider).asData?.value ?? const [];
+    ProgramInstance? activeInstance;
+    for (final instance in activeInstances) {
+      if (instance.programId == programId) {
+        activeInstance = instance;
+        break;
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -111,17 +124,35 @@ class ProgramDetailScreen extends ConsumerWidget {
             if (program.weeks.isEmpty)
               const Center(child: Text('This program has no weeks yet.'))
             else ...[
-              FilledButton.icon(
-                onPressed: () => _startProgram(
-                  context,
-                  ref,
-                  program.weeks.fold<int>(0, (sum, w) => sum + w.days.length),
+              if (activeInstance != null) ...[
+                Text(
+                  isProgramUpcoming(activeInstance.startedAt)
+                      ? 'Upcoming — starts ${formatDate(activeInstance.startedAt)}'
+                      : 'In progress — started ${formatDate(activeInstance.startedAt)}',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
                 ),
-                icon: const Icon(Icons.play_arrow),
-                label: const Text('Start Program'),
-              ),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  onPressed: () => context
+                      .push(AppConstants.routeProgramInstanceDetail(activeInstance!.id)),
+                  icon: const Icon(Icons.visibility_outlined),
+                  label: const Text('View Progress'),
+                ),
+              ] else
+                FilledButton.icon(
+                  onPressed: () => _startProgram(
+                    context,
+                    ref,
+                    program.weeks.fold<int>(0, (sum, w) => sum + w.days.length),
+                  ),
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Start Program'),
+                ),
               const SizedBox(height: 16),
-              for (final week in program.weeks) _WeekSection(week: week),
+              for (final week in program.weeks) _WeekSection(week: week, programId: programId),
             ],
           ],
         ),
@@ -131,9 +162,10 @@ class ProgramDetailScreen extends ConsumerWidget {
 }
 
 class _WeekSection extends StatelessWidget {
-  const _WeekSection({required this.week});
+  const _WeekSection({required this.week, required this.programId});
 
   final ProgramWeek week;
+  final String programId;
 
   @override
   Widget build(BuildContext context) {
@@ -152,77 +184,17 @@ class _WeekSection extends StatelessWidget {
               child: Text(week.notes!, style: Theme.of(context).textTheme.bodySmall),
             ),
           const SizedBox(height: 8),
-          for (final day in week.days) _DaySection(day: day),
+          for (final day in week.days)
+            ProgramDayCard(
+              title: day.title,
+              subtitle: programDaySubtitle(day),
+              showChevron: programDayHasContent(day),
+              onTap: programDayHasContent(day)
+                  ? () => context.push(AppConstants.routeProgramDayDetail(programId, day.id))
+                  : null,
+            ),
         ],
       ),
     );
-  }
-}
-
-class _DaySection extends StatelessWidget {
-  const _DaySection({required this.day});
-
-  final ProgramDay day;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(day.title, style: Theme.of(context).textTheme.titleMedium),
-            if (day.isRestDay)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text('Rest day', style: Theme.of(context).textTheme.bodySmall),
-              )
-            else ...[
-              if (day.notes != null && day.notes!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(day.notes!, style: Theme.of(context).textTheme.bodySmall),
-                ),
-              for (final ex in day.exercises)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(ex.exerciseName, style: Theme.of(context).textTheme.bodyLarge),
-                      if (ex.notes != null && ex.notes!.isNotEmpty)
-                        Text(ex.notes!, style: Theme.of(context).textTheme.bodySmall),
-                      for (final s in ex.sets)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8, top: 2),
-                          child: Text(
-                            '${s.targetReps ?? '-'} reps · ${_valueLabel(s.weightMode, s.percentage, s.absoluteWeightKg, s.basisExerciseId, s.basisExerciseName)}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _valueLabel(
-    String weightMode,
-    double? percentage,
-    double? absoluteWeightKg,
-    String? basisExerciseId,
-    String? basisExerciseName,
-  ) {
-    if (weightMode == 'percentage') {
-      final basisLabel = basisExerciseId != null ? (basisExerciseName ?? '1RM') : '1RM';
-      return '${percentage?.toStringAsFixed(0) ?? '?'}% of $basisLabel';
-    }
-    return absoluteWeightKg != null ? formatWeightBoth(absoluteWeightKg) : '? lbs / ? kg';
   }
 }

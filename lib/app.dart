@@ -23,6 +23,8 @@ import 'features/programs/screens/programs_screen.dart';
 import 'features/programs/screens/new_program_screen.dart';
 import 'features/programs/screens/program_edit_screen.dart';
 import 'features/programs/screens/program_detail_screen.dart';
+import 'features/programs/screens/program_day_detail_screen.dart';
+import 'features/programs/screens/program_instance_detail_screen.dart';
 
 part 'app.g.dart';
 
@@ -130,9 +132,21 @@ GoRouter router(Ref ref) {
             ProgramEditScreen(programId: state.pathParameters['id']!),
       ),
       GoRoute(
+        path: '/programs/:programId/days/:dayId',
+        builder: (_, state) => ProgramDayDetailScreen(
+          programId: state.pathParameters['programId']!,
+          dayId: state.pathParameters['dayId']!,
+        ),
+      ),
+      GoRoute(
         path: '/programs/:id',
         builder: (_, state) =>
             ProgramDetailScreen(programId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/program-instances/:id',
+        builder: (_, state) =>
+            ProgramInstanceDetailScreen(instanceId: state.pathParameters['id']!),
       ),
     ],
   );
