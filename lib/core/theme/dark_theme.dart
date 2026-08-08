@@ -201,6 +201,10 @@ class AppDarkTheme {
           side: const BorderSide(color: _borderDefault),
         ),
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: _bg2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
       listTileTheme: const ListTileThemeData(
         iconColor: _fg3,
         textColor: _fg1,
