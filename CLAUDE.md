@@ -25,6 +25,8 @@ dart run build_runner watch --delete-conflicting-outputs
 
 `*.g.dart` files are committed. Any change to a `@Riverpod` annotation, provider name, or notifier signature requires a `build_runner` run before `flutter analyze` will pass.
 
+**Visually testing the web app via claude-in-chrome:** `flutter run -d chrome --dart-define-from-file=.env.local.json --web-port=<PORT>` launches its own dedicated Chrome instance for Flutter's debug service — that instance is not the one claude-in-chrome controls. Run it in the background, then navigate a claude-in-chrome-controlled tab to `http://localhost:<PORT>` directly; it's a normal web server, so any browser tab can load the running app there. Requires the local Supabase stack up (`supabase start`) first.
+
 Database (requires Docker + Supabase CLI):
 
 ```bash
@@ -79,6 +81,8 @@ Any new table in `public` **must** enable RLS and add ownership policies `TO aut
 
 **`start_program(p_program_id, p_start_date)`** (in `20260805020858_create_start_program_function.sql`) is the first non-trivial server-side `plpgsql` function in this codebase beyond the existing trigger functions (`handle_new_user`, `set_updated_at`). It's `SECURITY INVOKER` (not `DEFINER`) so it stays gated by the same RLS a direct client insert would hit, and does the whole weeks→days→exercises→sets walk in one transaction — this is why "Start Program" is an RPC call rather than a client-side loop like `WorkoutsNotifier.duplicateWorkout()`: a multi-week program is large enough (dozens of workouts, hundreds of exercises/sets) that a sequential client-side version would be slow and have no rollback on partial failure. Every `program_day` materializes a `workouts` row, including empty rest days.
 
+**Position/sequence fields must be derived from `max(existing) + 1`, not a count.** `ProgramDetailNotifier.addWeek`/`addDay` (`lib/features/programs/providers/program_detail_provider.dart`) used to compute the next `week_number`/`position` from `weeks.length`/`totalDays`. Deleting a week or day from the middle of a program left the count behind the highest number still in use, so the next insert collided with a surviving row and threw on the `program_weeks_program_id_week_number_key` / `program_days` position unique constraint — fixed by deriving from `max(existing) + 1` instead. The same "position = count" shape still exists in `addDay`'s `day_number: week.days.length + 1` (harmless — `day_number` is intentionally not unique) and `addExercise`'s `position: day.exercises.length` (`program_exercises.position` has no unique constraint either, so it won't crash, but can still produce silently wrong ordering after a mid-list delete). Treat any new `position`/`order` assignment in this codebase with the same suspicion.
+
 ## CI/CD
 
 - `.github/workflows/pr-checks.yml` — `flutter analyze`, `flutter test`, debug APK build, plus a `supabase db reset` + `db lint` job.
@@ -88,3 +92,5 @@ Any new table in `public` **must** enable RLS and add ownership policies `TO aut
 ## Testing
 
 Widget tests stub data by **subclassing the generated notifier and overriding `build()`**, then passing it to `ProviderScope(overrides: [...])` — e.g. `workoutsProvider.overrideWith(() => _EmptyWorkoutsNotifier())`. Simple derived providers use `overrideWithValue` (`unitPreferenceProvider.overrideWithValue('kg')`). There is no Supabase mock; tests never hit the network. Pure logic (parsers, resolvers, model JSON) is tested directly without widgets.
+
+**Widget tests render in `flutter_test`'s default ~800x600 surface.** A screen taller than that (nested `ExpansionTile`s, long lists) can push a target below the visible area — `tester.tap(finder)` on an off-screen widget doesn't throw, it just misses (a "hit test warning" that's easy to miss in the output), and the real failure surfaces later as something confusing and unrelated-looking, e.g. `Bad state: No element` from `enterText`/`showKeyboard` because a dialog never actually opened. Call `await tester.ensureVisible(finder); await tester.pumpAndSettle();` before tapping anything that might sit below the fold. After any UI change that adds height to a screen (more padding, more content), re-run the full suite rather than just the file touched — layout-adjacent tests can break invisibly.
