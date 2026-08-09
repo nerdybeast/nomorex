@@ -205,6 +205,8 @@ class _WeekCard extends ConsumerWidget {
     final notifier = ref.read(programDetailProvider(programId).notifier);
     return Card(
       child: ExpansionTile(
+        shape: const Border(),
+        collapsedShape: const Border(),
         title: Text('Week ${week.weekNumber}${week.label != null ? ' — ${week.label}' : ''}'),
         subtitle: Text('${week.days.length} ${week.days.length == 1 ? 'day' : 'days'}'),
         trailing: IconButton(
