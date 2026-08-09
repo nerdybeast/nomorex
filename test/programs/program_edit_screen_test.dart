@@ -17,10 +17,16 @@ class _StubExercisesNotifier extends ExercisesNotifier {
 }
 
 class _TestProgramDetailNotifier extends ProgramDetailNotifier {
-  _TestProgramDetailNotifier(this._program, {this.onAddWeek, this.onAddExercise});
+  _TestProgramDetailNotifier(
+    this._program, {
+    this.onAddWeek,
+    this.onAddExercise,
+    this.onRemoveWeek,
+  });
   final Program _program;
   final VoidCallback? onAddWeek;
   final void Function(String dayId, String exerciseId)? onAddExercise;
+  final void Function(String weekId)? onRemoveWeek;
 
   @override
   Future<Program> build(String programId) async => _program;
@@ -33,6 +39,11 @@ class _TestProgramDetailNotifier extends ProgramDetailNotifier {
   @override
   Future<void> addExercise(String dayId, String exerciseId) async {
     onAddExercise?.call(dayId, exerciseId);
+  }
+
+  @override
+  Future<void> removeWeek(String weekId) async {
+    onRemoveWeek?.call(weekId);
   }
 }
 
@@ -128,5 +139,104 @@ void main() {
 
     expect(capturedDayId, 'd1');
     expect(capturedExerciseId, 'e1');
+  });
+
+  testWidgets('deleting an empty week removes it without a confirmation dialog', (tester) async {
+    String? removedWeekId;
+    final program = Program(
+      id: 'p1',
+      userId: 'u1',
+      name: 'Test Program',
+      createdAt: DateTime(2026, 8, 1),
+      updatedAt: DateTime(2026, 8, 1),
+      weeks: [
+        ProgramWeek(id: 'w1', programId: 'p1', weekNumber: 1, position: 0, days: const []),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          programDetailProvider('p1').overrideWith(
+            () => _TestProgramDetailNotifier(
+              program,
+              onRemoveWeek: (weekId) => removedWeekId = weekId,
+            ),
+          ),
+          unitPreferenceProvider.overrideWithValue('kg'),
+        ],
+        child: const MaterialApp(home: ProgramEditScreen(programId: 'p1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pumpAndSettle();
+
+    expect(removedWeekId, 'w1');
+    expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('deleting a week with days shows a confirmation dialog', (tester) async {
+    String? removedWeekId;
+    final program = Program(
+      id: 'p1',
+      userId: 'u1',
+      name: 'Test Program',
+      createdAt: DateTime(2026, 8, 1),
+      updatedAt: DateTime(2026, 8, 1),
+      weeks: [
+        ProgramWeek(
+          id: 'w1',
+          programId: 'p1',
+          weekNumber: 1,
+          position: 0,
+          days: [
+            ProgramDay(id: 'd1', programWeekId: 'w1', dayNumber: 1, title: 'Day 1', position: 0),
+          ],
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          programDetailProvider('p1').overrideWith(
+            () => _TestProgramDetailNotifier(
+              program,
+              onRemoveWeek: (weekId) => removedWeekId = weekId,
+            ),
+          ),
+          unitPreferenceProvider.overrideWithValue('kg'),
+        ],
+        child: const MaterialApp(home: ProgramEditScreen(programId: 'p1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Tap delete -> dialog appears; Cancel -> no delete.
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text('This will also delete its 1 day.'), findsOneWidget);
+
+    await tester.tap(find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.text('Cancel'),
+    ));
+    await tester.pumpAndSettle();
+    expect(removedWeekId, isNull);
+    expect(find.byType(AlertDialog), findsNothing);
+
+    // Tap delete -> dialog appears again; Delete -> removeWeek called.
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.text('Delete'),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(removedWeekId, 'w1');
   });
 }

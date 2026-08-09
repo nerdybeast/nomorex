@@ -211,7 +211,35 @@ class _WeekCard extends ConsumerWidget {
         subtitle: Text('${week.days.length} ${week.days.length == 1 ? 'day' : 'days'}'),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline),
-          onPressed: () => notifier.removeWeek(week.id),
+          onPressed: () async {
+            if (week.days.isEmpty) {
+              await notifier.removeWeek(week.id);
+              return;
+            }
+            final dayCount = week.days.length;
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Delete week?'),
+                content: Text(
+                  'This will also delete its $dayCount ${dayCount == 1 ? 'day' : 'days'}.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Delete'),
+                  ),
+                ],
+              ),
+            );
+            if (confirmed == true) {
+              await notifier.removeWeek(week.id);
+            }
+          },
         ),
         children: [
           Padding(
