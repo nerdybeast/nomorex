@@ -18,6 +18,7 @@ class ProgramsScreen extends ConsumerStatefulWidget {
 
 class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
   bool _showArchived = false;
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -44,25 +45,54 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
               icon: const Icon(Icons.add),
               label: const Text('New program'),
             ),
-      body: programsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
-        data: (programs) {
-          if (programs.isEmpty) {
-            return Center(
-              child: Text(_showArchived
-                  ? 'No archived programs.'
-                  : 'No programs yet. Tap "New program" to start.'),
-            );
-          }
-          return ListView.builder(
-            itemCount: programs.length,
-            itemBuilder: (context, i) {
-              final p = programs[i];
-              return _ProgramTile(program: p, showArchived: _showArchived);
-            },
-          );
-        },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: 'Search programs...',
+                prefixIcon: Icon(Icons.search),
+                isDense: true,
+              ),
+              onChanged: (v) => setState(() => _searchQuery = v),
+            ),
+          ),
+          Expanded(
+            child: programsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) =>
+                  Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+              data: (programs) {
+                if (programs.isEmpty) {
+                  return Center(
+                    child: Text(_showArchived
+                        ? 'No archived programs.'
+                        : 'No programs yet. Tap "New program" to start.'),
+                  );
+                }
+                final query = _searchQuery.toLowerCase();
+                final filtered = query.isEmpty
+                    ? programs
+                    : programs.where((p) {
+                        final name = p.name.toLowerCase();
+                        final description = (p.description ?? '').toLowerCase();
+                        return name.contains(query) || description.contains(query);
+                      }).toList();
+                if (filtered.isEmpty) {
+                  return const Center(child: Text('No programs match your search.'));
+                }
+                return ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, i) {
+                    final p = filtered[i];
+                    return _ProgramTile(program: p, showArchived: _showArchived);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -77,7 +107,9 @@ class _ProgramTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weekCount = program.weeks.length;
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final description = program.description?.trim();
 
     ProgramInstance? activeInstance;
     if (!showArchived) {
@@ -91,15 +123,23 @@ class _ProgramTile extends ConsumerWidget {
     }
 
     return ListTile(
-      title: Text(program.name),
+      title: Text(
+        program.name,
+        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+      ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            showArchived
-                ? 'Archived ${program.archivedAt != null ? formatDate(program.archivedAt!) : ''}'
-                : '${formatDate(program.createdAt)} · $weekCount ${weekCount == 1 ? 'week' : 'weeks'}',
-          ),
+          if (description == null || description.isEmpty)
+            Text(
+              'No Description.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            )
+          else
+            Text(_truncatedDescription(description)),
           if (activeInstance != null)
             Text(
               isProgramUpcoming(activeInstance.startedAt)
@@ -107,6 +147,23 @@ class _ProgramTile extends ConsumerWidget {
                   : 'In progress — started ${formatDate(activeInstance.startedAt)}',
               style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
             ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                showArchived
+                    ? 'Archived ${program.archivedAt != null ? formatDate(program.archivedAt!) : ''}'
+                    : formatDate(program.createdAt),
+                style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              ),
+              if (!showArchived)
+                Text(
+                  '$weekCount ${weekCount == 1 ? 'week' : 'weeks'}',
+                  style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+            ],
+          ),
         ],
       ),
       onTap: () => context.push(AppConstants.routeProgramDetail(program.id)),
@@ -131,5 +188,10 @@ class _ProgramTile extends ConsumerWidget {
               ],
       ),
     );
+  }
+
+  String _truncatedDescription(String description) {
+    if (description.length <= 200) return description;
+    return '${description.substring(0, 200)}...';
   }
 }
