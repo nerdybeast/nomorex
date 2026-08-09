@@ -11,6 +11,7 @@ import '../models/program_day.dart';
 import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
 import '../utils/parsed_program_set.dart';
+import '../../../core/utils/sequential_naming.dart';
 
 // SetEditor is shared with the workouts feature, so its "Add sets (%)"
 // callback speaks ParsedSet regardless of caller; convert 1:1 to this
@@ -67,7 +68,8 @@ class ProgramEditScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _addDay(BuildContext context, WidgetRef ref, String weekId) async {
+  Future<void> _addDay(BuildContext context, WidgetRef ref, ProgramWeek week) async {
+    final defaultTitle = nextSequentialName(week.days.map((d) => d.title), 'Day');
     final controller = TextEditingController();
     var isRestDay = false;
     final result = await showDialog<bool>(
@@ -82,7 +84,7 @@ class ProgramEditScreen extends ConsumerWidget {
                 controller: controller,
                 autofocus: true,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(labelText: 'Title (e.g. Day 1)'),
+                decoration: InputDecoration(labelText: 'Title', hintText: defaultTitle),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
@@ -99,10 +101,11 @@ class ProgramEditScreen extends ConsumerWidget {
         ),
       ),
     );
-    if (result == true && controller.text.trim().isNotEmpty) {
+    if (result == true) {
+      final typed = controller.text.trim();
       await ref.read(programDetailProvider(programId).notifier).addDay(
-            weekId,
-            title: controller.text.trim(),
+            week.id,
+            title: typed.isEmpty ? defaultTitle : typed,
             isRestDay: isRestDay,
           );
     }
@@ -173,7 +176,7 @@ class ProgramEditScreen extends ConsumerWidget {
                     programId: programId,
                     week: week,
                     unit: unit,
-                    onAddDay: (weekId) => _addDay(context, ref, weekId),
+                    onAddDay: (week) => _addDay(context, ref, week),
                     onAddExercise: (dayId) => _addExercise(context, ref, dayId),
                   ),
             ],
@@ -197,7 +200,7 @@ class _WeekCard extends ConsumerWidget {
   final String programId;
   final ProgramWeek week;
   final String unit;
-  final void Function(String weekId) onAddDay;
+  final void Function(ProgramWeek week) onAddDay;
   final void Function(String dayId) onAddExercise;
 
   @override
@@ -264,7 +267,7 @@ class _WeekCard extends ConsumerWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
-                onPressed: () => onAddDay(week.id),
+                onPressed: () => onAddDay(week),
                 icon: const Icon(Icons.add),
                 label: const Text('Day'),
               ),

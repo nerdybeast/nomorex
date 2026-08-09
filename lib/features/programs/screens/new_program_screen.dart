@@ -38,9 +38,13 @@ class _NewProgramScreenState extends ConsumerState<NewProgramScreen> {
       _error = null;
     });
     try {
+      final typedName = _nameController.text.trim();
+      final name = typedName.isNotEmpty
+          ? typedName
+          : (ref.read(nextProgramNameProvider).value ?? 'Program 1');
       final description = _descriptionController.text.trim();
       final id = await ref.read(programsProvider.notifier).createProgram(
-            name: _nameController.text.trim(),
+            name: name,
             description: description.isEmpty ? null : description,
             isPublic: _isPublic,
           );
@@ -55,6 +59,7 @@ class _NewProgramScreenState extends ConsumerState<NewProgramScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final defaultName = ref.watch(nextProgramNameProvider).value;
 
     return Scaffold(
       appBar: AppBar(title: const Text('NEW PROGRAM')),
@@ -73,12 +78,11 @@ class _NewProgramScreenState extends ConsumerState<NewProgramScreen> {
                       controller: _nameController,
                       autofocus: true,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
-                        labelText: 'Name (e.g. ZT 6 Week Program)',
+                      decoration: InputDecoration(
+                        labelText: 'Name',
+                        hintText: defaultName,
                       ),
                       textInputAction: TextInputAction.next,
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Required' : null,
                     ),
                     const SizedBox(height: 20),
                     TextFormField(

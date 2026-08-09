@@ -112,3 +112,50 @@ abstract class _$ArchivedProgramsNotifier
     element.handleCreate(ref, build);
   }
 }
+
+/// "Program N" where N is one past the highest numbered program name the
+/// user has — including archived ones, since programs are never hard-deleted
+/// (see [ArchivedProgramsNotifier]), so a freed-up number could otherwise
+/// collide with an existing archived program's name.
+
+@ProviderFor(nextProgramName)
+final nextProgramNameProvider = NextProgramNameProvider._();
+
+/// "Program N" where N is one past the highest numbered program name the
+/// user has — including archived ones, since programs are never hard-deleted
+/// (see [ArchivedProgramsNotifier]), so a freed-up number could otherwise
+/// collide with an existing archived program's name.
+
+final class NextProgramNameProvider
+    extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
+    with $FutureModifier<String>, $FutureProvider<String> {
+  /// "Program N" where N is one past the highest numbered program name the
+  /// user has — including archived ones, since programs are never hard-deleted
+  /// (see [ArchivedProgramsNotifier]), so a freed-up number could otherwise
+  /// collide with an existing archived program's name.
+  NextProgramNameProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'nextProgramNameProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$nextProgramNameHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String> create(Ref ref) {
+    return nextProgramName(ref);
+  }
+}
+
+String _$nextProgramNameHash() => r'859ff9f6b39ceacb2e658db4d309d40643a79149';

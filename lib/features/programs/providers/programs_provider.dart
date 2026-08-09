@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/program.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/utils/sequential_naming.dart';
 
 part 'programs_provider.g.dart';
 
@@ -91,4 +92,23 @@ class ArchivedProgramsNotifier extends _$ArchivedProgramsNotifier {
         .map((e) => Program.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+}
+
+/// "Program N" where N is one past the highest numbered program name the
+/// user has — including archived ones, since programs are never hard-deleted
+/// (see [ArchivedProgramsNotifier]), so a freed-up number could otherwise
+/// collide with an existing archived program's name.
+@riverpod
+Future<String> nextProgramName(Ref ref) async {
+  ref.watch(authStateProvider);
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) return 'Program 1';
+
+  final data = await Supabase.instance.client
+      .from('programs')
+      .select('name')
+      .eq('user_id', userId);
+
+  final names = (data as List).map((e) => e['name'] as String);
+  return nextSequentialName(names, 'Program');
 }
