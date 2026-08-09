@@ -13,6 +13,7 @@ import 'features/shell/app_shell.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/personal_bests/screens/my_prs_screen.dart';
 import 'features/personal_bests/screens/add_pr_screen.dart';
+import 'features/personal_bests/screens/pr_history_screen.dart';
 import 'features/workouts/screens/workouts_screen.dart';
 import 'features/workouts/screens/new_workout_screen.dart';
 import 'features/workouts/screens/edit_workout_screen.dart';
@@ -102,6 +103,11 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: AppConstants.routeAddPr,
         builder: (_, _) => const AddPrScreen(),
+      ),
+      GoRoute(
+        path: '/prs/:exerciseId/history',
+        builder: (_, state) =>
+            PrHistoryScreen(exerciseId: state.pathParameters['exerciseId']!),
       ),
       GoRoute(
         path: AppConstants.routeWorkoutNew,

@@ -8,6 +8,7 @@ class AppConstants {
   static const String routeHome = '/shell/home';
   static const String routePrs = '/shell/prs';
   static const String routeAddPr = '/prs/add';
+  static String routePrHistory(String exerciseId) => '/prs/$exerciseId/history';
 
   static const String routeWorkouts = '/shell/workouts';
   // new: /workouts/new ; detail: /workouts/:id ; edit: /workouts/:id/edit

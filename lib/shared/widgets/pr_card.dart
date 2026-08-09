@@ -11,45 +11,55 @@ class PrCard extends StatelessWidget {
     required this.weightDisplay,
     required this.reps,
     required this.dateDisplay,
+    this.onTap,
   });
 
   final String exerciseName;
   final String weightDisplay;
   final int reps;
   final String dateDisplay;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(exerciseName, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text(
+                      dateDisplay,
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(exerciseName, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
+                  Text(weightDisplay, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                   Text(
-                    dateDisplay,
+                    reps == 1 ? '1 rep' : '$reps reps',
                     style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(weightDisplay, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                Text(
-                  reps == 1 ? '1 rep' : '$reps reps',
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
+              if (onTap != null) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
               ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
