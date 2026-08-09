@@ -125,6 +125,8 @@ void main() {
     await tester.tap(find.text('Day 1'));
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.text('Exercise'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Exercise'));
     await tester.pumpAndSettle();
 
