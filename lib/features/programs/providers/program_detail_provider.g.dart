@@ -51,7 +51,7 @@ final class ProgramDetailNotifierProvider
 }
 
 String _$programDetailNotifierHash() =>
-    r'648120ed3ee2678891a412d31e1de6d1b80179c9';
+    r'cbb15e1c041d25725ca18fa063708a067e954e62';
 
 final class ProgramDetailNotifierFamily extends $Family
     with

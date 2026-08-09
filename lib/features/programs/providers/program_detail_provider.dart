@@ -33,11 +33,13 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
 
   Future<void> addWeek({String? label, String? notes}) async {
     final current = await future;
+    final nextWeekNumber = current.weeks.fold<int>(0, (max, w) => w.weekNumber > max ? w.weekNumber : max) + 1;
+    final nextPosition = current.weeks.fold<int>(0, (max, w) => w.position > max ? w.position : max) + 1;
     await _db.from('program_weeks').insert({
       'program_id': programId,
       'user_id': _userId,
-      'week_number': current.weeks.length + 1,
-      'position': current.weeks.length,
+      'week_number': nextWeekNumber,
+      'position': nextPosition,
       if (label != null && label.isNotEmpty) 'label': label,
       if (notes != null && notes.isNotEmpty) 'notes': notes,
     });
@@ -90,7 +92,8 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
   Future<void> addDay(String weekId, {required String title, bool isRestDay = false}) async {
     final current = await future;
     final week = current.weeks.firstWhere((w) => w.id == weekId);
-    final totalDays = current.weeks.fold<int>(0, (sum, w) => sum + w.days.length);
+    final allDays = current.weeks.expand((w) => w.days);
+    final nextPosition = allDays.fold<int>(0, (max, d) => d.position > max ? d.position : max) + 1;
     await _db.from('program_days').insert({
       'program_id': programId,
       'program_week_id': weekId,
@@ -98,7 +101,7 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
       'day_number': week.days.length + 1,
       'title': title,
       'is_rest_day': isRestDay,
-      'position': totalDays,
+      'position': nextPosition,
     });
     await _refresh();
   }
