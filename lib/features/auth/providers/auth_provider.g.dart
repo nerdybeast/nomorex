@@ -43,6 +43,58 @@ final class AuthStateProvider
 
 String _$authStateHash() => r'faec550ca27ee757cbeb238269a61f90d5393ea1';
 
+/// The signed-in Supabase auth user, or null when signed out. Wraps
+/// [authStateProvider] so it's overridable in widget tests instead of
+/// reading `Supabase.instance.client.auth.currentUser` directly.
+
+@ProviderFor(currentAuthUser)
+final currentAuthUserProvider = CurrentAuthUserProvider._();
+
+/// The signed-in Supabase auth user, or null when signed out. Wraps
+/// [authStateProvider] so it's overridable in widget tests instead of
+/// reading `Supabase.instance.client.auth.currentUser` directly.
+
+final class CurrentAuthUserProvider
+    extends $FunctionalProvider<User?, User?, User?>
+    with $Provider<User?> {
+  /// The signed-in Supabase auth user, or null when signed out. Wraps
+  /// [authStateProvider] so it's overridable in widget tests instead of
+  /// reading `Supabase.instance.client.auth.currentUser` directly.
+  CurrentAuthUserProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'currentAuthUserProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$currentAuthUserHash();
+
+  @$internal
+  @override
+  $ProviderElement<User?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  User? create(Ref ref) {
+    return currentAuthUser(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(User? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<User?>(value),
+    );
+  }
+}
+
+String _$currentAuthUserHash() => r'5dd8395a9974f11d001b55a8cd64af89b3bff9ce';
+
 @ProviderFor(AuthNotifier)
 final authProvider = AuthNotifierProvider._();
 

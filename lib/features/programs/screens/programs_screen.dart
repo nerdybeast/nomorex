@@ -35,6 +35,11 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
             tooltip: _showArchived ? 'Show active programs' : 'Show archived programs',
             onPressed: () => setState(() => _showArchived = !_showArchived),
           ),
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'Profile',
+            onPressed: () => context.push(AppConstants.routeProfile),
+          ),
         ],
       ),
       floatingActionButton: _showArchived

@@ -10,6 +10,7 @@ import '../../../core/theme/dark_theme.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../shared/widgets/number_stepper_field.dart';
+import '../../../shared/widgets/unit_toggle.dart';
 
 class AddPrScreen extends ConsumerStatefulWidget {
   const AddPrScreen({super.key});
@@ -27,6 +28,14 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _loading = false;
   String? _error;
+  late String _entryUnit;
+
+  @override
+  void initState() {
+    super.initState();
+    final preference = ref.read(unitPreferenceProvider);
+    _entryUnit = preference == 'both' ? 'kg' : preference;
+  }
 
   @override
   void dispose() {
@@ -48,8 +57,7 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedExercise == null) return;
 
-    final unit = ref.read(unitPreferenceProvider);
-    final weightKg = unit == 'lbs' ? lbsToKg(_weight) : _weight;
+    final weightKg = _entryUnit == 'lbs' ? lbsToKg(_weight) : _weight;
 
     setState(() { _loading = true; _error = null; });
     try {
@@ -71,7 +79,7 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
   @override
   Widget build(BuildContext context) {
     final exercises = ref.watch(exercisesProvider).asData?.value ?? [];
-    final unit = ref.watch(unitPreferenceProvider);
+    final preference = ref.watch(unitPreferenceProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final tokens = Theme.of(context).extension<NomorexDarkTokens>();
     final overline = tokens?.overline;
@@ -109,12 +117,15 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Weight ($unit)'.toUpperCase(), style: overline),
-                        _UnitToggle(
-                          currentUnit: unit,
-                          onChanged: (newUnit) async {
-                            await ref.read(profileProvider.notifier).setUnitPreference(newUnit);
-                          },
+                        Text('Weight ($_entryUnit)'.toUpperCase(), style: overline),
+                        UnitToggle(
+                          preference: preference,
+                          value: _entryUnit,
+                          onChanged: (newUnit) => setState(() {
+                            if (newUnit == _entryUnit) return;
+                            _weight = newUnit == 'lbs' ? kgToLbs(_weight) : lbsToKg(_weight);
+                            _entryUnit = newUnit;
+                          }),
                         ),
                       ],
                     ),
@@ -123,8 +134,8 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                       label: '',
                       value: _weight,
                       min: 0,
-                      step: unit == 'lbs' ? 5 : 2.5,
-                      decimals: unit == 'lbs' ? 0 : 1,
+                      step: _entryUnit == 'lbs' ? 5 : 2.5,
+                      decimals: _entryUnit == 'lbs' ? 0 : 1,
                       onChanged: (v) => setState(() => _weight = v),
                       valueTextStyle: tokens?.stepperValue,
                       valueDecoration: tokens?.stepperValueDecoration,
@@ -188,58 +199,6 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                 ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// kg / lbs pill toggle matching the Sleek Orange unit switch: a filled
-/// track with a solid-color selected segment (not a bordered segmented
-/// control, so this is a small bespoke widget rather than a themed
-/// [SegmentedButton]).
-class _UnitToggle extends StatelessWidget {
-  const _UnitToggle({required this.currentUnit, required this.onChanged});
-
-  final String currentUnit;
-  final Future<void> Function(String) onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final u in const ['kg', 'lbs']) _segment(context, colorScheme, u),
-        ],
-      ),
-    );
-  }
-
-  Widget _segment(BuildContext context, ColorScheme colorScheme, String u) {
-    final selected = u == currentUnit;
-    return InkWell(
-      onTap: selected ? null : () => onChanged(u),
-      borderRadius: BorderRadius.circular(4),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(
-          color: selected ? colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          u,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: selected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
           ),
         ),
       ),

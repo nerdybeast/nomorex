@@ -11,6 +11,7 @@ import 'features/auth/screens/landing_screen.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/shell/app_shell.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
+import 'features/profile/screens/profile_screen.dart';
 import 'features/personal_bests/screens/my_prs_screen.dart';
 import 'features/personal_bests/screens/add_pr_screen.dart';
 import 'features/personal_bests/screens/pr_history_screen.dart';
@@ -99,6 +100,10 @@ GoRouter router(Ref ref) {
             ),
           ]),
         ],
+      ),
+      GoRoute(
+        path: AppConstants.routeProfile,
+        builder: (_, _) => const ProfileScreen(),
       ),
       GoRoute(
         path: AppConstants.routeAddPr,

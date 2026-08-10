@@ -138,10 +138,11 @@ class _SetLines extends StatelessWidget {
       final basisLabel = set.basisExerciseId != null ? (set.basisExerciseName ?? '1RM') : '1RM';
       firstLine = '$repsLabel · ${set.percentage?.toStringAsFixed(0) ?? '?'}% of $basisLabel';
       if (oneRepMaxKg != null && resolvedKg != null) {
-        secondLine = '${formatWeight(oneRepMaxKg, unit)} PR ≈ ${formatWeight(resolvedKg, unit)}';
+        secondLine =
+            '${formatWeightForPreference(oneRepMaxKg, unit)} PR ≈ ${formatWeightForPreference(resolvedKg, unit)}';
       }
     } else {
-      firstLine = '$repsLabel · ${formatWeight(set.absoluteWeightKg ?? 0, unit)}';
+      firstLine = '$repsLabel · ${formatWeightForPreference(set.absoluteWeightKg ?? 0, unit)}';
     }
 
     return Padding(

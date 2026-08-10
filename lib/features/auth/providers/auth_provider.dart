@@ -8,6 +8,15 @@ Stream<AuthState> authState(Ref ref) {
   return Supabase.instance.client.auth.onAuthStateChange;
 }
 
+/// The signed-in Supabase auth user, or null when signed out. Wraps
+/// [authStateProvider] so it's overridable in widget tests instead of
+/// reading `Supabase.instance.client.auth.currentUser` directly.
+@Riverpod(keepAlive: true)
+User? currentAuthUser(Ref ref) {
+  ref.watch(authStateProvider);
+  return Supabase.instance.client.auth.currentUser;
+}
+
 @Riverpod(keepAlive: true)
 class AuthNotifier extends _$AuthNotifier {
   @override

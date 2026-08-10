@@ -21,7 +21,16 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('WORKOUTS')),
+      appBar: AppBar(
+        title: const Text('WORKOUTS'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'Profile',
+            onPressed: () => context.push(AppConstants.routeProfile),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'workoutsNewFab',
         onPressed: () => context.push(AppConstants.routeWorkoutNew),

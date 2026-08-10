@@ -53,17 +53,20 @@ abstract class _$ProfileNotifier extends $AsyncNotifier<Profile?> {
   }
 }
 
-/// Derived provider — returns the user's unit preference, defaulting to 'kg'.
+/// Derived provider — returns the user's unit preference ('kg', 'lbs', or
+/// 'both'), defaulting to 'both'.
 
 @ProviderFor(unitPreference)
 final unitPreferenceProvider = UnitPreferenceProvider._();
 
-/// Derived provider — returns the user's unit preference, defaulting to 'kg'.
+/// Derived provider — returns the user's unit preference ('kg', 'lbs', or
+/// 'both'), defaulting to 'both'.
 
 final class UnitPreferenceProvider
     extends $FunctionalProvider<String, String, String>
     with $Provider<String> {
-  /// Derived provider — returns the user's unit preference, defaulting to 'kg'.
+  /// Derived provider — returns the user's unit preference ('kg', 'lbs', or
+  /// 'both'), defaulting to 'both'.
   UnitPreferenceProvider._()
     : super(
         from: null,
@@ -97,4 +100,4 @@ final class UnitPreferenceProvider
   }
 }
 
-String _$unitPreferenceHash() => r'985ab02fbfe91f93b0a64c3324597d363701a1d3';
+String _$unitPreferenceHash() => r'd98fdd7e693d88e2bcd4f979f31466c340c5b69c';
