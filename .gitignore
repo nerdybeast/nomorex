@@ -188,3 +188,8 @@ $RECYCLE.BIN/
 # End of https://www.toptal.com/developers/gitignore/api/windows,macos,linux,flutter,dart,visualstudiocode
 # Subagent-driven dev scratch (ledger, briefs, review packages)
 .superpowers/
+
+# Written by the custom_lint analyzer-plugin server on error; can grow
+# unbounded if the server gets stuck retrying (e.g. after a stale
+# .dart_tool/package_config.json), restart the IDE's Dart server if so.
+custom_lint.log
