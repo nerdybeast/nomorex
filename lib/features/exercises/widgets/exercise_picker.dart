@@ -36,6 +36,9 @@ class _ExercisePickerState extends State<ExercisePicker> {
   Widget build(BuildContext context) {
     return Autocomplete<Exercise>(
       displayStringForOption: (e) => e.name,
+      initialValue: widget.selected == null
+          ? const TextEditingValue()
+          : TextEditingValue(text: widget.selected!.name),
       optionsBuilder: (textEditingValue) {
         final matches = textEditingValue.text.isEmpty
             ? widget.exercises

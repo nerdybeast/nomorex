@@ -12,7 +12,8 @@ import '../../../core/utils/date_formatter.dart';
 import '../../../shared/widgets/number_stepper_field.dart';
 
 class AddPrScreen extends ConsumerStatefulWidget {
-  const AddPrScreen({super.key});
+  const AddPrScreen({super.key, this.exerciseId});
+  final String? exerciseId;
 
   @override
   ConsumerState<AddPrScreen> createState() => _AddPrScreenState();
@@ -27,6 +28,12 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _loading = false;
   String? _error;
+
+  // Flips exactly once (false -> true) once we've had a chance to resolve
+  // widget.exerciseId against the loaded exercise list (or determined there's
+  // nothing to resolve). Used as an ExercisePicker key so it remounts exactly
+  // once at that moment — see the ExercisePicker build() below for why.
+  bool _prefilledFromArg = false;
 
   @override
   void dispose() {
@@ -71,6 +78,27 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
   @override
   Widget build(BuildContext context) {
     final exercises = ref.watch(exercisesProvider).asData?.value ?? [];
+
+    // Resolve widget.exerciseId against the loaded list exactly once. This
+    // mutates state directly rather than via setState: it runs synchronously
+    // within this same build() call, so the values are already in effect for
+    // the widget tree built below. If exercisesProvider is still loading on
+    // first build, this simply re-runs (still guarded by _prefilledFromArg)
+    // on the rebuild that ref.watch triggers once data arrives.
+    if (!_prefilledFromArg) {
+      if (widget.exerciseId == null) {
+        _prefilledFromArg = true;
+      } else if (exercises.isNotEmpty) {
+        for (final e in exercises) {
+          if (e.id == widget.exerciseId) {
+            _selectedExercise = e;
+            break;
+          }
+        }
+        _prefilledFromArg = true;
+      }
+    }
+
     final unit = ref.watch(unitPreferenceProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final tokens = Theme.of(context).extension<NomorexDarkTokens>();
@@ -91,6 +119,7 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                   children: [
                     // Exercise picker
                     ExercisePicker(
+                      key: ValueKey(_prefilledFromArg),
                       exercises: exercises,
                       selected: _selectedExercise,
                       onSelected: (ex) => setState(() => _selectedExercise = ex),

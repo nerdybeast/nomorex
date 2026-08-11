@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/weight_converter.dart';
+import '../../exercises/providers/exercises_provider.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../providers/one_rep_max_provider.dart';
@@ -18,6 +19,12 @@ class WorkoutDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(workoutDetailProvider(workoutId));
     final maxes = ref.watch(oneRepMaxProvider).asData?.value ?? const {};
+    // The exercises the viewer themselves can see (predefined + their own
+    // custom ones) — not necessarily every exercise referenced by this
+    // workout, since a workout's owner may differ from the viewer for a
+    // public workout. Gates whether "set PR" is offered per set below.
+    final viewerExerciseIds =
+        ref.watch(exercisesProvider).asData?.value.map((e) => e.id).toSet() ?? const <String>{};
     final notifier = ref.read(workoutDetailProvider(workoutId).notifier);
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -53,6 +60,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
               _ExerciseCard(
                 exercise: ex,
                 oneRepMaxes: maxes,
+                viewerExerciseIds: viewerExerciseIds,
                 onToggle: (setId, value) => notifier.setCompleted(setId, value),
               ),
           ],
@@ -66,11 +74,13 @@ class _ExerciseCard extends StatelessWidget {
   const _ExerciseCard({
     required this.exercise,
     required this.oneRepMaxes,
+    required this.viewerExerciseIds,
     required this.onToggle,
   });
 
   final WorkoutExercise exercise;
   final Map<String, double> oneRepMaxes;
+  final Set<String> viewerExerciseIds;
   final void Function(String setId, bool value) onToggle;
 
   @override
@@ -89,15 +99,21 @@ class _ExerciseCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodySmall),
               ),
             const SizedBox(height: 4),
-            for (final s in exercise.sets)
-              _SetTile(
-                set: s,
-                oneRepMaxKg: oneRepMaxes[resolveBasisExerciseId(s, exercise)],
-                onToggle: onToggle,
-              ),
+            for (final s in exercise.sets) _setTile(s),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _setTile(WorkoutSet s) {
+    final basisId = resolveBasisExerciseId(s, exercise);
+    return _SetTile(
+      set: s,
+      basisExerciseId: basisId,
+      oneRepMaxKg: oneRepMaxes[basisId],
+      canAddPr: viewerExerciseIds.contains(basisId),
+      onToggle: onToggle,
     );
   }
 }
@@ -105,12 +121,16 @@ class _ExerciseCard extends StatelessWidget {
 class _SetTile extends StatelessWidget {
   const _SetTile({
     required this.set,
+    required this.basisExerciseId,
     required this.oneRepMaxKg,
+    required this.canAddPr,
     required this.onToggle,
   });
 
   final WorkoutSet set;
+  final String basisExerciseId;
   final double? oneRepMaxKg;
+  final bool canAddPr;
   final void Function(String setId, bool value) onToggle;
 
   @override
@@ -124,13 +144,46 @@ class _SetTile extends StatelessWidget {
 
     final basisSuffix =
         set.basisExerciseId != null ? ' of ${set.basisExerciseName ?? '1RM'}' : '';
-    final String trailingText;
-    if (set.weightMode == 'percentage') {
-      trailingText = resolvedKg == null
-          ? '${set.percentage?.toStringAsFixed(0)}%$basisSuffix — set a 1RM'
-          : '${set.percentage?.toStringAsFixed(0)}%$basisSuffix · ${formatWeightBoth(resolvedKg)}';
+    final colorScheme = Theme.of(context).colorScheme;
+    final baseStyle = Theme.of(context)
+        .textTheme
+        .bodyMedium
+        ?.copyWith(color: colorScheme.onSurfaceVariant);
+
+    final Widget subtitle;
+    if (set.weightMode == 'percentage' && resolvedKg == null && canAddPr) {
+      subtitle = Text.rich(
+        TextSpan(
+          style: baseStyle,
+          children: [
+            TextSpan(text: '${set.percentage?.toStringAsFixed(0)}%$basisSuffix — '),
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: InkWell(
+                onTap: () => context.push(AppConstants.routeAddPrForExercise(basisExerciseId)),
+                child: Text(
+                  'set PR',
+                  style: baseStyle?.copyWith(
+                    color: colorScheme.primary,
+                    decoration: TextDecoration.underline,
+                    decorationColor: colorScheme.primary,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (set.weightMode == 'percentage' && resolvedKg == null) {
+      // The viewer isn't the workout's owner and can't see this exercise
+      // (e.g. a custom exercise on someone else's public workout) — no
+      // point offering a link that can't actually be completed.
+      subtitle = Text('${set.percentage?.toStringAsFixed(0)}%$basisSuffix — no PR recorded');
     } else {
-      trailingText = formatWeightBoth(resolvedKg ?? 0);
+      final trailingText = set.weightMode == 'percentage'
+          ? '${set.percentage?.toStringAsFixed(0)}%$basisSuffix · ${formatWeightBoth(resolvedKg!)}'
+          : formatWeightBoth(resolvedKg ?? 0);
+      subtitle = Text(trailingText);
     }
 
     return CheckboxListTile(
@@ -139,7 +192,7 @@ class _SetTile extends StatelessWidget {
       value: set.completed,
       onChanged: (v) => onToggle(set.id, v ?? false),
       title: Text('${set.targetReps ?? '-'} reps'),
-      subtitle: Text(trailingText),
+      subtitle: subtitle,
     );
   }
 }
