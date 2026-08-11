@@ -38,9 +38,13 @@ class _NewWorkoutScreenState extends ConsumerState<NewWorkoutScreen> {
       _error = null;
     });
     try {
+      final typedTitle = _titleController.text.trim();
+      final title = typedTitle.isNotEmpty
+          ? typedTitle
+          : (ref.read(nextWorkoutNameProvider).value ?? 'Workout 1');
       final description = _descriptionController.text.trim();
       final id = await ref.read(workoutsProvider.notifier).createWorkout(
-            title: _titleController.text.trim(),
+            title: title,
             notes: description.isEmpty ? null : description,
             isPublic: _isPublic,
           );
@@ -55,6 +59,7 @@ class _NewWorkoutScreenState extends ConsumerState<NewWorkoutScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final defaultTitle = ref.watch(nextWorkoutNameProvider).value;
 
     return Scaffold(
       appBar: AppBar(title: const Text('NEW WORKOUT')),
@@ -73,12 +78,11 @@ class _NewWorkoutScreenState extends ConsumerState<NewWorkoutScreen> {
                       controller: _titleController,
                       autofocus: true,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
-                        labelText: 'Title (e.g. Day 1)',
+                      decoration: InputDecoration(
+                        labelText: 'Title',
+                        hintText: defaultTitle,
                       ),
                       textInputAction: TextInputAction.next,
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Required' : null,
                     ),
                     const SizedBox(height: 20),
                     TextFormField(

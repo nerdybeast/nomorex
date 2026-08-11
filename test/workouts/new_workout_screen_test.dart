@@ -39,6 +39,7 @@ void main() {
               return 'new-id';
             }),
           ),
+          nextWorkoutNameProvider.overrideWith((ref) async => 'Workout 3'),
         ],
         child: const MaterialApp(home: NewWorkoutScreen()),
       ),
@@ -48,18 +49,20 @@ void main() {
     expect(called, isFalse);
   });
 
-  testWidgets('tapping Save with a blank title does not create a workout', (tester) async {
-    var called = false;
+  testWidgets('tapping Save with a blank title falls back to the default name',
+      (tester) async {
+    String? capturedTitle;
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           workoutsProvider.overrideWith(
             () => _StubWorkoutsNotifier(({required title, notes, required isPublic}) async {
-              called = true;
+              capturedTitle = title;
               return 'new-id';
             }),
           ),
+          nextWorkoutNameProvider.overrideWith((ref) async => 'Workout 3'),
         ],
         child: const MaterialApp(home: NewWorkoutScreen()),
       ),
@@ -69,8 +72,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
-    expect(called, isFalse);
-    expect(find.text('Required'), findsOneWidget);
+    expect(capturedTitle, 'Workout 3');
   });
 
   testWidgets('tapping Save with a title creates the workout with entered fields',
@@ -90,6 +92,7 @@ void main() {
               return 'new-id';
             }),
           ),
+          nextWorkoutNameProvider.overrideWith((ref) async => 'Workout 3'),
         ],
         child: const MaterialApp(home: NewWorkoutScreen()),
       ),

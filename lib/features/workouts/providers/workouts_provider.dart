@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/workout.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/utils/sequential_naming.dart';
 
 part 'workouts_provider.g.dart';
 
@@ -104,4 +105,22 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
     ref.invalidateSelf();
     await future;
   }
+}
+
+/// "Workout N" where N is one past the highest numbered workout title the
+/// user has, across all their workouts (including ones materialized from a
+/// program), so a freed-up number can't collide with an existing title.
+@riverpod
+Future<String> nextWorkoutName(Ref ref) async {
+  ref.watch(authStateProvider);
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) return 'Workout 1';
+
+  final data = await Supabase.instance.client
+      .from('workouts')
+      .select('title')
+      .eq('user_id', userId);
+
+  final names = (data as List).map((e) => e['title'] as String);
+  return nextSequentialName(names, 'Workout');
 }
