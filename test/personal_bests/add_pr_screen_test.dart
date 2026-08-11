@@ -9,10 +9,14 @@ import 'package:nomorex/features/personal_bests/screens/add_pr_screen.dart';
 import 'package:nomorex/features/profile/providers/profile_provider.dart';
 
 const _backSquat = Exercise(id: 'e1', name: 'Back Squat', isPredefined: true);
+const _deadlift = Exercise(id: 'e2', name: 'Deadlift', isPredefined: true);
 
 class _StubExercisesNotifier extends ExercisesNotifier {
+  _StubExercisesNotifier(this._exercises);
+  final List<Exercise> _exercises;
+
   @override
-  Future<List<Exercise>> build() async => const [_backSquat];
+  Future<List<Exercise>> build() async => _exercises;
 }
 
 class _RecordingPersonalBestsNotifier extends PersonalBestsNotifier {
@@ -36,7 +40,7 @@ class _RecordingPersonalBestsNotifier extends PersonalBestsNotifier {
 
 Widget _wrap(String preference, void Function(double) onAddPr) => ProviderScope(
       overrides: [
-        exercisesProvider.overrideWith(() => _StubExercisesNotifier()),
+        exercisesProvider.overrideWith(() => _StubExercisesNotifier([_backSquat])),
         personalBestsProvider.overrideWith(() => _RecordingPersonalBestsNotifier(onAddPr)),
         unitPreferenceProvider.overrideWithValue(preference),
       ],
@@ -94,5 +98,51 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(captured, 100);
+  });
+
+  testWidgets('exerciseId pre-fills the matching exercise in the picker', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_backSquat, _deadlift])),
+        ],
+        child: const MaterialApp(home: AddPrScreen(exerciseId: 'e1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Back Squat'), findsOneWidget);
+  });
+
+  testWidgets('an unknown exerciseId leaves the picker blank without throwing',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_backSquat, _deadlift])),
+        ],
+        child: const MaterialApp(home: AddPrScreen(exerciseId: 'nonexistent')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Back Squat'), findsNothing);
+    expect(find.text('Deadlift'), findsNothing);
+  });
+
+  testWidgets('no exerciseId behaves like today: the picker starts blank', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_backSquat, _deadlift])),
+        ],
+        child: const MaterialApp(home: AddPrScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Back Squat'), findsNothing);
+    expect(find.text('Deadlift'), findsNothing);
   });
 }

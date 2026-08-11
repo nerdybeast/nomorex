@@ -107,7 +107,9 @@ GoRouter router(Ref ref) {
       ),
       GoRoute(
         path: AppConstants.routeAddPr,
-        builder: (_, _) => const AddPrScreen(),
+        builder: (_, state) => AddPrScreen(
+          exerciseId: state.uri.queryParameters['exerciseId'],
+        ),
       ),
       GoRoute(
         path: '/prs/:exerciseId/history',

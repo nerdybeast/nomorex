@@ -52,3 +52,47 @@ abstract class _$WorkoutsNotifier extends $AsyncNotifier<List<Workout>> {
     element.handleCreate(ref, build);
   }
 }
+
+/// "Workout N" where N is one past the highest numbered workout title the
+/// user has, across all their workouts (including ones materialized from a
+/// program), so a freed-up number can't collide with an existing title.
+
+@ProviderFor(nextWorkoutName)
+final nextWorkoutNameProvider = NextWorkoutNameProvider._();
+
+/// "Workout N" where N is one past the highest numbered workout title the
+/// user has, across all their workouts (including ones materialized from a
+/// program), so a freed-up number can't collide with an existing title.
+
+final class NextWorkoutNameProvider
+    extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
+    with $FutureModifier<String>, $FutureProvider<String> {
+  /// "Workout N" where N is one past the highest numbered workout title the
+  /// user has, across all their workouts (including ones materialized from a
+  /// program), so a freed-up number can't collide with an existing title.
+  NextWorkoutNameProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'nextWorkoutNameProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$nextWorkoutNameHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<String> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String> create(Ref ref) {
+    return nextWorkoutName(ref);
+  }
+}
+
+String _$nextWorkoutNameHash() => r'd60760d6bf1a6b70f0466247b7c39177d846a7b8';

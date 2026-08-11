@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/personal_best.dart';
 import '../../../features/auth/providers/auth_provider.dart';
+import '../../workouts/providers/one_rep_max_provider.dart';
 
 part 'personal_bests_provider.g.dart';
 
@@ -45,6 +46,7 @@ class PersonalBestsNotifier extends _$PersonalBestsNotifier {
     });
 
     ref.invalidateSelf();
+    ref.invalidate(oneRepMaxProvider);
     await future;
   }
 }
