@@ -10,6 +10,7 @@ import '../../personal_bests/providers/personal_bests_provider.dart';
 import '../../programs/providers/program_instances_list_provider.dart';
 import '../../programs/utils/program_progress.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -18,11 +19,17 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final prsAsync = ref.watch(personalBestsProvider);
     final instancesAsync = ref.watch(currentProgramInstancesProvider);
+    final unit = ref.watch(unitPreferenceProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('DASHBOARD'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'Profile',
+            onPressed: () => context.push(AppConstants.routeProfile),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',
@@ -90,7 +97,7 @@ class DashboardScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: PrCard(
                         exerciseName: pr.exerciseName,
-                        weightDisplay: formatWeightBoth(pr.weightKg),
+                        weightDisplay: formatWeightForPreference(pr.weightKg, unit),
                         reps: pr.reps,
                         dateDisplay: formatDate(pr.date),
                       ),

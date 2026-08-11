@@ -15,3 +15,11 @@ String formatWeightBoth(double weightKg) {
   final kg = weightKg.round();
   return '$lbs lbs / $kg kg';
 }
+
+/// Formats a weight stored in kg according to the user's unit preference —
+/// both units at once when the preference is 'both', otherwise just the one.
+String formatWeightForPreference(double weightKg, String preference) {
+  return preference == 'both'
+      ? formatWeightBoth(weightKg)
+      : formatWeight(weightKg, preference);
+}

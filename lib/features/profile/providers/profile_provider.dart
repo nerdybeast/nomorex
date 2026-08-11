@@ -37,8 +37,9 @@ class ProfileNotifier extends _$ProfileNotifier {
   }
 }
 
-/// Derived provider — returns the user's unit preference, defaulting to 'kg'.
+/// Derived provider — returns the user's unit preference ('kg', 'lbs', or
+/// 'both'), defaulting to 'both'.
 @Riverpod(keepAlive: true)
 String unitPreference(Ref ref) {
-  return ref.watch(profileProvider).asData?.value?.unitPreference ?? 'kg';
+  return ref.watch(profileProvider).asData?.value?.unitPreference ?? 'both';
 }

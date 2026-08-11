@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/weight_converter.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../../workouts/models/workout_exercise.dart';
 import '../../workouts/models/workout_set.dart';
 import '../providers/community_workout_detail_provider.dart';
@@ -13,6 +14,7 @@ class CommunityWorkoutDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(communityWorkoutDetailProvider(workoutId));
+    final unit = ref.watch(unitPreferenceProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -44,7 +46,7 @@ class CommunityWorkoutDetailScreen extends ConsumerWidget {
               Text(workout.notes!),
             ],
             const SizedBox(height: 16),
-            for (final ex in workout.exercises) _ExerciseCard(exercise: ex),
+            for (final ex in workout.exercises) _ExerciseCard(exercise: ex, unit: unit),
           ],
         ),
       ),
@@ -74,9 +76,10 @@ class _Badge extends StatelessWidget {
 }
 
 class _ExerciseCard extends StatelessWidget {
-  const _ExerciseCard({required this.exercise});
+  const _ExerciseCard({required this.exercise, required this.unit});
 
   final WorkoutExercise exercise;
+  final String unit;
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +96,7 @@ class _ExerciseCard extends StatelessWidget {
                 child: Text(exercise.notes!, style: Theme.of(context).textTheme.bodySmall),
               ),
             const SizedBox(height: 4),
-            for (final s in exercise.sets) _SetRow(set: s),
+            for (final s in exercise.sets) _SetRow(set: s, unit: unit),
           ],
         ),
       ),
@@ -102,9 +105,10 @@ class _ExerciseCard extends StatelessWidget {
 }
 
 class _SetRow extends StatelessWidget {
-  const _SetRow({required this.set});
+  const _SetRow({required this.set, required this.unit});
 
   final WorkoutSet set;
+  final String unit;
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +119,7 @@ class _SetRow extends StatelessWidget {
     if (set.weightMode == 'percentage') {
       text = '${set.targetReps ?? '-'} reps · ${set.percentage?.toStringAsFixed(0)}% 1RM';
     } else {
-      text = '${set.targetReps ?? '-'} reps · ${formatWeightBoth(set.absoluteWeightKg ?? 0)}';
+      text = '${set.targetReps ?? '-'} reps · ${formatWeightForPreference(set.absoluteWeightKg ?? 0, unit)}';
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

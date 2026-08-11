@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../exercises/providers/exercises_provider.dart';
+import '../../profile/providers/profile_provider.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../providers/one_rep_max_provider.dart';
@@ -19,6 +20,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(workoutDetailProvider(workoutId));
     final maxes = ref.watch(oneRepMaxProvider).asData?.value ?? const {};
+    final unit = ref.watch(unitPreferenceProvider);
     // The exercises the viewer themselves can see (predefined + their own
     // custom ones) — not necessarily every exercise referenced by this
     // workout, since a workout's owner may differ from the viewer for a
@@ -60,6 +62,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
               _ExerciseCard(
                 exercise: ex,
                 oneRepMaxes: maxes,
+                unit: unit,
                 viewerExerciseIds: viewerExerciseIds,
                 onToggle: (setId, value) => notifier.setCompleted(setId, value),
               ),
@@ -74,12 +77,14 @@ class _ExerciseCard extends StatelessWidget {
   const _ExerciseCard({
     required this.exercise,
     required this.oneRepMaxes,
+    required this.unit,
     required this.viewerExerciseIds,
     required this.onToggle,
   });
 
   final WorkoutExercise exercise;
   final Map<String, double> oneRepMaxes;
+  final String unit;
   final Set<String> viewerExerciseIds;
   final void Function(String setId, bool value) onToggle;
 
@@ -112,6 +117,7 @@ class _ExerciseCard extends StatelessWidget {
       set: s,
       basisExerciseId: basisId,
       oneRepMaxKg: oneRepMaxes[basisId],
+      unit: unit,
       canAddPr: viewerExerciseIds.contains(basisId),
       onToggle: onToggle,
     );
@@ -123,6 +129,7 @@ class _SetTile extends StatelessWidget {
     required this.set,
     required this.basisExerciseId,
     required this.oneRepMaxKg,
+    required this.unit,
     required this.canAddPr,
     required this.onToggle,
   });
@@ -130,6 +137,7 @@ class _SetTile extends StatelessWidget {
   final WorkoutSet set;
   final String basisExerciseId;
   final double? oneRepMaxKg;
+  final String unit;
   final bool canAddPr;
   final void Function(String setId, bool value) onToggle;
 
@@ -181,8 +189,8 @@ class _SetTile extends StatelessWidget {
       subtitle = Text('${set.percentage?.toStringAsFixed(0)}%$basisSuffix — no PR recorded');
     } else {
       final trailingText = set.weightMode == 'percentage'
-          ? '${set.percentage?.toStringAsFixed(0)}%$basisSuffix · ${formatWeightBoth(resolvedKg!)}'
-          : formatWeightBoth(resolvedKg ?? 0);
+          ? '${set.percentage?.toStringAsFixed(0)}%$basisSuffix · ${formatWeightForPreference(resolvedKg!, unit)}'
+          : formatWeightForPreference(resolvedKg ?? 0, unit);
       subtitle = Text(trailingText);
     }
 

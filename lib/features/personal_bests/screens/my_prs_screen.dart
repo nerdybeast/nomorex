@@ -7,6 +7,7 @@ import '../../../shared/widgets/pr_card.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../profile/providers/profile_provider.dart';
 
 class MyPrsScreen extends ConsumerStatefulWidget {
   const MyPrsScreen({super.key});
@@ -22,6 +23,7 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
   Widget build(BuildContext context) {
     final grouped = ref.watch(myPrsGroupedProvider);
     final prsAsync = ref.watch(personalBestsProvider);
+    final unit = ref.watch(unitPreferenceProvider);
 
     // Filter by search query
     final filtered = _searchQuery.isEmpty
@@ -33,7 +35,16 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
           );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MY PRS')),
+      appBar: AppBar(
+        title: const Text('MY PRS'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'Profile',
+            onPressed: () => context.push(AppConstants.routeProfile),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
@@ -85,7 +96,7 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: PrCard(
                         exerciseName: exerciseName,
-                        weightDisplay: formatWeightBoth(best.weightKg),
+                        weightDisplay: formatWeightForPreference(best.weightKg, unit),
                         reps: best.reps,
                         dateDisplay: formatDate(best.date),
                         onTap: () => context.push(AppConstants.routePrHistory(best.exerciseId)),

@@ -141,14 +141,37 @@ void main() {
   });
 
   testWidgets(
-      'Add sets (weight) unit toggle lets weight be entered in kg even when '
-      'the profile preference is lbs', (tester) async {
+      'Add sets (weight) shows a static unit chip, not a toggle, when the '
+      'profile preference is fixed to lbs', (tester) async {
+    await tester.pumpWidget(
+      _wrap(SetEditor(
+        sets: const [],
+        unit: 'lbs',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (_, _, _) {},
+        onDeleteSet: (_) {},
+      )),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add sets (weight)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Weight (lbs)'), findsOneWidget);
+    // No 'kg' segment to switch to — nothing to choose when the preference
+    // is fixed to a single unit.
+    expect(find.text('kg'), findsNothing);
+  });
+
+  testWidgets(
+      'Add sets (weight) unit toggle lets weight be entered in either unit '
+      "when the profile preference is 'both'", (tester) async {
     double? capturedWeightKg;
 
     await tester.pumpWidget(
       _wrap(SetEditor(
         sets: const [],
-        unit: 'lbs',
+        unit: 'both',
         onAddPercentageSets: (_) {},
         onAddAbsoluteSets: (_, _, weightKg) => capturedWeightKg = weightKg,
         onDeleteSet: (_) {},
@@ -157,6 +180,12 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Add sets (weight)'));
+    await tester.pumpAndSettle();
+
+    // Defaults to kg when the preference is 'both'.
+    expect(find.text('Weight (kg)'), findsOneWidget);
+
+    await tester.tap(find.text('lbs'));
     await tester.pumpAndSettle();
 
     expect(find.text('Weight (lbs)'), findsOneWidget);

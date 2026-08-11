@@ -2,7 +2,7 @@ class Profile {
   const Profile({required this.id, required this.unitPreference});
 
   final String id;
-  final String unitPreference; // 'kg' or 'lbs'
+  final String unitPreference; // 'kg', 'lbs', or 'both'
 
   factory Profile.fromJson(Map<String, dynamic> json) => Profile(
         id: json['id'] as String,

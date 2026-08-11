@@ -4,6 +4,7 @@ import '../providers/pr_history_provider.dart';
 import '../../../shared/widgets/pr_card.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../profile/providers/profile_provider.dart';
 
 class PrHistoryScreen extends ConsumerWidget {
   const PrHistoryScreen({super.key, required this.exerciseId});
@@ -12,6 +13,7 @@ class PrHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final history = ref.watch(prHistoryProvider(exerciseId));
+    final unit = ref.watch(unitPreferenceProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -28,7 +30,7 @@ class PrHistoryScreen extends ConsumerWidget {
                     padding: const EdgeInsets.only(bottom: 8),
                     child: PrCard(
                       exerciseName: pr.exerciseName,
-                      weightDisplay: formatWeightBoth(pr.weightKg),
+                      weightDisplay: formatWeightForPreference(pr.weightKg, unit),
                       reps: pr.reps,
                       dateDisplay: formatDate(pr.date),
                     ),

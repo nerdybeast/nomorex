@@ -21,7 +21,16 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('COMMUNITY')),
+      appBar: AppBar(
+        title: const Text('COMMUNITY'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'Profile',
+            onPressed: () => context.push(AppConstants.routeProfile),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(

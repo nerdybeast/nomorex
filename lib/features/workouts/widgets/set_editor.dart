@@ -4,6 +4,7 @@ import '../../../core/theme/dark_theme.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../shared/models/editable_set_row.dart';
 import '../../../shared/widgets/number_stepper_field.dart';
+import '../../../shared/widgets/unit_toggle.dart';
 import '../../exercises/models/exercise.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../utils/parsed_set.dart';
@@ -22,6 +23,7 @@ class SetEditor extends ConsumerWidget {
   });
 
   final List<EditableSetRow> sets;
+  /// The user's unit preference ('kg', 'lbs', or 'both').
   final String unit;
   final void Function(List<ParsedSet>) onAddPercentageSets;
   final void Function(int sets, int reps, double weightKg) onAddAbsoluteSets;
@@ -143,7 +145,7 @@ class SetEditor extends ConsumerWidget {
     var sets = 1;
     var reps = 1;
     var weightDisplay = 0.0;
-    var dialogUnit = unit;
+    var dialogUnit = unit == 'both' ? 'kg' : unit;
     final tokens = Theme.of(context).extension<NomorexDarkTokens>();
 
     await showDialog<void>(
@@ -183,23 +185,16 @@ class SetEditor extends ConsumerWidget {
               Row(
                 children: [
                   const Expanded(child: Text('Unit')),
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'kg', label: Text('kg')),
-                      ButtonSegment(value: 'lbs', label: Text('lbs')),
-                    ],
-                    selected: {dialogUnit},
-                    onSelectionChanged: (selection) => setState(() {
-                      final newUnit = selection.first;
+                  UnitToggle(
+                    preference: unit,
+                    value: dialogUnit,
+                    onChanged: (newUnit) => setState(() {
                       if (newUnit == dialogUnit) return;
                       weightDisplay = newUnit == 'lbs'
                           ? kgToLbs(weightDisplay)
                           : lbsToKg(weightDisplay);
                       dialogUnit = newUnit;
                     }),
-                    style: const ButtonStyle(
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
                   ),
                 ],
               ),
@@ -243,6 +238,7 @@ class SetEditor extends ConsumerWidget {
         for (final s in sets)
           _SetRow(
             set: s,
+            unit: unit,
             onDelete: () => onDeleteSet(s.id),
           ),
         Row(
@@ -267,10 +263,12 @@ class SetEditor extends ConsumerWidget {
 class _SetRow extends StatelessWidget {
   const _SetRow({
     required this.set,
+    required this.unit,
     required this.onDelete,
   });
 
   final EditableSetRow set;
+  final String unit;
   final VoidCallback onDelete;
 
   @override
@@ -279,8 +277,8 @@ class _SetRow extends StatelessWidget {
     final valueLabel = isPct
         ? '${set.percentage?.toStringAsFixed(0) ?? '?'}%'
         : (set.absoluteWeightKg != null
-            ? formatWeightBoth(set.absoluteWeightKg!)
-            : '? lbs / ? kg');
+            ? formatWeightForPreference(set.absoluteWeightKg!, unit)
+            : (unit == 'both' ? '? lbs / ? kg' : '? $unit'));
     final basisLabel = set.basisExerciseId != null
         ? (set.basisExerciseName ?? '1RM')
         : '1RM';
