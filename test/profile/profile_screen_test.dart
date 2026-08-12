@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/features/auth/providers/auth_provider.dart';
@@ -9,6 +10,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 const _testUser = User(
   id: 'u1',
+  appMetadata: {},
+  userMetadata: {},
+  aud: 'authenticated',
+  email: 'lifter@example.com',
+  createdAt: '2026-01-15T00:00:00Z',
+);
+
+const _longUuid = 'efc6e9c2-6585-42a1-a5c2-fcac5c6c1234';
+
+const _longIdUser = User(
+  id: _longUuid,
   appMetadata: {},
   userMetadata: {},
   aud: 'authenticated',
@@ -33,9 +45,14 @@ class _TestProfileNotifier extends ProfileNotifier {
   }
 }
 
-Widget _wrap(Profile profile, {void Function(String)? onSetUnitPreference}) => ProviderScope(
+Widget _wrap(
+  Profile profile, {
+  void Function(String)? onSetUnitPreference,
+  User user = _testUser,
+}) =>
+    ProviderScope(
       overrides: [
-        currentAuthUserProvider.overrideWithValue(_testUser),
+        currentAuthUserProvider.overrideWithValue(user),
         profileProvider.overrideWith(
           () => _TestProfileNotifier(profile, onSetUnitPreference: onSetUnitPreference),
         ),
@@ -76,5 +93,45 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(captured, 'kg');
+  });
+
+  testWidgets('shows the full user id without truncation', (tester) async {
+    await tester.pumpWidget(
+      _wrap(const Profile(id: _longUuid, unitPreference: 'both'), user: _longIdUser),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(_longUuid), findsOneWidget);
+    expect(find.byType(SelectableText), findsWidgets);
+    expect(
+      tester
+          .widgetList<Text>(find.byType(Text))
+          .where((t) => t.overflow == TextOverflow.ellipsis),
+      isEmpty,
+    );
+  });
+
+  testWidgets('copy button copies the user id to the clipboard', (tester) async {
+    final copiedTexts = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform,
+        (call) async {
+      if (call.method == 'Clipboard.setData') {
+        copiedTexts.add((call.arguments as Map)['text'] as String);
+      }
+      return null;
+    });
+    addTearDown(() =>
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
+    await tester.pumpWidget(
+      _wrap(const Profile(id: _longUuid, unitPreference: 'both'), user: _longIdUser),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.copy_rounded));
+    await tester.pump();
+
+    expect(copiedTexts, [_longUuid]);
+    expect(find.byType(SnackBar), findsOneWidget);
   });
 }
