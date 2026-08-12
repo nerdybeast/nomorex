@@ -12,6 +12,12 @@ class Workout {
     this.isPublic = false,
     this.programInstanceId,
     this.programDayId,
+    this.status = 'not_started',
+    this.startedAt,
+    this.pausedAt,
+    this.totalPausedSeconds = 0,
+    this.finishedAt,
+    this.sessionNotes,
   });
 
   final String id;
@@ -24,6 +30,14 @@ class Workout {
   final DateTime updatedAt;
   final String? programInstanceId;
   final String? programDayId;
+
+  /// 'not_started' | 'in_progress' | 'paused' | 'finished'.
+  final String status;
+  final DateTime? startedAt;
+  final DateTime? pausedAt;
+  final int totalPausedSeconds;
+  final DateTime? finishedAt;
+  final String? sessionNotes;
 
   factory Workout.fromJson(Map<String, dynamic> json) {
     final rawExercises = (json['workout_exercises'] as List?) ?? const [];
@@ -42,6 +56,13 @@ class Workout {
       isPublic: (json['is_public'] as bool?) ?? false,
       programInstanceId: json['program_instance_id'] as String?,
       programDayId: json['program_day_id'] as String?,
+      status: json['status'] as String? ?? 'not_started',
+      startedAt: json['started_at'] != null ? DateTime.parse(json['started_at'] as String) : null,
+      pausedAt: json['paused_at'] != null ? DateTime.parse(json['paused_at'] as String) : null,
+      totalPausedSeconds: (json['total_paused_seconds'] as int?) ?? 0,
+      finishedAt:
+          json['finished_at'] != null ? DateTime.parse(json['finished_at'] as String) : null,
+      sessionNotes: json['session_notes'] as String?,
     );
   }
 }

@@ -6,6 +6,8 @@ import 'package:nomorex/features/personal_bests/models/personal_best.dart';
 import 'package:nomorex/features/personal_bests/providers/personal_bests_provider.dart';
 import 'package:nomorex/features/programs/models/program_instance.dart';
 import 'package:nomorex/features/programs/providers/program_instances_list_provider.dart';
+import 'package:nomorex/features/workouts/models/workout.dart';
+import 'package:nomorex/features/workouts/providers/in_progress_workouts_provider.dart';
 
 class _StubPersonalBestsNotifier extends PersonalBestsNotifier {
   @override
@@ -24,6 +26,18 @@ class _StubProgramInstancesNotifier extends CurrentProgramInstancesNotifier {
   Future<List<ProgramInstance>> build() async => _instances;
 }
 
+class _EmptyInProgressWorkoutsNotifier extends InProgressWorkoutsNotifier {
+  @override
+  Future<List<Workout>> build() async => [];
+}
+
+class _StubInProgressWorkoutsNotifier extends InProgressWorkoutsNotifier {
+  _StubInProgressWorkoutsNotifier(this._workouts);
+  final List<Workout> _workouts;
+  @override
+  Future<List<Workout>> build() async => _workouts;
+}
+
 void main() {
   testWidgets('shows empty state when no programs are in progress', (tester) async {
     await tester.pumpWidget(
@@ -31,6 +45,7 @@ void main() {
         overrides: [
           personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
           currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -56,6 +71,7 @@ void main() {
           personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
           currentProgramInstancesProvider
               .overrideWith(() => _StubProgramInstancesNotifier([instance])),
+          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -82,6 +98,7 @@ void main() {
           personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
           currentProgramInstancesProvider
               .overrideWith(() => _StubProgramInstancesNotifier([instance])),
+          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -89,5 +106,76 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Upcoming'), findsOneWidget);
+  });
+
+  testWidgets('shows empty state when no workouts are in progress', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
+          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('No workouts currently in progress.'), findsOneWidget);
+  });
+
+  testWidgets('shows a card for an in-progress workout', (tester) async {
+    final workout = Workout(
+      id: 'w1',
+      userId: 'u1',
+      title: 'Push Day',
+      date: DateTime(2026, 8, 11),
+      updatedAt: DateTime(2026, 8, 11),
+      status: 'in_progress',
+      startedAt: DateTime(2026, 8, 11, 14, 45),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
+          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+          inProgressWorkoutsProvider.overrideWith(() => _StubInProgressWorkoutsNotifier([workout])),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Push Day'), findsOneWidget);
+    expect(find.textContaining('In progress — started'), findsOneWidget);
+  });
+
+  testWidgets('shows a card for a paused workout', (tester) async {
+    final workout = Workout(
+      id: 'w1',
+      userId: 'u1',
+      title: 'Push Day',
+      date: DateTime(2026, 8, 11),
+      updatedAt: DateTime(2026, 8, 11),
+      status: 'paused',
+      startedAt: DateTime(2026, 8, 11, 14, 45),
+      pausedAt: DateTime(2026, 8, 11, 15, 0),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
+          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+          inProgressWorkoutsProvider.overrideWith(() => _StubInProgressWorkoutsNotifier([workout])),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Push Day'), findsOneWidget);
+    expect(find.textContaining('Paused — started'), findsOneWidget);
   });
 }

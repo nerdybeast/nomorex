@@ -109,6 +109,44 @@ void main() {
     expect(w.updatedAt, DateTime.parse('2026-07-02T08:30:00Z'));
   });
 
+  test('Workout.fromJson defaults status to not_started when absent', () {
+    final w = Workout.fromJson({
+      'id': 'w1',
+      'user_id': 'u1',
+      'title': 'Day 1',
+      'date': '2026-06-28',
+      'updated_at': '2026-06-28T00:00:00Z',
+    });
+    expect(w.status, 'not_started');
+    expect(w.startedAt, isNull);
+    expect(w.pausedAt, isNull);
+    expect(w.finishedAt, isNull);
+    expect(w.totalPausedSeconds, 0);
+    expect(w.sessionNotes, isNull);
+  });
+
+  test('Workout.fromJson parses session-tracking fields', () {
+    final w = Workout.fromJson({
+      'id': 'w1',
+      'user_id': 'u1',
+      'title': 'Day 1',
+      'date': '2026-06-28',
+      'updated_at': '2026-06-28T00:00:00Z',
+      'status': 'paused',
+      'started_at': '2026-06-28T08:00:00Z',
+      'paused_at': '2026-06-28T08:30:00Z',
+      'total_paused_seconds': 120,
+      'finished_at': null,
+      'session_notes': 'Felt heavy today',
+    });
+    expect(w.status, 'paused');
+    expect(w.startedAt, DateTime.parse('2026-06-28T08:00:00Z'));
+    expect(w.pausedAt, DateTime.parse('2026-06-28T08:30:00Z'));
+    expect(w.totalPausedSeconds, 120);
+    expect(w.finishedAt, isNull);
+    expect(w.sessionNotes, 'Felt heavy today');
+  });
+
   test('WorkoutSet.fromJson parses basis_exercise_id and its joined name', () {
     final s = WorkoutSet.fromJson({
       'id': 's1',

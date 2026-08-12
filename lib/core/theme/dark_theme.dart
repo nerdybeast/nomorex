@@ -10,6 +10,8 @@ class NomorexDarkTokens extends ThemeExtension<NomorexDarkTokens> {
     required this.stepperValueDecoration,
     required this.stepperDecrementStyle,
     required this.stepperIncrementStyle,
+    required this.secondaryButtonStyle,
+    required this.dangerButtonStyle,
   });
 
   final TextStyle overline;
@@ -23,6 +25,18 @@ class NomorexDarkTokens extends ThemeExtension<NomorexDarkTokens> {
   final ButtonStyle stepperDecrementStyle;
   final ButtonStyle stepperIncrementStyle;
 
+  /// Same shape/size as the themed [FilledButton] (full-width, 56px,
+  /// 4px-radius corners), but blue instead of the orange primary — for a
+  /// secondary/alternate action sitting next to a primary [FilledButton]
+  /// (e.g. "Pause" beside "Finish"), where an action still needs equal
+  /// visual weight rather than the deliberately lighter [OutlinedButton].
+  final ButtonStyle secondaryButtonStyle;
+
+  /// Same shape/size again, but red — for a destructive/irreversible action
+  /// (e.g. "Discard"), distinct from [ColorScheme.error] which this theme
+  /// uses for form-validation messaging, not buttons.
+  final ButtonStyle dangerButtonStyle;
+
   @override
   NomorexDarkTokens copyWith({
     TextStyle? overline,
@@ -30,6 +44,8 @@ class NomorexDarkTokens extends ThemeExtension<NomorexDarkTokens> {
     InputDecoration? stepperValueDecoration,
     ButtonStyle? stepperDecrementStyle,
     ButtonStyle? stepperIncrementStyle,
+    ButtonStyle? secondaryButtonStyle,
+    ButtonStyle? dangerButtonStyle,
   }) {
     return NomorexDarkTokens(
       overline: overline ?? this.overline,
@@ -37,6 +53,8 @@ class NomorexDarkTokens extends ThemeExtension<NomorexDarkTokens> {
       stepperValueDecoration: stepperValueDecoration ?? this.stepperValueDecoration,
       stepperDecrementStyle: stepperDecrementStyle ?? this.stepperDecrementStyle,
       stepperIncrementStyle: stepperIncrementStyle ?? this.stepperIncrementStyle,
+      secondaryButtonStyle: secondaryButtonStyle ?? this.secondaryButtonStyle,
+      dangerButtonStyle: dangerButtonStyle ?? this.dangerButtonStyle,
     );
   }
 
@@ -59,6 +77,15 @@ class AppDarkTheme {
   static const _fg1 = Color(0xFFF0F0F2);
   static const _fg3 = Color(0xFF9898A6);
   static const _primary = Color(0xFFFC5201);
+  // Not ColorScheme.secondary (that's deliberately pinned to _primary above
+  // so untouched stock M3 widgets don't fall back to the Material baseline
+  // purple/teal) — this is specifically the color for a secondary/alternate
+  // *button*, e.g. "Pause" next to a primary "Finish" FilledButton.
+  static const _secondaryButton = Color(0xFF2563EB);
+  // A distinct red for destructive/"dangerous" action buttons (e.g.
+  // "Discard") — separate from _error/_errorText below, which are for
+  // form-validation messaging, not buttons.
+  static const _danger = Color(0xFFB91C1C);
   static const _error = Color(0xFFE74C3C);
   static const _errorText = Color(0xFFFF6F61);
   // "Orange background tint" from the design system's card active/selected
@@ -253,6 +280,20 @@ class AppDarkTheme {
             backgroundColor: _primary,
             foregroundColor: Colors.white,
             shape: const CircleBorder(),
+          ),
+          secondaryButtonStyle: FilledButton.styleFrom(
+            backgroundColor: _secondaryButton,
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(56),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          dangerButtonStyle: FilledButton.styleFrom(
+            backgroundColor: _danger,
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(56),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+            textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
       ],

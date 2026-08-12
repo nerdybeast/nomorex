@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/dark_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../models/workout.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../providers/one_rep_max_provider.dart';
 import '../providers/workout_detail_provider.dart';
 import '../utils/set_resolver.dart';
+import '../widgets/elapsed_timer.dart';
 
 class WorkoutDetailScreen extends ConsumerWidget {
   const WorkoutDetailScreen({super.key, required this.workoutId});
@@ -29,15 +32,19 @@ class WorkoutDetailScreen extends ConsumerWidget {
         ref.watch(exercisesProvider).asData?.value.map((e) => e.id).toSet() ?? const <String>{};
     final notifier = ref.read(workoutDetailProvider(workoutId).notifier);
     final colorScheme = Theme.of(context).colorScheme;
+    final workout = detail.asData?.value;
+    final showEditIcon = workout == null || workout.status == 'not_started';
+    final isBusy = detail.isLoading;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('WORKOUT'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => context.push(AppConstants.routeWorkoutEdit(workoutId)),
-          ),
+          if (showEditIcon)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => context.push(AppConstants.routeWorkoutEdit(workoutId)),
+            ),
         ],
       ),
       body: detail.when(
@@ -58,17 +65,136 @@ class WorkoutDetailScreen extends ConsumerWidget {
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 16),
+            _StatusSection(
+              workout: workout,
+              notifier: notifier,
+              isBusy: isBusy,
+            ),
+            const SizedBox(height: 16),
             for (final ex in workout.exercises)
               _ExerciseCard(
                 exercise: ex,
                 oneRepMaxes: maxes,
                 unit: unit,
                 viewerExerciseIds: viewerExerciseIds,
+                interactive: workout.status == 'in_progress' || workout.status == 'paused',
                 onToggle: (setId, value) => notifier.setCompleted(setId, value),
               ),
+            if (workout.status == 'in_progress' || workout.status == 'paused') ...[
+              const SizedBox(height: 16),
+              _StatusActions(
+                workout: workout,
+                notifier: notifier,
+                isBusy: isBusy,
+                workoutId: workoutId,
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+class _StatusSection extends StatelessWidget {
+  const _StatusSection({
+    required this.workout,
+    required this.notifier,
+    required this.isBusy,
+  });
+
+  final Workout workout;
+  final WorkoutDetailNotifier notifier;
+  final bool isBusy;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (workout.status) {
+      case 'in_progress':
+      case 'paused':
+        return ElapsedTimer(
+          startedAt: workout.startedAt!,
+          totalPausedSeconds: workout.totalPausedSeconds,
+          pausedAt: workout.pausedAt,
+        );
+      case 'finished':
+        final colorScheme = Theme.of(context).colorScheme;
+        final labelStyle =
+            Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Duration', style: labelStyle),
+            ElapsedTimer(
+              startedAt: workout.startedAt!,
+              totalPausedSeconds: workout.totalPausedSeconds,
+              finishedAt: workout.finishedAt,
+            ),
+            if (workout.sessionNotes != null && workout.sessionNotes!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text('Notes', style: labelStyle),
+              Text(workout.sessionNotes!),
+            ],
+          ],
+        );
+      default: // 'not_started'
+        return FilledButton(
+          onPressed: isBusy ? null : () => notifier.startWorkout(),
+          child: const Text('Start Workout'),
+        );
+    }
+  }
+}
+
+// Pause/Resume + Finish, pinned below all the workout's content rather than
+// next to the timer, so they're reachable at a consistent spot regardless of
+// how many exercises/sets are in the workout.
+class _StatusActions extends StatelessWidget {
+  const _StatusActions({
+    required this.workout,
+    required this.notifier,
+    required this.isBusy,
+    required this.workoutId,
+  });
+
+  final Workout workout;
+  final WorkoutDetailNotifier notifier;
+  final bool isBusy;
+  final String workoutId;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
+    return Row(
+      children: [
+        Expanded(
+          child: FilledButton(
+            style: tokens?.secondaryButtonStyle,
+            onPressed: isBusy
+                ? null
+                : () => workout.status == 'in_progress'
+                    ? notifier.pauseWorkout()
+                    : notifier.resumeWorkout(),
+            child: Text(workout.status == 'in_progress' ? 'Pause' : 'Resume'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: FilledButton(
+            onPressed: isBusy
+                ? null
+                : () async {
+                    if (workout.status == 'in_progress') {
+                      await notifier.pauseWorkout();
+                    }
+                    if (context.mounted) {
+                      context.push(AppConstants.routeWorkoutFinish(workoutId));
+                    }
+                  },
+            child: const Text('Finish'),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -79,6 +205,7 @@ class _ExerciseCard extends StatelessWidget {
     required this.oneRepMaxes,
     required this.unit,
     required this.viewerExerciseIds,
+    required this.interactive,
     required this.onToggle,
   });
 
@@ -86,7 +213,8 @@ class _ExerciseCard extends StatelessWidget {
   final Map<String, double> oneRepMaxes;
   final String unit;
   final Set<String> viewerExerciseIds;
-  final void Function(String setId, bool value) onToggle;
+  final bool interactive;
+  final void Function(String setId, bool value)? onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +247,7 @@ class _ExerciseCard extends StatelessWidget {
       oneRepMaxKg: oneRepMaxes[basisId],
       unit: unit,
       canAddPr: viewerExerciseIds.contains(basisId),
+      interactive: interactive,
       onToggle: onToggle,
     );
   }
@@ -131,6 +260,7 @@ class _SetTile extends StatelessWidget {
     required this.oneRepMaxKg,
     required this.unit,
     required this.canAddPr,
+    required this.interactive,
     required this.onToggle,
   });
 
@@ -139,7 +269,8 @@ class _SetTile extends StatelessWidget {
   final double? oneRepMaxKg;
   final String unit;
   final bool canAddPr;
-  final void Function(String setId, bool value) onToggle;
+  final bool interactive;
+  final void Function(String setId, bool value)? onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +329,7 @@ class _SetTile extends StatelessWidget {
       dense: true,
       controlAffinity: ListTileControlAffinity.leading,
       value: set.completed,
-      onChanged: (v) => onToggle(set.id, v ?? false),
+      onChanged: interactive ? (v) => onToggle?.call(set.id, v ?? false) : null,
       title: Text('${set.targetReps ?? '-'} reps'),
       subtitle: subtitle,
     );

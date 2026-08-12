@@ -19,6 +19,7 @@ import 'features/workouts/screens/workouts_screen.dart';
 import 'features/workouts/screens/new_workout_screen.dart';
 import 'features/workouts/screens/edit_workout_screen.dart';
 import 'features/workouts/screens/workout_detail_screen.dart';
+import 'features/workouts/screens/finish_workout_screen.dart';
 import 'features/community/screens/community_screen.dart';
 import 'features/community/screens/community_workout_detail_screen.dart';
 import 'features/programs/screens/programs_screen.dart';
@@ -124,6 +125,11 @@ GoRouter router(Ref ref) {
         path: '/workouts/:id/edit',
         builder: (_, state) =>
             EditWorkoutScreen(workoutId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/workouts/:id/finish',
+        builder: (_, state) =>
+            FinishWorkoutScreen(workoutId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/workouts/:id',

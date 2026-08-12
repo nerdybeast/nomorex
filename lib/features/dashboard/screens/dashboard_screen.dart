@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/pr_card.dart';
 import '../../../shared/widgets/program_instance_card.dart';
+import '../../../shared/widgets/workout_in_progress_card.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../personal_bests/providers/personal_bests_provider.dart';
 import '../../programs/providers/program_instances_list_provider.dart';
 import '../../programs/utils/program_progress.dart';
+import '../../workouts/providers/in_progress_workouts_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 
@@ -19,6 +21,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final prsAsync = ref.watch(personalBestsProvider);
     final instancesAsync = ref.watch(currentProgramInstancesProvider);
+    final inProgressWorkoutsAsync = ref.watch(inProgressWorkoutsProvider);
     final unit = ref.watch(unitPreferenceProvider);
 
     return Scaffold(
@@ -40,6 +43,37 @@ class DashboardScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Text('WORKOUTS IN PROGRESS', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          inProgressWorkoutsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text(
+              'Failed to load workouts: $e',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            data: (workouts) {
+              if (workouts.isEmpty) {
+                return const Text('No workouts currently in progress.');
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final workout in workouts)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: WorkoutInProgressCard(
+                        title: workout.title,
+                        statusDisplay: workout.status == 'paused'
+                            ? 'Paused — started ${formatTime(workout.startedAt!)}'
+                            : 'In progress — started ${formatTime(workout.startedAt!)}',
+                        onTap: () => context.push(AppConstants.routeWorkoutDetail(workout.id)),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 24),
           Text('CURRENT PROGRAMS', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           instancesAsync.when(

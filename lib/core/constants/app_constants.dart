@@ -18,6 +18,7 @@ class AppConstants {
   static const String routeWorkoutNew = '/workouts/new';
   static String routeWorkoutDetail(String id) => '/workouts/$id';
   static String routeWorkoutEdit(String id) => '/workouts/$id/edit';
+  static String routeWorkoutFinish(String id) => '/workouts/$id/finish';
 
   static const String routeCommunity = '/shell/community';
   static String routeCommunityWorkoutDetail(String id) => '/community/$id';

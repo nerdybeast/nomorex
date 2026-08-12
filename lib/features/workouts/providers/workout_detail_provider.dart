@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/workout.dart';
 import '../utils/parsed_set.dart';
 import '../../auth/providers/auth_provider.dart';
+import 'in_progress_workouts_provider.dart';
 import 'workouts_provider.dart';
 
 part 'workout_detail_provider.g.dart';
@@ -139,6 +140,37 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
         .from('workouts')
         .update({'notes': (description != null && description.isEmpty) ? null : description})
         .eq('id', workoutId);
+    await _refresh();
+  }
+
+  Future<void> startWorkout() async {
+    await _db.rpc('start_workout_session', params: {'p_workout_id': workoutId});
+    ref.invalidate(inProgressWorkoutsProvider);
+    await _refresh();
+  }
+
+  Future<void> pauseWorkout() async {
+    await _db.rpc('pause_workout_session', params: {'p_workout_id': workoutId});
+    await _refresh();
+  }
+
+  Future<void> resumeWorkout() async {
+    await _db.rpc('resume_workout_session', params: {'p_workout_id': workoutId});
+    await _refresh();
+  }
+
+  Future<void> finishWorkout({String? sessionNotes}) async {
+    await _db.rpc('finish_workout_session', params: {
+      'p_workout_id': workoutId,
+      'p_session_notes': sessionNotes,
+    });
+    ref.invalidate(inProgressWorkoutsProvider);
+    await _refresh();
+  }
+
+  Future<void> discardSession() async {
+    await _db.rpc('discard_workout_session', params: {'p_workout_id': workoutId});
+    ref.invalidate(inProgressWorkoutsProvider);
     await _refresh();
   }
 }
