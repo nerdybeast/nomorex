@@ -19,6 +19,24 @@ class _EmptyProgramInstancesNotifier extends CurrentProgramInstancesNotifier {
   Future<List<ProgramInstance>> build() async => [];
 }
 
+class _RecordingProgramsNotifier extends ProgramsNotifier {
+  _RecordingProgramsNotifier(this.onRefresh);
+  final VoidCallback onRefresh;
+  @override
+  Future<List<Program>> build() async => const [];
+  @override
+  Future<void> refresh() async => onRefresh();
+}
+
+class _RecordingArchivedProgramsNotifier extends ArchivedProgramsNotifier {
+  _RecordingArchivedProgramsNotifier(this.onRefresh);
+  final VoidCallback onRefresh;
+  @override
+  Future<List<Program>> build() async => const [];
+  @override
+  Future<void> refresh() async => onRefresh();
+}
+
 Program _program(String id, String name, {String? description}) => Program(
       id: id,
       userId: 'u1',
@@ -115,5 +133,57 @@ void main() {
     await tester.enterText(find.byType(TextField), 'nonexistent');
     await tester.pumpAndSettle();
     expect(find.text('No programs match your search.'), findsOneWidget);
+  });
+
+  testWidgets('tapping the refresh icon refreshes the active programs list', (tester) async {
+    var refreshed = false;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          programsProvider.overrideWith(() => _RecordingProgramsNotifier(() => refreshed = true)),
+          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+        ],
+        child: const MaterialApp(home: ProgramsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.pumpAndSettle();
+
+    expect(refreshed, isTrue);
+  });
+
+  testWidgets('tapping the refresh icon while viewing archived refreshes the archived list', (
+    tester,
+  ) async {
+    var activeRefreshed = false;
+    var archivedRefreshed = false;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          programsProvider.overrideWith(
+            () => _RecordingProgramsNotifier(() => activeRefreshed = true),
+          ),
+          archivedProgramsProvider.overrideWith(
+            () => _RecordingArchivedProgramsNotifier(() => archivedRefreshed = true),
+          ),
+          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+        ],
+        child: const MaterialApp(home: ProgramsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.archive_outlined));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.pumpAndSettle();
+
+    expect(archivedRefreshed, isTrue);
+    expect(activeRefreshed, isFalse);
   });
 }

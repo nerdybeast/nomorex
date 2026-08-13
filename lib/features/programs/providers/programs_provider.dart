@@ -66,6 +66,11 @@ class ProgramsNotifier extends _$ProgramsNotifier {
     ref.invalidateSelf();
     await future;
   }
+
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+    await future;
+  }
 }
 
 /// Mirrors [ProgramsNotifier] but surfaces the archived list, so a user can
@@ -91,6 +96,11 @@ class ArchivedProgramsNotifier extends _$ArchivedProgramsNotifier {
     return (data as List)
         .map((e) => Program.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+    await future;
   }
 }
 

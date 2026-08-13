@@ -26,4 +26,9 @@ class CommunityWorkoutsNotifier extends _$CommunityWorkoutsNotifier {
         .map((e) => Workout.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+    await future;
+  }
 }

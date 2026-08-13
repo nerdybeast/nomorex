@@ -25,6 +25,19 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
         title: const Text('WORKOUTS'),
         actions: [
           IconButton(
+            icon: workoutsAsync.isRefreshing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+            tooltip: 'Refresh',
+            onPressed: workoutsAsync.isRefreshing
+                ? null
+                : () => ref.read(workoutsProvider.notifier).refresh(),
+          ),
+          IconButton(
             icon: const Icon(Icons.person_outline),
             tooltip: 'Profile',
             onPressed: () => context.push(AppConstants.routeProfile),

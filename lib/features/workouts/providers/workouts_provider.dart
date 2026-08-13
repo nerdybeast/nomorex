@@ -105,6 +105,11 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
     ref.invalidateSelf();
     await future;
   }
+
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+    await future;
+  }
 }
 
 /// "Workout N" where N is one past the highest numbered workout title the

@@ -11,7 +11,6 @@ import '../../personal_bests/providers/personal_bests_provider.dart';
 import '../../programs/providers/program_instances_list_provider.dart';
 import '../../programs/utils/program_progress.dart';
 import '../../workouts/providers/in_progress_workouts_provider.dart';
-import '../../auth/providers/auth_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -23,20 +22,35 @@ class DashboardScreen extends ConsumerWidget {
     final instancesAsync = ref.watch(currentProgramInstancesProvider);
     final inProgressWorkoutsAsync = ref.watch(inProgressWorkoutsProvider);
     final unit = ref.watch(unitPreferenceProvider);
+    final isRefreshing = inProgressWorkoutsAsync.isRefreshing ||
+        instancesAsync.isRefreshing ||
+        prsAsync.isRefreshing;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('DASHBOARD'),
         actions: [
           IconButton(
+            icon: isRefreshing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+            tooltip: 'Refresh',
+            onPressed: isRefreshing
+                ? null
+                : () {
+                    ref.read(inProgressWorkoutsProvider.notifier).refresh();
+                    ref.read(currentProgramInstancesProvider.notifier).refresh();
+                    ref.read(personalBestsProvider.notifier).refresh();
+                  },
+          ),
+          IconButton(
             icon: const Icon(Icons.person_outline),
             tooltip: 'Profile',
             onPressed: () => context.push(AppConstants.routeProfile),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign out',
-            onPressed: () => ref.read(authProvider.notifier).signOut(),
           ),
         ],
       ),

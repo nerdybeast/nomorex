@@ -49,4 +49,9 @@ class PersonalBestsNotifier extends _$PersonalBestsNotifier {
     ref.invalidate(oneRepMaxProvider);
     await future;
   }
+
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+    await future;
+  }
 }

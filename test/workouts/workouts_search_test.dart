@@ -12,6 +12,15 @@ class _StubWorkoutsNotifier extends WorkoutsNotifier {
   Future<List<Workout>> build() async => _workouts;
 }
 
+class _RecordingWorkoutsNotifier extends WorkoutsNotifier {
+  _RecordingWorkoutsNotifier(this.onRefresh);
+  final VoidCallback onRefresh;
+  @override
+  Future<List<Workout>> build() async => const [];
+  @override
+  Future<void> refresh() async => onRefresh();
+}
+
 void main() {
   testWidgets('search field filters the workouts list by title', (tester) async {
     final workouts = [
@@ -85,5 +94,24 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No workouts match your search.'), findsOneWidget);
+  });
+
+  testWidgets('tapping the refresh icon calls refresh on the notifier', (tester) async {
+    var refreshed = false;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          workoutsProvider.overrideWith(() => _RecordingWorkoutsNotifier(() => refreshed = true)),
+        ],
+        child: const MaterialApp(home: WorkoutsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.pumpAndSettle();
+
+    expect(refreshed, isTrue);
   });
 }

@@ -28,4 +28,9 @@ class CurrentProgramInstancesNotifier extends _$CurrentProgramInstancesNotifier 
         .map((e) => ProgramInstance.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+    await future;
+  }
 }

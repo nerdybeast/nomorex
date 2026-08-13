@@ -1,12 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/dark_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
+
+  Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
+    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Log Out'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  style: tokens?.secondaryButtonStyle,
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Log Out'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(authProvider.notifier).signOut();
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,7 +53,16 @@ class ProfileScreen extends ConsumerWidget {
         : '—';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('PROFILE')),
+      appBar: AppBar(
+        title: const Text('PROFILE'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sign out',
+            onPressed: () => _confirmSignOut(context, ref),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),

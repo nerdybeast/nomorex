@@ -31,6 +31,21 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
         title: Text(_showArchived ? 'ARCHIVED PROGRAMS' : 'PROGRAMS'),
         actions: [
           IconButton(
+            icon: programsAsync.isRefreshing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+            tooltip: 'Refresh',
+            onPressed: programsAsync.isRefreshing
+                ? null
+                : () => _showArchived
+                    ? ref.read(archivedProgramsProvider.notifier).refresh()
+                    : ref.read(programsProvider.notifier).refresh(),
+          ),
+          IconButton(
             icon: Icon(_showArchived ? Icons.archive : Icons.archive_outlined),
             tooltip: _showArchived ? 'Show active programs' : 'Show archived programs',
             onPressed: () => setState(() => _showArchived = !_showArchived),

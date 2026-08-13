@@ -39,6 +39,19 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
         title: const Text('MY PRS'),
         actions: [
           IconButton(
+            icon: prsAsync.isRefreshing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+            tooltip: 'Refresh',
+            onPressed: prsAsync.isRefreshing
+                ? null
+                : () => ref.read(personalBestsProvider.notifier).refresh(),
+          ),
+          IconButton(
             icon: const Icon(Icons.person_outline),
             tooltip: 'Profile',
             onPressed: () => context.push(AppConstants.routeProfile),

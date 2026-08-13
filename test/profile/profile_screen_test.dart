@@ -28,6 +28,14 @@ const _longIdUser = User(
   createdAt: '2026-01-15T00:00:00Z',
 );
 
+class _RecordingAuthNotifier extends AuthNotifier {
+  _RecordingAuthNotifier(this.onSignOut);
+  final VoidCallback onSignOut;
+
+  @override
+  Future<void> signOut() async => onSignOut();
+}
+
 class _TestProfileNotifier extends ProfileNotifier {
   _TestProfileNotifier(this._profile, {this.onSetUnitPreference});
   Profile? _profile;
@@ -49,6 +57,7 @@ Widget _wrap(
   Profile profile, {
   void Function(String)? onSetUnitPreference,
   User user = _testUser,
+  VoidCallback? onSignOut,
 }) =>
     ProviderScope(
       overrides: [
@@ -56,6 +65,7 @@ Widget _wrap(
         profileProvider.overrideWith(
           () => _TestProfileNotifier(profile, onSetUnitPreference: onSetUnitPreference),
         ),
+        if (onSignOut != null) authProvider.overrideWith(() => _RecordingAuthNotifier(onSignOut)),
       ],
       child: const MaterialApp(home: ProfileScreen()),
     );
@@ -133,5 +143,48 @@ void main() {
 
     expect(copiedTexts, [_longUuid]);
     expect(find.byType(SnackBar), findsOneWidget);
+  });
+
+  testWidgets('tapping the sign-out icon shows a confirmation dialog', (tester) async {
+    await tester.pumpWidget(_wrap(const Profile(id: 'u1', unitPreference: 'both')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.logout));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Log Out'), findsNWidgets(2)); // dialog title + confirm button
+    expect(find.text('Are you sure you want to log out?'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+  });
+
+  testWidgets('cancelling the confirmation dialog does not sign out', (tester) async {
+    var signedOut = false;
+    await tester.pumpWidget(
+      _wrap(const Profile(id: 'u1', unitPreference: 'both'), onSignOut: () => signedOut = true),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.logout));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(signedOut, isFalse);
+    expect(find.text('Are you sure you want to log out?'), findsNothing);
+  });
+
+  testWidgets('confirming Log Out signs the user out', (tester) async {
+    var signedOut = false;
+    await tester.pumpWidget(
+      _wrap(const Profile(id: 'u1', unitPreference: 'both'), onSignOut: () => signedOut = true),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.logout));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Log Out'));
+    await tester.pumpAndSettle();
+
+    expect(signedOut, isTrue);
   });
 }

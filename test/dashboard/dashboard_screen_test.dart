@@ -38,6 +38,33 @@ class _StubInProgressWorkoutsNotifier extends InProgressWorkoutsNotifier {
   Future<List<Workout>> build() async => _workouts;
 }
 
+class _RecordingPersonalBestsNotifier extends PersonalBestsNotifier {
+  _RecordingPersonalBestsNotifier(this.onRefresh);
+  final VoidCallback onRefresh;
+  @override
+  Future<List<PersonalBest>> build() async => [];
+  @override
+  Future<void> refresh() async => onRefresh();
+}
+
+class _RecordingProgramInstancesNotifier extends CurrentProgramInstancesNotifier {
+  _RecordingProgramInstancesNotifier(this.onRefresh);
+  final VoidCallback onRefresh;
+  @override
+  Future<List<ProgramInstance>> build() async => [];
+  @override
+  Future<void> refresh() async => onRefresh();
+}
+
+class _RecordingInProgressWorkoutsNotifier extends InProgressWorkoutsNotifier {
+  _RecordingInProgressWorkoutsNotifier(this.onRefresh);
+  final VoidCallback onRefresh;
+  @override
+  Future<List<Workout>> build() async => [];
+  @override
+  Future<void> refresh() async => onRefresh();
+}
+
 void main() {
   testWidgets('shows empty state when no programs are in progress', (tester) async {
     await tester.pumpWidget(
@@ -177,5 +204,36 @@ void main() {
 
     expect(find.text('Push Day'), findsOneWidget);
     expect(find.textContaining('Paused — started'), findsOneWidget);
+  });
+
+  testWidgets('tapping the refresh icon refreshes all three data sources', (tester) async {
+    var prsRefreshed = false;
+    var instancesRefreshed = false;
+    var workoutsRefreshed = false;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(
+            () => _RecordingPersonalBestsNotifier(() => prsRefreshed = true),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _RecordingProgramInstancesNotifier(() => instancesRefreshed = true),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _RecordingInProgressWorkoutsNotifier(() => workoutsRefreshed = true),
+          ),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.pumpAndSettle();
+
+    expect(prsRefreshed, isTrue);
+    expect(instancesRefreshed, isTrue);
+    expect(workoutsRefreshed, isTrue);
   });
 }

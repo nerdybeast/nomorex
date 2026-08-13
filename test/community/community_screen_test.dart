@@ -12,6 +12,15 @@ class _StubCommunityWorkoutsNotifier extends CommunityWorkoutsNotifier {
   Future<List<Workout>> build() async => _workouts;
 }
 
+class _RecordingCommunityWorkoutsNotifier extends CommunityWorkoutsNotifier {
+  _RecordingCommunityWorkoutsNotifier(this.onRefresh);
+  final VoidCallback onRefresh;
+  @override
+  Future<List<Workout>> build() async => const [];
+  @override
+  Future<void> refresh() async => onRefresh();
+}
+
 void main() {
   testWidgets('lists public workouts without any owner attribution', (tester) async {
     final workouts = [
@@ -87,5 +96,26 @@ void main() {
 
     expect(find.text('5x5 Strength'), findsOneWidget);
     expect(find.text('Push Pull Legs'), findsNothing);
+  });
+
+  testWidgets('tapping the refresh icon calls refresh on the notifier', (tester) async {
+    var refreshed = false;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          communityWorkoutsProvider.overrideWith(
+            () => _RecordingCommunityWorkoutsNotifier(() => refreshed = true),
+          ),
+        ],
+        child: const MaterialApp(home: CommunityScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.refresh));
+    await tester.pumpAndSettle();
+
+    expect(refreshed, isTrue);
   });
 }
