@@ -33,7 +33,7 @@ final class ProgramsNotifierProvider
   ProgramsNotifier create() => ProgramsNotifier();
 }
 
-String _$programsNotifierHash() => r'594655324c7eb8dded9da6cbdbceb8703cbda4ee';
+String _$programsNotifierHash() => r'eafd60f9e20114cd719c8e9bc83681f7d44ada11';
 
 abstract class _$ProgramsNotifier extends $AsyncNotifier<List<Program>> {
   FutureOr<List<Program>> build();
@@ -88,7 +88,7 @@ final class ArchivedProgramsNotifierProvider
 }
 
 String _$archivedProgramsNotifierHash() =>
-    r'e25217c3a27981ea92ef5cc231a317298847e444';
+    r'9419b2da3ecbf24b1724881065ba813b14763db1';
 
 /// Mirrors [ProgramsNotifier] but surfaces the archived list, so a user can
 /// find and restore a program they archived. No hard delete is ever

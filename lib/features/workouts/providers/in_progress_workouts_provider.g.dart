@@ -49,7 +49,7 @@ final class InProgressWorkoutsNotifierProvider
 }
 
 String _$inProgressWorkoutsNotifierHash() =>
-    r'a2b256a8a4a54bcae517e29dc2ae7ff05bf3b3e4';
+    r'79e6e91074fba9f54c177f445192d2b7aa3d5283';
 
 /// Workouts currently in progress or paused for the current user — what the
 /// dashboard's "Workouts In Progress" section reads from. Unlike

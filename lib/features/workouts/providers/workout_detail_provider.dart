@@ -2,7 +2,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/workout.dart';
 import '../utils/parsed_set.dart';
+import '../utils/workout_copier.dart';
 import '../../auth/providers/auth_provider.dart';
+import 'finished_workouts_provider.dart';
 import 'in_progress_workouts_provider.dart';
 import 'workouts_provider.dart';
 
@@ -160,11 +162,46 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
   }
 
   Future<void> finishWorkout({String? sessionNotes}) async {
+    final current = await future;
     await _db.rpc('finish_workout_session', params: {
       'p_workout_id': workoutId,
       'p_session_notes': sessionNotes,
     });
+
+    // Eagerly materialize the next not-started instance for this group, so
+    // the Workouts list always has a live/actionable row to show instead of
+    // this now-frozen completion. Standalone workouts only — a
+    // program-materialized day doesn't spawn a standalone copy of itself;
+    // repeating a whole program goes through starting a new program
+    // instance instead. Skipped if a live sibling already exists (e.g. this
+    // finish is racing another tab, or repeatWorkout() already made one).
+    if (current.programInstanceId == null) {
+      final liveSibling = await _db
+          .from('workouts')
+          .select('id')
+          .eq('user_id', _userId)
+          .eq('workout_group_id', current.workoutGroupId)
+          .inFilter('status', ['not_started', 'in_progress', 'paused']).maybeSingle();
+      if (liveSibling == null) {
+        final nextWorkout = await _db.from('workouts').insert({
+          'user_id': _userId,
+          'title': current.title,
+          'date': DateTime.now().toIso8601String().split('T').first,
+          if (current.notes != null) 'notes': current.notes,
+          'workout_group_id': current.workoutGroupId,
+        }).select('id').single();
+        await copyWorkoutContents(
+          _db,
+          userId: _userId,
+          sourceExercises: current.exercises,
+          targetWorkoutId: nextWorkout['id'] as String,
+        );
+      }
+    }
+
+    ref.invalidate(workoutsProvider);
     ref.invalidate(inProgressWorkoutsProvider);
+    ref.invalidate(finishedWorkoutsProvider);
     await _refresh();
   }
 
@@ -172,5 +209,69 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     await _db.rpc('discard_workout_session', params: {'p_workout_id': workoutId});
     ref.invalidate(inProgressWorkoutsProvider);
     await _refresh();
+  }
+
+  /// Starts another instance of this workout's group. Reuses an existing
+  /// not-started sibling if one's already there (the common case — finishing
+  /// a workout eagerly creates the next instance, see finishWorkout()) rather
+  /// than creating a duplicate; only falls back to creating+copying a new row
+  /// when no sibling exists at all (e.g. a workout finished before eager
+  /// creation existed, or a program-materialized repeat, which doesn't get
+  /// one). Throws a [StateError] instead of creating a second in-progress
+  /// instance of the same logical workout — checked proactively, then backed
+  /// by the DB's partial unique index as a race guard.
+  Future<String> repeatWorkout() async {
+    final current = await future;
+    final groupId = current.workoutGroupId;
+
+    final existing = await _db
+        .from('workouts')
+        .select('id, status')
+        .eq('user_id', _userId)
+        .eq('workout_group_id', groupId)
+        .inFilter('status', ['not_started', 'in_progress', 'paused']).maybeSingle();
+
+    String targetId;
+    final reusingExisting = existing != null;
+    if (existing != null) {
+      final status = existing['status'] as String;
+      if (status != 'not_started') {
+        throw StateError('This workout is already in progress.');
+      }
+      targetId = existing['id'] as String;
+    } else {
+      final newWorkout = await _db.from('workouts').insert({
+        'user_id': _userId,
+        'title': current.title,
+        'date': DateTime.now().toIso8601String().split('T').first,
+        if (current.notes != null) 'notes': current.notes,
+        'workout_group_id': groupId,
+      }).select('id').single();
+      targetId = newWorkout['id'] as String;
+
+      await copyWorkoutContents(
+        _db,
+        userId: _userId,
+        sourceExercises: current.exercises,
+        targetWorkoutId: targetId,
+      );
+    }
+
+    try {
+      await _db.rpc('start_workout_session', params: {'p_workout_id': targetId});
+    } on PostgrestException catch (e) {
+      if (!reusingExisting) {
+        await _db.from('workouts').delete().eq('id', targetId);
+      }
+      if (e.code == '23505') {
+        throw StateError('This workout is already in progress.');
+      }
+      rethrow;
+    }
+
+    ref.invalidate(workoutsProvider);
+    ref.invalidate(inProgressWorkoutsProvider);
+    ref.invalidate(finishedWorkoutsProvider);
+    return targetId;
   }
 }

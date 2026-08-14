@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nomorex/features/workouts/models/workout.dart';
 import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
 import 'package:nomorex/features/workouts/screens/workouts_screen.dart';
@@ -30,6 +31,7 @@ void main() {
         title: 'Push Day',
         date: DateTime(2026, 7, 1),
         updatedAt: DateTime(2026, 7, 1),
+        workoutGroupId: 'w1',
       ),
       Workout(
         id: 'w2',
@@ -37,6 +39,7 @@ void main() {
         title: 'Pull Day',
         date: DateTime(2026, 7, 2),
         updatedAt: DateTime(2026, 7, 2),
+        workoutGroupId: 'w2',
       ),
       Workout(
         id: 'w3',
@@ -44,6 +47,7 @@ void main() {
         title: 'Leg Day',
         date: DateTime(2026, 7, 3),
         updatedAt: DateTime(2026, 7, 3),
+        workoutGroupId: 'w3',
       ),
     ];
 
@@ -77,6 +81,7 @@ void main() {
         title: 'Push Day',
         date: DateTime(2026, 7, 1),
         updatedAt: DateTime(2026, 7, 1),
+        workoutGroupId: 'w1',
       ),
     ];
 
@@ -113,5 +118,34 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(refreshed, isTrue);
+  });
+
+  testWidgets('tapping the history icon navigates to the unfiltered history route',
+      (tester) async {
+    final router = GoRouter(
+      initialLocation: '/workouts',
+      routes: [
+        GoRoute(path: '/workouts', builder: (_, _) => const WorkoutsScreen()),
+        GoRoute(
+          path: '/workouts/history',
+          builder: (_, state) => Text('history:${state.uri.queryParameters['groupId']}'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          workoutsProvider.overrideWith(() => _StubWorkoutsNotifier(const [])),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.history));
+    await tester.pumpAndSettle();
+
+    expect(find.text('history:null'), findsOneWidget);
   });
 }

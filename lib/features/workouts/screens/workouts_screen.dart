@@ -38,6 +38,11 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                 : () => ref.read(workoutsProvider.notifier).refresh(),
           ),
           IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Workout History',
+            onPressed: () => context.push(AppConstants.routeWorkoutHistory),
+          ),
+          IconButton(
             icon: const Icon(Icons.person_outline),
             tooltip: 'Profile',
             onPressed: () => context.push(AppConstants.routeProfile),

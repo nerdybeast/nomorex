@@ -1,6 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/workout.dart';
+import '../utils/workout_copier.dart';
+import '../utils/workout_group_representative.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../core/utils/sequential_naming.dart';
 
@@ -26,9 +28,24 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
         .filter('program_instance_id', 'is', null)
         .order('date', ascending: false);
 
-    return (data as List)
+    final all = (data as List)
         .map((e) => Workout.fromJson(e as Map<String, dynamic>))
         .toList();
+
+    // One card per logical workout, not one per completion: group by
+    // workoutGroupId and keep only the live/actionable row per group (see
+    // pickGroupRepresentative). Every completion still has its own row for
+    // history — this only affects what this list surfaces.
+    final byGroup = <String, List<Workout>>{};
+    for (final w in all) {
+      byGroup.putIfAbsent(w.workoutGroupId, () => []).add(w);
+    }
+    final representatives = byGroup.values
+        .map(pickGroupRepresentative)
+        .whereType<Workout>()
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    return representatives;
   }
 
   Future<String> createWorkout({
@@ -75,32 +92,12 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
     }).select('id').single();
     final newWorkoutId = newWorkout['id'] as String;
 
-    for (final ex in src.exercises) {
-      final newEx = await _db.from('workout_exercises').insert({
-        'workout_id': newWorkoutId,
-        'user_id': userId,
-        'exercise_id': ex.exerciseId,
-        'position': ex.position,
-        if (ex.notes != null) 'notes': ex.notes,
-      }).select('id').single();
-      final newExId = newEx['id'] as String;
-
-      if (ex.sets.isEmpty) continue;
-      await _db.from('workout_sets').insert([
-        for (final s in ex.sets)
-          {
-            'workout_exercise_id': newExId,
-            'user_id': userId,
-            'position': s.position,
-            'target_reps': s.targetReps,
-            'weight_mode': s.weightMode,
-            'percentage': s.percentage,
-            'absolute_weight_kg': s.absoluteWeightKg,
-            'basis_exercise_id': s.basisExerciseId,
-            'note': s.note,
-          },
-      ]);
-    }
+    await copyWorkoutContents(
+      _db,
+      userId: userId,
+      sourceExercises: src.exercises,
+      targetWorkoutId: newWorkoutId,
+    );
 
     ref.invalidateSelf();
     await future;

@@ -34,6 +34,7 @@ class _StubWorkoutDetailNotifier extends WorkoutDetailNotifier {
       title: _workout.title,
       date: _workout.date,
       updatedAt: _workout.updatedAt,
+      workoutGroupId: _workout.workoutGroupId,
       status: 'not_started',
     );
     ref.invalidateSelf();
@@ -49,6 +50,7 @@ Workout _pausedWorkout({String? sessionNotes}) {
     title: 'Workout 1',
     date: DateTime(2026, 8, 11),
     updatedAt: DateTime(2026, 8, 11),
+    workoutGroupId: 'g1',
     status: 'paused',
     startedAt: startedAt,
     pausedAt: startedAt.add(const Duration(hours: 1, minutes: 2, seconds: 3)),

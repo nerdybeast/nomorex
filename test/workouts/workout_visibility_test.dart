@@ -46,6 +46,7 @@ void main() {
       title: 'Day 1',
       date: DateTime(2026, 7, 5),
       updatedAt: DateTime(2026, 7, 5),
+      workoutGroupId: 'g1',
       isPublic: false,
     );
     bool? toggledTo;
@@ -83,6 +84,7 @@ void main() {
       title: 'Day 1',
       date: DateTime(2026, 7, 5),
       updatedAt: DateTime(2026, 7, 5),
+      workoutGroupId: 'g1',
     );
     String? updatedTitle;
 
@@ -118,6 +120,7 @@ void main() {
       title: 'Day 1',
       date: DateTime(2026, 7, 5),
       updatedAt: DateTime(2026, 7, 5),
+      workoutGroupId: 'g1',
     );
     var called = false;
 
@@ -151,6 +154,7 @@ void main() {
       title: 'Day 1',
       date: DateTime(2026, 7, 5),
       updatedAt: DateTime(2026, 7, 5),
+      workoutGroupId: 'g1',
     );
     String? updatedDescription;
 

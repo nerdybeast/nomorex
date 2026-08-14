@@ -7,6 +7,7 @@ class Workout {
     required this.title,
     required this.date,
     required this.updatedAt,
+    required this.workoutGroupId,
     this.notes,
     this.exercises = const [],
     this.isPublic = false,
@@ -31,6 +32,11 @@ class Workout {
   final String? programInstanceId;
   final String? programDayId;
 
+  /// Shared across every completion of "the same" workout — set fresh on
+  /// creation, carried forward when repeating a finished workout so history
+  /// can be queried by this id. See repeatWorkout().
+  final String workoutGroupId;
+
   /// 'not_started' | 'in_progress' | 'paused' | 'finished'.
   final String status;
   final DateTime? startedAt;
@@ -51,6 +57,7 @@ class Workout {
       title: json['title'] as String,
       date: DateTime.parse(json['date'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      workoutGroupId: json['workout_group_id'] as String,
       notes: json['notes'] as String?,
       exercises: exercises,
       isPublic: (json['is_public'] as bool?) ?? false,

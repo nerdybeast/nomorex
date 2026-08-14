@@ -24,6 +24,7 @@ void main() {
       title: 'Squat Focus',
       date: DateTime(2026, 7, 5),
       updatedAt: DateTime(2026, 7, 5),
+      workoutGroupId: 'g1',
       isPublic: true,
       exercises: const [
         WorkoutExercise(

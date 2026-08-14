@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/pr_card.dart';
 import '../../../shared/widgets/program_instance_card.dart';
+import '../../../shared/widgets/recent_workout_card.dart';
 import '../../../shared/widgets/workout_in_progress_card.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/weight_converter.dart';
@@ -10,6 +11,7 @@ import '../../../core/utils/date_formatter.dart';
 import '../../personal_bests/providers/personal_bests_provider.dart';
 import '../../programs/providers/program_instances_list_provider.dart';
 import '../../programs/utils/program_progress.dart';
+import '../../workouts/providers/finished_workouts_provider.dart';
 import '../../workouts/providers/in_progress_workouts_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 
@@ -21,10 +23,12 @@ class DashboardScreen extends ConsumerWidget {
     final prsAsync = ref.watch(personalBestsProvider);
     final instancesAsync = ref.watch(currentProgramInstancesProvider);
     final inProgressWorkoutsAsync = ref.watch(inProgressWorkoutsProvider);
+    final finishedWorkoutsAsync = ref.watch(finishedWorkoutsProvider);
     final unit = ref.watch(unitPreferenceProvider);
     final isRefreshing = inProgressWorkoutsAsync.isRefreshing ||
         instancesAsync.isRefreshing ||
-        prsAsync.isRefreshing;
+        prsAsync.isRefreshing ||
+        finishedWorkoutsAsync.isRefreshing;
 
     return Scaffold(
       appBar: AppBar(
@@ -45,6 +49,7 @@ class DashboardScreen extends ConsumerWidget {
                     ref.read(inProgressWorkoutsProvider.notifier).refresh();
                     ref.read(currentProgramInstancesProvider.notifier).refresh();
                     ref.read(personalBestsProvider.notifier).refresh();
+                    ref.read(finishedWorkoutsProvider.notifier).refresh();
                   },
           ),
           IconButton(
@@ -148,6 +153,37 @@ class DashboardScreen extends ConsumerWidget {
                         weightDisplay: formatWeightForPreference(pr.weightKg, unit),
                         reps: pr.reps,
                         dateDisplay: formatDate(pr.date),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+          Text('RECENT WORKOUTS', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          finishedWorkoutsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text(
+              'Failed to load workouts: $e',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            data: (allFinished) {
+              final recent = allFinished.take(5).toList();
+              if (recent.isEmpty) {
+                return const Text('No completed workouts yet.');
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final workout in recent)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: RecentWorkoutCard(
+                        title: workout.title,
+                        completedDisplay:
+                            'Completed ${formatDate(workout.finishedAt!.toLocal())}',
+                        onTap: () => context.push(AppConstants.routeWorkoutDetail(workout.id)),
                       ),
                     ),
                 ],

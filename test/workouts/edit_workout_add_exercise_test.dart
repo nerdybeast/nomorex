@@ -51,6 +51,7 @@ void main() {
         title: 'Day 1',
         date: DateTime(2026, 7, 5),
         updatedAt: DateTime(2026, 7, 5),
+        workoutGroupId: 'g1',
       );
 
       await tester.pumpWidget(
@@ -108,6 +109,7 @@ void main() {
         title: 'Day 1',
         date: DateTime(2026, 7, 5),
         updatedAt: DateTime(2026, 7, 5),
+        workoutGroupId: 'g1',
       );
       String? addedName;
       String? addedExerciseId;

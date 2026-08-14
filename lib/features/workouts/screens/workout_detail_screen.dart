@@ -12,6 +12,7 @@ import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../providers/one_rep_max_provider.dart';
 import '../providers/workout_detail_provider.dart';
+import '../providers/workout_group_history_provider.dart';
 import '../utils/set_resolver.dart';
 import '../widgets/elapsed_timer.dart';
 
@@ -35,6 +36,8 @@ class WorkoutDetailScreen extends ConsumerWidget {
     final workout = detail.asData?.value;
     final showEditIcon = workout == null || workout.status == 'not_started';
     final isBusy = detail.isLoading;
+    final hasHistory =
+        workout != null && ref.watch(groupHasFinishedHistoryProvider(workout.workoutGroupId));
 
     return Scaffold(
       appBar: AppBar(
@@ -69,6 +72,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
               workout: workout,
               notifier: notifier,
               isBusy: isBusy,
+              hasHistory: hasHistory,
             ),
             const SizedBox(height: 16),
             for (final ex in workout.exercises)
@@ -101,11 +105,13 @@ class _StatusSection extends StatelessWidget {
     required this.workout,
     required this.notifier,
     required this.isBusy,
+    required this.hasHistory,
   });
 
   final Workout workout;
   final WorkoutDetailNotifier notifier;
   final bool isBusy;
+  final bool hasHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -135,9 +141,17 @@ class _StatusSection extends StatelessWidget {
               Text('Notes', style: labelStyle),
               Text(workout.sessionNotes!),
             ],
+            const SizedBox(height: 16),
+            _FinishedActions(workout: workout, notifier: notifier),
           ],
         );
       default: // 'not_started'
+        if (hasHistory) {
+          return _NotStartedWithHistoryActions(
+            workoutGroupId: workout.workoutGroupId,
+            notifier: notifier,
+          );
+        }
         return FilledButton(
           onPressed: isBusy ? null : () => notifier.startWorkout(),
           child: const Text('Start Workout'),
@@ -192,6 +206,132 @@ class _StatusActions extends StatelessWidget {
                     }
                   },
             child: const Text('Finish'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// "Do This Workout Again" (duplicates this workout, sharing its
+// workoutGroupId, and immediately starts the copy), full-width like "Start
+// Workout", plus a "View History" link below it — shown once a workout
+// reaches 'finished'.
+class _FinishedActions extends StatefulWidget {
+  const _FinishedActions({required this.workout, required this.notifier});
+
+  final Workout workout;
+  final WorkoutDetailNotifier notifier;
+
+  @override
+  State<_FinishedActions> createState() => _FinishedActionsState();
+}
+
+class _FinishedActionsState extends State<_FinishedActions> {
+  bool _isRepeating = false;
+
+  Future<void> _repeat() async {
+    setState(() => _isRepeating = true);
+    try {
+      final newWorkoutId = await widget.notifier.repeatWorkout();
+      if (mounted) {
+        context.push(AppConstants.routeWorkoutDetail(newWorkoutId));
+      }
+    } on StateError catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _isRepeating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _PrimaryAndHistoryButtons(
+      primaryLabel: 'Do This Workout Again',
+      isBusy: _isRepeating,
+      onPrimary: _isRepeating ? null : _repeat,
+      workoutGroupId: widget.workout.workoutGroupId,
+    );
+  }
+}
+
+// A not-started workout whose group already has a finished completion:
+// offers "Do This Workout Again" (really just starts *this* row — the
+// eager "next instance" created when the prior completion finished, see
+// WorkoutDetailNotifier.finishWorkout()) instead of plain "Start Workout",
+// plus the same "View History" link.
+class _NotStartedWithHistoryActions extends StatefulWidget {
+  const _NotStartedWithHistoryActions({required this.workoutGroupId, required this.notifier});
+
+  final String workoutGroupId;
+  final WorkoutDetailNotifier notifier;
+
+  @override
+  State<_NotStartedWithHistoryActions> createState() => _NotStartedWithHistoryActionsState();
+}
+
+class _NotStartedWithHistoryActionsState extends State<_NotStartedWithHistoryActions> {
+  bool _isStarting = false;
+
+  Future<void> _start() async {
+    setState(() => _isStarting = true);
+    try {
+      await widget.notifier.startWorkout();
+    } finally {
+      if (mounted) setState(() => _isStarting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _PrimaryAndHistoryButtons(
+      primaryLabel: 'Do This Workout Again',
+      isBusy: _isStarting,
+      onPrimary: _isStarting ? null : _start,
+      workoutGroupId: widget.workoutGroupId,
+    );
+  }
+}
+
+// Shared visual shell for "Do This Workout Again" (full-width, like "Start
+// Workout") + a right-aligned blue "View History" link below it.
+class _PrimaryAndHistoryButtons extends StatelessWidget {
+  const _PrimaryAndHistoryButtons({
+    required this.primaryLabel,
+    required this.isBusy,
+    required this.onPrimary,
+    required this.workoutGroupId,
+  });
+
+  final String primaryLabel;
+  final bool isBusy;
+  final VoidCallback? onPrimary;
+  final String workoutGroupId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FilledButton(
+          onPressed: onPrimary,
+          child: isBusy
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(primaryLabel),
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.blue),
+            onPressed: () =>
+                context.push(AppConstants.routeWorkoutHistoryFiltered(workoutGroupId)),
+            child: const Text('View History'),
           ),
         ),
       ],

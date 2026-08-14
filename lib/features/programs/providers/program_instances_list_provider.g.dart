@@ -45,7 +45,7 @@ final class CurrentProgramInstancesNotifierProvider
 }
 
 String _$currentProgramInstancesNotifierHash() =>
-    r'b1831400778694f22a56ea0f5be1b06d1775316c';
+    r'cf2c44ef6e6c5155d34924ef0ccef167490da5e4';
 
 /// Active program runs for the current user — what the dashboard's "Current
 /// Programs" section reads from. Excludes completed/abandoned instances.

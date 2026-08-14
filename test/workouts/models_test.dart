@@ -7,6 +7,7 @@ void main() {
     final json = {
       'id': 'w1',
       'user_id': 'u1',
+      'workout_group_id': 'g1',
       'title': 'Day 1',
       'date': '2026-06-28',
       'updated_at': '2026-06-29T12:00:00Z',
@@ -52,6 +53,7 @@ void main() {
     final w = Workout.fromJson({
       'id': 'w1',
       'user_id': 'u1',
+      'workout_group_id': 'g1',
       'title': 'Empty',
       'date': '2026-06-28',
       'updated_at': '2026-06-28T00:00:00Z',
@@ -64,6 +66,7 @@ void main() {
     final w = Workout.fromJson({
       'id': 'w1',
       'user_id': 'u1',
+      'workout_group_id': 'g1',
       'title': 'Public workout',
       'date': '2026-06-28',
       'updated_at': '2026-06-28T00:00:00Z',
@@ -76,6 +79,7 @@ void main() {
     final w = Workout.fromJson({
       'id': 'w1',
       'user_id': 'u1',
+      'workout_group_id': 'g1',
       'title': 'Day 1',
       'date': '2026-06-28',
       'updated_at': '2026-06-28T00:00:00Z',
@@ -90,6 +94,7 @@ void main() {
     final w = Workout.fromJson({
       'id': 'w1',
       'user_id': 'u1',
+      'workout_group_id': 'g1',
       'title': 'Day 1',
       'date': '2026-06-28',
       'updated_at': '2026-06-28T00:00:00Z',
@@ -102,6 +107,7 @@ void main() {
     final w = Workout.fromJson({
       'id': 'w1',
       'user_id': 'u1',
+      'workout_group_id': 'g1',
       'title': 'Day 1',
       'date': '2026-06-28',
       'updated_at': '2026-07-02T08:30:00Z',
@@ -113,6 +119,7 @@ void main() {
     final w = Workout.fromJson({
       'id': 'w1',
       'user_id': 'u1',
+      'workout_group_id': 'g1',
       'title': 'Day 1',
       'date': '2026-06-28',
       'updated_at': '2026-06-28T00:00:00Z',
@@ -129,6 +136,7 @@ void main() {
     final w = Workout.fromJson({
       'id': 'w1',
       'user_id': 'u1',
+      'workout_group_id': 'g1',
       'title': 'Day 1',
       'date': '2026-06-28',
       'updated_at': '2026-06-28T00:00:00Z',

@@ -15,10 +15,14 @@ class AppConstants {
 
   static const String routeWorkouts = '/shell/workouts';
   // new: /workouts/new ; detail: /workouts/:id ; edit: /workouts/:id/edit
+  // history (all workouts, or filtered by ?groupId=): /workouts/history
   static const String routeWorkoutNew = '/workouts/new';
   static String routeWorkoutDetail(String id) => '/workouts/$id';
   static String routeWorkoutEdit(String id) => '/workouts/$id/edit';
   static String routeWorkoutFinish(String id) => '/workouts/$id/finish';
+  static const String routeWorkoutHistory = '/workouts/history';
+  static String routeWorkoutHistoryFiltered(String groupId) =>
+      '$routeWorkoutHistory?groupId=$groupId';
 
   static const String routeCommunity = '/shell/community';
   static String routeCommunityWorkoutDetail(String id) => '/community/$id';

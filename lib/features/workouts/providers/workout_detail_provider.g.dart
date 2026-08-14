@@ -51,7 +51,7 @@ final class WorkoutDetailNotifierProvider
 }
 
 String _$workoutDetailNotifierHash() =>
-    r'66050183d3a3f09cc493f4983aa91875733f096b';
+    r'0b977568dfe596b1f3958e64185f45741017f179';
 
 final class WorkoutDetailNotifierFamily extends $Family
     with

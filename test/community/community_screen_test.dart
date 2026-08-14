@@ -30,6 +30,7 @@ void main() {
         title: '5x5 Strength',
         date: DateTime(2026, 7, 1),
         updatedAt: DateTime(2026, 7, 1),
+        workoutGroupId: 'w1',
         isPublic: true,
       ),
       Workout(
@@ -38,6 +39,7 @@ void main() {
         title: 'Push Pull Legs',
         date: DateTime(2026, 7, 2),
         updatedAt: DateTime(2026, 7, 2),
+        workoutGroupId: 'w2',
         isPublic: true,
       ),
     ];
@@ -67,6 +69,7 @@ void main() {
         title: '5x5 Strength',
         date: DateTime(2026, 7, 1),
         updatedAt: DateTime(2026, 7, 1),
+        workoutGroupId: 'w1',
         isPublic: true,
       ),
       Workout(
@@ -75,6 +78,7 @@ void main() {
         title: 'Push Pull Legs',
         date: DateTime(2026, 7, 2),
         updatedAt: DateTime(2026, 7, 2),
+        workoutGroupId: 'w2',
         isPublic: true,
       ),
     ];
