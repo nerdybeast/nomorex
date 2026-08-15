@@ -85,12 +85,33 @@ Any new table in `public` **must** enable RLS and add ownership policies `TO aut
 
 ## CI/CD
 
-- `.github/workflows/pr-checks.yml` — `flutter analyze`, `flutter test`, debug APK build, plus a `supabase db reset` + `db lint` job.
+- `.github/workflows/pr-checks.yml` — four parallel jobs, no `needs:` between them: `checks` (`flutter analyze`, `flutter test`, release web build), `build-android` (debug APK), `db-validate` (`supabase db reset` + `db lint`), and `e2e` (see E2E tests below). The Android build is deliberately its own job — the Gradle build dominated `checks` and was delaying analyze/test feedback. Only `build-android` sets up Java; the other jobs don't need it.
 - `.github/workflows/deploy.yml` — on push to `main`, builds and publishes the web app to GitHub Pages (with `--base-href` set to the repo subpath).
 - Migrations are deployed **separately**, by the Supabase GitHub integration watching `supabase/`. The two are unordered relative to each other, so ship additive migrations ahead of the code that depends on them.
 
 ## Testing
 
 Widget tests stub data by **subclassing the generated notifier and overriding `build()`**, then passing it to `ProviderScope(overrides: [...])` — e.g. `workoutsProvider.overrideWith(() => _EmptyWorkoutsNotifier())`. Simple derived providers use `overrideWithValue` (`unitPreferenceProvider.overrideWithValue('kg')`). There is no Supabase mock; tests never hit the network. Pure logic (parsers, resolvers, model JSON) is tested directly without widgets.
+
+### E2E tests (`integration_test/`)
+
+`flutter test` only runs `test/`; the E2E suite is separate and always goes through its runner:
+
+```bash
+./scripts/e2e.sh          # macOS desktop (default)
+./scripts/e2e.sh linux    # Linux desktop, how CI runs it
+```
+
+The script starts the local stack, runs `supabase db reset` (local only — never `--linked`), then runs each test file. Unlike widget tests, these boot the **real app against real Supabase**: no provider is stubbed. That's forced by `RouterNotifier.redirect` in `lib/app.dart`, which reads `Supabase.instance.client.auth.currentSession` directly rather than through a provider, so it can't be overridden — anything past `/` needs a genuine session. Tests sign in as the seeded `a@a.com` / `123456`.
+
+Rules for adding to the suite:
+
+- **Never call `flutter test integration_test` on the whole directory.** Each file launches a real desktop app window, and a second launch inside one invocation fails with `Unable to start the app on the device`. `scripts/e2e.sh` loops one invocation per file for this reason.
+- **Go through a page object** in `integration_test/support/pages/`, never raw finders in a test body.
+- **Target keys, not text**, for anything you interact with — add a `Key('screen_thing')` to the widget in `lib/` as needed. Nav tabs and bottom-sheet entries are the exception; their labels are unambiguous.
+- **Use `waitFor` / `waitForAbsent` from `support/harness.dart`** after anything that hits the network. A bare `pumpAndSettle` blocks on the spinner that's still on screen and reports a far less useful failure.
+- **Assert presence, not counts.** The suite must stay green re-run against a stack that wasn't freshly reset.
+- The harness initializes Supabase with `EmptyLocalStorage` so sessions never persist to disk. Don't remove that: with the default storage, a session from a previous run is restored *asynchronously* during `initialize` and races the sign-out, which makes only the first test of a run fail.
+- Both desktop targets are wider than the 600px `kMobileBreakpoint`, so these exercise `AppShell`'s `NavigationRail` branch. The mobile `BottomAppBar` branch stays widget-test territory.
 
 **Widget tests render in `flutter_test`'s default ~800x600 surface.** A screen taller than that (nested `ExpansionTile`s, long lists) can push a target below the visible area — `tester.tap(finder)` on an off-screen widget doesn't throw, it just misses (a "hit test warning" that's easy to miss in the output), and the real failure surfaces later as something confusing and unrelated-looking, e.g. `Bad state: No element` from `enterText`/`showKeyboard` because a dialog never actually opened. Call `await tester.ensureVisible(finder); await tester.pumpAndSettle();` before tapping anything that might sit below the fold. After any UI change that adds height to a screen (more padding, more content), re-run the full suite rather than just the file touched — layout-adjacent tests can break invisibly.

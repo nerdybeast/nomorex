@@ -160,6 +160,7 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                     ),
                     const SizedBox(height: 8),
                     NumberStepperField(
+                      key: const Key('add_pr_weight'),
                       label: '',
                       value: _weight,
                       min: 0,
@@ -176,6 +177,7 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                     Text('Reps'.toUpperCase(), style: overline),
                     const SizedBox(height: 8),
                     NumberStepperField(
+                      key: const Key('add_pr_reps'),
                       label: '',
                       value: _reps.toDouble(),
                       min: 1,
@@ -219,6 +221,7 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                     ],
                     const SizedBox(height: 24),
                     FilledButton(
+                      key: const Key('add_pr_submit'),
                       onPressed: (_loading || _selectedExercise == null) ? null : _submit,
                       child: _loading
                           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))

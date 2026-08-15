@@ -129,3 +129,23 @@ longer runs `supabase db push`.
 
 The two run independently, so a schema change and the app build that depends on
 it are not ordered. Ship additive migrations ahead of the code that needs them.
+
+## E2E tests
+
+The `integration_test/` suite boots the real app against the local Supabase
+stack, so it needs the same compile-time dart-defines as a normal run. Use the
+runner rather than invoking `flutter test` directly:
+
+```bash
+./scripts/e2e.sh          # macOS desktop
+./scripts/e2e.sh linux    # Linux desktop, how CI runs it
+```
+
+It starts the stack, runs `supabase db reset` (local only), and passes the
+config through. Locally it reads `.env.local.json`; in CI, where that file
+doesn't exist, it reads `API_URL` and `PUBLISHABLE_KEY` off the running stack
+via `supabase status -o env`.
+
+If the suite is ever pointed at an Android emulator, the URL must be
+`http://10.0.2.2:54321` rather than `127.0.0.1`, for the same reason described
+above.
