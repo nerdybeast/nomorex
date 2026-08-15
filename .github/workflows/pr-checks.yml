@@ -7,9 +7,43 @@ on:
 
 jobs:
   checks:
-    name: Analyze, Test & Build
+    name: Analyze, Test & Build Web
     runs-on: ubuntu-latest
 
+    # No setup-java here: Java is only needed for the Android Gradle build,
+    # which now lives in the build-android job.
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      # Deploy builds a release web bundle (see deploy.yml); this only proves
+      # that target still compiles in release mode, so the values just need
+      # to be well-formed, not real.
+      - name: Build web (release)
+        run: |
+          flutter build web --release \
+            --dart-define=SUPABASE_URL=https://placeholder.supabase.co \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
+
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    # Split out of `checks` because the Gradle build dominated that job's
+    # runtime. On its own runner it no longer gates analyze/test feedback.
     steps:
       - uses: actions/checkout@v7
 
@@ -26,23 +60,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Test
-        run: flutter test
-
       - name: Build APK (debug)
         run: flutter build apk --debug
-
-      # Deploy builds a release web bundle (see deploy.yml); this only proves
-      # that target still compiles in release mode, so the values just need
-      # to be well-formed, not real.
-      - name: Build web (release)
-        run: |
-          flutter build web --release \
-            --dart-define=SUPABASE_URL=https://placeholder.supabase.co \
-            --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
 
   db-validate:
     name: Validate DB migrations

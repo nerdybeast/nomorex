@@ -85,7 +85,7 @@ Any new table in `public` **must** enable RLS and add ownership policies `TO aut
 
 ## CI/CD
 
-- `.github/workflows/pr-checks.yml` — `flutter analyze`, `flutter test`, debug APK build, plus a `supabase db reset` + `db lint` job and an `e2e` job (see E2E tests below).
+- `.github/workflows/pr-checks.yml` — four parallel jobs, no `needs:` between them: `checks` (`flutter analyze`, `flutter test`, release web build), `build-android` (debug APK), `db-validate` (`supabase db reset` + `db lint`), and `e2e` (see E2E tests below). The Android build is deliberately its own job — the Gradle build dominated `checks` and was delaying analyze/test feedback. Only `build-android` sets up Java; the other jobs don't need it.
 - `.github/workflows/deploy.yml` — on push to `main`, builds and publishes the web app to GitHub Pages (with `--base-href` set to the repo subpath).
 - Migrations are deployed **separately**, by the Supabase GitHub integration watching `supabase/`. The two are unordered relative to each other, so ship additive migrations ahead of the code that depends on them.
 
