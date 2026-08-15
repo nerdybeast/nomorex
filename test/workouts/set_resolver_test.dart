@@ -62,4 +62,54 @@ void main() {
     );
     expect(resolveBasisExerciseId(set, _exercise), 'e2');
   });
+
+  group('lookupOneRepMaxKg', () {
+    test('prefers a match on exercise id', () {
+      expect(
+        lookupOneRepMaxKg(
+          basisExerciseId: 'e1',
+          basisExerciseName: 'Front Squat',
+          byExerciseId: const {'e1': 100},
+          byExerciseName: const {'front squat': 90},
+        ),
+        100,
+      );
+    });
+
+    test('falls back to the exercise name when the id is another user\'s', () {
+      expect(
+        lookupOneRepMaxKg(
+          basisExerciseId: 'owners-id',
+          basisExerciseName: 'dude pulls',
+          byExerciseId: const {'viewers-id': 87},
+          byExerciseName: const {'dude pulls': 87},
+        ),
+        87,
+      );
+    });
+
+    test('matches names case-insensitively', () {
+      expect(
+        lookupOneRepMaxKg(
+          basisExerciseId: 'owners-id',
+          basisExerciseName: 'Dude Pulls',
+          byExerciseId: const {},
+          byExerciseName: const {'dude pulls': 87},
+        ),
+        87,
+      );
+    });
+
+    test('returns null when neither the id nor the name is known', () {
+      expect(
+        lookupOneRepMaxKg(
+          basisExerciseId: 'e1',
+          basisExerciseName: 'Front Squat',
+          byExerciseId: const {},
+          byExerciseName: const {},
+        ),
+        isNull,
+      );
+    });
+  });
 }

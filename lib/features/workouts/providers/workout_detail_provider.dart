@@ -40,11 +40,17 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
       'exercise_id': exerciseId,
       'position': nextPos,
     });
+    // The Workouts list renders an exercise count off its own cached copy of
+    // this workout, so a changed exercise list has to invalidate it too —
+    // otherwise a workout built right after creation keeps showing
+    // "0 exercises" until the list is refetched some other way.
+    ref.invalidate(workoutsProvider);
     await _refresh();
   }
 
   Future<void> removeExercise(String workoutExerciseId) async {
     await _db.from('workout_exercises').delete().eq('id', workoutExerciseId);
+    ref.invalidate(workoutsProvider);
     await _refresh();
   }
 
