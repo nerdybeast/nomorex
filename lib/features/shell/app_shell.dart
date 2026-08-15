@@ -115,6 +115,7 @@ class AppShell extends ConsumerWidget {
           ),
         ),
         floatingActionButton: FloatingActionButton(
+          key: const Key('shell_add_fab'),
           heroTag: 'shellAddFab',
           onPressed: () => _showAddMenu(context),
           tooltip: 'Add',
@@ -134,6 +135,9 @@ class AppShell extends ConsumerWidget {
             onDestinationSelected: shell.goBranch,
             labelType: NavigationRailLabelType.all,
             leading: FloatingActionButton(
+              // Same key as the mobile FAB above: the two layout branches are
+              // mutually exclusive, so only one is ever in the tree.
+              key: const Key('shell_add_fab'),
               heroTag: 'shellAddFabRail',
               onPressed: () => _showAddMenu(context),
               mini: true,

@@ -62,3 +62,43 @@ jobs:
 
       - name: Lint database
         run: supabase db lint
+
+  e2e:
+    name: E2E (integration_test)
+    runs-on: ubuntu-latest
+
+    # Runs on Linux desktop rather than macOS: the suite needs a real Supabase
+    # stack, `supabase start` needs Docker, and GitHub-hosted macOS runners
+    # don't ship Docker. The test files are platform-agnostic Dart — locally
+    # the same suite runs against `-d macos` via ./scripts/e2e.sh.
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: supabase/setup-cli@v3
+        with:
+          version: latest
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Linux desktop build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libstdc++-12-dev \
+            xvfb
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Enable Linux desktop
+        run: flutter config --enable-linux-desktop
+
+      # scripts/e2e.sh starts Supabase, resets the DB, and reads the API URL
+      # and publishable key off the running stack (there's no .env.local.json
+      # in CI). xvfb provides the display the desktop app needs.
+      - name: Run E2E suite
+        run: xvfb-run -a ./scripts/e2e.sh linux

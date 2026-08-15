@@ -32,6 +32,7 @@ class LandingScreen extends StatelessWidget {
               ),
               const Spacer(),
               FilledButton(
+                key: const Key('landing_login_button'),
                 onPressed: () => context.push(AppConstants.routeLogin),
                 child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 4),
