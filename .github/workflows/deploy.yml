@@ -3,6 +3,26 @@ name: Deploy
 on:
   push:
     branches: [main]
+    # Skip the deploy when a push touches nothing that can change the built web
+    # app. Evaluated across every commit in the push, so a docs-only push is
+    # skipped while a push mixing docs with lib/ still deploys. deploy.yml
+    # itself is deliberately absent — editing it should deploy — and
+    # workflow_dispatch below stays available to force a run either way.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'test/**'
+      - 'integration_test/**'
+      - 'scripts/**'
+      # Migrations are deployed by the Supabase GitHub integration, not here.
+      - 'supabase/**'
+      - 'android/**'
+      - 'ios/**'
+      - 'macos/**'
+      - 'linux/**'
+      - 'windows/**'
+      - '.github/workflows/pr-checks.yml'
+      - '.gitignore'
   workflow_dispatch:
 
 # Allow this workflow to publish to GitHub Pages
