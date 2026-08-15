@@ -3,6 +3,25 @@ name: PR Checks
 on:
   pull_request:
     branches: [main]
+    # Deliberately much shorter than deploy.yml's list: these jobs depend on
+    # nearly everything that can't affect the web bundle. test/ and
+    # integration_test/ are what `flutter test` and the e2e suite run,
+    # scripts/ holds e2e.sh, supabase/ is what db-validate resets and lints,
+    # android/ is what build-android builds, and linux/ is the desktop target
+    # e2e compiles — none of them can be ignored. Only genuinely unused
+    # platform folders and prose are safe.
+    #
+    # If these checks are ever made required in branch protection, revisit
+    # this: a skipped workflow never reports, so a required check would wait
+    # for a status that never arrives and block the merge.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'ios/**'
+      - 'macos/**'
+      - 'windows/**'
+      - '.github/workflows/deploy.yml'
+      - '.gitignore'
   workflow_dispatch:
 
 jobs:
