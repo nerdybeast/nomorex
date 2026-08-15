@@ -12,6 +12,7 @@ class NomorexDarkTokens extends ThemeExtension<NomorexDarkTokens> {
     required this.stepperIncrementStyle,
     required this.secondaryButtonStyle,
     required this.dangerButtonStyle,
+    required this.secondaryAccent,
   });
 
   final TextStyle overline;
@@ -37,6 +38,12 @@ class NomorexDarkTokens extends ThemeExtension<NomorexDarkTokens> {
   /// uses for form-validation messaging, not buttons.
   final ButtonStyle dangerButtonStyle;
 
+  /// The same blue as [secondaryButtonStyle], but as a bare color for
+  /// text/inline accents rather than buttons — e.g. a weight resolved from
+  /// the viewer's own 1RM. [ColorScheme.secondary] is deliberately pinned to
+  /// the orange primary, so it can't carry this role.
+  final Color secondaryAccent;
+
   @override
   NomorexDarkTokens copyWith({
     TextStyle? overline,
@@ -46,6 +53,7 @@ class NomorexDarkTokens extends ThemeExtension<NomorexDarkTokens> {
     ButtonStyle? stepperIncrementStyle,
     ButtonStyle? secondaryButtonStyle,
     ButtonStyle? dangerButtonStyle,
+    Color? secondaryAccent,
   }) {
     return NomorexDarkTokens(
       overline: overline ?? this.overline,
@@ -55,6 +63,7 @@ class NomorexDarkTokens extends ThemeExtension<NomorexDarkTokens> {
       stepperIncrementStyle: stepperIncrementStyle ?? this.stepperIncrementStyle,
       secondaryButtonStyle: secondaryButtonStyle ?? this.secondaryButtonStyle,
       dangerButtonStyle: dangerButtonStyle ?? this.dangerButtonStyle,
+      secondaryAccent: secondaryAccent ?? this.secondaryAccent,
     );
   }
 
@@ -79,9 +88,11 @@ class AppDarkTheme {
   static const _primary = Color(0xFFFC5201);
   // Not ColorScheme.secondary (that's deliberately pinned to _primary above
   // so untouched stock M3 widgets don't fall back to the Material baseline
-  // purple/teal) — this is specifically the color for a secondary/alternate
-  // *button*, e.g. "Pause" next to a primary "Finish" FilledButton.
-  static const _secondaryButton = Color(0xFF2563EB);
+  // purple/teal) — this is the design system's secondary blue, surfaced on
+  // NomorexDarkTokens both as a whole button style (secondaryButtonStyle,
+  // e.g. "Pause" next to a primary "Finish") and as a bare color
+  // (secondaryAccent) for inline text accents.
+  static const _secondaryBlue = Color(0xFF2563EB);
   // A distinct red for destructive/"dangerous" action buttons (e.g.
   // "Discard") — separate from _error/_errorText below, which are for
   // form-validation messaging, not buttons.
@@ -281,8 +292,9 @@ class AppDarkTheme {
             foregroundColor: Colors.white,
             shape: const CircleBorder(),
           ),
+          secondaryAccent: _secondaryBlue,
           secondaryButtonStyle: FilledButton.styleFrom(
-            backgroundColor: _secondaryButton,
+            backgroundColor: _secondaryBlue,
             foregroundColor: Colors.white,
             minimumSize: const Size.fromHeight(56),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),

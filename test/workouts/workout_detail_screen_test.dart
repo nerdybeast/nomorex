@@ -62,11 +62,20 @@ class _StubFinishedWorkoutsNotifier extends FinishedWorkoutsNotifier {
 }
 
 class _StubExercisesNotifier extends ExercisesNotifier {
-  _StubExercisesNotifier(this._exercises);
+  _StubExercisesNotifier(this._exercises, {this.onEnsureByName});
   final List<Exercise> _exercises;
+  final Exercise Function(String name)? onEnsureByName;
 
   @override
   Future<List<Exercise>> build() async => _exercises;
+
+  @override
+  Future<Exercise> ensureExerciseByName(String name) async {
+    if (onEnsureByName == null) {
+      throw UnimplementedError('onEnsureByName not stubbed');
+    }
+    return onEnsureByName!(name);
+  }
 }
 
 const _sumoDeadlift = Exercise(id: 'e1', name: 'Sumo Deadlift', isPredefined: true);
@@ -124,6 +133,7 @@ void main() {
             () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
           ),
           oneRepMaxProvider.overrideWith((ref) async => {}),
+          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
           finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
         ],
@@ -172,6 +182,7 @@ void main() {
             ),
           ),
           oneRepMaxProvider.overrideWith((ref) async => {}),
+          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
           finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
         ],
@@ -196,6 +207,7 @@ void main() {
             () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
           ),
           oneRepMaxProvider.overrideWith((ref) async => {'e1': 100}),
+          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
           finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
         ],
@@ -209,8 +221,21 @@ void main() {
   });
 
   testWidgets(
-      'a percentage set on an exercise the viewer cannot see shows plain '
-      '"no PR recorded" text, not a link', (tester) async {
+      'a percentage set on an exercise the viewer cannot see still offers "set PR", '
+      'routed to the viewer\'s own copy of that exercise', (tester) async {
+    String? ensuredName;
+
+    final router = GoRouter(
+      initialLocation: '/w1',
+      routes: [
+        GoRoute(path: '/w1', builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1')),
+        GoRoute(
+          path: '/prs/add',
+          builder: (_, state) => Text('destination:${state.uri.queryParameters['exerciseId']}'),
+        ),
+      ],
+    );
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -218,25 +243,35 @@ void main() {
             () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
           ),
           oneRepMaxProvider.overrideWith((ref) async => {}),
+          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           // The viewer's own exercise list does NOT contain 'e1' — e.g. this
           // is someone else's public workout referencing a custom exercise
-          // only the workout's owner can see.
-          exercisesProvider.overrideWith(() => _StubExercisesNotifier(const [])),
+          // only the workout's owner can see. Tapping "set PR" should give
+          // the viewer their own same-named exercise rather than dead-ending.
+          exercisesProvider.overrideWith(
+            () => _StubExercisesNotifier(
+              const [],
+              onEnsureByName: (name) {
+                ensuredName = name;
+                return const Exercise(id: 'mine-1', name: 'Sumo Deadlift', isPredefined: false);
+              },
+            ),
+          ),
           finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
         ],
-        child: const MaterialApp(home: WorkoutDetailScreen(workoutId: 'w1')),
+        child: MaterialApp.router(routerConfig: router),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('set PR'), findsNothing);
-    expect(
-      find.byWidgetPredicate(
-        (w) => w is InkWell && w.child is Text && (w.child as Text).data == 'set PR',
-      ),
-      findsNothing,
-    );
-    expect(find.textContaining('no PR recorded'), findsOneWidget);
+    expect(find.textContaining('no PR recorded'), findsNothing);
+    expect(find.text('set PR'), findsOneWidget);
+
+    await tester.tap(find.text('set PR'));
+    await tester.pumpAndSettle();
+
+    expect(ensuredName, 'Sumo Deadlift');
+    expect(find.text('destination:mine-1'), findsOneWidget);
   });
 
   Future<void> pumpDetailScreen(
@@ -261,6 +296,7 @@ void main() {
             ),
           ),
           oneRepMaxProvider.overrideWith((ref) async => {'e1': 100}),
+          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
           finishedWorkoutsProvider.overrideWith(
             () => _StubFinishedWorkoutsNotifier(finishedSiblings),
@@ -465,6 +501,7 @@ void main() {
             () => _StubWorkoutDetailNotifier(finishedWorkout()),
           ),
           oneRepMaxProvider.overrideWith((ref) async => {'e1': 100}),
+          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
           finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
         ],
@@ -499,6 +536,7 @@ void main() {
             ),
           ),
           oneRepMaxProvider.overrideWith((ref) async => {'e1': 100}),
+          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
           finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
         ],
@@ -526,6 +564,7 @@ void main() {
             ),
           ),
           oneRepMaxProvider.overrideWith((ref) async => {'e1': 100}),
+          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
           finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
         ],

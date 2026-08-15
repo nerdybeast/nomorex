@@ -5,7 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/dark_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/weight_converter.dart';
-import '../../exercises/providers/exercises_provider.dart';
+import '../../../shared/widgets/set_pr_link.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
@@ -24,13 +24,8 @@ class WorkoutDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(workoutDetailProvider(workoutId));
     final maxes = ref.watch(oneRepMaxProvider).asData?.value ?? const {};
+    final maxesByName = ref.watch(oneRepMaxByNameProvider).asData?.value ?? const {};
     final unit = ref.watch(unitPreferenceProvider);
-    // The exercises the viewer themselves can see (predefined + their own
-    // custom ones) — not necessarily every exercise referenced by this
-    // workout, since a workout's owner may differ from the viewer for a
-    // public workout. Gates whether "set PR" is offered per set below.
-    final viewerExerciseIds =
-        ref.watch(exercisesProvider).asData?.value.map((e) => e.id).toSet() ?? const <String>{};
     final notifier = ref.read(workoutDetailProvider(workoutId).notifier);
     final colorScheme = Theme.of(context).colorScheme;
     final workout = detail.asData?.value;
@@ -79,8 +74,8 @@ class WorkoutDetailScreen extends ConsumerWidget {
               _ExerciseCard(
                 exercise: ex,
                 oneRepMaxes: maxes,
+                oneRepMaxesByName: maxesByName,
                 unit: unit,
-                viewerExerciseIds: viewerExerciseIds,
                 interactive: workout.status == 'in_progress' || workout.status == 'paused',
                 onToggle: (setId, value) => notifier.setCompleted(setId, value),
               ),
@@ -343,16 +338,16 @@ class _ExerciseCard extends StatelessWidget {
   const _ExerciseCard({
     required this.exercise,
     required this.oneRepMaxes,
+    required this.oneRepMaxesByName,
     required this.unit,
-    required this.viewerExerciseIds,
     required this.interactive,
     required this.onToggle,
   });
 
   final WorkoutExercise exercise;
   final Map<String, double> oneRepMaxes;
+  final Map<String, double> oneRepMaxesByName;
   final String unit;
-  final Set<String> viewerExerciseIds;
   final bool interactive;
   final void Function(String setId, bool value)? onToggle;
 
@@ -381,12 +376,18 @@ class _ExerciseCard extends StatelessWidget {
 
   Widget _setTile(WorkoutSet s) {
     final basisId = resolveBasisExerciseId(s, exercise);
+    final basisName = s.basisExerciseName ?? exercise.exerciseName;
     return _SetTile(
       set: s,
       basisExerciseId: basisId,
-      oneRepMaxKg: oneRepMaxes[basisId],
+      basisExerciseName: basisName,
+      oneRepMaxKg: lookupOneRepMaxKg(
+        basisExerciseId: basisId,
+        basisExerciseName: basisName,
+        byExerciseId: oneRepMaxes,
+        byExerciseName: oneRepMaxesByName,
+      ),
       unit: unit,
-      canAddPr: viewerExerciseIds.contains(basisId),
       interactive: interactive,
       onToggle: onToggle,
     );
@@ -397,18 +398,22 @@ class _SetTile extends StatelessWidget {
   const _SetTile({
     required this.set,
     required this.basisExerciseId,
+    required this.basisExerciseName,
     required this.oneRepMaxKg,
     required this.unit,
-    required this.canAddPr,
     required this.interactive,
     required this.onToggle,
   });
 
   final WorkoutSet set;
   final String basisExerciseId;
+
+  /// Display name for [basisExerciseId] — [SetPrLink] needs it to give the
+  /// viewer their own copy of the lift when this workout belongs to someone
+  /// else and the basis is one of that owner's custom exercises.
+  final String basisExerciseName;
   final double? oneRepMaxKg;
   final String unit;
-  final bool canAddPr;
   final bool interactive;
   final void Function(String setId, bool value)? onToggle;
 
@@ -430,7 +435,7 @@ class _SetTile extends StatelessWidget {
         ?.copyWith(color: colorScheme.onSurfaceVariant);
 
     final Widget subtitle;
-    if (set.weightMode == 'percentage' && resolvedKg == null && canAddPr) {
+    if (set.weightMode == 'percentage' && resolvedKg == null) {
       subtitle = Text.rich(
         TextSpan(
           style: baseStyle,
@@ -438,26 +443,15 @@ class _SetTile extends StatelessWidget {
             TextSpan(text: '${set.percentage?.toStringAsFixed(0)}%$basisSuffix — '),
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
-              child: InkWell(
-                onTap: () => context.push(AppConstants.routeAddPrForExercise(basisExerciseId)),
-                child: Text(
-                  'set PR',
-                  style: baseStyle?.copyWith(
-                    color: colorScheme.primary,
-                    decoration: TextDecoration.underline,
-                    decorationColor: colorScheme.primary,
-                  ),
-                ),
+              child: SetPrLink(
+                exerciseId: basisExerciseId,
+                exerciseName: basisExerciseName,
+                style: baseStyle,
               ),
             ),
           ],
         ),
       );
-    } else if (set.weightMode == 'percentage' && resolvedKg == null) {
-      // The viewer isn't the workout's owner and can't see this exercise
-      // (e.g. a custom exercise on someone else's public workout) — no
-      // point offering a link that can't actually be completed.
-      subtitle = Text('${set.percentage?.toStringAsFixed(0)}%$basisSuffix — no PR recorded');
     } else {
       final trailingText = set.weightMode == 'percentage'
           ? '${set.percentage?.toStringAsFixed(0)}%$basisSuffix · ${formatWeightForPreference(resolvedKg!, unit)}'

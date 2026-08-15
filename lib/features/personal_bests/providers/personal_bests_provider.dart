@@ -47,6 +47,7 @@ class PersonalBestsNotifier extends _$PersonalBestsNotifier {
 
     ref.invalidateSelf();
     ref.invalidate(oneRepMaxProvider);
+    ref.invalidate(oneRepMaxByNameProvider);
     await future;
   }
 
