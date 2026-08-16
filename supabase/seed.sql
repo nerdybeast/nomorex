@@ -2848,3 +2848,62 @@ insert into public.program_sets (program_exercise_id, user_id, position, target_
   ('51bb7d62-b91c-4281-84c3-84ea148804d5', (select id from auth.users where email = 'a@a.com'), 0, 1, 'absolute', null, 85, null, '1RM test'),
   ('5c23376a-e23a-46a4-83b1-cee0a5e2ec05', (select id from auth.users where email = 'a@a.com'), 0, 1, 'absolute', null, 105, null, '1RM test'),
   ('6d8187c1-1518-4286-a612-19cd03c728eb', (select id from auth.users where email = 'a@a.com'), 0, 1, 'absolute', null, 100, null, 'Optional 1RM');
+
+-- =========================================================================
+-- Community seed data: public content owned by b@b.com so that signing in as
+-- a@a.com has something to browse on the Community screen (both tabs), with a
+-- real author name attached. a@a.com deliberately keeps a null display_name so
+-- the anonymous fallback is exercised too. Local/CI only.
+-- =========================================================================
+
+update public.profiles set display_name = 'BeastModeB'
+where id = (select id from auth.users where email = 'b@b.com');
+
+-- ---- Public workout ----
+insert into public.workouts (id, user_id, title, date, notes, is_public, workout_group_id) values
+  ('3f1d9c2e-4a58-4f7b-9a21-2c6f8e0b1a34', (select id from auth.users where email = 'b@b.com'),
+   'Heavy Pull Day', current_date, 'Straps allowed after the first working set.', true,
+   'c0ffee00-0000-4000-8000-000000000001');
+
+insert into public.workout_exercises (id, workout_id, user_id, exercise_id, position, notes) values
+  ('4a2e8b71-6c39-4d05-8f13-7b5c9d2e0a48', '3f1d9c2e-4a58-4f7b-9a21-2c6f8e0b1a34',
+   (select id from auth.users where email = 'b@b.com'),
+   (select id from public.exercises where name = 'Clean Pull' and is_predefined limit 1), 0, null);
+
+-- A percentage set: on the Community screen this resolves against the *viewer's*
+-- 1RM, which is the behavior worth having seeded data for.
+insert into public.workout_sets (workout_exercise_id, user_id, position, target_reps, weight_mode, percentage) values
+  ('4a2e8b71-6c39-4d05-8f13-7b5c9d2e0a48', (select id from auth.users where email = 'b@b.com'), 0, 3, 'percentage', 90),
+  ('4a2e8b71-6c39-4d05-8f13-7b5c9d2e0a48', (select id from auth.users where email = 'b@b.com'), 1, 3, 'percentage', 95);
+
+-- ---- Public program ----
+insert into public.programs (id, user_id, name, description, is_public, is_archived) values
+  ('8b4c1d6a-9e27-4f30-b158-3d7a2c9e5f01', (select id from auth.users where email = 'b@b.com'),
+   'B''s 2-Week Squat Block', 'A short public block, here so the Community Programs tab has content.', true, false);
+
+insert into public.program_weeks (id, program_id, user_id, week_number, label, notes, position) values
+  ('9c5d2e7b-0f38-4a41-c269-4e8b3daf6012', '8b4c1d6a-9e27-4f30-b158-3d7a2c9e5f01',
+   (select id from auth.users where email = 'b@b.com'), 1, 'Accumulation', null, 0),
+  ('ad6e3f8c-1a49-4b52-d37a-5f9c4eb07123', '8b4c1d6a-9e27-4f30-b158-3d7a2c9e5f01',
+   (select id from auth.users where email = 'b@b.com'), 2, 'Intensification', null, 1);
+
+insert into public.program_days (id, program_id, program_week_id, user_id, day_number, title, is_rest_day, notes, position) values
+  ('be7f4a9d-2b50-4c63-e48b-6a0d5fc18234', '8b4c1d6a-9e27-4f30-b158-3d7a2c9e5f01',
+   '9c5d2e7b-0f38-4a41-c269-4e8b3daf6012', (select id from auth.users where email = 'b@b.com'), 1, 'Day 1', false, null, 0),
+  ('cf805bae-3c61-4d74-f59c-7b1e60d29345', '8b4c1d6a-9e27-4f30-b158-3d7a2c9e5f01',
+   '9c5d2e7b-0f38-4a41-c269-4e8b3daf6012', (select id from auth.users where email = 'b@b.com'), 2, 'Day 2', true, 'Rest', 1),
+  ('d0916cbf-4d72-4e85-06ad-8c2f71e3a456', '8b4c1d6a-9e27-4f30-b158-3d7a2c9e5f01',
+   'ad6e3f8c-1a49-4b52-d37a-5f9c4eb07123', (select id from auth.users where email = 'b@b.com'), 1, 'Day 1', false, null, 2);
+
+insert into public.program_exercises (id, program_day_id, user_id, exercise_id, position, notes) values
+  ('e1a27dc0-5e83-4f96-17be-9d3082f4b567', 'be7f4a9d-2b50-4c63-e48b-6a0d5fc18234',
+   (select id from auth.users where email = 'b@b.com'),
+   (select id from public.exercises where name = 'Back Squat' and is_predefined limit 1), 0, null),
+  ('f2b38ed1-6f94-40a7-28cf-0e4193a5c678', 'd0916cbf-4d72-4e85-06ad-8c2f71e3a456',
+   (select id from auth.users where email = 'b@b.com'),
+   (select id from public.exercises where name = 'Back Squat' and is_predefined limit 1), 0, 'Pause 2s in the hole');
+
+insert into public.program_sets (program_exercise_id, user_id, position, target_reps, weight_mode, percentage, absolute_weight_kg, basis_exercise_id, note) values
+  ('e1a27dc0-5e83-4f96-17be-9d3082f4b567', (select id from auth.users where email = 'b@b.com'), 0, 5, 'percentage', 70, null, null, null),
+  ('e1a27dc0-5e83-4f96-17be-9d3082f4b567', (select id from auth.users where email = 'b@b.com'), 1, 5, 'percentage', 75, null, null, null),
+  ('f2b38ed1-6f94-40a7-28cf-0e4193a5c678', (select id from auth.users where email = 'b@b.com'), 0, 3, 'percentage', 85, null, null, null);

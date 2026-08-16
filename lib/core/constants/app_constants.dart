@@ -26,6 +26,7 @@ class AppConstants {
 
   static const String routeCommunity = '/shell/community';
   static String routeCommunityWorkoutDetail(String id) => '/community/$id';
+  static String routeCommunityProgramDetail(String id) => '/community/programs/$id';
 
   static const String routePrograms = '/shell/programs';
   // new: /programs/new ; detail: /programs/:id ; edit: /programs/:id/edit

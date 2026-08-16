@@ -15,10 +15,16 @@ class Program {
     this.isArchived = false,
     this.archivedAt,
     this.weeks = const [],
+    this.ownerDisplayName,
   });
 
   final String id;
   final String userId;
+
+  /// Author's `profiles.display_name`, present only when the query embedded
+  /// `profiles(display_name)`. Render it through `ownerDisplayName()` in
+  /// core/utils/owner_name.dart — null means "no name to show", not "no owner".
+  final String? ownerDisplayName;
   final String name;
   final String? description;
   final bool isPublic;
@@ -47,6 +53,7 @@ class Program {
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       weeks: weeks,
+      ownerDisplayName: (json['profiles'] as Map<String, dynamic>?)?['display_name'] as String?,
     );
   }
 }

@@ -24,6 +24,8 @@ void main() {
         weightKg: 100,
         reps: 5,
         date: DateTime(2026, 1, 1),
+        notes: 'Felt strong, belt only, no wraps.\n'
+            'Back tightened up on the walkout so next time set up shallower.',
         updatedAt: DateTime(2026, 1, 1),
       ),
       PersonalBest(
@@ -62,6 +64,50 @@ void main() {
     expect(find.text('PR HISTORY'), findsOneWidget);
     expect(find.text('Back Squat'), findsWidgets);
     expect(find.text('Bench Press'), findsNothing);
+  });
+
+  testWidgets('shows the full note on a history entry', (tester) async {
+    const note = 'Felt strong, belt only, no wraps.\n'
+        'Back tightened up on the walkout so next time set up shallower.';
+    final prs = [
+      PersonalBest(
+        id: '1',
+        userId: 'u1',
+        exerciseId: 'e1',
+        exerciseName: 'Back Squat',
+        weightKg: 100,
+        reps: 5,
+        date: DateTime(2026, 1, 1),
+        notes: note,
+        updatedAt: DateTime(2026, 1, 1),
+      ),
+      // No note — must not render an empty line.
+      PersonalBest(
+        id: '2',
+        userId: 'u1',
+        exerciseId: 'e1',
+        exerciseName: 'Back Squat',
+        weightKg: 90,
+        reps: 5,
+        date: DateTime(2025, 12, 1),
+        updatedAt: DateTime(2025, 12, 1),
+      ),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier(prs)),
+        ],
+        child: const MaterialApp(home: PrHistoryScreen(exerciseId: 'e1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final noteFinder = find.text(note);
+    expect(noteFinder, findsOneWidget);
+    // Unclipped on the detail screen.
+    expect(tester.widget<Text>(noteFinder).maxLines, isNull);
   });
 
   testWidgets('shows an empty state when the exercise has no history', (tester) async {

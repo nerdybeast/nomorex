@@ -17,7 +17,7 @@ class CommunityWorkoutsNotifier extends _$CommunityWorkoutsNotifier {
 
     final data = await _db
         .from('workouts')
-        .select('*, workout_exercises(*, exercises(name))')
+        .select('*, profiles(display_name), workout_exercises(*, exercises(name))')
         .eq('is_public', true)
         .neq('user_id', userId)
         .order('date', ascending: false);

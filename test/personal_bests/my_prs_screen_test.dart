@@ -14,6 +14,7 @@ final _prs = [
     weightKg: 100,
     reps: 5,
     date: DateTime(2026, 1, 1),
+    notes: 'Felt strong, belt only.',
     updatedAt: DateTime(2026, 1, 1),
   ),
 ];
@@ -71,5 +72,23 @@ void main() {
     expect(find.text('MY PRS'), findsOneWidget);
     expect(find.text('Back Squat'), findsOneWidget);
     expect(find.byIcon(Icons.refresh), findsOneWidget);
+  });
+
+  testWidgets('shows the PR note, clipped to two lines', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(
+            () => _RecordingPersonalBestsNotifier(() {}),
+          ),
+        ],
+        child: const MaterialApp(home: MyPrsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final noteFinder = find.text('Felt strong, belt only.');
+    expect(noteFinder, findsOneWidget);
+    expect(tester.widget<Text>(noteFinder).maxLines, 2);
   });
 }

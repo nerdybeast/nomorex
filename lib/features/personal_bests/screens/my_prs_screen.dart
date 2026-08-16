@@ -112,6 +112,8 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
                         weightDisplay: formatWeightForPreference(best.weightKg, unit),
                         reps: best.reps,
                         dateDisplay: formatDate(best.date),
+                        notes: best.notes,
+                        notesMaxLines: 2,
                         onTap: () => context.push(AppConstants.routePrHistory(best.exerciseId)),
                       ),
                     );

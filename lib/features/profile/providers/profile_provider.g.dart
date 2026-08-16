@@ -33,7 +33,7 @@ final class ProfileNotifierProvider
   ProfileNotifier create() => ProfileNotifier();
 }
 
-String _$profileNotifierHash() => r'5f7ac23068dfbdc0f1581b6322bc09ae087cc9b1';
+String _$profileNotifierHash() => r'4c5f5f5c4d58dc779089d00080bcc98fca04a4c6';
 
 abstract class _$ProfileNotifier extends $AsyncNotifier<Profile?> {
   FutureOr<Profile?> build();
@@ -101,3 +101,49 @@ final class UnitPreferenceProvider
 }
 
 String _$unitPreferenceHash() => r'd98fdd7e693d88e2bcd4f979f31466c340c5b69c';
+
+/// The signed-in user's own display name, or null if they haven't set one.
+
+@ProviderFor(displayName)
+final displayNameProvider = DisplayNameProvider._();
+
+/// The signed-in user's own display name, or null if they haven't set one.
+
+final class DisplayNameProvider
+    extends $FunctionalProvider<String?, String?, String?>
+    with $Provider<String?> {
+  /// The signed-in user's own display name, or null if they haven't set one.
+  DisplayNameProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'displayNameProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$displayNameHash();
+
+  @$internal
+  @override
+  $ProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  String? create(Ref ref) {
+    return displayName(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String?>(value),
+    );
+  }
+}
+
+String _$displayNameHash() => r'208c3dfa1df22dcc7f971db42ad147bf69d2e5a0';

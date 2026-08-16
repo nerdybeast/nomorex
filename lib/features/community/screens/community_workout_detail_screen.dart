@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/dark_theme.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/owner_name.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../shared/widgets/set_pr_link.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -48,7 +49,7 @@ class CommunityWorkoutDetailScreen extends ConsumerWidget {
             Text(workout.title, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 4),
             Text(
-              formatDate(workout.date),
+              'by ${ownerDisplayName(workout.ownerDisplayName)} · ${formatDate(workout.date)}',
               style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
             ),
             if (workout.notes != null && workout.notes!.isNotEmpty) ...[

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nomorex/core/theme/dark_theme.dart';
+import 'package:nomorex/core/utils/owner_name.dart';
 import 'package:nomorex/features/community/providers/community_workout_detail_provider.dart';
 import 'package:nomorex/features/community/screens/community_workout_detail_screen.dart';
 import 'package:nomorex/features/exercises/models/exercise.dart';
@@ -42,7 +43,10 @@ const _cleanAndJerk = Exercise(id: 'e2', name: 'Clean & Jerk', isPredefined: tru
 
 /// Someone else's public workout: one percentage set on 'e1', plus whatever
 /// [extraExercises] the individual test needs.
-Workout _publicWorkout({List<WorkoutExercise> extraExercises = const []}) {
+Workout _publicWorkout({
+  List<WorkoutExercise> extraExercises = const [],
+  String? owner = 'BeastModeB',
+}) {
   return Workout(
     id: 'w1',
     userId: 'other-user',
@@ -51,6 +55,7 @@ Workout _publicWorkout({List<WorkoutExercise> extraExercises = const []}) {
     updatedAt: DateTime(2026, 7, 5),
     workoutGroupId: 'g1',
     isPublic: true,
+    ownerDisplayName: owner,
     exercises: [
       const WorkoutExercise(
         id: 'we1',
@@ -140,6 +145,19 @@ void main() {
     expect(find.byType(IconButton), findsNothing);
     expect(find.byType(TextFormField), findsNothing);
     expect(find.text('Read only'), findsOneWidget);
+  });
+
+  testWidgets('attributes the workout to its owner', (tester) async {
+    await pumpCommunityDetail(tester, workout: _publicWorkout());
+
+    expect(find.textContaining('by BeastModeB'), findsOneWidget);
+  });
+
+  testWidgets('falls back to the anonymous label when the owner has no name',
+      (tester) async {
+    await pumpCommunityDetail(tester, workout: _publicWorkout(owner: null));
+
+    expect(find.textContaining('by $kAnonymousOwnerName'), findsOneWidget);
   });
 
   testWidgets('a percentage set resolves against the VIEWER\'s 1RM and accents the weight',

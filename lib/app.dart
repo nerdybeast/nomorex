@@ -22,6 +22,7 @@ import 'features/workouts/screens/workout_detail_screen.dart';
 import 'features/workouts/screens/finish_workout_screen.dart';
 import 'features/workouts/screens/workout_history_screen.dart';
 import 'features/community/screens/community_screen.dart';
+import 'features/community/screens/community_program_detail_screen.dart';
 import 'features/community/screens/community_workout_detail_screen.dart';
 import 'features/programs/screens/programs_screen.dart';
 import 'features/programs/screens/new_program_screen.dart';
@@ -142,6 +143,13 @@ GoRouter router(Ref ref) {
         path: '/workouts/:id',
         builder: (_, state) =>
             WorkoutDetailScreen(workoutId: state.pathParameters['id']!),
+      ),
+      // Declared ahead of '/community/:id' so the static "programs" segment is
+      // never mistaken for a workout id.
+      GoRoute(
+        path: '/community/programs/:id',
+        builder: (_, state) =>
+            CommunityProgramDetailScreen(programId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/community/:id',

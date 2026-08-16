@@ -23,6 +23,7 @@ class ProgramDayDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(programDetailProvider(programId));
     final maxes = ref.watch(oneRepMaxProvider).asData?.value ?? const {};
+    final maxesByName = ref.watch(oneRepMaxByNameProvider).asData?.value ?? const {};
     final unit = ref.watch(unitPreferenceProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -58,7 +59,12 @@ class ProgramDayDetailScreen extends ConsumerWidget {
                       const Text('No workout scheduled')
                     else
                       for (final ex in day.exercises)
-                        _ExerciseCard(exercise: ex, oneRepMaxes: maxes, unit: unit),
+                        _ExerciseCard(
+                          exercise: ex,
+                          oneRepMaxes: maxes,
+                          oneRepMaxesByName: maxesByName,
+                          unit: unit,
+                        ),
                   ]),
                 ),
               ),
@@ -71,10 +77,16 @@ class ProgramDayDetailScreen extends ConsumerWidget {
 }
 
 class _ExerciseCard extends StatelessWidget {
-  const _ExerciseCard({required this.exercise, required this.oneRepMaxes, required this.unit});
+  const _ExerciseCard({
+    required this.exercise,
+    required this.oneRepMaxes,
+    required this.oneRepMaxesByName,
+    required this.unit,
+  });
 
   final ProgramExercise exercise;
   final Map<String, double> oneRepMaxes;
+  final Map<String, double> oneRepMaxesByName;
   final String unit;
 
   @override
@@ -97,7 +109,14 @@ class _ExerciseCard extends StatelessWidget {
                 ),
               ),
             const Divider(height: 16),
-            for (final s in exercise.sets) _SetLines(set: s, exercise: exercise, oneRepMaxes: oneRepMaxes, unit: unit),
+            for (final s in exercise.sets)
+              _SetLines(
+                set: s,
+                exercise: exercise,
+                oneRepMaxes: oneRepMaxes,
+                oneRepMaxesByName: oneRepMaxesByName,
+                unit: unit,
+              ),
           ],
         ),
       ),
@@ -110,19 +129,31 @@ class _SetLines extends StatelessWidget {
     required this.set,
     required this.exercise,
     required this.oneRepMaxes,
+    required this.oneRepMaxesByName,
     required this.unit,
   });
 
   final ProgramSet set;
   final ProgramExercise exercise;
   final Map<String, double> oneRepMaxes;
+  final Map<String, double> oneRepMaxesByName;
   final String unit;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final basisExerciseId = set.basisExerciseId ?? exercise.exerciseId;
-    final oneRepMaxKg = oneRepMaxes[basisExerciseId];
+    // Name fallback matters here because this screen also renders another
+    // user's public program, whose exercise ids belong to *their* catalog —
+    // an id-only lookup would silently never resolve. See lookupOneRepMaxKg.
+    final oneRepMaxKg = lookupOneRepMaxKg(
+      basisExerciseId: basisExerciseId,
+      basisExerciseName: set.basisExerciseId != null
+          ? (set.basisExerciseName ?? exercise.exerciseName)
+          : exercise.exerciseName,
+      byExerciseId: oneRepMaxes,
+      byExerciseName: oneRepMaxesByName,
+    );
     final resolvedKg = resolveSetWeightKg(
       weightMode: set.weightMode,
       percentage: set.percentage,

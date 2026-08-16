@@ -19,10 +19,17 @@ class Workout {
     this.totalPausedSeconds = 0,
     this.finishedAt,
     this.sessionNotes,
+    this.ownerDisplayName,
   });
 
   final String id;
   final String userId;
+
+  /// Author's `profiles.display_name`, present only when the query embedded
+  /// `profiles(display_name)` (the community reads do; the owner's own lists
+  /// don't need it). Null both for "not selected" and "owner has no name set",
+  /// so render it through `ownerDisplayName()` in core/utils/owner_name.dart.
+  final String? ownerDisplayName;
   final String title;
   final DateTime date;
   final String? notes;
@@ -70,6 +77,7 @@ class Workout {
       finishedAt:
           json['finished_at'] != null ? DateTime.parse(json['finished_at'] as String) : null,
       sessionNotes: json['session_notes'] as String?,
+      ownerDisplayName: (json['profiles'] as Map<String, dynamic>?)?['display_name'] as String?,
     );
   }
 }

@@ -37,9 +37,10 @@ class _RecordingAuthNotifier extends AuthNotifier {
 }
 
 class _TestProfileNotifier extends ProfileNotifier {
-  _TestProfileNotifier(this._profile, {this.onSetUnitPreference});
+  _TestProfileNotifier(this._profile, {this.onSetUnitPreference, this.onSetDisplayName});
   Profile? _profile;
   final void Function(String)? onSetUnitPreference;
+  final void Function(String)? onSetDisplayName;
 
   @override
   Future<Profile?> build() async => _profile;
@@ -47,7 +48,14 @@ class _TestProfileNotifier extends ProfileNotifier {
   @override
   Future<void> setUnitPreference(String unit) async {
     onSetUnitPreference?.call(unit);
-    _profile = Profile(id: _profile!.id, unitPreference: unit);
+    _profile = _profile!.copyWith(unitPreference: unit);
+    ref.invalidateSelf();
+    await future;
+  }
+
+  @override
+  Future<void> setDisplayName(String name) async {
+    onSetDisplayName?.call(name);
     ref.invalidateSelf();
     await future;
   }
@@ -56,6 +64,7 @@ class _TestProfileNotifier extends ProfileNotifier {
 Widget _wrap(
   Profile profile, {
   void Function(String)? onSetUnitPreference,
+  void Function(String)? onSetDisplayName,
   User user = _testUser,
   VoidCallback? onSignOut,
 }) =>
@@ -63,7 +72,11 @@ Widget _wrap(
       overrides: [
         currentAuthUserProvider.overrideWithValue(user),
         profileProvider.overrideWith(
-          () => _TestProfileNotifier(profile, onSetUnitPreference: onSetUnitPreference),
+          () => _TestProfileNotifier(
+            profile,
+            onSetUnitPreference: onSetUnitPreference,
+            onSetDisplayName: onSetDisplayName,
+          ),
         ),
         if (onSignOut != null) authProvider.overrideWith(() => _RecordingAuthNotifier(onSignOut)),
       ],
@@ -99,10 +112,55 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // The display-name section sits above PREFERENCES, so the unit toggle can
+    // be below the fold in the default test viewport.
+    await tester.ensureVisible(find.text('kg'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('kg'));
     await tester.pumpAndSettle();
 
     expect(captured, 'kg');
+  });
+
+  testWidgets('seeds the display-name field from the profile', (tester) async {
+    await tester.pumpWidget(
+      _wrap(const Profile(id: 'u1', unitPreference: 'both', displayName: 'BeastModeB')),
+    );
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(find.byKey(const Key('profile_display_name')));
+    expect(field.controller?.text, 'BeastModeB');
+  });
+
+  testWidgets('leaves the display-name field empty when none is set', (tester) async {
+    await tester.pumpWidget(_wrap(const Profile(id: 'u1', unitPreference: 'both')));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(find.byKey(const Key('profile_display_name')));
+    expect(field.controller?.text, isEmpty);
+  });
+
+  testWidgets('saving the display name calls setDisplayName', (tester) async {
+    String? captured;
+
+    await tester.pumpWidget(
+      _wrap(
+        const Profile(id: 'u1', unitPreference: 'both'),
+        onSetDisplayName: (n) => captured = n,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byKey(const Key('profile_display_name')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('profile_display_name')), 'BeastModeB');
+
+    await tester.ensureVisible(find.byKey(const Key('profile_display_name_save')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('profile_display_name_save')));
+    await tester.pumpAndSettle();
+
+    expect(captured, 'BeastModeB');
   });
 
   testWidgets('shows the full user id without truncation', (tester) async {
@@ -113,12 +171,13 @@ void main() {
 
     expect(find.text(_longUuid), findsOneWidget);
     expect(find.byType(SelectableText), findsWidgets);
-    expect(
-      tester
-          .widgetList<Text>(find.byType(Text))
-          .where((t) => t.overflow == TextOverflow.ellipsis),
-      isEmpty,
-    );
+    // Scoped to the id's own widget rather than every Text on screen: the
+    // display-name input's hint renders with ellipsis overflow by default,
+    // which has nothing to do with truncating the id.
+    final idField = tester
+        .widgetList<SelectableText>(find.byType(SelectableText))
+        .firstWhere((s) => s.data == _longUuid);
+    expect(idField.maxLines, isNull);
   });
 
   testWidgets('copy button copies the user id to the clipboard', (tester) async {

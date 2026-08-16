@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nomorex/features/dashboard/screens/dashboard_screen.dart';
 import 'package:nomorex/features/personal_bests/models/personal_best.dart';
 import 'package:nomorex/features/personal_bests/providers/personal_bests_provider.dart';
@@ -9,6 +10,7 @@ import 'package:nomorex/features/programs/providers/program_instances_list_provi
 import 'package:nomorex/features/workouts/models/workout.dart';
 import 'package:nomorex/features/workouts/providers/finished_workouts_provider.dart';
 import 'package:nomorex/features/workouts/providers/in_progress_workouts_provider.dart';
+import 'package:nomorex/shared/widgets/pr_card.dart';
 
 class _StubPersonalBestsNotifier extends PersonalBestsNotifier {
   @override
@@ -37,6 +39,13 @@ class _StubInProgressWorkoutsNotifier extends InProgressWorkoutsNotifier {
   final List<Workout> _workouts;
   @override
   Future<List<Workout>> build() async => _workouts;
+}
+
+class _StubPersonalBestsWithPrsNotifier extends PersonalBestsNotifier {
+  _StubPersonalBestsWithPrsNotifier(this._prs);
+  final List<PersonalBest> _prs;
+  @override
+  Future<List<PersonalBest>> build() async => _prs;
 }
 
 class _RecordingPersonalBestsNotifier extends PersonalBestsNotifier {
@@ -131,6 +140,9 @@ void main() {
 
     expect(find.text('Strong Like Bull'), findsOneWidget);
     expect(find.textContaining('In progress'), findsOneWidget);
+    // The card navigates to the instance detail screen, so it carries the
+    // app-wide "this row goes somewhere" chevron.
+    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
   });
 
   testWidgets('shows an upcoming program as upcoming', (tester) async {
@@ -204,6 +216,7 @@ void main() {
 
     expect(find.text('Push Day'), findsOneWidget);
     expect(find.textContaining('In progress — started'), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
   });
 
   testWidgets('shows a card for a paused workout', (tester) async {
@@ -288,6 +301,88 @@ void main() {
     expect(find.text('Workout 5'), findsOneWidget);
     expect(find.text('Workout 1'), findsOneWidget);
     expect(find.text('Workout 0'), findsNothing);
+    // Every recent-workout card navigates to the workout, so each gets a chevron.
+    expect(find.byIcon(Icons.chevron_right), findsNWidgets(5));
+  });
+
+  testWidgets('shows the note on a recent PR, clipped to two lines', (tester) async {
+    final prs = [
+      PersonalBest(
+        id: '1',
+        userId: 'u1',
+        exerciseId: 'e1',
+        exerciseName: 'Back Squat',
+        weightKg: 100,
+        reps: 1,
+        date: DateTime(2026, 8, 14),
+        notes: 'Felt strong, belt only.',
+        updatedAt: DateTime(2026, 8, 14),
+      ),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsWithPrsNotifier(prs)),
+          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
+          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final noteFinder = find.text('Felt strong, belt only.');
+    expect(noteFinder, findsOneWidget);
+    expect(tester.widget<Text>(noteFinder).maxLines, 2);
+  });
+
+  testWidgets('tapping a recent PR opens that exercise\'s history', (tester) async {
+    final prs = [
+      PersonalBest(
+        id: '1',
+        userId: 'u1',
+        exerciseId: 'e1',
+        exerciseName: 'Back Squat',
+        weightKg: 100,
+        reps: 1,
+        date: DateTime(2026, 8, 14),
+        updatedAt: DateTime(2026, 8, 14),
+      ),
+    ];
+
+    final router = GoRouter(
+      initialLocation: '/shell/home',
+      routes: [
+        GoRoute(path: '/shell/home', builder: (_, _) => const DashboardScreen()),
+        GoRoute(
+          path: '/prs/:exerciseId/history',
+          builder: (_, state) => Text('history:${state.pathParameters['exerciseId']}'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsWithPrsNotifier(prs)),
+          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
+          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The card navigates, so it carries the chevron.
+    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+
+    await tester.tap(find.byType(PrCard));
+    await tester.pumpAndSettle();
+
+    expect(find.text('history:e1'), findsOneWidget);
   });
 
   testWidgets('tapping the refresh icon refreshes all four data sources', (tester) async {

@@ -33,6 +33,7 @@ class PrHistoryScreen extends ConsumerWidget {
                       weightDisplay: formatWeightForPreference(pr.weightKg, unit),
                       reps: pr.reps,
                       dateDisplay: formatDate(pr.date),
+                      notes: pr.notes,
                     ),
                   ),
               ],
