@@ -13,6 +13,7 @@ import '../../programs/providers/program_instances_list_provider.dart';
 import '../../programs/utils/program_progress.dart';
 import '../../workouts/providers/finished_workouts_provider.dart';
 import '../../workouts/providers/in_progress_workouts_provider.dart';
+import '../../workouts/widgets/elapsed_timer.dart';
 import '../../profile/providers/profile_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -82,9 +83,18 @@ class DashboardScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: WorkoutInProgressCard(
                         title: workout.title,
-                        statusDisplay: workout.status == 'paused'
-                            ? 'Paused — started ${formatTime(workout.startedAt!)}'
-                            : 'In progress — started ${formatTime(workout.startedAt!)}',
+                        statusDisplay: workout.status == 'paused' ? 'Paused' : 'In progress',
+                        // Ticks live for an in-progress workout and renders
+                        // frozen for a paused one — ElapsedTimer handles both.
+                        statusTrailing: ElapsedTimer(
+                          startedAt: workout.startedAt!,
+                          totalPausedSeconds: workout.totalPausedSeconds,
+                          pausedAt: workout.pausedAt,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                              ),
+                        ),
                         onTap: () => context.push(AppConstants.routeWorkoutDetail(workout.id)),
                       ),
                     ),

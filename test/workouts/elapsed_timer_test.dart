@@ -93,4 +93,61 @@ void main() {
     expect(ticks.hasListener, isFalse);
     expect(find.text('00:03:00'), findsOneWidget);
   });
+
+  group('maxScaledWidth', () {
+    // The scaling lives in a FittedBox, which scales through a paint
+    // transform — the child Text's own reported size stays unscaled, so these
+    // assert on the FittedBox's box instead.
+    Widget build({required double surfaceWidth, required double maxScaledWidth}) => MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                key: const Key('surface'),
+                width: surfaceWidth,
+                child: ElapsedTimer(
+                  startedAt: DateTime.now(),
+                  totalPausedSeconds: 0,
+                  finishedAt: DateTime.now(),
+                  maxScaledWidth: maxScaledWidth,
+                ),
+              ),
+            ),
+          ),
+        );
+
+    testWidgets('is absent by default, leaving the timer unscaled', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ElapsedTimer(
+            startedAt: DateTime.now(),
+            totalPausedSeconds: 0,
+            finishedAt: DateTime.now(),
+          ),
+        ),
+      );
+
+      expect(find.byType(FittedBox), findsNothing);
+    });
+
+    testWidgets('fills the available width when narrower than the cap', (tester) async {
+      await tester.pumpWidget(build(surfaceWidth: 320, maxScaledWidth: 400));
+
+      expect(tester.getSize(find.byType(FittedBox)).width, 320);
+    });
+
+    testWidgets('stops at the cap on a wider surface', (tester) async {
+      await tester.pumpWidget(build(surfaceWidth: 700, maxScaledWidth: 400));
+
+      expect(tester.getSize(find.byType(FittedBox)).width, 400);
+    });
+
+    testWidgets('stays left-aligned past the cap', (tester) async {
+      await tester.pumpWidget(build(surfaceWidth: 700, maxScaledWidth: 400));
+
+      expect(
+        tester.getTopLeft(find.byType(FittedBox)).dx,
+        tester.getTopLeft(find.byKey(const Key('surface'))).dx,
+      );
+    });
+  });
 }

@@ -1,6 +1,12 @@
 class AppConstants {
   static const double kMobileBreakpoint = 600.0;
 
+  /// Cap for the scaled-up in-progress workout timer: roughly the content width
+  /// of a large phone (~430pt device minus the screen's 16pt horizontal
+  /// padding), so the timer fills a phone edge-to-edge and stops growing on
+  /// tablet/desktop.
+  static const double kWorkoutTimerMaxWidth = 400.0;
+
   // Route paths
   static const String routeLanding = '/';
   static const String routeLogin = '/login';
