@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/features/workouts/models/workout_exercise.dart';
 import 'package:nomorex/features/workouts/models/workout_set.dart';
 import 'package:nomorex/features/workouts/utils/set_resolver.dart';
+import 'package:nomorex/shared/models/one_rep_max.dart';
 
 const _exercise = WorkoutExercise(
   id: 'we1',
@@ -63,46 +64,46 @@ void main() {
     expect(resolveBasisExerciseId(set, _exercise), 'e2');
   });
 
-  group('lookupOneRepMaxKg', () {
+  group('lookupOneRepMax', () {
     test('prefers a match on exercise id', () {
       expect(
-        lookupOneRepMaxKg(
+        lookupOneRepMax(
           basisExerciseId: 'e1',
           basisExerciseName: 'Front Squat',
-          byExerciseId: const {'e1': 100},
-          byExerciseName: const {'front squat': 90},
-        ),
+          byExerciseId: const {'e1': OneRepMax.measured(100)},
+          byExerciseName: const {'front squat': OneRepMax.measured(90)},
+        )?.kg,
         100,
       );
     });
 
     test('falls back to the exercise name when the id is another user\'s', () {
       expect(
-        lookupOneRepMaxKg(
+        lookupOneRepMax(
           basisExerciseId: 'owners-id',
           basisExerciseName: 'dude pulls',
-          byExerciseId: const {'viewers-id': 87},
-          byExerciseName: const {'dude pulls': 87},
-        ),
+          byExerciseId: const {'viewers-id': OneRepMax.measured(87)},
+          byExerciseName: const {'dude pulls': OneRepMax.measured(87)},
+        )?.kg,
         87,
       );
     });
 
     test('matches names case-insensitively', () {
       expect(
-        lookupOneRepMaxKg(
+        lookupOneRepMax(
           basisExerciseId: 'owners-id',
           basisExerciseName: 'Dude Pulls',
           byExerciseId: const {},
-          byExerciseName: const {'dude pulls': 87},
-        ),
+          byExerciseName: const {'dude pulls': OneRepMax.measured(87)},
+        )?.kg,
         87,
       );
     });
 
     test('returns null when neither the id nor the name is known', () {
       expect(
-        lookupOneRepMaxKg(
+        lookupOneRepMax(
           basisExerciseId: 'e1',
           basisExerciseName: 'Front Squat',
           byExerciseId: const {},
@@ -110,6 +111,38 @@ void main() {
         ),
         isNull,
       );
+    });
+  });
+
+  group('lookupOneRepMax carries the measured/estimated distinction', () {
+    test('reports a measured single as not estimated', () {
+      final max = lookupOneRepMax(
+        basisExerciseId: 'e1',
+        basisExerciseName: 'Front Squat',
+        byExerciseId: const {'e1': OneRepMax.measured(100)},
+        byExerciseName: const {},
+      );
+      expect(max?.isEstimated, isFalse);
+    });
+
+    test('reports an inferred max as estimated', () {
+      final max = lookupOneRepMax(
+        basisExerciseId: 'e1',
+        basisExerciseName: 'Front Squat',
+        byExerciseId: const {'e1': OneRepMax.estimated(112.5)},
+        byExerciseName: const {},
+      );
+      expect(max?.isEstimated, isTrue);
+    });
+
+    test('carries the flag through the name fallback too', () {
+      final max = lookupOneRepMax(
+        basisExerciseId: 'owners-id',
+        basisExerciseName: 'Dude Pulls',
+        byExerciseId: const {},
+        byExerciseName: const {'dude pulls': OneRepMax.estimated(87)},
+      );
+      expect(max?.isEstimated, isTrue);
     });
   });
 }

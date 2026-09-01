@@ -10,6 +10,7 @@ import '../../workouts/models/workout_exercise.dart';
 import '../../workouts/models/workout_set.dart';
 import '../../workouts/providers/one_rep_max_provider.dart';
 import '../../workouts/utils/set_resolver.dart';
+import '../../../shared/models/one_rep_max.dart';
 import '../providers/community_workout_detail_provider.dart';
 
 class CommunityWorkoutDetailScreen extends ConsumerWidget {
@@ -101,8 +102,8 @@ class _ExerciseCard extends StatelessWidget {
   });
 
   final WorkoutExercise exercise;
-  final Map<String, double> oneRepMaxes;
-  final Map<String, double> oneRepMaxesByName;
+  final Map<String, OneRepMax> oneRepMaxes;
+  final Map<String, OneRepMax> oneRepMaxesByName;
   final String unit;
 
   @override
@@ -146,8 +147,8 @@ class _SetRow extends StatelessWidget {
 
   final WorkoutSet set;
   final WorkoutExercise exercise;
-  final Map<String, double> oneRepMaxes;
-  final Map<String, double> oneRepMaxesByName;
+  final Map<String, OneRepMax> oneRepMaxes;
+  final Map<String, OneRepMax> oneRepMaxesByName;
   final String unit;
 
   @override
@@ -166,16 +167,17 @@ class _SetRow extends StatelessWidget {
 
     final basisId = resolveBasisExerciseId(set, exercise);
     final basisName = set.basisExerciseName ?? exercise.exerciseName;
+    final oneRepMax = lookupOneRepMax(
+      basisExerciseId: basisId,
+      basisExerciseName: basisName,
+      byExerciseId: oneRepMaxes,
+      byExerciseName: oneRepMaxesByName,
+    );
     final resolvedKg = resolveSetWeightKg(
       weightMode: set.weightMode,
       percentage: set.percentage,
       absoluteWeightKg: set.absoluteWeightKg,
-      oneRepMaxKg: lookupOneRepMaxKg(
-        basisExerciseId: basisId,
-        basisExerciseName: basisName,
-        byExerciseId: oneRepMaxes,
-        byExerciseName: oneRepMaxesByName,
-      ),
+      oneRepMaxKg: oneRepMax?.kg,
     );
 
     // "70% 1RM" normally, but "75% of Clean & Jerk" when the set is programmed
@@ -196,7 +198,8 @@ class _SetRow extends StatelessWidget {
             TextSpan(text: target),
             if (resolvedKg != null)
               TextSpan(
-                text: formatWeightForPreference(resolvedKg, unit),
+                text: formatResolvedWeight(resolvedKg, unit,
+                    estimated: oneRepMax?.isEstimated ?? false),
                 style: baseStyle.copyWith(color: accent),
               )
             else

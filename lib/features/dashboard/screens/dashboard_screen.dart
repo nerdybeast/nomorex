@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/pr_card.dart';
+import '../../personal_bests/utils/estimated_pr_label.dart';
 import '../../../shared/widgets/program_instance_card.dart';
 import '../../../shared/widgets/recent_workout_card.dart';
 import '../../../shared/widgets/workout_in_progress_card.dart';
@@ -26,6 +27,7 @@ class DashboardScreen extends ConsumerWidget {
     final inProgressWorkoutsAsync = ref.watch(inProgressWorkoutsProvider);
     final finishedWorkoutsAsync = ref.watch(finishedWorkoutsProvider);
     final unit = ref.watch(unitPreferenceProvider);
+    final formula = ref.watch(oneRepMaxFormulaProvider);
     final isRefreshing = inProgressWorkoutsAsync.isRefreshing ||
         instancesAsync.isRefreshing ||
         prsAsync.isRefreshing ||
@@ -165,6 +167,8 @@ class DashboardScreen extends ConsumerWidget {
                         dateDisplay: formatDate(pr.date),
                         notes: pr.notes,
                         notesMaxLines: 2,
+                        estimatedOneRepMaxDisplay:
+                            estimatedOneRepMaxLabel(pr, formula, unit),
                         onTap: () => context.push(AppConstants.routePrHistory(pr.exerciseId)),
                       ),
                     ),

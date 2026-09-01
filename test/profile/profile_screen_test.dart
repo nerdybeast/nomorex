@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/features/auth/providers/auth_provider.dart';
 import 'package:nomorex/features/profile/models/profile.dart';
+import 'package:nomorex/core/utils/one_rep_max_formula.dart';
 import 'package:nomorex/features/profile/providers/profile_provider.dart';
 import 'package:nomorex/features/profile/screens/profile_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -37,10 +38,16 @@ class _RecordingAuthNotifier extends AuthNotifier {
 }
 
 class _TestProfileNotifier extends ProfileNotifier {
-  _TestProfileNotifier(this._profile, {this.onSetUnitPreference, this.onSetDisplayName});
+  _TestProfileNotifier(
+    this._profile, {
+    this.onSetUnitPreference,
+    this.onSetDisplayName,
+    this.onSetOneRepMaxFormula,
+  });
   Profile? _profile;
   final void Function(String)? onSetUnitPreference;
   final void Function(String)? onSetDisplayName;
+  final void Function(OneRepMaxFormula)? onSetOneRepMaxFormula;
 
   @override
   Future<Profile?> build() async => _profile;
@@ -49,6 +56,14 @@ class _TestProfileNotifier extends ProfileNotifier {
   Future<void> setUnitPreference(String unit) async {
     onSetUnitPreference?.call(unit);
     _profile = _profile!.copyWith(unitPreference: unit);
+    ref.invalidateSelf();
+    await future;
+  }
+
+  @override
+  Future<void> setOneRepMaxFormula(OneRepMaxFormula formula) async {
+    onSetOneRepMaxFormula?.call(formula);
+    _profile = _profile!.copyWith(oneRepMaxFormula: formula);
     ref.invalidateSelf();
     await future;
   }
@@ -65,6 +80,7 @@ Widget _wrap(
   Profile profile, {
   void Function(String)? onSetUnitPreference,
   void Function(String)? onSetDisplayName,
+  void Function(OneRepMaxFormula)? onSetOneRepMaxFormula,
   User user = _testUser,
   VoidCallback? onSignOut,
 }) =>
@@ -76,6 +92,7 @@ Widget _wrap(
             profile,
             onSetUnitPreference: onSetUnitPreference,
             onSetDisplayName: onSetDisplayName,
+            onSetOneRepMaxFormula: onSetOneRepMaxFormula,
           ),
         ),
         if (onSignOut != null) authProvider.overrideWith(() => _RecordingAuthNotifier(onSignOut)),
@@ -85,7 +102,10 @@ Widget _wrap(
 
 void main() {
   testWidgets('shows the user id, email, and member-since date', (tester) async {
-    await tester.pumpWidget(_wrap(const Profile(id: 'u1', unitPreference: 'both')));
+    await tester.pumpWidget(_wrap(const Profile(
+        id: 'u1',
+        unitPreference: 'both',
+        oneRepMaxFormula: OneRepMaxFormula.brzycki)));
     await tester.pumpAndSettle();
 
     expect(find.text('u1'), findsOneWidget);
@@ -94,7 +114,10 @@ void main() {
   });
 
   testWidgets('preselects the segmented button to the current preference', (tester) async {
-    await tester.pumpWidget(_wrap(const Profile(id: 'u1', unitPreference: 'lbs')));
+    await tester.pumpWidget(_wrap(const Profile(
+        id: 'u1',
+        unitPreference: 'lbs',
+        oneRepMaxFormula: OneRepMaxFormula.brzycki)));
     await tester.pumpAndSettle();
 
     final button = tester.widget<SegmentedButton<String>>(find.byType(SegmentedButton<String>));
@@ -106,7 +129,10 @@ void main() {
 
     await tester.pumpWidget(
       _wrap(
-        const Profile(id: 'u1', unitPreference: 'both'),
+        const Profile(
+        id: 'u1',
+        unitPreference: 'both',
+        oneRepMaxFormula: OneRepMaxFormula.brzycki),
         onSetUnitPreference: (u) => captured = u,
       ),
     );
@@ -124,7 +150,10 @@ void main() {
 
   testWidgets('seeds the display-name field from the profile', (tester) async {
     await tester.pumpWidget(
-      _wrap(const Profile(id: 'u1', unitPreference: 'both', displayName: 'BeastModeB')),
+      _wrap(const Profile(
+        id: 'u1',
+        unitPreference: 'both',
+        oneRepMaxFormula: OneRepMaxFormula.brzycki, displayName: 'BeastModeB')),
     );
     await tester.pumpAndSettle();
 
@@ -133,7 +162,10 @@ void main() {
   });
 
   testWidgets('leaves the display-name field empty when none is set', (tester) async {
-    await tester.pumpWidget(_wrap(const Profile(id: 'u1', unitPreference: 'both')));
+    await tester.pumpWidget(_wrap(const Profile(
+        id: 'u1',
+        unitPreference: 'both',
+        oneRepMaxFormula: OneRepMaxFormula.brzycki)));
     await tester.pumpAndSettle();
 
     final field = tester.widget<TextField>(find.byKey(const Key('profile_display_name')));
@@ -145,7 +177,10 @@ void main() {
 
     await tester.pumpWidget(
       _wrap(
-        const Profile(id: 'u1', unitPreference: 'both'),
+        const Profile(
+        id: 'u1',
+        unitPreference: 'both',
+        oneRepMaxFormula: OneRepMaxFormula.brzycki),
         onSetDisplayName: (n) => captured = n,
       ),
     );
@@ -165,7 +200,10 @@ void main() {
 
   testWidgets('shows the full user id without truncation', (tester) async {
     await tester.pumpWidget(
-      _wrap(const Profile(id: _longUuid, unitPreference: 'both'), user: _longIdUser),
+      _wrap(const Profile(
+        id: _longUuid,
+        unitPreference: 'both',
+        oneRepMaxFormula: OneRepMaxFormula.brzycki), user: _longIdUser),
     );
     await tester.pumpAndSettle();
 
@@ -193,7 +231,10 @@ void main() {
         tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
 
     await tester.pumpWidget(
-      _wrap(const Profile(id: _longUuid, unitPreference: 'both'), user: _longIdUser),
+      _wrap(const Profile(
+        id: _longUuid,
+        unitPreference: 'both',
+        oneRepMaxFormula: OneRepMaxFormula.brzycki), user: _longIdUser),
     );
     await tester.pumpAndSettle();
 
@@ -205,7 +246,10 @@ void main() {
   });
 
   testWidgets('tapping the sign-out icon shows a confirmation dialog', (tester) async {
-    await tester.pumpWidget(_wrap(const Profile(id: 'u1', unitPreference: 'both')));
+    await tester.pumpWidget(_wrap(const Profile(
+        id: 'u1',
+        unitPreference: 'both',
+        oneRepMaxFormula: OneRepMaxFormula.brzycki)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.logout));
@@ -219,7 +263,10 @@ void main() {
   testWidgets('cancelling the confirmation dialog does not sign out', (tester) async {
     var signedOut = false;
     await tester.pumpWidget(
-      _wrap(const Profile(id: 'u1', unitPreference: 'both'), onSignOut: () => signedOut = true),
+      _wrap(const Profile(
+        id: 'u1',
+        unitPreference: 'both',
+        oneRepMaxFormula: OneRepMaxFormula.brzycki), onSignOut: () => signedOut = true),
     );
     await tester.pumpAndSettle();
 
@@ -235,7 +282,10 @@ void main() {
   testWidgets('confirming Log Out signs the user out', (tester) async {
     var signedOut = false;
     await tester.pumpWidget(
-      _wrap(const Profile(id: 'u1', unitPreference: 'both'), onSignOut: () => signedOut = true),
+      _wrap(const Profile(
+        id: 'u1',
+        unitPreference: 'both',
+        oneRepMaxFormula: OneRepMaxFormula.brzycki), onSignOut: () => signedOut = true),
     );
     await tester.pumpAndSettle();
 
@@ -245,5 +295,46 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(signedOut, isTrue);
+  });
+
+  testWidgets('reflects the saved 1RM formula', (tester) async {
+    await tester.pumpWidget(
+      _wrap(const Profile(
+        id: 'u1',
+        unitPreference: 'kg',
+        oneRepMaxFormula: OneRepMaxFormula.lander,
+      )),
+    );
+    await tester.pumpAndSettle();
+
+    final button = tester.widget<SegmentedButton<OneRepMaxFormula>>(
+      find.byKey(const Key('profile_1rm_formula')),
+    );
+    expect(button.selected, {OneRepMaxFormula.lander});
+  });
+
+  testWidgets('selecting a formula calls setOneRepMaxFormula', (tester) async {
+    OneRepMaxFormula? captured;
+
+    await tester.pumpWidget(
+      _wrap(
+        const Profile(
+          id: 'u1',
+          unitPreference: 'kg',
+          oneRepMaxFormula: OneRepMaxFormula.brzycki,
+        ),
+        onSetOneRepMaxFormula: (f) => captured = f,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Sits at the bottom of PREFERENCES, well below the fold in the default
+    // test viewport.
+    await tester.ensureVisible(find.text('Epley'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Epley'));
+    await tester.pumpAndSettle();
+
+    expect(captured, OneRepMaxFormula.epley);
   });
 }

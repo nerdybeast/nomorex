@@ -33,7 +33,7 @@ final class ProfileNotifierProvider
   ProfileNotifier create() => ProfileNotifier();
 }
 
-String _$profileNotifierHash() => r'4c5f5f5c4d58dc779089d00080bcc98fca04a4c6';
+String _$profileNotifierHash() => r'a65103207fa5699a46eaf4fe2de786ba36211505';
 
 abstract class _$ProfileNotifier extends $AsyncNotifier<Profile?> {
   FutureOr<Profile?> build();
@@ -101,6 +101,60 @@ final class UnitPreferenceProvider
 }
 
 String _$unitPreferenceHash() => r'd98fdd7e693d88e2bcd4f979f31466c340c5b69c';
+
+/// Derived provider — the formula used to estimate a 1RM from a multi-rep PR,
+/// defaulting to Brzycki.
+
+@ProviderFor(oneRepMaxFormula)
+final oneRepMaxFormulaProvider = OneRepMaxFormulaProvider._();
+
+/// Derived provider — the formula used to estimate a 1RM from a multi-rep PR,
+/// defaulting to Brzycki.
+
+final class OneRepMaxFormulaProvider
+    extends
+        $FunctionalProvider<
+          OneRepMaxFormula,
+          OneRepMaxFormula,
+          OneRepMaxFormula
+        >
+    with $Provider<OneRepMaxFormula> {
+  /// Derived provider — the formula used to estimate a 1RM from a multi-rep PR,
+  /// defaulting to Brzycki.
+  OneRepMaxFormulaProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'oneRepMaxFormulaProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$oneRepMaxFormulaHash();
+
+  @$internal
+  @override
+  $ProviderElement<OneRepMaxFormula> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  OneRepMaxFormula create(Ref ref) {
+    return oneRepMaxFormula(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(OneRepMaxFormula value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<OneRepMaxFormula>(value),
+    );
+  }
+}
+
+String _$oneRepMaxFormulaHash() => r'6cec038ccbc6afc73dcfaa9a72e799716498c6e3';
 
 /// The signed-in user's own display name, or null if they haven't set one.
 

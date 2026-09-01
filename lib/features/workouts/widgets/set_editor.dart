@@ -5,9 +5,12 @@ import '../../../core/utils/weight_converter.dart';
 import '../../../shared/models/editable_set_row.dart';
 import '../../../shared/widgets/number_stepper_field.dart';
 import '../../../shared/widgets/unit_toggle.dart';
+import '../../../shared/models/one_rep_max.dart';
 import '../../exercises/models/exercise.dart';
 import '../../exercises/providers/exercises_provider.dart';
+import '../providers/one_rep_max_provider.dart';
 import '../utils/parsed_set.dart';
+import '../utils/set_resolver.dart';
 
 /// Editable list of sets for a single exercise, plus add controls. Works
 /// against [EditableSetRow] rather than a concrete `WorkoutSet`/`ProgramSet`
@@ -17,6 +20,8 @@ class SetEditor extends ConsumerWidget {
     super.key,
     required this.sets,
     required this.unit,
+    required this.currentExerciseId,
+    required this.currentExerciseName,
     required this.onAddPercentageSets,
     required this.onAddAbsoluteSets,
     required this.onDeleteSet,
@@ -25,6 +30,11 @@ class SetEditor extends ConsumerWidget {
   final List<EditableSetRow> sets;
   /// The user's unit preference ('kg', 'lbs', or 'both').
   final String unit;
+
+  /// The exercise these sets belong to — the basis a percentage set resolves
+  /// against when the "Based on" dropdown is left on "This exercise".
+  final String currentExerciseId;
+  final String currentExerciseName;
   final void Function(List<ParsedSet>) onAddPercentageSets;
   final void Function(int sets, int reps, double weightKg) onAddAbsoluteSets;
   final void Function(String setId) onDeleteSet;
@@ -63,6 +73,12 @@ class SetEditor extends ConsumerWidget {
                       ),
                   ],
                   onChanged: (v) => setState(() => basisExercise = v),
+                ),
+                const SizedBox(height: 8),
+                _BasisOneRepMax(
+                  basisExerciseId: basisExercise?.id ?? currentExerciseId,
+                  basisExerciseName: basisExercise?.name ?? currentExerciseName,
+                  unit: unit,
                 ),
                 const SizedBox(height: 12),
                 NumberStepperField(
@@ -289,6 +305,70 @@ class _SetRow extends StatelessWidget {
       trailing: IconButton(
         icon: const Icon(Icons.close),
         onPressed: onDelete,
+      ),
+    );
+  }
+}
+
+/// The 1RM the percentages in the "Add sets (%)" dialog will resolve against.
+///
+/// Watches the 1RM providers rather than reading them in the dialog's
+/// callback: they're `keepAlive` but still lazy, so nothing would have loaded
+/// them if no screen behind the dialog happened to be watching, and `.asData`
+/// would read as "no 1RM" instead of "not loaded yet".
+///
+/// Deliberately not a [SetPrLink] in the empty case — navigating off to the
+/// add-PR screen would discard the half-filled dialog.
+class _BasisOneRepMax extends ConsumerWidget {
+  const _BasisOneRepMax({
+    required this.basisExerciseId,
+    required this.basisExerciseName,
+    required this.unit,
+  });
+
+  final String basisExerciseId;
+  final String basisExerciseName;
+  final String unit;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final tokens = theme.extension<NomorexDarkTokens>();
+    final byId = ref.watch(oneRepMaxProvider).asData?.value ??
+        const <String, OneRepMax>{};
+    final byName = ref.watch(oneRepMaxByNameProvider).asData?.value ??
+        const <String, OneRepMax>{};
+
+    final oneRepMax = lookupOneRepMax(
+      basisExerciseId: basisExerciseId,
+      basisExerciseName: basisExerciseName,
+      byExerciseId: byId,
+      byExerciseName: byName,
+    );
+
+    final Widget label;
+    if (oneRepMax == null) {
+      label = Text(
+        'No 1RM recorded for this lift',
+        style: theme.textTheme.bodySmall
+            ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      );
+    } else {
+      final weight = formatWeightForPreference(oneRepMax.kg, unit);
+      label = Text(
+        oneRepMax.isEstimated ? 'Est. 1RM $weight' : '1RM $weight',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: oneRepMax.isEstimated ? tokens?.secondaryAccent : null,
+        ),
+      );
+    }
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 12),
+        child: label,
       ),
     );
   }

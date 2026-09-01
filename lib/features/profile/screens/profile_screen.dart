@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/dark_theme.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/one_rep_max_formula.dart';
 import '../../../core/utils/owner_name.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
@@ -48,6 +49,7 @@ class ProfileScreen extends ConsumerWidget {
     final user = ref.watch(currentAuthUserProvider);
     final profileAsync = ref.watch(profileProvider);
     final unit = ref.watch(unitPreferenceProvider);
+    final formula = ref.watch(oneRepMaxFormulaProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final memberSince = user != null && user.createdAt.isNotEmpty
         ? formatDate(DateTime.parse(user.createdAt))
@@ -103,6 +105,31 @@ class ProfileScreen extends ConsumerWidget {
                         ? null
                         : (selection) =>
                             ref.read(profileProvider.notifier).setUnitPreference(selection.first),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    '1RM formula',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 8),
+                  SegmentedButton<OneRepMaxFormula>(
+                    key: const Key('profile_1rm_formula'),
+                    segments: const [
+                      ButtonSegment(value: OneRepMaxFormula.brzycki, label: Text('Brzycki')),
+                      ButtonSegment(value: OneRepMaxFormula.epley, label: Text('Epley')),
+                      ButtonSegment(value: OneRepMaxFormula.lander, label: Text('Lander')),
+                    ],
+                    selected: {formula},
+                    onSelectionChanged: profileAsync.isLoading
+                        ? null
+                        : (selection) =>
+                            ref.read(profileProvider.notifier).setOneRepMaxFormula(selection.first),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Used to estimate your 1RM from multi-rep PRs. Brzycki is most '
+                    'accurate at low reps; Epley holds up to 10.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                   if (profileAsync.hasError) ...[
                     const SizedBox(height: 8),

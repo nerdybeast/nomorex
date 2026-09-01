@@ -9,6 +9,7 @@ import 'package:nomorex/features/workouts/models/workout_exercise.dart';
 import 'package:nomorex/features/workouts/models/workout_set.dart';
 import 'package:nomorex/features/workouts/providers/finished_workouts_provider.dart';
 import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
+import 'package:nomorex/shared/models/one_rep_max.dart';
 import 'package:nomorex/features/workouts/providers/workout_detail_provider.dart';
 import 'package:nomorex/features/workouts/screens/workout_detail_screen.dart';
 
@@ -206,7 +207,7 @@ void main() {
           workoutDetailProvider('w1').overrideWith(
             () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
           ),
-          oneRepMaxProvider.overrideWith((ref) async => {'e1': 100}),
+          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
           oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
           finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
@@ -295,7 +296,7 @@ void main() {
               onResume: onResume,
             ),
           ),
-          oneRepMaxProvider.overrideWith((ref) async => {'e1': 100}),
+          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
           oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
           finishedWorkoutsProvider.overrideWith(
@@ -500,7 +501,7 @@ void main() {
           workoutDetailProvider('w1').overrideWith(
             () => _StubWorkoutDetailNotifier(finishedWorkout()),
           ),
-          oneRepMaxProvider.overrideWith((ref) async => {'e1': 100}),
+          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
           oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
           finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
@@ -535,7 +536,7 @@ void main() {
               onRepeat: () async => 'w2',
             ),
           ),
-          oneRepMaxProvider.overrideWith((ref) async => {'e1': 100}),
+          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
           oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
           finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
@@ -563,7 +564,7 @@ void main() {
               onRepeat: () async => throw StateError('This workout is already in progress.'),
             ),
           ),
-          oneRepMaxProvider.overrideWith((ref) async => {'e1': 100}),
+          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
           oneRepMaxByNameProvider.overrideWith((ref) async => {}),
           exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
           finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
