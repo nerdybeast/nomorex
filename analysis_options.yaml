@@ -10,6 +10,23 @@
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
+  errors:
+    # custom_lint 0.8.1 (and so riverpod_lint) still registers through the
+    # legacy analyzer plugin mechanism — the `plugins:` key below — and has no
+    # support for the new analyzer plugin system yet. Dart 3.x flags that as a
+    # deprecation, and because `flutter analyze` exits non-zero on warnings, it
+    # fails CI on every PR (CI tracks `channel: stable`, which moved to Flutter
+    # 3.47.2 and started emitting it). Drop both lines below once custom_lint
+    # ships a migration path, at which point `plugins:` moves too.
+    #
+    # unrecognized_error_code has to be ignored first, and only because these
+    # two SDK versions disagree about whether the code below exists: it's
+    # unknown on 3.47.0 (so naming it is itself a warning) and real on 3.47.2.
+    # Suppressing it keeps one config working on both. The cost is that a typo
+    # anywhere in this errors: map now goes unreported — keep the map short.
+    unrecognized_error_code: ignore
+    analysis_options_deprecated_plugins: ignore
+
   exclude:
     - build/**
     - android/**

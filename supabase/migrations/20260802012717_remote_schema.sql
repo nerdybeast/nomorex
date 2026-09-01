@@ -4,7 +4,11 @@
 
 SET check_function_bodies = false;
 
-DROP EXTENSION pg_net;
+-- IF EXISTS because this statement came from a `db pull` of the remote schema,
+-- where pg_net was installed. Local/CI stacks created by newer Supabase CLI
+-- versions don't ship pg_net, so a bare DROP aborts the whole replay with
+-- `extension "pg_net" does not exist` before any table is created.
+DROP EXTENSION IF EXISTS pg_net;
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT DELETE, INSERT, SELECT, UPDATE ON TABLES TO anon;
 

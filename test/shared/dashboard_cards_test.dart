@@ -77,6 +77,39 @@ void main() {
 
       expect(tapped, isTrue);
     });
+
+    testWidgets('renders statusTrailing after the status text', (tester) async {
+      await pump(
+        tester,
+        const WorkoutInProgressCard(
+          title: 'Push Day',
+          statusDisplay: 'In progress',
+          statusTrailing: Text('00:12:34'),
+        ),
+      );
+
+      expect(find.text('In progress'), findsOneWidget);
+      expect(find.text('00:12:34'), findsOneWidget);
+    });
+
+    testWidgets('a long status does not push the trailing widget or chevron off the card',
+        (tester) async {
+      await pump(
+        tester,
+        WorkoutInProgressCard(
+          title: 'Push Day',
+          statusDisplay: 'In progress on an absurdly long status line that goes on and on',
+          statusTrailing: const Text('00:12:34'),
+          onTap: () {},
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+
+      final cardRight = tester.getBottomRight(find.byType(WorkoutInProgressCard)).dx;
+      expect(tester.getBottomRight(find.text('00:12:34')).dx, lessThanOrEqualTo(cardRight));
+      expect(tester.getBottomRight(find.byIcon(Icons.chevron_right)).dx, lessThanOrEqualTo(cardRight));
+    });
   });
 
   group('RecentWorkoutCard', () {

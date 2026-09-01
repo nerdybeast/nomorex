@@ -18,6 +18,7 @@ class ElapsedTimer extends StatefulWidget {
     this.finishedAt,
     this.ticks,
     this.style,
+    this.maxScaledWidth,
   });
 
   final DateTime startedAt;
@@ -26,6 +27,11 @@ class ElapsedTimer extends StatefulWidget {
   final DateTime? finishedAt;
   final Stream<void>? ticks;
   final TextStyle? style;
+
+  /// When set, the timer scales up to fill the available width, capped at this
+  /// many logical pixels, instead of rendering at a fixed font size. Left null
+  /// for the compact readouts (dashboard card, finished-workout duration).
+  final double? maxScaledWidth;
 
   bool get _isRunning => pausedAt == null && finishedAt == null;
 
@@ -74,15 +80,47 @@ class _ElapsedTimerState extends State<ElapsedTimer> {
       pausedAt: widget.pausedAt,
       finishedAt: widget.finishedAt,
     );
-    return Text(
+    final text = Text(
       formatDuration(elapsed),
       // Deliberately not Theme.of(context).textTheme.displaySmall: that
       // style uses the app's custom Google Font (Barlow), whose glyph
       // metrics overshoot its calculated line box at this weight/size,
       // visually overlapping whatever renders right after it. An explicit
       // style with a generous height avoids that.
+      //
+      // tabularFigures is load-bearing when scaling (see below): with
+      // proportional digits the string's width changes as 1s and 2s swap in,
+      // which would make the FittedBox re-scale — and the whole timer visibly
+      // jump — every second.
       style: widget.style ??
-          const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, height: 1.4),
+          const TextStyle(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            height: 1.4,
+            fontFeatures: [FontFeature.tabularFigures()],
+          ),
+    );
+
+    final maxScaledWidth = widget.maxScaledWidth;
+    if (maxScaledWidth == null) return text;
+
+    // Scale the timer to fill the content width, capped so it stops growing on
+    // tablet/desktop. Every layer here is load-bearing: the Align absorbs the
+    // tight cross-axis width a ListView hands its children (a bare
+    // ConstrainedBox would size itself to the cap and violate that constraint)
+    // and passes loose constraints down; ConstrainedBox + an infinite-width
+    // SizedBox turn those back into a *tight* min(available, cap), which is
+    // what FittedBox needs — under loose constraints it just sizes to the
+    // child and nothing scales.
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxScaledWidth),
+        child: SizedBox(
+          width: double.infinity,
+          child: FittedBox(fit: BoxFit.contain, child: text),
+        ),
+      ),
     );
   }
 }

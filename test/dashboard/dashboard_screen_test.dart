@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nomorex/features/dashboard/screens/dashboard_screen.dart';
+import 'package:nomorex/features/workouts/widgets/elapsed_timer.dart';
 import 'package:nomorex/features/personal_bests/models/personal_best.dart';
 import 'package:nomorex/features/personal_bests/providers/personal_bests_provider.dart';
 import 'package:nomorex/features/programs/models/program_instance.dart';
@@ -212,10 +213,14 @@ void main() {
         child: const MaterialApp(home: DashboardScreen()),
       ),
     );
-    await tester.pumpAndSettle();
+    // pump(), not pumpAndSettle(): the card's ElapsedTimer runs a real
+    // 1-second ticker for an in-progress workout, so the tree never settles.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Push Day'), findsOneWidget);
-    expect(find.textContaining('In progress — started'), findsOneWidget);
+    expect(find.textContaining('In progress'), findsOneWidget);
+    expect(find.byType(ElapsedTimer), findsOneWidget);
     expect(find.byIcon(Icons.chevron_right), findsOneWidget);
   });
 
@@ -246,7 +251,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Push Day'), findsOneWidget);
-    expect(find.textContaining('Paused — started'), findsOneWidget);
+    expect(find.textContaining('Paused'), findsOneWidget);
+    // 14:45 -> 15:00 with no prior pause cycles.
+    expect(find.text('00:15:00'), findsOneWidget);
   });
 
   testWidgets('shows empty state when no workouts have been completed', (tester) async {

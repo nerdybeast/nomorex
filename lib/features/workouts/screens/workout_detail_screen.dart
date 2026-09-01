@@ -117,6 +117,7 @@ class _StatusSection extends StatelessWidget {
           startedAt: workout.startedAt!,
           totalPausedSeconds: workout.totalPausedSeconds,
           pausedAt: workout.pausedAt,
+          maxScaledWidth: AppConstants.kWorkoutTimerMaxWidth,
         );
       case 'finished':
         final colorScheme = Theme.of(context).colorScheme;
