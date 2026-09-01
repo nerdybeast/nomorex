@@ -36,6 +36,10 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
+          # Pinned deliberately: `channel: stable` floats, and a Flutter
+          # release landing mid-PR has broken these checks on changes that
+          # touched nothing related. Bump this on purpose, not by surprise.
+          flutter-version: 3.47.2
           channel: stable
           cache: true
 
@@ -73,6 +77,10 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
+          # Pinned deliberately: `channel: stable` floats, and a Flutter
+          # release landing mid-PR has broken these checks on changes that
+          # touched nothing related. Bump this on purpose, not by surprise.
+          flutter-version: 3.47.2
           channel: stable
           cache: true
 
@@ -90,7 +98,10 @@ jobs:
 
       - uses: supabase/setup-cli@v3
         with:
-          version: latest
+          # Pinned for the same reason as flutter-version above: `latest`
+          # floats, and a CLI release changing what the local stack ships
+          # has broken db-validate and e2e on unrelated changes.
+          version: 2.116.0
 
       - name: Start local Supabase stack
         run: supabase start
@@ -114,10 +125,17 @@ jobs:
 
       - uses: supabase/setup-cli@v3
         with:
-          version: latest
+          # Pinned for the same reason as flutter-version above: `latest`
+          # floats, and a CLI release changing what the local stack ships
+          # has broken db-validate and e2e on unrelated changes.
+          version: 2.116.0
 
       - uses: subosito/flutter-action@v2
         with:
+          # Pinned deliberately: `channel: stable` floats, and a Flutter
+          # release landing mid-PR has broken these checks on changes that
+          # touched nothing related. Bump this on purpose, not by surprise.
+          flutter-version: 3.47.2
           channel: stable
           cache: true
 
