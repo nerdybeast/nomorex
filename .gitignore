@@ -8,8 +8,10 @@
 .dart_tool/
 .packages
 build/
-# If you're building an application, you may want to check-in your pubspec.lock
-pubspec.lock
+# pubspec.lock is checked in: nomorex is an application, not a library, so
+# every machine and CI should build against the same resolved package
+# versions rather than re-resolving whatever satisfies the constraints that
+# day. See the note further down about why library packages do the opposite.
 
 # Directory created by dartdoc
 # If you don't generate documentation locally you can remove this line.
