@@ -226,14 +226,11 @@ void main() {
     await tester.tap(find.text('lbs'));
     await tester.pumpAndSettle();
 
-    await _enterLift(tester, weight: '225', reps: 5);
+    await _enterLift(tester, weight: '441', reps: 2);
 
-    // 225 lbs x 5 estimates to ~253.1 lbs, not a kg figure.
-    expect(find.byKey(const Key('add_pr_estimated_1rm')), findsOneWidget);
-    final text = tester
-        .widget<Text>(find.byKey(const Key('add_pr_estimated_1rm')))
-        .data!;
-    expect(text, contains('lbs'));
-    expect(text, isNot(contains('kg')));
+    // 441 lbs x 2 -> 453.6 lbs by Brzycki. Asserted exactly: formatWeight
+    // converts out of kg, so an estimate computed in the entry unit and
+    // handed to it double-converts and renders 1000.0 lbs.
+    expect(find.text('Estimated 1RM 453.6 lbs (Brzycki)'), findsOneWidget);
   });
 }

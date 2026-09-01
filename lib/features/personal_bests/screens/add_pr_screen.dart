@@ -111,11 +111,13 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
     final preference = ref.watch(unitPreferenceProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final formula = ref.watch(oneRepMaxFormulaProvider);
-    // Estimated in the entry unit rather than kg: the formulas are linear in
-    // weight, so this tracks exactly what the user is typing instead of
-    // flipping units on them mid-entry.
-    final estimatedOneRepMax = _weight > 0 && _reps > 1
-        ? estimateOneRepMaxKg(weightKg: _weight, reps: _reps, formula: formula)
+    // Estimate in kg, the same conversion _submit does, because formatWeight
+    // converts *out of* kg — handing it a value already in the entry unit
+    // double-converts it (441 lbs would render as 1000 lbs).
+    final entryWeightKg = _entryUnit == 'lbs' ? lbsToKg(_weight) : _weight;
+    final estimatedOneRepMaxKg = _weight > 0 && _reps > 1
+        ? estimateOneRepMaxKg(
+            weightKg: entryWeightKg, reps: _reps, formula: formula)
         : null;
     final tokens = Theme.of(context).extension<NomorexDarkTokens>();
     final overline = tokens?.overline;
@@ -200,10 +202,10 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                     // Nothing to show on a single — every formula returns the
                     // lifted weight itself at 1 rep — or past the range where
                     // the formulas mean anything.
-                    if (estimatedOneRepMax != null) ...[
+                    if (estimatedOneRepMaxKg != null) ...[
                       const SizedBox(height: 12),
                       Text(
-                        'Estimated 1RM ${formatWeight(estimatedOneRepMax, _entryUnit)} '
+                        'Estimated 1RM ${formatWeight(estimatedOneRepMaxKg, _entryUnit)} '
                         '(${oneRepMaxFormulaLabel(formula)})',
                         key: const Key('add_pr_estimated_1rm'),
                         textAlign: TextAlign.right,
