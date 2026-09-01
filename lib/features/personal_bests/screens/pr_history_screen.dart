@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/pr_history_provider.dart';
 import '../../../shared/widgets/pr_card.dart';
+import '../utils/estimated_pr_label.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -14,6 +15,7 @@ class PrHistoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final history = ref.watch(prHistoryProvider(exerciseId));
     final unit = ref.watch(unitPreferenceProvider);
+    final formula = ref.watch(oneRepMaxFormulaProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -34,6 +36,8 @@ class PrHistoryScreen extends ConsumerWidget {
                       reps: pr.reps,
                       dateDisplay: formatDate(pr.date),
                       notes: pr.notes,
+                      estimatedOneRepMaxDisplay:
+                          estimatedOneRepMaxLabel(pr, formula, unit),
                     ),
                   ),
               ],

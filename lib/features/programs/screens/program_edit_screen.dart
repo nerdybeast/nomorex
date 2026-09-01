@@ -338,6 +338,8 @@ class _DayCard extends ConsumerWidget {
                         SetEditor(
                           sets: ex.sets.map((s) => s.toEditableRow()).toList(),
                           unit: unit,
+                          currentExerciseId: ex.exerciseId,
+                          currentExerciseName: ex.exerciseName,
                           onAddPercentageSets: (parsed) => notifier.addPercentageSets(
                             ex.id,
                             [

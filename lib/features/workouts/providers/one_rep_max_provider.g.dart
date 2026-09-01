@@ -8,24 +8,30 @@ part of 'one_rep_max_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// exerciseId -> the user's heaviest recorded 1-rep PR (kg) for that lift.
+/// exerciseId -> the user's 1RM (kg) for that lift: their heaviest recorded
+/// single, or — when they've never tested one — the best estimate from their
+/// multi-rep PRs.
 
 @ProviderFor(oneRepMax)
 final oneRepMaxProvider = OneRepMaxProvider._();
 
-/// exerciseId -> the user's heaviest recorded 1-rep PR (kg) for that lift.
+/// exerciseId -> the user's 1RM (kg) for that lift: their heaviest recorded
+/// single, or — when they've never tested one — the best estimate from their
+/// multi-rep PRs.
 
 final class OneRepMaxProvider
     extends
         $FunctionalProvider<
-          AsyncValue<Map<String, double>>,
-          Map<String, double>,
-          FutureOr<Map<String, double>>
+          AsyncValue<Map<String, OneRepMax>>,
+          Map<String, OneRepMax>,
+          FutureOr<Map<String, OneRepMax>>
         >
     with
-        $FutureModifier<Map<String, double>>,
-        $FutureProvider<Map<String, double>> {
-  /// exerciseId -> the user's heaviest recorded 1-rep PR (kg) for that lift.
+        $FutureModifier<Map<String, OneRepMax>>,
+        $FutureProvider<Map<String, OneRepMax>> {
+  /// exerciseId -> the user's 1RM (kg) for that lift: their heaviest recorded
+  /// single, or — when they've never tested one — the best estimate from their
+  /// multi-rep PRs.
   OneRepMaxProvider._()
     : super(
         from: null,
@@ -42,19 +48,19 @@ final class OneRepMaxProvider
 
   @$internal
   @override
-  $FutureProviderElement<Map<String, double>> $createElement(
+  $FutureProviderElement<Map<String, OneRepMax>> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<Map<String, double>> create(Ref ref) {
+  FutureOr<Map<String, OneRepMax>> create(Ref ref) {
     return oneRepMax(ref);
   }
 }
 
-String _$oneRepMaxHash() => r'f6d94a4b3422e9cc76a5d19ebdd73e9695e53e5d';
+String _$oneRepMaxHash() => r'c56233de095327bb91b0a15be4399cc6a7eeff0f';
 
-/// Lowercased exercise name -> the user's heaviest recorded 1-rep PR (kg).
+/// Lowercased exercise name -> the user's 1RM (kg), measured or estimated.
 ///
 /// [oneRepMax]'s id keying is enough for the user's own workouts, but misses
 /// on someone else's: a public workout's percentage set carries the *owner's*
@@ -67,7 +73,7 @@ String _$oneRepMaxHash() => r'f6d94a4b3422e9cc76a5d19ebdd73e9695e53e5d';
 @ProviderFor(oneRepMaxByName)
 final oneRepMaxByNameProvider = OneRepMaxByNameProvider._();
 
-/// Lowercased exercise name -> the user's heaviest recorded 1-rep PR (kg).
+/// Lowercased exercise name -> the user's 1RM (kg), measured or estimated.
 ///
 /// [oneRepMax]'s id keying is enough for the user's own workouts, but misses
 /// on someone else's: a public workout's percentage set carries the *owner's*
@@ -80,14 +86,14 @@ final oneRepMaxByNameProvider = OneRepMaxByNameProvider._();
 final class OneRepMaxByNameProvider
     extends
         $FunctionalProvider<
-          AsyncValue<Map<String, double>>,
-          Map<String, double>,
-          FutureOr<Map<String, double>>
+          AsyncValue<Map<String, OneRepMax>>,
+          Map<String, OneRepMax>,
+          FutureOr<Map<String, OneRepMax>>
         >
     with
-        $FutureModifier<Map<String, double>>,
-        $FutureProvider<Map<String, double>> {
-  /// Lowercased exercise name -> the user's heaviest recorded 1-rep PR (kg).
+        $FutureModifier<Map<String, OneRepMax>>,
+        $FutureProvider<Map<String, OneRepMax>> {
+  /// Lowercased exercise name -> the user's 1RM (kg), measured or estimated.
   ///
   /// [oneRepMax]'s id keying is enough for the user's own workouts, but misses
   /// on someone else's: a public workout's percentage set carries the *owner's*
@@ -112,14 +118,14 @@ final class OneRepMaxByNameProvider
 
   @$internal
   @override
-  $FutureProviderElement<Map<String, double>> $createElement(
+  $FutureProviderElement<Map<String, OneRepMax>> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<Map<String, double>> create(Ref ref) {
+  FutureOr<Map<String, OneRepMax>> create(Ref ref) {
     return oneRepMaxByName(ref);
   }
 }
 
-String _$oneRepMaxByNameHash() => r'ee3c8a54c17d012c5e9ecdbf76442cf8daaa0124';
+String _$oneRepMaxByNameHash() => r'0d8b785ad3dac9f5dcdf5cf9c100565cb4e62164';

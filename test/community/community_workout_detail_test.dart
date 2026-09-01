@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomorex/shared/models/one_rep_max.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nomorex/core/theme/dark_theme.dart';
 import 'package:nomorex/core/utils/owner_name.dart';
@@ -82,8 +83,8 @@ Workout _publicWorkout({
 Future<void> pumpCommunityDetail(
   WidgetTester tester, {
   required Workout workout,
-  Map<String, double> oneRepMaxes = const {},
-  Map<String, double> oneRepMaxesByName = const {},
+  Map<String, OneRepMax> oneRepMaxes = const {},
+  Map<String, OneRepMax> oneRepMaxesByName = const {},
   List<Exercise> viewerExercises = const [_backSquat, _cleanAndJerk],
   String unit = 'kg',
   Exercise Function(String name)? onEnsureByName,
@@ -165,7 +166,7 @@ void main() {
     await pumpCommunityDetail(
       tester,
       workout: _publicWorkout(),
-      oneRepMaxes: {'e1': 100},
+      oneRepMaxes: const {'e1': OneRepMax.measured(100)},
     );
 
     expect(find.textContaining('5 reps · 80% 1RM · 80.0 kg'), findsOneWidget);
@@ -262,8 +263,8 @@ void main() {
     await pumpCommunityDetail(
       tester,
       workout: _publicWorkout(),
-      oneRepMaxes: const {'viewers-own-id': 100},
-      oneRepMaxesByName: const {'back squat': 100},
+      oneRepMaxes: const {'viewers-own-id': OneRepMax.measured(100)},
+      oneRepMaxesByName: const {'back squat': OneRepMax.measured(100)},
       viewerExercises: const [],
     );
 
@@ -298,7 +299,7 @@ void main() {
 
     // Only the basis lift has a 1RM — the set must resolve against 'e2', not
     // against its own exercise 'e3'.
-    await pumpCommunityDetail(tester, workout: workout, oneRepMaxes: {'e2': 120});
+    await pumpCommunityDetail(tester, workout: workout, oneRepMaxes: const {'e2': OneRepMax.measured(120)});
 
     expect(find.textContaining('3 reps · 75% of Clean & Jerk · 90.0 kg'), findsOneWidget);
   });
@@ -335,7 +336,7 @@ void main() {
     await pumpCommunityDetail(
       tester,
       workout: _publicWorkout(),
-      oneRepMaxes: {'e1': 100},
+      oneRepMaxes: const {'e1': OneRepMax.measured(100)},
       unit: 'lbs',
     );
 

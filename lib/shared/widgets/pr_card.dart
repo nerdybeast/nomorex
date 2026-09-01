@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/dark_theme.dart';
 
 /// Displays a single personal best entry.
 /// [exerciseName], [weightDisplay] (pre-formatted, e.g. "120.0 kg"),
@@ -8,6 +9,10 @@ import 'package:flutter/material.dart';
 /// [notes] renders full-width beneath the main row when non-empty.
 /// [notesMaxLines] clips it with an ellipsis (list views want 2 so rows stay
 /// scannable); leave it null to show the whole note.
+///
+/// [estimatedOneRepMaxDisplay] (pre-formatted, e.g. "Est. 1RM 112.5 kg") is
+/// the 1RM inferred from a multi-rep entry. Pass null on singles, where the
+/// estimate is just the lifted weight again.
 class PrCard extends StatelessWidget {
   const PrCard({
     super.key,
@@ -17,6 +22,7 @@ class PrCard extends StatelessWidget {
     required this.dateDisplay,
     this.notes,
     this.notesMaxLines,
+    this.estimatedOneRepMaxDisplay,
     this.onTap,
   });
 
@@ -26,12 +32,15 @@ class PrCard extends StatelessWidget {
   final String dateDisplay;
   final String? notes;
   final int? notesMaxLines;
+  final String? estimatedOneRepMaxDisplay;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final note = notes;
+    final estimate = estimatedOneRepMaxDisplay;
+    final accent = theme.extension<NomorexDarkTokens>()?.secondaryAccent;
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -72,6 +81,20 @@ class PrCard extends StatelessWidget {
                   ],
                 ],
               ),
+              // Right-aligned so it reads as part of the numbers column, but
+              // laid out full-width rather than as a third line inside it —
+              // the 'both' unit preference makes this string long enough
+              // ("Est. 1RM 394 lbs / 179 kg") to overflow a narrow column.
+              if (estimate != null) ...[
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    estimate,
+                    style: theme.textTheme.bodySmall?.copyWith(color: accent),
+                  ),
+                ),
+              ],
               // Full-width rather than tucked into the left column, so a long
               // note wraps across the whole card and the weight/reps column
               // stays lined up with the exercise name.

@@ -14,6 +14,7 @@ import '../providers/one_rep_max_provider.dart';
 import '../providers/workout_detail_provider.dart';
 import '../providers/workout_group_history_provider.dart';
 import '../utils/set_resolver.dart';
+import '../../../shared/models/one_rep_max.dart';
 import '../widgets/elapsed_timer.dart';
 
 class WorkoutDetailScreen extends ConsumerWidget {
@@ -346,8 +347,8 @@ class _ExerciseCard extends StatelessWidget {
   });
 
   final WorkoutExercise exercise;
-  final Map<String, double> oneRepMaxes;
-  final Map<String, double> oneRepMaxesByName;
+  final Map<String, OneRepMax> oneRepMaxes;
+  final Map<String, OneRepMax> oneRepMaxesByName;
   final String unit;
   final bool interactive;
   final void Function(String setId, bool value)? onToggle;
@@ -382,7 +383,7 @@ class _ExerciseCard extends StatelessWidget {
       set: s,
       basisExerciseId: basisId,
       basisExerciseName: basisName,
-      oneRepMaxKg: lookupOneRepMaxKg(
+      oneRepMax: lookupOneRepMax(
         basisExerciseId: basisId,
         basisExerciseName: basisName,
         byExerciseId: oneRepMaxes,
@@ -400,7 +401,7 @@ class _SetTile extends StatelessWidget {
     required this.set,
     required this.basisExerciseId,
     required this.basisExerciseName,
-    required this.oneRepMaxKg,
+    required this.oneRepMax,
     required this.unit,
     required this.interactive,
     required this.onToggle,
@@ -413,7 +414,7 @@ class _SetTile extends StatelessWidget {
   /// viewer their own copy of the lift when this workout belongs to someone
   /// else and the basis is one of that owner's custom exercises.
   final String basisExerciseName;
-  final double? oneRepMaxKg;
+  final OneRepMax? oneRepMax;
   final String unit;
   final bool interactive;
   final void Function(String setId, bool value)? onToggle;
@@ -424,7 +425,7 @@ class _SetTile extends StatelessWidget {
       weightMode: set.weightMode,
       percentage: set.percentage,
       absoluteWeightKg: set.absoluteWeightKg,
-      oneRepMaxKg: oneRepMaxKg,
+      oneRepMaxKg: oneRepMax?.kg,
     );
 
     final basisSuffix =
@@ -455,7 +456,7 @@ class _SetTile extends StatelessWidget {
       );
     } else {
       final trailingText = set.weightMode == 'percentage'
-          ? '${set.percentage?.toStringAsFixed(0)}%$basisSuffix · ${formatWeightForPreference(resolvedKg!, unit)}'
+          ? '${set.percentage?.toStringAsFixed(0)}%$basisSuffix · ${formatResolvedWeight(resolvedKg!, unit, estimated: oneRepMax?.isEstimated ?? false)}'
           : formatWeightForPreference(resolvedKg ?? 0, unit);
       subtitle = Text(trailingText);
     }

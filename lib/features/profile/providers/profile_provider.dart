@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/profile.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/utils/one_rep_max_formula.dart';
 
 part 'profile_provider.g.dart';
 
@@ -36,6 +37,22 @@ class ProfileNotifier extends _$ProfileNotifier {
     await future;
   }
 
+  /// Sets the formula used to estimate a 1RM from a multi-rep PR.
+  ///
+  /// No explicit invalidation of the 1RM providers is needed: they
+  /// `ref.watch(oneRepMaxFormulaProvider)`, which watches this notifier, so
+  /// invalidating ourselves recomputes every estimate downstream.
+  Future<void> setOneRepMaxFormula(OneRepMaxFormula formula) async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    await Supabase.instance.client.from('profiles').upsert(
+        {'id': userId, 'one_rep_max_formula': oneRepMaxFormulaToDb(formula)});
+
+    ref.invalidateSelf();
+    await future;
+  }
+
   /// Sets the name shown as the author on this user's public workouts and
   /// programs. An empty name clears it, putting them back on the anonymous
   /// fallback rather than storing a blank string.
@@ -60,6 +77,14 @@ class ProfileNotifier extends _$ProfileNotifier {
 @Riverpod(keepAlive: true)
 String unitPreference(Ref ref) {
   return ref.watch(profileProvider).asData?.value?.unitPreference ?? 'both';
+}
+
+/// Derived provider — the formula used to estimate a 1RM from a multi-rep PR,
+/// defaulting to Brzycki.
+@Riverpod(keepAlive: true)
+OneRepMaxFormula oneRepMaxFormula(Ref ref) {
+  return ref.watch(profileProvider).asData?.value?.oneRepMaxFormula ??
+      OneRepMaxFormula.brzycki;
 }
 
 /// The signed-in user's own display name, or null if they haven't set one.

@@ -151,6 +151,8 @@ class EditWorkoutScreen extends ConsumerWidget {
                           SetEditor(
                             sets: ex.sets.map((s) => s.toEditableRow()).toList(),
                             unit: unit,
+                            currentExerciseId: ex.exerciseId,
+                            currentExerciseName: ex.exerciseName,
                             onAddPercentageSets: (parsed) =>
                                 notifier.addPercentageSets(ex.id, parsed),
                             onAddAbsoluteSets: (sets, reps, weightKg) =>

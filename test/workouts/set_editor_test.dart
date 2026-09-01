@@ -6,7 +6,9 @@ import 'package:nomorex/features/exercises/models/exercise.dart';
 import 'package:nomorex/features/exercises/providers/exercises_provider.dart';
 import 'package:nomorex/features/workouts/utils/parsed_set.dart';
 import 'package:nomorex/features/workouts/widgets/set_editor.dart';
+import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
 import 'package:nomorex/shared/models/editable_set_row.dart';
+import 'package:nomorex/shared/models/one_rep_max.dart';
 
 const _otherExercise = Exercise(id: 'e2', name: 'Front Squat', isPredefined: true);
 
@@ -15,11 +17,28 @@ class _StubExercisesNotifier extends ExercisesNotifier {
   Future<List<Exercise>> build() async => const [_otherExercise];
 }
 
-Widget _wrap(Widget child) => ProviderScope(
+Widget _wrap(
+  Widget child, {
+  Map<String, OneRepMax> oneRepMaxes = const {},
+}) =>
+    ProviderScope(
       overrides: [
         exercisesProvider.overrideWith(() => _StubExercisesNotifier()),
+        oneRepMaxProvider.overrideWith((ref) async => oneRepMaxes),
+        oneRepMaxByNameProvider.overrideWith((ref) async => const {}),
       ],
       child: MaterialApp(home: Scaffold(body: child)),
+    );
+
+/// The editor under test, keyed to exercise 'e1' / 'Back Squat'.
+SetEditor _editor() => SetEditor(
+      sets: const [],
+      unit: 'kg',
+      currentExerciseId: 'e1',
+      currentExerciseName: 'Back Squat',
+      onAddPercentageSets: (_) {},
+      onAddAbsoluteSets: (_, _, _) {},
+      onDeleteSet: (_) {},
     );
 
 Future<void> _tapStepper(
@@ -44,6 +63,8 @@ void main() {
       _wrap(SetEditor(
         sets: const [],
         unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Front Squat',
         onAddPercentageSets: (parsed) => added = parsed,
         onAddAbsoluteSets: (_, _, _) {},
         onDeleteSet: (_) {},
@@ -80,6 +101,8 @@ void main() {
       _wrap(SetEditor(
         sets: const [],
         unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Front Squat',
         onAddPercentageSets: (parsed) => added = parsed,
         onAddAbsoluteSets: (_, _, _) {},
         onDeleteSet: (_) {},
@@ -114,6 +137,8 @@ void main() {
       _wrap(SetEditor(
         sets: const [],
         unit: 'lbs',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Front Squat',
         onAddPercentageSets: (_) {},
         onAddAbsoluteSets: (sets, reps, weightKg) {
           capturedSets = sets;
@@ -147,6 +172,8 @@ void main() {
       _wrap(SetEditor(
         sets: const [],
         unit: 'lbs',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Front Squat',
         onAddPercentageSets: (_) {},
         onAddAbsoluteSets: (_, _, _) {},
         onDeleteSet: (_) {},
@@ -172,6 +199,8 @@ void main() {
       _wrap(SetEditor(
         sets: const [],
         unit: 'both',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Front Squat',
         onAddPercentageSets: (_) {},
         onAddAbsoluteSets: (_, _, weightKg) => capturedWeightKg = weightKg,
         onDeleteSet: (_) {},
@@ -215,6 +244,8 @@ void main() {
       _wrap(SetEditor(
         sets: const [],
         unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Front Squat',
         onAddPercentageSets: (_) {},
         onAddAbsoluteSets: (_, _, weightKg) => capturedWeightKg = weightKg,
         onDeleteSet: (_) {},
@@ -244,6 +275,8 @@ void main() {
       _wrap(SetEditor(
         sets: const [],
         unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Front Squat',
         onAddPercentageSets: (_) {},
         onAddAbsoluteSets: (_, _, _) {},
         onDeleteSet: (_) {},
@@ -276,6 +309,8 @@ void main() {
           ),
         ],
         unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Front Squat',
         onAddPercentageSets: (_) {},
         onAddAbsoluteSets: (_, _, _) {},
         onDeleteSet: (_) {},
@@ -284,5 +319,68 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('85% of Front Squat'), findsOneWidget);
+  });
+
+  group('Add sets (%) shows the 1RM the percentages resolve against', () {
+    testWidgets('a measured single renders plainly', (tester) async {
+      await tester.pumpWidget(_wrap(
+        _editor(),
+        oneRepMaxes: const {'e1': OneRepMax.measured(165)},
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add sets (%)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1RM 165.0 kg'), findsOneWidget);
+    });
+
+    testWidgets('an inferred max is labelled as an estimate', (tester) async {
+      await tester.pumpWidget(_wrap(
+        _editor(),
+        oneRepMaxes: const {'e1': OneRepMax.estimated(112.5)},
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add sets (%)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Est. 1RM 112.5 kg'), findsOneWidget);
+    });
+
+    testWidgets('says so when the lift has no 1RM at all', (tester) async {
+      await tester.pumpWidget(_wrap(_editor()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add sets (%)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No 1RM recorded for this lift'), findsOneWidget);
+    });
+
+    testWidgets('follows the basis exercise chosen in the dropdown',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        _editor(),
+        oneRepMaxes: const {
+          'e1': OneRepMax.measured(165),
+          'e2': OneRepMax.measured(90),
+        },
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add sets (%)'));
+      await tester.pumpAndSettle();
+      expect(find.text('1RM 165.0 kg'), findsOneWidget);
+
+      // "Based on" -> Front Squat (e2), a different lift's 1RM.
+      await tester.tap(find.text('This exercise'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Front Squat').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('1RM 90.0 kg'), findsOneWidget);
+      expect(find.text('1RM 165.0 kg'), findsNothing);
+    });
   });
 }

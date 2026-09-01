@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomorex/shared/models/one_rep_max.dart';
 import 'package:nomorex/features/profile/providers/profile_provider.dart';
 import 'package:nomorex/features/programs/models/program.dart';
 import 'package:nomorex/features/programs/models/program_day.dart';
@@ -67,8 +68,8 @@ Program _program() => Program(
 
 Future<void> _pump(
   WidgetTester tester, {
-  Map<String, double> oneRepMaxes = const {},
-  Map<String, double> oneRepMaxesByName = const {},
+  Map<String, OneRepMax> oneRepMaxes = const {},
+  Map<String, OneRepMax> oneRepMaxesByName = const {},
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -89,7 +90,7 @@ Future<void> _pump(
 void main() {
   testWidgets('resolves a percentage set against the viewer 1RM matched by id',
       (tester) async {
-    await _pump(tester, oneRepMaxes: {'owner-e1': 100});
+    await _pump(tester, oneRepMaxes: const {'owner-e1': OneRepMax.measured(100)});
 
     expect(find.textContaining('5 reps · 80% of 1RM'), findsOneWidget);
     expect(find.textContaining('80.0 kg'), findsOneWidget);
@@ -100,7 +101,7 @@ void main() {
       (tester) async {
     // The viewer's PR hangs off *their* exercise row, so nothing matches by id.
     // Without the name fallback this set would render as unresolvable forever.
-    await _pump(tester, oneRepMaxesByName: {'back squat': 100});
+    await _pump(tester, oneRepMaxesByName: const {'back squat': OneRepMax.measured(100)});
 
     expect(find.textContaining('80.0 kg'), findsOneWidget);
   });

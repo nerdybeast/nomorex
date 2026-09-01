@@ -4,6 +4,7 @@ import '../../../core/utils/weight_converter.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../workouts/providers/one_rep_max_provider.dart';
 import '../../workouts/utils/set_resolver.dart';
+import '../../../shared/models/one_rep_max.dart';
 import '../models/program_exercise.dart';
 import '../models/program_set.dart';
 import '../providers/program_detail_provider.dart';
@@ -85,8 +86,8 @@ class _ExerciseCard extends StatelessWidget {
   });
 
   final ProgramExercise exercise;
-  final Map<String, double> oneRepMaxes;
-  final Map<String, double> oneRepMaxesByName;
+  final Map<String, OneRepMax> oneRepMaxes;
+  final Map<String, OneRepMax> oneRepMaxesByName;
   final String unit;
 
   @override
@@ -135,8 +136,8 @@ class _SetLines extends StatelessWidget {
 
   final ProgramSet set;
   final ProgramExercise exercise;
-  final Map<String, double> oneRepMaxes;
-  final Map<String, double> oneRepMaxesByName;
+  final Map<String, OneRepMax> oneRepMaxes;
+  final Map<String, OneRepMax> oneRepMaxesByName;
   final String unit;
 
   @override
@@ -145,8 +146,8 @@ class _SetLines extends StatelessWidget {
     final basisExerciseId = set.basisExerciseId ?? exercise.exerciseId;
     // Name fallback matters here because this screen also renders another
     // user's public program, whose exercise ids belong to *their* catalog —
-    // an id-only lookup would silently never resolve. See lookupOneRepMaxKg.
-    final oneRepMaxKg = lookupOneRepMaxKg(
+    // an id-only lookup would silently never resolve. See lookupOneRepMax.
+    final oneRepMax = lookupOneRepMax(
       basisExerciseId: basisExerciseId,
       basisExerciseName: set.basisExerciseId != null
           ? (set.basisExerciseName ?? exercise.exerciseName)
@@ -158,7 +159,7 @@ class _SetLines extends StatelessWidget {
       weightMode: set.weightMode,
       percentage: set.percentage,
       absoluteWeightKg: set.absoluteWeightKg,
-      oneRepMaxKg: oneRepMaxKg,
+      oneRepMaxKg: oneRepMax?.kg,
     );
 
     final repsLabel = '${set.targetReps ?? '-'} ${set.targetReps == 1 ? 'rep' : 'reps'}';
@@ -168,9 +169,13 @@ class _SetLines extends StatelessWidget {
     if (set.weightMode == 'percentage') {
       final basisLabel = set.basisExerciseId != null ? (set.basisExerciseName ?? '1RM') : '1RM';
       firstLine = '$repsLabel · ${set.percentage?.toStringAsFixed(0) ?? '?'}% of $basisLabel';
-      if (oneRepMaxKg != null && resolvedKg != null) {
-        secondLine =
-            '${formatWeightForPreference(oneRepMaxKg, unit)} PR ≈ ${formatWeightForPreference(resolvedKg, unit)}';
+      if (oneRepMax != null && resolvedKg != null) {
+        // "PR" would be a lie for an estimate — the user never lifted that
+        // single, it was inferred from a multi-rep best.
+        final basis = oneRepMax.isEstimated
+            ? '${formatWeightForPreference(oneRepMax.kg, unit)} est. 1RM'
+            : '${formatWeightForPreference(oneRepMax.kg, unit)} PR';
+        secondLine = '$basis ≈ ${formatWeightForPreference(resolvedKg, unit)}';
       }
     } else {
       firstLine = '$repsLabel · ${formatWeightForPreference(set.absoluteWeightKg ?? 0, unit)}';

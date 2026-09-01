@@ -7,6 +7,7 @@ import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../../core/theme/dark_theme.dart';
+import '../../../core/utils/one_rep_max_formula.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../shared/widgets/number_stepper_field.dart';
@@ -109,6 +110,13 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
 
     final preference = ref.watch(unitPreferenceProvider);
     final colorScheme = Theme.of(context).colorScheme;
+    final formula = ref.watch(oneRepMaxFormulaProvider);
+    // Estimated in the entry unit rather than kg: the formulas are linear in
+    // weight, so this tracks exactly what the user is typing instead of
+    // flipping units on them mid-entry.
+    final estimatedOneRepMax = _weight > 0 && _reps > 1
+        ? estimateOneRepMaxKg(weightKg: _weight, reps: _reps, formula: formula)
+        : null;
     final tokens = Theme.of(context).extension<NomorexDarkTokens>();
     final overline = tokens?.overline;
 
@@ -189,6 +197,22 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                       decrementButtonStyle: tokens?.stepperDecrementStyle,
                       incrementButtonStyle: tokens?.stepperIncrementStyle,
                     ),
+                    // Nothing to show on a single — every formula returns the
+                    // lifted weight itself at 1 rep — or past the range where
+                    // the formulas mean anything.
+                    if (estimatedOneRepMax != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        'Estimated 1RM ${formatWeight(estimatedOneRepMax, _entryUnit)} '
+                        '(${oneRepMaxFormulaLabel(formula)})',
+                        key: const Key('add_pr_estimated_1rm'),
+                        textAlign: TextAlign.right,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: tokens?.secondaryAccent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     // Date
                     InkWell(

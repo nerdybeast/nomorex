@@ -7,6 +7,7 @@ import 'package:nomorex/features/personal_bests/models/personal_best.dart';
 import 'package:nomorex/features/personal_bests/providers/personal_bests_provider.dart';
 import 'package:nomorex/features/personal_bests/screens/add_pr_screen.dart';
 import 'package:nomorex/features/profile/providers/profile_provider.dart';
+import 'package:nomorex/core/utils/one_rep_max_formula.dart';
 
 const _backSquat = Exercise(id: 'e1', name: 'Back Squat', isPredefined: true);
 const _deadlift = Exercise(id: 'e2', name: 'Deadlift', isPredefined: true);
@@ -38,14 +39,49 @@ class _RecordingPersonalBestsNotifier extends PersonalBestsNotifier {
   }
 }
 
-Widget _wrap(String preference, void Function(double) onAddPr) => ProviderScope(
+Widget _wrap(
+  String preference,
+  void Function(double) onAddPr, {
+  OneRepMaxFormula formula = OneRepMaxFormula.brzycki,
+}) =>
+    ProviderScope(
       overrides: [
         exercisesProvider.overrideWith(() => _StubExercisesNotifier([_backSquat])),
         personalBestsProvider.overrideWith(() => _RecordingPersonalBestsNotifier(onAddPr)),
         unitPreferenceProvider.overrideWithValue(preference),
+        oneRepMaxFormulaProvider.overrideWithValue(formula),
       ],
       child: const MaterialApp(home: AddPrScreen()),
     );
+
+/// Sets the weight and reps steppers. Both target their keyed widget rather
+/// than the displayed value, so they work on a screen that already has
+/// numbers in it.
+Future<void> _enterLift(
+  WidgetTester tester, {
+  required String weight,
+  required int reps,
+}) async {
+  final weightField = find.descendant(
+    of: find.byKey(const Key('add_pr_weight')),
+    matching: find.byType(TextField),
+  );
+  await tester.ensureVisible(weightField);
+  await tester.pumpAndSettle();
+  await tester.enterText(weightField, weight);
+  await tester.testTextInput.receiveAction(TextInputAction.done);
+  await tester.pumpAndSettle();
+
+  final repsField = find.descendant(
+    of: find.byKey(const Key('add_pr_reps')),
+    matching: find.byType(TextField),
+  );
+  await tester.ensureVisible(repsField);
+  await tester.pumpAndSettle();
+  await tester.enterText(repsField, '$reps');
+  await tester.testTextInput.receiveAction(TextInputAction.done);
+  await tester.pumpAndSettle();
+}
 
 Future<void> _selectExercise(WidgetTester tester) async {
   await tester.tap(find.widgetWithText(TextFormField, 'Exercise'));
@@ -144,5 +180,60 @@ void main() {
 
     expect(find.text('Back Squat'), findsNothing);
     expect(find.text('Deadlift'), findsNothing);
+  });
+
+  testWidgets('shows an estimated 1RM once the entry is a multi-rep set',
+      (tester) async {
+    await tester.pumpWidget(_wrap('kg', (_) {}));
+    await tester.pumpAndSettle();
+
+    // A single needs no estimate — the formulas return the lifted weight.
+    await _enterLift(tester, weight: '100', reps: 1);
+    expect(find.byKey(const Key('add_pr_estimated_1rm')), findsNothing);
+
+    await _enterLift(tester, weight: '100', reps: 5);
+    expect(
+      find.text('Estimated 1RM 112.5 kg (Brzycki)'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the estimate follows the profile formula', (tester) async {
+    await tester.pumpWidget(
+      _wrap('kg', (_) {}, formula: OneRepMaxFormula.epley),
+    );
+    await tester.pumpAndSettle();
+
+    await _enterLift(tester, weight: '100', reps: 5);
+
+    expect(find.text('Estimated 1RM 116.7 kg (Epley)'), findsOneWidget);
+  });
+
+  testWidgets('no estimate past the usable rep range', (tester) async {
+    await tester.pumpWidget(_wrap('kg', (_) {}));
+    await tester.pumpAndSettle();
+
+    await _enterLift(tester, weight: '100', reps: kMaxEstimableReps + 1);
+
+    expect(find.byKey(const Key('add_pr_estimated_1rm')), findsNothing);
+  });
+
+  testWidgets('the estimate is expressed in the unit being typed in',
+      (tester) async {
+    await tester.pumpWidget(_wrap('both', (_) {}));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('lbs'));
+    await tester.pumpAndSettle();
+
+    await _enterLift(tester, weight: '225', reps: 5);
+
+    // 225 lbs x 5 estimates to ~253.1 lbs, not a kg figure.
+    expect(find.byKey(const Key('add_pr_estimated_1rm')), findsOneWidget);
+    final text = tester
+        .widget<Text>(find.byKey(const Key('add_pr_estimated_1rm')))
+        .data!;
+    expect(text, contains('lbs'));
+    expect(text, isNot(contains('kg')));
   });
 }

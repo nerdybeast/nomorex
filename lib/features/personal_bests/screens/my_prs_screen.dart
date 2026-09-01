@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/my_prs_grouped_provider.dart';
 import '../providers/personal_bests_provider.dart';
 import '../../../shared/widgets/pr_card.dart';
+import '../utils/estimated_pr_label.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
@@ -24,6 +25,7 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
     final grouped = ref.watch(myPrsGroupedProvider);
     final prsAsync = ref.watch(personalBestsProvider);
     final unit = ref.watch(unitPreferenceProvider);
+    final formula = ref.watch(oneRepMaxFormulaProvider);
 
     // Filter by search query
     final filtered = _searchQuery.isEmpty
@@ -114,6 +116,8 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
                         dateDisplay: formatDate(best.date),
                         notes: best.notes,
                         notesMaxLines: 2,
+                        estimatedOneRepMaxDisplay:
+                            estimatedOneRepMaxLabel(best, formula, unit),
                         onTap: () => context.push(AppConstants.routePrHistory(best.exerciseId)),
                       ),
                     );

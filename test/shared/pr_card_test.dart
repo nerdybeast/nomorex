@@ -121,4 +121,39 @@ void main() {
     );
     expect(find.byType(Text), findsNWidgets(4));
   });
+
+  testWidgets('renders the estimated 1RM line when one is supplied', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PrCard(
+            exerciseName: 'Back Squat',
+            weightDisplay: '100.0 kg',
+            reps: 5,
+            dateDisplay: 'Jan 1, 2026',
+            estimatedOneRepMaxDisplay: 'Est. 1RM 112.5 kg',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Est. 1RM 112.5 kg'), findsOneWidget);
+  });
+
+  testWidgets('omits the estimate line when none is supplied', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PrCard(
+            exerciseName: 'Back Squat',
+            weightDisplay: '165.0 kg',
+            reps: 1,
+            dateDisplay: 'Jan 1, 2026',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.textContaining('Est. 1RM'), findsNothing);
+  });
 }

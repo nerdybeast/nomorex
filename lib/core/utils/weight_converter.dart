@@ -23,3 +23,15 @@ String formatWeightForPreference(double weightKg, String preference) {
       ? formatWeightBoth(weightKg)
       : formatWeight(weightKg, preference);
 }
+
+/// A weight resolved from a 1RM, marked when that 1RM was estimated from a
+/// multi-rep PR rather than measured as a true single. Centralized so the
+/// marker can't drift between the workout, program, and community screens.
+String formatResolvedWeight(
+  double weightKg,
+  String preference, {
+  required bool estimated,
+}) {
+  final formatted = formatWeightForPreference(weightKg, preference);
+  return estimated ? '$formatted (est.)' : formatted;
+}
