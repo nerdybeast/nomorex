@@ -126,7 +126,7 @@ void main() {
 
     await _selectExercise(tester);
 
-    await tester.enterText(find.widgetWithText(TextField, '0.0'), '100');
+    await tester.enterText(find.widgetWithText(TextField, '0'), '100');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
@@ -256,7 +256,7 @@ void main() {
       of: find.byKey(const Key('add_pr_reps')),
       matching: find.byType(TextField),
     );
-    expect(tester.widget<TextField>(weightField).controller?.text, '152.0');
+    expect(tester.widget<TextField>(weightField).controller?.text, '152');
     expect(tester.widget<TextField>(repsField).controller?.text, '5');
   });
 

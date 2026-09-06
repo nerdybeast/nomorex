@@ -39,7 +39,15 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
   late final _controller = TextEditingController(text: _format(widget.value));
   final _focusNode = FocusNode();
 
-  String _format(double v) => v.toStringAsFixed(widget.decimals);
+  // Caps precision at widget.decimals but drops a trailing ".0"/".50" etc
+  // so a whole number reads as "205", not "205.0" — the decimal only shows
+  // up once the value actually has a nonzero fractional part.
+  String _format(double v) {
+    var text = v.toStringAsFixed(widget.decimals);
+    if (!text.contains('.')) return text;
+    text = text.replaceFirst(RegExp(r'0+$'), '');
+    return text.endsWith('.') ? text.substring(0, text.length - 1) : text;
+  }
 
   @override
   void initState() {
