@@ -14,8 +14,10 @@ import '../../../shared/widgets/number_stepper_field.dart';
 import '../../../shared/widgets/unit_toggle.dart';
 
 class AddPrScreen extends ConsumerStatefulWidget {
-  const AddPrScreen({super.key, this.exerciseId});
+  const AddPrScreen({super.key, this.exerciseId, this.initialWeightKg, this.initialReps});
   final String? exerciseId;
+  final double? initialWeightKg;
+  final int? initialReps;
 
   @override
   ConsumerState<AddPrScreen> createState() => _AddPrScreenState();
@@ -37,6 +39,10 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
     super.initState();
     final preference = ref.read(unitPreferenceProvider);
     _entryUnit = preference == 'both' ? 'kg' : preference;
+    if (widget.initialWeightKg != null) {
+      _weight = _entryUnit == 'lbs' ? kgToLbs(widget.initialWeightKg!) : widget.initialWeightKg!;
+    }
+    if (widget.initialReps != null) _reps = widget.initialReps!;
   }
 
   // Flips exactly once (false -> true) once we've had a chance to resolve

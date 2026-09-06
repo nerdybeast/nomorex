@@ -233,4 +233,53 @@ void main() {
     // handed to it double-converts and renders 1000.0 lbs.
     expect(find.text('Estimated 1RM 453.6 lbs (Brzycki)'), findsOneWidget);
   });
+
+  testWidgets('initialWeightKg/initialReps pre-fill the steppers in kg', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_backSquat])),
+          unitPreferenceProvider.overrideWithValue('kg'),
+        ],
+        child: const MaterialApp(
+          home: AddPrScreen(exerciseId: 'e1', initialWeightKg: 152, initialReps: 5),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final weightField = find.descendant(
+      of: find.byKey(const Key('add_pr_weight')),
+      matching: find.byType(TextField),
+    );
+    final repsField = find.descendant(
+      of: find.byKey(const Key('add_pr_reps')),
+      matching: find.byType(TextField),
+    );
+    expect(tester.widget<TextField>(weightField).controller?.text, '152.0');
+    expect(tester.widget<TextField>(repsField).controller?.text, '5');
+  });
+
+  testWidgets('initialWeightKg converts to lbs when the entry unit defaults to lbs',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_backSquat])),
+          unitPreferenceProvider.overrideWithValue('lbs'),
+        ],
+        child: const MaterialApp(
+          home: AddPrScreen(exerciseId: 'e1', initialWeightKg: 100, initialReps: 3),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final weightField = find.descendant(
+      of: find.byKey(const Key('add_pr_weight')),
+      matching: find.byType(TextField),
+    );
+    // 100 kg -> 220.462262 lbs, floored to 0 decimals in the lbs entry unit.
+    expect(tester.widget<TextField>(weightField).controller?.text, '220');
+  });
 }

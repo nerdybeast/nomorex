@@ -15,8 +15,16 @@ class AppConstants {
   static const String routeHome = '/shell/home';
   static const String routePrs = '/shell/prs';
   static const String routeAddPr = '/prs/add';
-  static String routeAddPrForExercise(String exerciseId) =>
-      '$routeAddPr?exerciseId=$exerciseId';
+  static String routeAddPrForExercise(
+    String exerciseId, {
+    double? weightKg,
+    int? reps,
+  }) {
+    final buffer = StringBuffer('$routeAddPr?exerciseId=$exerciseId');
+    if (weightKg != null) buffer.write('&weightKg=$weightKg');
+    if (reps != null) buffer.write('&reps=$reps');
+    return buffer.toString();
+  }
   static String routePrHistory(String exerciseId) => '/prs/$exerciseId/history';
 
   static const String routeWorkouts = '/shell/workouts';
