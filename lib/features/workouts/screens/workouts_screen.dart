@@ -85,29 +85,36 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                   return const Center(child: Text('No workouts match your search.'));
                 }
                 return ListView.builder(
+                  padding: const EdgeInsets.all(16),
                   itemCount: filtered.length,
                   itemBuilder: (context, i) {
                     final w = filtered[i];
-                    return ListTile(
-                      title: Text(w.title),
-                      subtitle: Text('${formatDate(w.date)} · ${w.exercises.length} exercises'),
-                      onTap: () => context.push(AppConstants.routeWorkoutDetail(w.id)),
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (value) async {
-                          final notifier = ref.read(workoutsProvider.notifier);
-                          if (value == 'duplicate') {
-                            await notifier.duplicateWorkout(w.id);
-                          } else if (value == 'edit') {
-                            if (context.mounted) context.push(AppConstants.routeWorkoutEdit(w.id));
-                          } else if (value == 'delete') {
-                            await notifier.deleteWorkout(w.id);
-                          }
-                        },
-                        itemBuilder: (_) => const [
-                          PopupMenuItem(value: 'edit', child: Text('Edit')),
-                          PopupMenuItem(value: 'duplicate', child: Text('Duplicate')),
-                          PopupMenuItem(value: 'delete', child: Text('Delete')),
-                        ],
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Card(
+                        clipBehavior: Clip.antiAlias,
+                        child: ListTile(
+                          title: Text(w.title),
+                          subtitle: Text('${formatDate(w.date)} · ${w.exercises.length} exercises'),
+                          onTap: () => context.push(AppConstants.routeWorkoutDetail(w.id)),
+                          trailing: PopupMenuButton<String>(
+                            onSelected: (value) async {
+                              final notifier = ref.read(workoutsProvider.notifier);
+                              if (value == 'duplicate') {
+                                await notifier.duplicateWorkout(w.id);
+                              } else if (value == 'edit') {
+                                if (context.mounted) context.push(AppConstants.routeWorkoutEdit(w.id));
+                              } else if (value == 'delete') {
+                                await notifier.deleteWorkout(w.id);
+                              }
+                            },
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(value: 'edit', child: Text('Edit')),
+                              PopupMenuItem(value: 'duplicate', child: Text('Duplicate')),
+                              PopupMenuItem(value: 'delete', child: Text('Delete')),
+                            ],
+                          ),
+                        ),
                       ),
                     );
                   },

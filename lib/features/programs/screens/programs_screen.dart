@@ -103,10 +103,14 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
                   return const Center(child: Text('No programs match your search.'));
                 }
                 return ListView.builder(
+                  padding: const EdgeInsets.all(16),
                   itemCount: filtered.length,
                   itemBuilder: (context, i) {
                     final p = filtered[i];
-                    return _ProgramTile(program: p, showArchived: _showArchived);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _ProgramTile(program: p, showArchived: _showArchived),
+                    );
                   },
                 );
               },
@@ -142,70 +146,73 @@ class _ProgramTile extends ConsumerWidget {
       }
     }
 
-    return ListTile(
-      title: Text(
-        program.name,
-        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (description == null || description.isEmpty)
-            Text(
-              'No Description.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontStyle: FontStyle.italic,
-              ),
-            )
-          else
-            Text(_truncatedDescription(description)),
-          if (activeInstance != null)
-            Text(
-              isProgramUpcoming(activeInstance.startedAt)
-                  ? 'Upcoming — starts ${formatDate(activeInstance.startedAt)}'
-                  : 'In progress — started ${formatDate(activeInstance.startedAt)}',
-              style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
-            ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        title: Text(
+          program.name,
+          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (description == null || description.isEmpty)
               Text(
-                showArchived
-                    ? 'Archived ${program.archivedAt != null ? formatDate(program.archivedAt!) : ''}'
-                    : formatDate(program.createdAt),
-                style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                'No Description.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontStyle: FontStyle.italic,
+                ),
+              )
+            else
+              Text(_truncatedDescription(description)),
+            if (activeInstance != null)
+              Text(
+                isProgramUpcoming(activeInstance.startedAt)
+                    ? 'Upcoming — starts ${formatDate(activeInstance.startedAt)}'
+                    : 'In progress — started ${formatDate(activeInstance.startedAt)}',
+                style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
               ),
-              if (!showArchived)
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 Text(
-                  '$weekCount ${weekCount == 1 ? 'week' : 'weeks'}',
+                  showArchived
+                      ? 'Archived ${program.archivedAt != null ? formatDate(program.archivedAt!) : ''}'
+                      : formatDate(program.createdAt),
                   style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
-            ],
-          ),
-        ],
-      ),
-      onTap: () => context.push(AppConstants.routeProgramDetail(program.id)),
-      trailing: PopupMenuButton<String>(
-        onSelected: (value) async {
-          final notifier = ref.read(programsProvider.notifier);
-          if (value == 'edit') {
-            if (context.mounted) context.push(AppConstants.routeProgramEdit(program.id));
-          } else if (value == 'archive') {
-            await notifier.archiveProgram(program.id);
-          } else if (value == 'restore') {
-            await notifier.restoreProgram(program.id);
-          }
-        },
-        itemBuilder: (_) => showArchived
-            ? const [
-                PopupMenuItem(value: 'restore', child: Text('Restore')),
-              ]
-            : const [
-                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                PopupMenuItem(value: 'archive', child: Text('Archive')),
+                if (!showArchived)
+                  Text(
+                    '$weekCount ${weekCount == 1 ? 'week' : 'weeks'}',
+                    style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
               ],
+            ),
+          ],
+        ),
+        onTap: () => context.push(AppConstants.routeProgramDetail(program.id)),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) async {
+            final notifier = ref.read(programsProvider.notifier);
+            if (value == 'edit') {
+              if (context.mounted) context.push(AppConstants.routeProgramEdit(program.id));
+            } else if (value == 'archive') {
+              await notifier.archiveProgram(program.id);
+            } else if (value == 'restore') {
+              await notifier.restoreProgram(program.id);
+            }
+          },
+          itemBuilder: (_) => showArchived
+              ? const [
+                  PopupMenuItem(value: 'restore', child: Text('Restore')),
+                ]
+              : const [
+                  PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  PopupMenuItem(value: 'archive', child: Text('Archive')),
+                ],
+        ),
       ),
     );
   }

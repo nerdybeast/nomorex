@@ -112,7 +112,7 @@ Widget tests stub data by **subclassing the generated notifier and overriding `b
 ./scripts/e2e.sh linux    # Linux desktop, how CI runs it
 ```
 
-The script starts the local stack, runs `supabase db reset` (local only — never `--linked`), then runs each test file. Unlike widget tests, these boot the **real app against real Supabase**: no provider is stubbed. That's forced by `RouterNotifier.redirect` in `lib/app.dart`, which reads `Supabase.instance.client.auth.currentSession` directly rather than through a provider, so it can't be overridden — anything past `/` needs a genuine session. Tests sign in as the seeded `a@a.com` / `123456`.
+The script starts the local stack, runs `supabase db reset` (local only — never `--linked`), then runs each test file. Unlike widget tests, these boot the **real app against real Supabase**: no provider is stubbed. That's forced by `RouterNotifier.redirect` in `lib/app.dart`, which reads `Supabase.instance.client.auth.currentSession` directly rather than through a provider, so it can't be overridden — anything past `/` needs a genuine session. Tests sign in as the seeded `a@a.com` / `123456`. Locally the script passes the same `.env.local.json` used for a normal run; in CI, where that gitignored file doesn't exist, it instead reads `API_URL`/`PUBLISHABLE_KEY` straight off the running stack via `supabase status -o env`.
 
 Rules for adding to the suite:
 
