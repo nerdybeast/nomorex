@@ -332,7 +332,7 @@ void main() {
       await tester.tap(find.text('Add sets (%)'));
       await tester.pumpAndSettle();
 
-      expect(find.text('1RM 165.0 kg'), findsOneWidget);
+      expect(find.text('1RM 165 kg'), findsOneWidget);
     });
 
     testWidgets('an inferred max is labelled as an estimate', (tester) async {
@@ -371,7 +371,7 @@ void main() {
 
       await tester.tap(find.text('Add sets (%)'));
       await tester.pumpAndSettle();
-      expect(find.text('1RM 165.0 kg'), findsOneWidget);
+      expect(find.text('1RM 165 kg'), findsOneWidget);
 
       // "Based on" -> Front Squat (e2), a different lift's 1RM.
       await tester.tap(find.text('This exercise'));
@@ -379,8 +379,8 @@ void main() {
       await tester.tap(find.text('Front Squat').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('1RM 90.0 kg'), findsOneWidget);
-      expect(find.text('1RM 165.0 kg'), findsNothing);
+      expect(find.text('1RM 90 kg'), findsOneWidget);
+      expect(find.text('1RM 165 kg'), findsNothing);
     });
   });
 }

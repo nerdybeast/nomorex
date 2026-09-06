@@ -93,7 +93,7 @@ void main() {
     await _pump(tester, oneRepMaxes: const {'owner-e1': OneRepMax.measured(100)});
 
     expect(find.textContaining('5 reps · 80% of 1RM'), findsOneWidget);
-    expect(find.textContaining('80.0 kg'), findsOneWidget);
+    expect(find.textContaining('80 kg'), findsOneWidget);
   });
 
   testWidgets(
@@ -103,7 +103,7 @@ void main() {
     // Without the name fallback this set would render as unresolvable forever.
     await _pump(tester, oneRepMaxesByName: const {'back squat': OneRepMax.measured(100)});
 
-    expect(find.textContaining('80.0 kg'), findsOneWidget);
+    expect(find.textContaining('80 kg'), findsOneWidget);
   });
 
   testWidgets('shows no resolved weight when the viewer has no 1RM at all', (tester) async {

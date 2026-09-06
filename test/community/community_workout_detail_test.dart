@@ -169,13 +169,13 @@ void main() {
       oneRepMaxes: const {'e1': OneRepMax.measured(100)},
     );
 
-    expect(find.textContaining('5 reps · 80% 1RM · 80.0 kg'), findsOneWidget);
+    expect(find.textContaining('5 reps · 80% 1RM · 80 kg'), findsOneWidget);
     expect(find.text('set PR'), findsNothing);
 
     final accent = AppDarkTheme.sleekOrange()
         .extension<NomorexDarkTokens>()!
         .secondaryAccent;
-    expect(colorOfSpan(tester, '80.0 kg'), accent);
+    expect(colorOfSpan(tester, '80 kg'), accent);
   });
 
   testWidgets('a percentage set with no 1RM for the viewer shows a "set PR" link',
@@ -269,7 +269,7 @@ void main() {
     );
 
     expect(find.text('set PR'), findsNothing);
-    expect(find.textContaining('5 reps · 80% 1RM · 80.0 kg'), findsOneWidget);
+    expect(find.textContaining('5 reps · 80% 1RM · 80 kg'), findsOneWidget);
   });
 
   testWidgets('a set programmed against another lift names that lift', (tester) async {
@@ -301,7 +301,7 @@ void main() {
     // against its own exercise 'e3'.
     await pumpCommunityDetail(tester, workout: workout, oneRepMaxes: const {'e2': OneRepMax.measured(120)});
 
-    expect(find.textContaining('3 reps · 75% of Clean & Jerk · 90.0 kg'), findsOneWidget);
+    expect(find.textContaining('3 reps · 75% of Clean & Jerk · 90 kg'), findsOneWidget);
   });
 
   testWidgets('absolute sets are unchanged and keep the default color', (tester) async {

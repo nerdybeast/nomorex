@@ -24,4 +24,25 @@ void main() {
       );
     });
   });
+
+  group('formatWeight', () {
+    test('drops the trailing .0 for a whole-number weight', () {
+      expect(formatWeight(205, 'kg'), '205 kg');
+    });
+
+    test('keeps the decimal for a genuinely fractional weight', () {
+      expect(formatWeight(167.5, 'kg'), '167.5 kg');
+    });
+  });
+
+  group('formatWeightBoth', () {
+    test('rounds lbs to a whole number but keeps the kg side exact', () {
+      // Regression case: 167.5 kg was previously rounded away to "168 kg".
+      expect(formatWeightBoth(167.5), '369 lbs / 167.5 kg');
+    });
+
+    test('shows no decimal on either side for a whole-number weight', () {
+      expect(formatWeightBoth(100), '220 lbs / 100 kg');
+    });
+  });
 }
