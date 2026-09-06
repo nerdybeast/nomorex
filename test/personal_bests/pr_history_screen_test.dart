@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nomorex/features/personal_bests/models/personal_best.dart';
 import 'package:nomorex/features/personal_bests/providers/personal_bests_provider.dart';
 import 'package:nomorex/features/personal_bests/screens/pr_history_screen.dart';
@@ -122,5 +123,93 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No PR history found.'), findsOneWidget);
+  });
+
+  testWidgets('tapping the add button opens the add-PR form pre-filled from the most recent PR',
+      (tester) async {
+    final prs = [
+      PersonalBest(
+        id: '1',
+        userId: 'u1',
+        exerciseId: 'e1',
+        exerciseName: 'Clean Pull',
+        weightKg: 152,
+        reps: 5,
+        date: DateTime(2026, 8, 31),
+        updatedAt: DateTime(2026, 8, 31),
+      ),
+      // Older — must not be the one the add button pre-fills from.
+      PersonalBest(
+        id: '2',
+        userId: 'u1',
+        exerciseId: 'e1',
+        exerciseName: 'Clean Pull',
+        weightKg: 140,
+        reps: 3,
+        date: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      ),
+    ];
+
+    final router = GoRouter(
+      initialLocation: '/prs/e1/history',
+      routes: [
+        GoRoute(
+          path: '/prs/e1/history',
+          builder: (_, _) => const PrHistoryScreen(exerciseId: 'e1'),
+        ),
+        GoRoute(
+          path: '/prs/add',
+          builder: (_, state) => Text('add:${state.uri.query}'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier(prs)),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('pr_history_add')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('add:exerciseId=e1&weightKg=152.0&reps=5'), findsOneWidget);
+  });
+
+  testWidgets('tapping the add button with no history opens a blank add-PR form',
+      (tester) async {
+    final router = GoRouter(
+      initialLocation: '/prs/e1/history',
+      routes: [
+        GoRoute(
+          path: '/prs/e1/history',
+          builder: (_, _) => const PrHistoryScreen(exerciseId: 'e1'),
+        ),
+        GoRoute(
+          path: '/prs/add',
+          builder: (_, state) => Text('add:${state.uri.query}'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier(const [])),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('pr_history_add')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('add:exerciseId=e1'), findsOneWidget);
   });
 }

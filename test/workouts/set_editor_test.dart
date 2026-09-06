@@ -224,7 +224,7 @@ void main() {
 
     expect(find.text('Weight (kg)'), findsOneWidget);
 
-    await tester.enterText(find.widgetWithText(TextField, '0.0'), '100');
+    await tester.enterText(find.widgetWithText(TextField, '0'), '100');
     final repsRow = find.ancestor(of: find.text('Reps'), matching: find.byType(Row));
     await tester.tap(find.descendant(of: repsRow, matching: find.byType(TextField)));
     await tester.pump();
@@ -256,7 +256,7 @@ void main() {
     await tester.tap(find.text('Add sets (weight)'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.widgetWithText(TextField, '0.0'), '102.5');
+    await tester.enterText(find.widgetWithText(TextField, '0'), '102.5');
     // Move focus to another field (e.g. tabbing away) without submitting via
     // enter — a Text tap wouldn't actually shift focus, so target the Reps
     // TextField instead.
@@ -332,7 +332,7 @@ void main() {
       await tester.tap(find.text('Add sets (%)'));
       await tester.pumpAndSettle();
 
-      expect(find.text('1RM 165.0 kg'), findsOneWidget);
+      expect(find.text('1RM 165 kg'), findsOneWidget);
     });
 
     testWidgets('an inferred max is labelled as an estimate', (tester) async {
@@ -371,7 +371,7 @@ void main() {
 
       await tester.tap(find.text('Add sets (%)'));
       await tester.pumpAndSettle();
-      expect(find.text('1RM 165.0 kg'), findsOneWidget);
+      expect(find.text('1RM 165 kg'), findsOneWidget);
 
       // "Based on" -> Front Squat (e2), a different lift's 1RM.
       await tester.tap(find.text('This exercise'));
@@ -379,8 +379,8 @@ void main() {
       await tester.tap(find.text('Front Squat').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('1RM 90.0 kg'), findsOneWidget);
-      expect(find.text('1RM 165.0 kg'), findsNothing);
+      expect(find.text('1RM 90 kg'), findsOneWidget);
+      expect(find.text('1RM 165 kg'), findsNothing);
     });
   });
 }

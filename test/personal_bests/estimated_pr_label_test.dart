@@ -66,7 +66,7 @@ void main() {
         OneRepMaxFormula.brzycki,
         'both',
       ),
-      'Est. 1RM 248 lbs / 113 kg',
+      'Est. 1RM 248 lbs / 112.5 kg',
     );
   });
 }

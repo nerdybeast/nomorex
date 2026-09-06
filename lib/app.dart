@@ -112,6 +112,8 @@ GoRouter router(Ref ref) {
         path: AppConstants.routeAddPr,
         builder: (_, state) => AddPrScreen(
           exerciseId: state.uri.queryParameters['exerciseId'],
+          initialWeightKg: double.tryParse(state.uri.queryParameters['weightKg'] ?? ''),
+          initialReps: int.tryParse(state.uri.queryParameters['reps'] ?? ''),
         ),
       ),
       GoRoute(
