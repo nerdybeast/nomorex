@@ -6,6 +6,7 @@ import '../../exercises/widgets/exercise_picker.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../../shared/widgets/toggle_card.dart';
 import '../providers/workout_detail_provider.dart';
+import '../utils/confirm_delete_workout.dart';
 import '../widgets/set_editor.dart';
 
 class EditWorkoutScreen extends ConsumerWidget {
@@ -66,6 +67,8 @@ class EditWorkoutScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(workoutDetailProvider(workoutId));
     final unit = ref.watch(unitPreferenceProvider);
+    final workoutForDelete = detail.asData?.value;
+    final showDeleteIcon = workoutForDelete != null && workoutForDelete.programInstanceId == null;
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -73,6 +76,16 @@ class EditWorkoutScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('EDIT WORKOUT'),
         actions: [
+          if (showDeleteIcon)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => confirmAndDeleteWorkout(
+                context,
+                ref,
+                workoutForDelete,
+                navigateToListOnDelete: true,
+              ),
+            ),
           TextButton(
             onPressed: () => context.pop(),
             child: const Text('Done'),
@@ -90,80 +103,113 @@ class EditWorkoutScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
         data: (workout) {
           final notifier = ref.read(workoutDetailProvider(workoutId).notifier);
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _AutoSaveField(
-                initialValue: workout.title,
-                labelText: 'Title (e.g. Day 1)',
-                onChanged: (v) {
-                  final trimmed = v.trim();
-                  if (trimmed.isNotEmpty) notifier.updateTitle(trimmed);
-                },
-              ),
-              const SizedBox(height: 16),
-              _AutoSaveField(
-                initialValue: workout.notes,
-                labelText: 'Description',
-                maxLines: 3,
-                onChanged: notifier.updateDescription,
-              ),
-              const SizedBox(height: 16),
-              ToggleCard(
-                title: 'Public',
-                subtitle: 'Other users can view this workout',
-                value: workout.isPublic,
-                onChanged: (v) => notifier.updateVisibility(v),
-              ),
-              const Divider(height: 32),
-              if (workout.exercises.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: Text('No exercises yet. Tap "Exercise" to add one.')),
-                )
-              else
-                for (final ex in workout.exercises)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(ex.exerciseName,
-                                    style: Theme.of(context).textTheme.titleMedium),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: () => notifier.removeExercise(ex.id),
-                              ),
-                            ],
-                          ),
-                          _AutoSaveField(
-                            key: ValueKey(ex.id),
-                            initialValue: ex.notes,
-                            labelText: 'Notes (e.g. build to a heavy triple)',
-                            onChanged: (v) => notifier.updateExerciseNotes(ex.id, v),
-                          ),
-                          const SizedBox(height: 8),
-                          SetEditor(
-                            sets: ex.sets.map((s) => s.toEditableRow()).toList(),
-                            unit: unit,
-                            currentExerciseId: ex.exerciseId,
-                            currentExerciseName: ex.exerciseName,
-                            onAddPercentageSets: (parsed) =>
-                                notifier.addPercentageSets(ex.id, parsed),
-                            onAddAbsoluteSets: (sets, reps, weightKg) =>
-                                notifier.addAbsoluteSets(ex.id,
-                                    sets: sets, reps: reps, weightKg: weightKg),
-                            onDeleteSet: notifier.deleteSet,
-                          ),
-                        ],
-                      ),
+          return CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _AutoSaveField(
+                      initialValue: workout.title,
+                      labelText: 'Title (e.g. Day 1)',
+                      onChanged: (v) {
+                        final trimmed = v.trim();
+                        if (trimmed.isNotEmpty) notifier.updateTitle(trimmed);
+                      },
                     ),
+                    const SizedBox(height: 16),
+                    _AutoSaveField(
+                      initialValue: workout.notes,
+                      labelText: 'Description',
+                      maxLines: 3,
+                      onChanged: notifier.updateDescription,
+                    ),
+                    const SizedBox(height: 16),
+                    ToggleCard(
+                      title: 'Public',
+                      subtitle: 'Other users can view this workout',
+                      value: workout.isPublic,
+                      onChanged: (v) => notifier.updateVisibility(v),
+                    ),
+                    const Divider(height: 32),
+                    if (workout.exercises.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(child: Text('No exercises yet. Tap "Exercise" to add one.')),
+                      ),
+                  ]),
+                ),
+              ),
+              if (workout.exercises.isNotEmpty)
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverReorderableList(
+                    itemCount: workout.exercises.length,
+                    itemBuilder: (context, i) {
+                      final ex = workout.exercises[i];
+                      return Padding(
+                        key: ValueKey(ex.id),
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    ReorderableDragStartListener(
+                                      index: i,
+                                      child: const Padding(
+                                        padding: EdgeInsets.only(right: 8),
+                                        child: Icon(Icons.drag_handle),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(ex.exerciseName,
+                                          style: Theme.of(context).textTheme.titleMedium),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline),
+                                      onPressed: () => notifier.removeExercise(ex.id),
+                                    ),
+                                  ],
+                                ),
+                                _AutoSaveField(
+                                  key: ValueKey(ex.id),
+                                  initialValue: ex.notes,
+                                  labelText: 'Notes (e.g. build to a heavy triple)',
+                                  onChanged: (v) => notifier.updateExerciseNotes(ex.id, v),
+                                ),
+                                const SizedBox(height: 8),
+                                SetEditor(
+                                  sets: ex.sets.map((s) => s.toEditableRow()).toList(),
+                                  unit: unit,
+                                  currentExerciseId: ex.exerciseId,
+                                  currentExerciseName: ex.exerciseName,
+                                  onAddPercentageSets: (parsed) =>
+                                      notifier.addPercentageSets(ex.id, parsed),
+                                  onAddAbsoluteSets: (sets, reps, weightKg) =>
+                                      notifier.addAbsoluteSets(ex.id,
+                                          sets: sets, reps: reps, weightKg: weightKg),
+                                  onDeleteSet: notifier.deleteSet,
+                                  onReorderSets: (orderedIds) =>
+                                      notifier.reorderSets(ex.id, orderedIds),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    onReorderItem: (oldIndex, newIndex) {
+                      final ids = workout.exercises.map((e) => e.id).toList();
+                      final moved = ids.removeAt(oldIndex);
+                      ids.insert(newIndex, moved);
+                      notifier.reorderExercises(ids);
+                    },
                   ),
+                ),
             ],
           );
         },

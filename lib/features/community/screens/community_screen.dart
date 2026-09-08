@@ -128,17 +128,24 @@ class _WorkoutsTab extends ConsumerWidget {
           return const Center(child: Text('No workouts match your search.'));
         }
         return ListView.builder(
+          padding: const EdgeInsets.all(16),
           itemCount: filtered.length,
           itemBuilder: (context, i) {
             final w = filtered[i];
-            return ListTile(
-              title: Text(w.title),
-              subtitle: Text(
-                'by ${ownerDisplayName(w.ownerDisplayName)} · '
-                '${formatDate(w.date)} · ${w.exercises.length} exercises',
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  title: Text(w.title),
+                  subtitle: Text(
+                    'by ${ownerDisplayName(w.ownerDisplayName)} · '
+                    '${formatDate(w.date)} · ${w.exercises.length} exercises',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(AppConstants.routeCommunityWorkoutDetail(w.id)),
+                ),
               ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(AppConstants.routeCommunityWorkoutDetail(w.id)),
             );
           },
         );
@@ -170,18 +177,25 @@ class _ProgramsTab extends ConsumerWidget {
           return const Center(child: Text('No programs match your search.'));
         }
         return ListView.builder(
+          padding: const EdgeInsets.all(16),
           itemCount: filtered.length,
           itemBuilder: (context, i) {
             final p = filtered[i];
             final weeks = p.weeks.length;
-            return ListTile(
-              title: Text(p.name),
-              subtitle: Text(
-                'by ${ownerDisplayName(p.ownerDisplayName)} · '
-                '$weeks ${weeks == 1 ? 'week' : 'weeks'}',
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  title: Text(p.name),
+                  subtitle: Text(
+                    'by ${ownerDisplayName(p.ownerDisplayName)} · '
+                    '$weeks ${weeks == 1 ? 'week' : 'weeks'}',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(AppConstants.routeCommunityProgramDetail(p.id)),
+                ),
               ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(AppConstants.routeCommunityProgramDetail(p.id)),
             );
           },
         );

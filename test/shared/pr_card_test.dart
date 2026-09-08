@@ -45,6 +45,34 @@ void main() {
     expect(tapped, isTrue);
   });
 
+  testWidgets('shows a delete icon instead of the chevron when onDelete is provided',
+      (tester) async {
+    var deleted = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PrCard(
+            exerciseName: 'Back Squat',
+            weightDisplay: '100.0 kg',
+            reps: 5,
+            dateDisplay: 'Jan 1, 2026',
+            onTap: () {},
+            onDelete: () => deleted = true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pump();
+
+    expect(deleted, isTrue);
+  });
+
   testWidgets('renders the note when one is provided', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

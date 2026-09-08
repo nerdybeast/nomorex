@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +40,7 @@ SetEditor _editor() => SetEditor(
       onAddPercentageSets: (_) {},
       onAddAbsoluteSets: (_, _, _) {},
       onDeleteSet: (_) {},
+      onReorderSets: (_) {},
     );
 
 Future<void> _tapStepper(
@@ -68,6 +70,7 @@ void main() {
         onAddPercentageSets: (parsed) => added = parsed,
         onAddAbsoluteSets: (_, _, _) {},
         onDeleteSet: (_) {},
+        onReorderSets: (_) {},
       )),
     );
     await tester.pumpAndSettle();
@@ -106,6 +109,7 @@ void main() {
         onAddPercentageSets: (parsed) => added = parsed,
         onAddAbsoluteSets: (_, _, _) {},
         onDeleteSet: (_) {},
+        onReorderSets: (_) {},
       )),
     );
     await tester.pumpAndSettle();
@@ -146,6 +150,7 @@ void main() {
           capturedWeightKg = weightKg;
         },
         onDeleteSet: (_) {},
+        onReorderSets: (_) {},
       )),
     );
     await tester.pumpAndSettle();
@@ -177,6 +182,7 @@ void main() {
         onAddPercentageSets: (_) {},
         onAddAbsoluteSets: (_, _, _) {},
         onDeleteSet: (_) {},
+        onReorderSets: (_) {},
       )),
     );
     await tester.pumpAndSettle();
@@ -204,6 +210,7 @@ void main() {
         onAddPercentageSets: (_) {},
         onAddAbsoluteSets: (_, _, weightKg) => capturedWeightKg = weightKg,
         onDeleteSet: (_) {},
+        onReorderSets: (_) {},
       )),
     );
     await tester.pumpAndSettle();
@@ -249,6 +256,7 @@ void main() {
         onAddPercentageSets: (_) {},
         onAddAbsoluteSets: (_, _, weightKg) => capturedWeightKg = weightKg,
         onDeleteSet: (_) {},
+        onReorderSets: (_) {},
       )),
     );
     await tester.pumpAndSettle();
@@ -280,6 +288,7 @@ void main() {
         onAddPercentageSets: (_) {},
         onAddAbsoluteSets: (_, _, _) {},
         onDeleteSet: (_) {},
+        onReorderSets: (_) {},
       )),
     );
     await tester.pumpAndSettle();
@@ -314,6 +323,7 @@ void main() {
         onAddPercentageSets: (_) {},
         onAddAbsoluteSets: (_, _, _) {},
         onDeleteSet: (_) {},
+        onReorderSets: (_) {},
       )),
     );
     await tester.pumpAndSettle();
@@ -382,5 +392,67 @@ void main() {
       expect(find.text('1RM 90 kg'), findsOneWidget);
       expect(find.text('1RM 165 kg'), findsNothing);
     });
+  });
+
+  testWidgets('dragging a set\'s handle below the next set calls onReorderSets '
+      'with the new id order', (tester) async {
+    List<String>? reordered;
+
+    await tester.pumpWidget(
+      _wrap(SetEditor(
+        sets: const [
+          EditableSetRow(id: 's1', weightMode: 'absolute', targetReps: 14, absoluteWeightKg: 50),
+          EditableSetRow(id: 's2', weightMode: 'absolute', targetReps: 15, absoluteWeightKg: 45),
+          EditableSetRow(id: 's3', weightMode: 'absolute', targetReps: 16, absoluteWeightKg: 40),
+        ],
+        unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Back Squat',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (_, _, _) {},
+        onDeleteSet: (_) {},
+        onReorderSets: (ids) => reordered = ids,
+      )),
+    );
+    await tester.pumpAndSettle();
+
+    final handles = find.byIcon(Icons.drag_handle);
+    expect(handles, findsNWidgets(3));
+
+    final drag = await tester.startGesture(tester.getCenter(handles.first));
+    await tester.pump(kPressTimeout);
+    await drag.moveBy(const Offset(0, 100));
+    await tester.pump();
+    await drag.up();
+    await tester.pumpAndSettle();
+
+    expect(reordered, isNotNull);
+    expect(reordered, ['s2', 's1', 's3']);
+  });
+
+  testWidgets('deleting a set still works once rows are draggable', (tester) async {
+    String? deletedId;
+
+    await tester.pumpWidget(
+      _wrap(SetEditor(
+        sets: const [
+          EditableSetRow(id: 's1', weightMode: 'absolute', targetReps: 14, absoluteWeightKg: 50),
+          EditableSetRow(id: 's2', weightMode: 'absolute', targetReps: 15, absoluteWeightKg: 45),
+        ],
+        unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Back Squat',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (_, _, _) {},
+        onDeleteSet: (id) => deletedId = id,
+        onReorderSets: (_) {},
+      )),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.close).first);
+    await tester.pumpAndSettle();
+
+    expect(deletedId, 's1');
   });
 }

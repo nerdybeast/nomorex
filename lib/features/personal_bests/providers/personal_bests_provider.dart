@@ -51,6 +51,14 @@ class PersonalBestsNotifier extends _$PersonalBestsNotifier {
     await future;
   }
 
+  Future<void> deletePr(String id) async {
+    await Supabase.instance.client.from('personal_bests').delete().eq('id', id);
+    ref.invalidateSelf();
+    ref.invalidate(oneRepMaxProvider);
+    ref.invalidate(oneRepMaxByNameProvider);
+    await future;
+  }
+
   Future<void> refresh() async {
     ref.invalidateSelf();
     await future;

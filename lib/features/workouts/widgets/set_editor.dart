@@ -25,6 +25,7 @@ class SetEditor extends ConsumerWidget {
     required this.onAddPercentageSets,
     required this.onAddAbsoluteSets,
     required this.onDeleteSet,
+    required this.onReorderSets,
   });
 
   final List<EditableSetRow> sets;
@@ -38,6 +39,7 @@ class SetEditor extends ConsumerWidget {
   final void Function(List<ParsedSet>) onAddPercentageSets;
   final void Function(int sets, int reps, double weightKg) onAddAbsoluteSets;
   final void Function(String setId) onDeleteSet;
+  final void Function(List<String> orderedSetIds) onReorderSets;
 
   Future<void> _showPercentageSetDialog(
     BuildContext context,
@@ -251,12 +253,25 @@ class SetEditor extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final s in sets)
-          _SetRow(
-            set: s,
+        ReorderableListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          buildDefaultDragHandles: false,
+          itemCount: sets.length,
+          onReorderItem: (oldIndex, newIndex) {
+            final ids = sets.map((s) => s.id).toList();
+            final moved = ids.removeAt(oldIndex);
+            ids.insert(newIndex, moved);
+            onReorderSets(ids);
+          },
+          itemBuilder: (context, i) => _SetRow(
+            key: ValueKey(sets[i].id),
+            index: i,
+            set: sets[i],
             unit: unit,
-            onDelete: () => onDeleteSet(s.id),
+            onDelete: () => onDeleteSet(sets[i].id),
           ),
+        ),
         Row(
           children: [
             TextButton.icon(
@@ -278,11 +293,14 @@ class SetEditor extends ConsumerWidget {
 
 class _SetRow extends StatelessWidget {
   const _SetRow({
+    super.key,
+    required this.index,
     required this.set,
     required this.unit,
     required this.onDelete,
   });
 
+  final int index;
   final EditableSetRow set;
   final String unit;
   final VoidCallback onDelete;
@@ -300,7 +318,17 @@ class _SetRow extends StatelessWidget {
         : '1RM';
     return ListTile(
       dense: true,
-      leading: Text('${set.targetReps ?? '-'} reps'),
+      leading: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ReorderableDragStartListener(
+            index: index,
+            child: const Icon(Icons.drag_handle),
+          ),
+          const SizedBox(width: 8),
+          Text('${set.targetReps ?? '-'} reps'),
+        ],
+      ),
       title: Text(isPct ? '$valueLabel of $basisLabel' : valueLabel),
       trailing: IconButton(
         icon: const Icon(Icons.close),

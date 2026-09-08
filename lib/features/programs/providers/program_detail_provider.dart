@@ -151,11 +151,14 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
   Future<void> addExercise(String dayId, String exerciseId) async {
     final current = await future;
     final day = current.weeks.expand((w) => w.days).firstWhere((d) => d.id == dayId);
+    final nextPos = day.exercises.isEmpty
+        ? 0
+        : day.exercises.map((e) => e.position).reduce((a, b) => a > b ? a : b) + 1;
     await _db.from('program_exercises').insert({
       'program_day_id': dayId,
       'user_id': _userId,
       'exercise_id': exerciseId,
-      'position': day.exercises.length,
+      'position': nextPos,
     });
     await _refresh();
   }
@@ -173,6 +176,45 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
     await _refresh();
   }
 
+  /// Reassigns the position values `program_exercises` already held by
+  /// [orderedExerciseIds] (all within [dayId]) in the new order.
+  /// `program_exercises.position` has no unique constraint, so — unlike
+  /// [reorderWeeks]/[reorderDays] — a single sequential pass is safe.
+  Future<void> reorderExercises({
+    required String dayId,
+    required List<String> orderedExerciseIds,
+  }) async {
+    final current = await future;
+    final day = current.weeks.expand((w) => w.days).firstWhere((d) => d.id == dayId);
+    final positions = (orderedExerciseIds
+            .map((id) => day.exercises.firstWhere((e) => e.id == id).position)
+            .toList()
+          ..sort());
+    for (var i = 0; i < orderedExerciseIds.length; i++) {
+      await _db
+          .from('program_exercises')
+          .update({'position': positions[i]}).eq('id', orderedExerciseIds[i]);
+    }
+    await _refresh();
+  }
+
+  /// Same idea for a single exercise's sets.
+  Future<void> reorderSets(String programExerciseId, List<String> orderedSetIds) async {
+    final current = await future;
+    final ex = current.weeks
+        .expand((w) => w.days)
+        .expand((d) => d.exercises)
+        .firstWhere((e) => e.id == programExerciseId);
+    final positions = (orderedSetIds
+            .map((id) => ex.sets.firstWhere((s) => s.id == id).position)
+            .toList()
+          ..sort());
+    for (var i = 0; i < orderedSetIds.length; i++) {
+      await _db.from('program_sets').update({'position': positions[i]}).eq('id', orderedSetIds[i]);
+    }
+    await _refresh();
+  }
+
   // ---- Sets ----
 
   Future<void> addPercentageSets(
@@ -185,7 +227,9 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
         .expand((w) => w.days)
         .expand((d) => d.exercises)
         .firstWhere((e) => e.id == programExerciseId);
-    var pos = ex.sets.length;
+    var pos = ex.sets.isEmpty
+        ? 0
+        : ex.sets.map((s) => s.position).reduce((a, b) => a > b ? a : b) + 1;
     await _db.from('program_sets').insert([
       for (final p in parsed)
         {
@@ -213,7 +257,9 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
         .expand((w) => w.days)
         .expand((d) => d.exercises)
         .firstWhere((e) => e.id == programExerciseId);
-    var pos = ex.sets.length;
+    var pos = ex.sets.isEmpty
+        ? 0
+        : ex.sets.map((s) => s.position).reduce((a, b) => a > b ? a : b) + 1;
     await _db.from('program_sets').insert([
       for (var i = 0; i < sets; i++)
         {

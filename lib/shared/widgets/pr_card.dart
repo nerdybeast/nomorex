@@ -24,6 +24,7 @@ class PrCard extends StatelessWidget {
     this.notesMaxLines,
     this.estimatedOneRepMaxDisplay,
     this.onTap,
+    this.onDelete,
   });
 
   final String exerciseName;
@@ -34,6 +35,7 @@ class PrCard extends StatelessWidget {
   final int? notesMaxLines;
   final String? estimatedOneRepMaxDisplay;
   final VoidCallback? onTap;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +77,14 @@ class PrCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (onTap != null) ...[
+                  if (onDelete != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      tooltip: 'Delete',
+                      onPressed: onDelete,
+                    ),
+                  ] else if (onTap != null) ...[
                     const SizedBox(width: 8),
                     Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
                   ],
