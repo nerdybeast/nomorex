@@ -33,7 +33,9 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
 
   Future<void> addExercise(String exerciseId) async {
     final current = await future;
-    final nextPos = current.exercises.length;
+    final nextPos = current.exercises.isEmpty
+        ? 0
+        : current.exercises.map((e) => e.position).reduce((a, b) => a > b ? a : b) + 1;
     await _db.from('workout_exercises').insert({
       'workout_id': workoutId,
       'user_id': _userId,
@@ -62,12 +64,47 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     await _refresh();
   }
 
+  /// Reassigns the position values `workout_exercises` already held by
+  /// [orderedExerciseIds] in the new order. `workout_exercises.position` has
+  /// no unique constraint, so a single sequential pass is safe here (unlike
+  /// ProgramDetailNotifier.reorderWeeks/reorderDays, which need a two-phase
+  /// negative-then-final trick to dodge a unique constraint).
+  Future<void> reorderExercises(List<String> orderedExerciseIds) async {
+    final current = await future;
+    final positions = (orderedExerciseIds
+            .map((id) => current.exercises.firstWhere((e) => e.id == id).position)
+            .toList()
+          ..sort());
+    for (var i = 0; i < orderedExerciseIds.length; i++) {
+      await _db
+          .from('workout_exercises')
+          .update({'position': positions[i]}).eq('id', orderedExerciseIds[i]);
+    }
+    await _refresh();
+  }
+
+  /// Same idea for a single exercise's sets.
+  Future<void> reorderSets(String workoutExerciseId, List<String> orderedSetIds) async {
+    final current = await future;
+    final ex = current.exercises.firstWhere((e) => e.id == workoutExerciseId);
+    final positions = (orderedSetIds
+            .map((id) => ex.sets.firstWhere((s) => s.id == id).position)
+            .toList()
+          ..sort());
+    for (var i = 0; i < orderedSetIds.length; i++) {
+      await _db.from('workout_sets').update({'position': positions[i]}).eq('id', orderedSetIds[i]);
+    }
+    await _refresh();
+  }
+
   Future<void> addPercentageSets(
       String workoutExerciseId, List<ParsedSet> parsed) async {
     if (parsed.isEmpty) return;
     final current = await future;
     final ex = current.exercises.firstWhere((e) => e.id == workoutExerciseId);
-    var pos = ex.sets.length;
+    var pos = ex.sets.isEmpty
+        ? 0
+        : ex.sets.map((s) => s.position).reduce((a, b) => a > b ? a : b) + 1;
     await _db.from('workout_sets').insert([
       for (final p in parsed)
         {
@@ -92,7 +129,9 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     if (sets <= 0) return;
     final current = await future;
     final ex = current.exercises.firstWhere((e) => e.id == workoutExerciseId);
-    var pos = ex.sets.length;
+    var pos = ex.sets.isEmpty
+        ? 0
+        : ex.sets.map((s) => s.position).reduce((a, b) => a > b ? a : b) + 1;
     await _db.from('workout_sets').insert([
       for (var i = 0; i < sets; i++)
         {

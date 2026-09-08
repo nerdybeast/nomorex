@@ -307,55 +307,82 @@ class _DayCard extends ConsumerWidget {
         ),
         children: [
           if (!day.isRestDay)
-            for (final ex in day.exercises)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+              child: ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false,
+                itemCount: day.exercises.length,
+                itemBuilder: (context, i) {
+                  final ex = day.exercises[i];
+                  return Padding(
+                    key: ValueKey(ex.id),
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Text(ex.exerciseName,
-                                  style: Theme.of(context).textTheme.titleMedium),
+                            Row(
+                              children: [
+                                ReorderableDragStartListener(
+                                  index: i,
+                                  child: const Padding(
+                                    padding: EdgeInsets.only(right: 8),
+                                    child: Icon(Icons.drag_handle),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(ex.exerciseName,
+                                      style: Theme.of(context).textTheme.titleMedium),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline),
+                                  onPressed: () => notifier.removeExercise(ex.id),
+                                ),
+                              ],
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline),
-                              onPressed: () => notifier.removeExercise(ex.id),
+                            _AutoSaveField(
+                              key: ValueKey(ex.id),
+                              initialValue: ex.notes,
+                              labelText: 'Notes (e.g. build to a heavy triple)',
+                              onChanged: (v) => notifier.updateExerciseNotes(ex.id, v),
+                            ),
+                            const SizedBox(height: 8),
+                            SetEditor(
+                              sets: ex.sets.map((s) => s.toEditableRow()).toList(),
+                              unit: unit,
+                              currentExerciseId: ex.exerciseId,
+                              currentExerciseName: ex.exerciseName,
+                              onAddPercentageSets: (parsed) => notifier.addPercentageSets(
+                                ex.id,
+                                [
+                                  for (final p in parsed)
+                                    _toParsedProgramSet(p),
+                                ],
+                              ),
+                              onAddAbsoluteSets: (sets, reps, weightKg) => notifier
+                                  .addAbsoluteSets(ex.id, sets: sets, reps: reps, weightKg: weightKg),
+                              onDeleteSet: notifier.deleteSet,
+                              onReorderSets: (orderedIds) =>
+                                  notifier.reorderSets(ex.id, orderedIds),
                             ),
                           ],
                         ),
-                        _AutoSaveField(
-                          key: ValueKey(ex.id),
-                          initialValue: ex.notes,
-                          labelText: 'Notes (e.g. build to a heavy triple)',
-                          onChanged: (v) => notifier.updateExerciseNotes(ex.id, v),
-                        ),
-                        const SizedBox(height: 8),
-                        SetEditor(
-                          sets: ex.sets.map((s) => s.toEditableRow()).toList(),
-                          unit: unit,
-                          currentExerciseId: ex.exerciseId,
-                          currentExerciseName: ex.exerciseName,
-                          onAddPercentageSets: (parsed) => notifier.addPercentageSets(
-                            ex.id,
-                            [
-                              for (final p in parsed)
-                                _toParsedProgramSet(p),
-                            ],
-                          ),
-                          onAddAbsoluteSets: (sets, reps, weightKg) => notifier
-                              .addAbsoluteSets(ex.id, sets: sets, reps: reps, weightKg: weightKg),
-                          onDeleteSet: notifier.deleteSet,
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
+                onReorderItem: (oldIndex, newIndex) {
+                  final ids = day.exercises.map((e) => e.id).toList();
+                  final moved = ids.removeAt(oldIndex);
+                  ids.insert(newIndex, moved);
+                  notifier.reorderExercises(dayId: day.id, orderedExerciseIds: ids);
+                },
               ),
+            ),
           if (!day.isRestDay)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
