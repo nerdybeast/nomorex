@@ -14,6 +14,20 @@ class _StubPersonalBestsNotifier extends PersonalBestsNotifier {
   Future<List<PersonalBest>> build() async => _prs;
 }
 
+class _RecordingPersonalBestsNotifier extends PersonalBestsNotifier {
+  _RecordingPersonalBestsNotifier(this._prs, {this.onDelete});
+  final List<PersonalBest> _prs;
+  final void Function(String id)? onDelete;
+
+  @override
+  Future<List<PersonalBest>> build() async => _prs;
+
+  @override
+  Future<void> deletePr(String id) async {
+    onDelete?.call(id);
+  }
+}
+
 void main() {
   testWidgets('renders every history entry for the given exercise', (tester) async {
     final prs = [
@@ -211,5 +225,114 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('add:exerciseId=e1'), findsOneWidget);
+  });
+
+  testWidgets('tapping a row\'s delete icon opens a confirmation dialog', (tester) async {
+    final prs = [
+      PersonalBest(
+        id: '1',
+        userId: 'u1',
+        exerciseId: 'e1',
+        exerciseName: 'Back Squat',
+        weightKg: 100,
+        reps: 5,
+        date: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      ),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier(prs)),
+        ],
+        child: const MaterialApp(home: PrHistoryScreen(exerciseId: 'e1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete personal best?'), findsOneWidget);
+  });
+
+  testWidgets('canceling delete leaves deletePr uncalled', (tester) async {
+    String? deletedId;
+    final prs = [
+      PersonalBest(
+        id: '1',
+        userId: 'u1',
+        exerciseId: 'e1',
+        exerciseName: 'Back Squat',
+        weightKg: 100,
+        reps: 5,
+        date: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      ),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(
+            () => _RecordingPersonalBestsNotifier(prs, onDelete: (id) => deletedId = id),
+          ),
+        ],
+        child: const MaterialApp(home: PrHistoryScreen(exerciseId: 'e1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.text('Cancel'),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(deletedId, isNull);
+    expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('confirming delete calls deletePr with that entry\'s id', (tester) async {
+    String? deletedId;
+    final prs = [
+      PersonalBest(
+        id: '1',
+        userId: 'u1',
+        exerciseId: 'e1',
+        exerciseName: 'Back Squat',
+        weightKg: 100,
+        reps: 5,
+        date: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      ),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(
+            () => _RecordingPersonalBestsNotifier(prs, onDelete: (id) => deletedId = id),
+          ),
+        ],
+        child: const MaterialApp(home: PrHistoryScreen(exerciseId: 'e1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.text('Delete'),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(deletedId, '1');
   });
 }

@@ -4,7 +4,11 @@ import '../models/workout.dart';
 import '../utils/workout_copier.dart';
 import '../utils/workout_group_representative.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../community/providers/community_workouts_provider.dart';
 import '../../../core/utils/sequential_naming.dart';
+import 'finished_workouts_provider.dart';
+import 'in_progress_workouts_provider.dart';
+import 'workout_detail_provider.dart';
 
 part 'workouts_provider.g.dart';
 
@@ -69,6 +73,14 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
 
   Future<void> deleteWorkout(String id) async {
     await _db.from('workouts').delete().eq('id', id);
+    // inProgressWorkoutsProvider/finishedWorkoutsProvider/communityWorkoutsProvider
+    // all cache their own copy of this row; workoutDetailProvider(id) is
+    // keepAlive too, so it must be invalidated or a later revisit of this
+    // workout's route would render stale (deleted) data instead of an error.
+    ref.invalidate(inProgressWorkoutsProvider);
+    ref.invalidate(finishedWorkoutsProvider);
+    ref.invalidate(communityWorkoutsProvider);
+    ref.invalidate(workoutDetailProvider(id));
     ref.invalidateSelf();
     await future;
   }

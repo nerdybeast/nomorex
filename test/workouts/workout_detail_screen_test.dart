@@ -9,6 +9,7 @@ import 'package:nomorex/features/workouts/models/workout_exercise.dart';
 import 'package:nomorex/features/workouts/models/workout_set.dart';
 import 'package:nomorex/features/workouts/providers/finished_workouts_provider.dart';
 import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
+import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
 import 'package:nomorex/shared/models/one_rep_max.dart';
 import 'package:nomorex/features/workouts/providers/workout_detail_provider.dart';
 import 'package:nomorex/features/workouts/screens/workout_detail_screen.dart';
@@ -52,6 +53,19 @@ class _StubWorkoutDetailNotifier extends WorkoutDetailNotifier {
       throw UnimplementedError('onRepeat not stubbed');
     }
     return onRepeat!();
+  }
+}
+
+class _RecordingWorkoutsNotifier extends WorkoutsNotifier {
+  _RecordingWorkoutsNotifier({this.onDelete});
+  final void Function(String id)? onDelete;
+
+  @override
+  Future<List<Workout>> build() async => const [];
+
+  @override
+  Future<void> deleteWorkout(String id) async {
+    onDelete?.call(id);
   }
 }
 
@@ -471,6 +485,84 @@ void main() {
       ),
     );
     expect(find.byIcon(Icons.edit_outlined), findsNothing);
+  });
+
+  testWidgets('delete icon is hidden for a workout materialized from a program',
+      (tester) async {
+    final workout = _workoutWithPercentageSet();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          workoutDetailProvider('w1').overrideWith(
+            () => _StubWorkoutDetailNotifier(
+              Workout(
+                id: workout.id,
+                userId: workout.userId,
+                title: workout.title,
+                date: workout.date,
+                updatedAt: workout.updatedAt,
+                workoutGroupId: workout.workoutGroupId,
+                exercises: workout.exercises,
+                programInstanceId: 'pi1',
+              ),
+            ),
+          ),
+          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
+          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
+          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
+          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
+        ],
+        child: const MaterialApp(home: WorkoutDetailScreen(workoutId: 'w1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.delete_outline), findsNothing);
+  });
+
+  testWidgets('confirming delete calls deleteWorkout and navigates to the workouts list',
+      (tester) async {
+    String? deletedId;
+    final router = GoRouter(
+      initialLocation: '/w1',
+      routes: [
+        GoRoute(path: '/w1', builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1')),
+        GoRoute(path: '/shell/workouts', builder: (_, _) => const Text('destination:workouts')),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          workoutDetailProvider('w1').overrideWith(
+            () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
+          ),
+          workoutsProvider.overrideWith(
+            () => _RecordingWorkoutsNotifier(onDelete: (id) => deletedId = id),
+          ),
+          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
+          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
+          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
+          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete workout?'), findsOneWidget);
+
+    await tester.tap(find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.text('Delete'),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(deletedId, 'w1');
+    expect(find.text('destination:workouts'), findsOneWidget);
   });
 
   Workout finishedWorkout() {

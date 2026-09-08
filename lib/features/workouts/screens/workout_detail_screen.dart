@@ -13,6 +13,7 @@ import '../models/workout_set.dart';
 import '../providers/one_rep_max_provider.dart';
 import '../providers/workout_detail_provider.dart';
 import '../providers/workout_group_history_provider.dart';
+import '../utils/confirm_delete_workout.dart';
 import '../utils/set_resolver.dart';
 import '../../../shared/models/one_rep_max.dart';
 import '../widgets/elapsed_timer.dart';
@@ -31,6 +32,9 @@ class WorkoutDetailScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final workout = detail.asData?.value;
     final showEditIcon = workout == null || workout.status == 'not_started';
+    // Unlike edit, a destructive action shouldn't be tappable before we've
+    // confirmed the loaded workout isn't materialized from a program.
+    final showDeleteIcon = workout != null && workout.programInstanceId == null;
     final isBusy = detail.isLoading;
     final hasHistory =
         workout != null && ref.watch(groupHasFinishedHistoryProvider(workout.workoutGroupId));
@@ -43,6 +47,12 @@ class WorkoutDetailScreen extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => context.push(AppConstants.routeWorkoutEdit(workoutId)),
+            ),
+          if (showDeleteIcon)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () =>
+                  confirmAndDeleteWorkout(context, ref, workout, navigateToListOnDelete: true),
             ),
         ],
       ),

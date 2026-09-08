@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../providers/workouts_provider.dart';
+import '../utils/confirm_delete_workout.dart';
 
 class WorkoutsScreen extends ConsumerStatefulWidget {
   const WorkoutsScreen({super.key});
@@ -105,7 +106,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                               } else if (value == 'edit') {
                                 if (context.mounted) context.push(AppConstants.routeWorkoutEdit(w.id));
                               } else if (value == 'delete') {
-                                await notifier.deleteWorkout(w.id);
+                                await confirmAndDeleteWorkout(context, ref, w);
                               }
                             },
                             itemBuilder: (_) => const [

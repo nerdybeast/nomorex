@@ -6,6 +6,7 @@ import '../../exercises/widgets/exercise_picker.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../../shared/widgets/toggle_card.dart';
 import '../providers/workout_detail_provider.dart';
+import '../utils/confirm_delete_workout.dart';
 import '../widgets/set_editor.dart';
 
 class EditWorkoutScreen extends ConsumerWidget {
@@ -66,6 +67,8 @@ class EditWorkoutScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(workoutDetailProvider(workoutId));
     final unit = ref.watch(unitPreferenceProvider);
+    final workoutForDelete = detail.asData?.value;
+    final showDeleteIcon = workoutForDelete != null && workoutForDelete.programInstanceId == null;
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -73,6 +76,16 @@ class EditWorkoutScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('EDIT WORKOUT'),
         actions: [
+          if (showDeleteIcon)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => confirmAndDeleteWorkout(
+                context,
+                ref,
+                workoutForDelete,
+                navigateToListOnDelete: true,
+              ),
+            ),
           TextButton(
             onPressed: () => context.pop(),
             child: const Text('Done'),
