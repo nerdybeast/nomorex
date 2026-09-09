@@ -59,6 +59,20 @@ The local keys are fixed demo credentials — identical on every machine and not
 secret. Run `supabase status` to print the current values. Note that Android
 emulators reach the host at `10.0.2.2`, not `127.0.0.1`.
 
+**In Claude Code on the web**, `.env.local.json` doesn't point at a real local
+stack: the `SessionStart` hook (`.claude/hooks/session-start.sh`) writes it
+pointing at a small dedicated cloud dev Supabase project instead, because
+`supabase start` needs Docker, and its image pulls land on CDN hosts (e.g.
+Docker Hub's CloudFront-backed blob host) that fall outside this repo's cloud
+environment's network access level. That same level also has to include
+`*.supabase.co` for the hosted project below to be reachable at all — see
+[Network access](https://code.claude.com/docs/en/cloud-environments#access-levels)
+to set the environment to **Custom** with `*.supabase.co` added, or **Full**.
+Once network access allows it, the project (migrated from
+`supabase/migrations/`, seeded with the predefined exercises and the
+`a@a.com` / `b@b.com` (password `123456`) test users) behaves like the local
+stack for everything except a real `supabase start`/`db reset` cycle.
+
 Alternatively, you can pass values inline without the file:
 
 ```bash
