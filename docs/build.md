@@ -59,6 +59,52 @@ The local keys are fixed demo credentials — identical on every machine and not
 secret. Run `supabase status` to print the current values. Note that Android
 emulators reach the host at `10.0.2.2`, not `127.0.0.1`.
 
+**In Claude Code on the web**, `.env.local.json` doesn't point at a real local
+stack: the `SessionStart` hook (`.claude/hooks/session-start.sh`) writes it
+pointing at a small dedicated cloud dev Supabase project (`nomorex-cloud-dev`,
+ref `gjrxtxxxqqnjetzgjtwb`, in the "Playground" org) instead, because
+`supabase start` needs Docker, and its image pulls land on CDN hosts (e.g.
+Docker Hub's CloudFront-backed blob host) that fall outside this repo's cloud
+environment's network access level. That same level also has to include
+`*.supabase.co` for the hosted project to be reachable at all — see
+[Network access](https://code.claude.com/docs/en/cloud-environments#access-levels)
+to set the environment to **Custom** with `*.supabase.co` added, or **Full**.
+
+A few things worth knowing before touching this again:
+
+- **Changing an environment's network access does not affect sessions already
+  running.** The policy is fixed when the container starts; a session open
+  before the change keeps failing with the same proxy 403s after you save the
+  new setting. Verify from a *new* session, not the one you were in when you
+  changed it.
+- **The Supabase MCP tools (`mcp__Supabase__*`) reach a project's Management
+  API regardless of the session's own network access level** — they don't go
+  through the session's sandboxed proxy the way `curl`/`psql`/the `supabase`
+  CLI do. That's how this project's schema and seed data got applied from
+  inside a Trusted-only session before network access was widened at all, and
+  it's still the right tool for schema/data changes here, rather than trying
+  to get `supabase db push`/`psql` working against it.
+- **This project's schema is not kept in sync automatically.** Unlike
+  production, which the Supabase GitHub integration migrates on every push to
+  `main`, nothing re-applies `supabase/migrations/` to `nomorex-cloud-dev`.
+  Adding a migration to the repo without also running it here (via
+  `mcp__Supabase__apply_migration`, in order, or by pasting the new file into
+  the project's SQL editor) leaves cloud sessions on a stale schema — a bug
+  that won't reproduce locally since `supabase db reset` always replays
+  everything.
+- **Seed data is partial.** The project has the predefined exercises,
+  `a@a.com` / `b@b.com` (password `123456`) test users, and the small
+  Community-tab demo content from the end of `supabase/seed.sql`. The four
+  large historical ZT programs (`supabase/seed.sql` lines ~137–2851) were
+  deliberately left out — that much UUID-cross-referenced SQL has no safe way
+  to reach this project's database from inside a sandboxed session other than
+  retyping it by hand, which risks a silently broken foreign key. If you want
+  that data too, paste those lines into the project's SQL editor in the
+  Supabase dashboard directly.
+
+Once network access allows it, the project behaves like the local stack for
+everything except a real `supabase start`/`db reset` cycle.
+
 Alternatively, you can pass values inline without the file:
 
 ```bash
