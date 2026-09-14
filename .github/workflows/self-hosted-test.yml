@@ -2,6 +2,7 @@ name: Self-Hosted Test
 
 on:
   push:
+  workflow_dispatch:
 
 jobs:
   test:
