@@ -29,7 +29,12 @@ jobs:
         run: flutter analyze
 
       - name: Test
-        run: flutter test
+        run: flutter test --coverage --branch-coverage
+
+      - name: Write coverage to job summary
+        uses: livewing/lcov-job-summary@v1.3.0
+        with:
+          lcov: coverage/lcov.info
 
       # Deploy builds a release web bundle (see deploy.yml); this only proves
       # that target still compiles in release mode, so the values just need
