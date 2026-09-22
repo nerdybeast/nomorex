@@ -127,6 +127,31 @@ For GitHub Actions (or any CI system), pass the values as secrets. Store `SUPABA
 
 > Note: Dart's `--dart-define` reads from the build command, not from OS environment variables. For CI, pass them explicitly via `--dart-define` flags or `--dart-define-from-file` pointed at a generated file.
 
+## iOS signing and `flutter build ipa`
+
+`flutter build ipa` defaults to `--export-method app-store`, which requires an
+"iOS Distribution" certificate and an App Store provisioning profile — both of
+which require an active **paid** Apple Developer Program membership ($99/yr).
+On a free/personal Apple team, that export always fails with errors like:
+
+```
+error: exportArchive No signing certificate "iOS Distribution" found
+error: exportArchive Team "<name>" does not have permission to create "iOS App Store" provisioning profiles.
+```
+
+This is expected on a free team, not a misconfiguration. Apple restricts free
+teams to **development** signing (install on devices registered with that
+Apple ID via Xcode). To produce an installable IPA without a paid membership:
+
+```bash
+flutter build ipa --export-method development
+```
+
+Moving to `--export-method ad-hoc` or the `app-store` default later requires
+enrolling in the paid Apple Developer Program — at that point,
+`DEVELOPMENT_TEAM` in `ios/Runner.xcodeproj/project.pbxproj` may also need to
+point at the paid team's ID if it differs from the free team currently used.
+
 ## A Note on the Publishable Key
 
 The Supabase publishable key (`sb_publishable_...`) is designed to be public — it is safe to ship inside an app binary. Security is enforced server-side via Row Level Security (RLS) policies on the database. Keeping it out of source control is good practice, but it is not a secret in the same way a secret API key (`sb_secret_...`) would be.
