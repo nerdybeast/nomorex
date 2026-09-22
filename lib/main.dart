@@ -13,8 +13,7 @@ void main() async {
 
   await SentryFlutter.init(
     (options) {
-      options.dsn =
-          'https://6ea4146311980ffaab6d5deaab8222db@o4512127760596992.ingest.us.sentry.io/4512127767150592';
+      options.dsn = const String.fromEnvironment('SENTRY_DSN');
     },
     appRunner: () => runApp(const ProviderScope(child: NomorexApp())),
   );

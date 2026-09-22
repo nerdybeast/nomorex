@@ -9,9 +9,15 @@ await Supabase.initialize(
   url: const String.fromEnvironment('SUPABASE_URL'),
   publishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
 );
+
+await SentryFlutter.init((options) {
+  options.dsn = const String.fromEnvironment('SENTRY_DSN');
+}, appRunner: () => runApp(...));
 ```
 
-These are **compile-time constants**, not runtime environment variables. The values are baked into the binary during `flutter build` — they do not exist as named variables in the finished app. If they are not supplied at build time, they default to empty strings (no error, but the app will fail to connect to Supabase).
+These are **compile-time constants**, not runtime environment variables. The values are baked into the binary during `flutter build` — they do not exist as named variables in the finished app. If they are not supplied at build time, they default to empty strings (no error, but the app will fail to connect to Supabase; an empty `SENTRY_DSN` just disables the Sentry SDK rather than erroring).
+
+`SENTRY_DSN` deliberately points at a **different Sentry project per environment**: `.env.json` (prod) carries the `Nomorex` project's DSN, `.env.local.json` carries the `Nomorex-test` project's DSN, so local debugging noise never lands in the production Sentry project. A DSN is not a secret — see "A Note on the Publishable Key" below for why the same reasoning applies here.
 
 ## Local Development
 
@@ -22,7 +28,8 @@ A `.env.json` file at the project root supplies these values locally. It is giti
 ```json
 {
   "SUPABASE_URL": "https://<project-ref>.supabase.co",
-  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_<your-publishable-key>"
+  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_<your-publishable-key>",
+  "SENTRY_DSN": "<Nomorex project DSN>"
 }
 ```
 
@@ -47,7 +54,8 @@ flutter build apk --release --dart-define-from-file=.env.json
 ```json
 {
   "SUPABASE_URL": "http://127.0.0.1:54321",
-  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_<local-key>"
+  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_<local-key>",
+  "SENTRY_DSN": "<Nomorex-test project DSN>"
 }
 ```
 
@@ -127,6 +135,14 @@ For GitHub Actions (or any CI system), pass the values as secrets. Store `SUPABA
 
 > Note: Dart's `--dart-define` reads from the build command, not from OS environment variables. For CI, pass them explicitly via `--dart-define` flags or `--dart-define-from-file` pointed at a generated file.
 
+`.github/workflows/deploy.yml` is the only workflow that builds a real deployed
+environment (the GitHub Pages web app), so it's also the only one that passes
+`SENTRY_DSN` — as a `SENTRY_DSN` repository secret holding the **Nomorex**
+(production) project's DSN. `pr-checks.yml` never deploys anywhere real, so it
+intentionally leaves `SENTRY_DSN` unset; an empty DSN just disables the Sentry
+SDK for that build, same as an unset Supabase secret leaves it unable to
+connect.
+
 ## iOS signing and `flutter build ipa`
 
 `flutter build ipa` defaults to `--export-method app-store`, which requires an
@@ -157,6 +173,8 @@ point at the paid team's ID if it differs from the free team currently used.
 The Supabase publishable key (`sb_publishable_...`) is designed to be public — it is safe to ship inside an app binary. Security is enforced server-side via Row Level Security (RLS) policies on the database. Keeping it out of source control is good practice, but it is not a secret in the same way a secret API key (`sb_secret_...`) would be.
 
 It replaces the older JWT-based anon key: `supabase_flutter` now takes it via the `publishableKey:` parameter, and `anonKey:` is deprecated. Publishable keys can also be rotated independently of the project's JWT secret.
+
+A Sentry DSN (`SENTRY_DSN`) is public for the same reason: it only lets a client submit new events, it grants no read access to the project's data, and it can be rotated from the project's settings if it's ever abused.
 
 ## Database migrations
 
