@@ -37,6 +37,7 @@ dependencies:
   go_router: ^17.3.0
   intl: any
   google_fonts: ^8.2.1
+  sentry_flutter: ^9.22.0
 
 dev_dependencies:
   flutter_test:
