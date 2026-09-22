@@ -95,6 +95,57 @@ final class CurrentAuthUserProvider
 
 String _$currentAuthUserHash() => r'5dd8395a9974f11d001b55a8cd64af89b3bff9ce';
 
+/// Keeps Sentry's user context in sync with [currentAuthUserProvider] so
+/// error reports are attributed to whoever was signed in when they occurred.
+/// Watched once from [NomorexApp] to run for the lifetime of the app.
+
+@ProviderFor(sentryUserSync)
+final sentryUserSyncProvider = SentryUserSyncProvider._();
+
+/// Keeps Sentry's user context in sync with [currentAuthUserProvider] so
+/// error reports are attributed to whoever was signed in when they occurred.
+/// Watched once from [NomorexApp] to run for the lifetime of the app.
+
+final class SentryUserSyncProvider extends $FunctionalProvider<void, void, void>
+    with $Provider<void> {
+  /// Keeps Sentry's user context in sync with [currentAuthUserProvider] so
+  /// error reports are attributed to whoever was signed in when they occurred.
+  /// Watched once from [NomorexApp] to run for the lifetime of the app.
+  SentryUserSyncProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'sentryUserSyncProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$sentryUserSyncHash();
+
+  @$internal
+  @override
+  $ProviderElement<void> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  void create(Ref ref) {
+    return sentryUserSync(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(void value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<void>(value),
+    );
+  }
+}
+
+String _$sentryUserSyncHash() => r'46d000f739e74f23b46c029406e40b32c0ce6384';
+
 @ProviderFor(AuthNotifier)
 final authProvider = AuthNotifierProvider._();
 

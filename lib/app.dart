@@ -193,6 +193,7 @@ class NomorexApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(sentryUserSyncProvider);
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
       title: 'NoMoreX',
