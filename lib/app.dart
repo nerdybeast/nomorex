@@ -10,6 +10,7 @@ import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/screens/landing_screen.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/shell/app_shell.dart';
+import 'shared/widgets/haptic_tap_scope.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'features/personal_bests/screens/my_prs_screen.dart';
@@ -199,6 +200,7 @@ class NomorexApp extends ConsumerWidget {
       title: 'NoMoreX',
       theme: AppDarkTheme.sleekOrange(),
       routerConfig: router,
+      builder: (context, child) => HapticTapScope(child: child!),
     );
   }
 }
