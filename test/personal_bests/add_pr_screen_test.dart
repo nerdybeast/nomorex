@@ -20,6 +20,30 @@ class _StubExercisesNotifier extends ExercisesNotifier {
   Future<List<Exercise>> build() async => _exercises;
 }
 
+/// Behaves like the real notifier's create path: the new row lands in the
+/// list and the provider refetches, so the picker sees a fresh list.
+class _CustomAddingExercisesNotifier extends ExercisesNotifier {
+  _CustomAddingExercisesNotifier(this._exercises);
+  final List<Exercise> _exercises;
+
+  @override
+  Future<List<Exercise>> build() async => List.of(_exercises);
+
+  @override
+  Future<Exercise> addCustomExercise(String name) async {
+    final created = Exercise(
+      id: 'custom-${name.toLowerCase()}',
+      name: name,
+      isPredefined: false,
+      userId: 'u1',
+    );
+    _exercises.add(created);
+    ref.invalidateSelf();
+    await future;
+    return created;
+  }
+}
+
 class _RecordingPersonalBestsNotifier extends PersonalBestsNotifier {
   _RecordingPersonalBestsNotifier(this.onAddPr);
   final void Function(double weightKg) onAddPr;
@@ -36,6 +60,25 @@ class _RecordingPersonalBestsNotifier extends PersonalBestsNotifier {
     String? notes,
   }) async {
     onAddPr(weightKg);
+  }
+}
+
+class _ExerciseCapturingPersonalBestsNotifier extends PersonalBestsNotifier {
+  _ExerciseCapturingPersonalBestsNotifier(this.onAddPr);
+  final void Function(String exerciseId) onAddPr;
+
+  @override
+  Future<List<PersonalBest>> build() async => const [];
+
+  @override
+  Future<void> addPr({
+    required String exerciseId,
+    required double weightKg,
+    required int reps,
+    required DateTime date,
+    String? notes,
+  }) async {
+    onAddPr(exerciseId);
   }
 }
 
@@ -281,5 +324,57 @@ void main() {
     );
     // 100 kg -> 220.462262 lbs, floored to 0 decimals in the lbs entry unit.
     expect(tester.widget<TextField>(weightField).controller?.text, '220');
+  });
+
+  testWidgets(
+      'adding a custom exercise selects it: the field shows its name and '
+      'saving records the PR against the new exercise', (tester) async {
+    String? savedExerciseId;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          exercisesProvider
+              .overrideWith(() => _CustomAddingExercisesNotifier([_backSquat])),
+          personalBestsProvider.overrideWith(
+            () => _ExerciseCapturingPersonalBestsNotifier((id) => savedExerciseId = id),
+          ),
+          unitPreferenceProvider.overrideWithValue('kg'),
+          oneRepMaxFormulaProvider.overrideWithValue(OneRepMaxFormula.brzycki),
+        ],
+        child: const MaterialApp(home: AddPrScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final field = find.widgetWithText(TextFormField, 'Exercise');
+    await tester.tap(field);
+    await tester.pumpAndSettle();
+    await tester.enterText(field, 'Zerch');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add custom exercise'));
+    await tester.pumpAndSettle();
+
+    // The dialog is prefilled with what was typed; the user completes the name.
+    await tester.enterText(
+      find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField)),
+      'Zercher Squat',
+    );
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, '0'), '100');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Save Personal Best'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save Personal Best'));
+    await tester.pumpAndSettle();
+
+    expect(savedExerciseId, 'custom-zercher squat');
+    expect(
+      tester.widget<TextFormField>(find.byType(TextFormField).first).controller?.text,
+      'Zercher Squat',
+    );
   });
 }

@@ -51,6 +51,12 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
   // once at that moment — see the ExercisePicker build() below for why.
   bool _prefilledFromArg = false;
 
+  // Bumped after a custom exercise is created so the picker remounts and
+  // re-reads `selected` as its initial text. Autocomplete only honors
+  // initialValue on first mount, so without this the field keeps whatever was
+  // typed before "Add custom exercise" was tapped, not the created name.
+  int _pickerGeneration = 0;
+
   @override
   void dispose() {
     _notesController.dispose();
@@ -143,13 +149,17 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                   children: [
                     // Exercise picker
                     ExercisePicker(
-                      key: ValueKey(_prefilledFromArg),
+                      key: ValueKey((_prefilledFromArg, _pickerGeneration)),
                       exercises: exercises,
                       selected: _selectedExercise,
                       onSelected: (ex) => setState(() => _selectedExercise = ex),
                       onAddCustom: (name) async {
                         final newEx = await ref.read(exercisesProvider.notifier).addCustomExercise(name);
-                        if (mounted) setState(() => _selectedExercise = newEx);
+                        if (!mounted) return;
+                        setState(() {
+                          _selectedExercise = newEx;
+                          _pickerGeneration++;
+                        });
                       },
                     ),
                     const SizedBox(height: 20),
