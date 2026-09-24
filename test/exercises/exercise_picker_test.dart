@@ -54,4 +54,42 @@ void main() {
     expect(find.text('Back Squat'), findsOneWidget);
     expect(find.text('Deadlift'), findsNothing);
   });
+
+  testWidgets(
+      'options list does not inherit the safe-area top inset as blank space',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            padding: const EdgeInsets.only(top: 60),
+          ),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: ExercisePicker(
+            exercises: const [_squat, _deadlift],
+            selected: null,
+            onSelected: (_) {},
+            onAddCustom: (_) async {},
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextFormField));
+    await tester.pumpAndSettle();
+
+    final overlayTop = tester
+        .getTopLeft(find.ancestor(
+          of: find.text('Back Squat'),
+          matching: find.byType(Material),
+        ).first)
+        .dy;
+    final firstOptionTop = tester.getTopLeft(find.text('Back Squat')).dy;
+
+    // A ListTile's own vertical padding is well under 30dp; the leaked
+    // safe-area inset would add 60dp on top of that.
+    expect(firstOptionTop - overlayTop, lessThan(30));
+  });
 }

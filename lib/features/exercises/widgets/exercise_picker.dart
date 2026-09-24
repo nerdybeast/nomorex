@@ -76,6 +76,9 @@ class _ExercisePickerState extends State<ExercisePicker> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 200),
               child: ListView.builder(
+                // ListView otherwise pads itself by the ambient safe-area
+                // inset, which this overlay isn't actually under.
+                padding: EdgeInsets.zero,
                 shrinkWrap: true,
                 itemCount: optionList.length + 1,
                 itemBuilder: (context, index) {
