@@ -270,6 +270,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // The taller empty-state cards push the last section below the default
+    // test viewport's cache extent, so it isn't built until scrolled into view.
+    await tester.dragUntilVisible(
+      find.text('No completed workouts yet.'),
+      find.byType(ListView),
+      const Offset(0, -300),
+    );
+
     expect(find.text('No completed workouts yet.'), findsOneWidget);
   });
 
@@ -304,6 +312,14 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+
+    // The taller empty-state cards above this section push it below the
+    // default test viewport's cache extent, so scroll it into view first.
+    await tester.dragUntilVisible(
+      find.text('Workout 5'),
+      find.byType(ListView),
+      const Offset(0, -300),
+    );
 
     expect(find.text('Workout 5'), findsOneWidget);
     expect(find.text('Workout 1'), findsOneWidget);
@@ -426,5 +442,83 @@ void main() {
     expect(instancesRefreshed, isTrue);
     expect(workoutsRefreshed, isTrue);
     expect(finishedWorkoutsRefreshed, isTrue);
+  });
+
+  testWidgets('shows the welcome banner when all four sections are empty', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
+          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
+          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Welcome to NoMoreX'), findsOneWidget);
+  });
+
+  testWidgets('hides the welcome banner when at least one section has data', (tester) async {
+    final instance = ProgramInstance(
+      id: 'pi1',
+      programId: 'p1',
+      programName: 'Strong Like Bull',
+      userId: 'u1',
+      startedAt: DateTime.now().subtract(const Duration(days: 2)),
+      status: 'active',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
+          currentProgramInstancesProvider
+              .overrideWith(() => _StubProgramInstancesNotifier([instance])),
+          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
+          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Welcome to NoMoreX'), findsNothing);
+  });
+
+  testWidgets('tapping the Recent PRs empty-state CTA opens Add PR', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/shell/home',
+      routes: [
+        GoRoute(path: '/shell/home', builder: (_, _) => const DashboardScreen()),
+        GoRoute(path: '/prs/add', builder: (_, _) => const Text('add-pr-screen')),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
+          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
+          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.dragUntilVisible(
+      find.text('Log your first PR'),
+      find.byType(ListView),
+      const Offset(0, -300),
+    );
+
+    await tester.tap(find.text('Log your first PR'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('add-pr-screen'), findsOneWidget);
   });
 }

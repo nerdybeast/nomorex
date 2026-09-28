@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/pr_card.dart';
 import '../../personal_bests/utils/estimated_pr_label.dart';
 import '../../../shared/widgets/program_instance_card.dart';
 import '../../../shared/widgets/recent_workout_card.dart';
 import '../../../shared/widgets/workout_in_progress_card.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/dark_theme.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../personal_bests/providers/personal_bests_provider.dart';
@@ -32,6 +34,19 @@ class DashboardScreen extends ConsumerWidget {
         instancesAsync.isRefreshing ||
         prsAsync.isRefreshing ||
         finishedWorkoutsAsync.isRefreshing;
+
+    // A section that errored counts as settled/empty here so one unrelated
+    // fetch failure can't hide the welcome message for an otherwise
+    // brand-new user.
+    bool isEmptyOrErrored<T>(AsyncValue<List<T>> asyncValue) {
+      final data = asyncValue.value;
+      if (data != null) return data.isEmpty;
+      return asyncValue.hasError;
+    }
+
+    final sections = [inProgressWorkoutsAsync, instancesAsync, prsAsync, finishedWorkoutsAsync];
+    final allSettled = sections.every((s) => s.hasValue || s.hasError);
+    final showWelcome = allSettled && sections.every(isEmptyOrErrored);
 
     return Scaffold(
       appBar: AppBar(
@@ -65,6 +80,10 @@ class DashboardScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (showWelcome) ...[
+            const _DashboardWelcomeBanner(),
+            const SizedBox(height: 24),
+          ],
           Text('WORKOUTS IN PROGRESS', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           inProgressWorkoutsAsync.when(
@@ -75,7 +94,11 @@ class DashboardScreen extends ConsumerWidget {
             ),
             data: (workouts) {
               if (workouts.isEmpty) {
-                return const Text('No workouts currently in progress.');
+                return const DashboardEmptyStateCard(
+                  icon: Icons.fitness_center_outlined,
+                  title: 'No workouts currently in progress.',
+                  message: "Start a workout from the + button to see it here while it's active.",
+                );
               }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -115,7 +138,13 @@ class DashboardScreen extends ConsumerWidget {
             ),
             data: (instances) {
               if (instances.isEmpty) {
-                return const Text('No programs currently in progress.');
+                return DashboardEmptyStateCard(
+                  icon: Icons.checklist_outlined,
+                  title: 'No programs currently in progress.',
+                  message: 'Browse your programs to start one and track your progress.',
+                  ctaLabel: 'Browse programs',
+                  onCta: () => context.go(AppConstants.routePrograms),
+                );
               }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -152,7 +181,13 @@ class DashboardScreen extends ConsumerWidget {
                   .take(5)
                   .toList();
               if (prs.isEmpty) {
-                return const Text('No PRs yet.\nTap + to log your first personal best.');
+                return DashboardEmptyStateCard(
+                  icon: Icons.emoji_events_outlined,
+                  title: 'No PRs yet.',
+                  message: 'Log a personal best to start tracking your progress.',
+                  ctaLabel: 'Log your first PR',
+                  onCta: () => context.push(AppConstants.routeAddPr),
+                );
               }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -188,7 +223,11 @@ class DashboardScreen extends ConsumerWidget {
             data: (allFinished) {
               final recent = allFinished.take(5).toList();
               if (recent.isEmpty) {
-                return const Text('No completed workouts yet.');
+                return const DashboardEmptyStateCard(
+                  icon: Icons.history,
+                  title: 'No completed workouts yet.',
+                  message: "Finish a workout and it'll show up here.",
+                );
               }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -208,6 +247,53 @@ class DashboardScreen extends ConsumerWidget {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Shown above the section list only when the user has no data anywhere on
+/// the dashboard yet, so a brand-new sign-in doesn't read as 4 stacked
+/// empty sections with no framing.
+class _DashboardWelcomeBanner extends StatelessWidget {
+  const _DashboardWelcomeBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final overline = theme.extension<NomorexDarkTokens>()?.overline;
+    return Card(
+      color: colorScheme.primaryContainer,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: colorScheme.primary),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.flag_outlined, color: colorScheme.primary, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('GET STARTED', style: overline),
+                  const SizedBox(height: 4),
+                  Text('Welcome to NoMoreX', style: theme.textTheme.headlineSmall),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Log a workout, hit a new PR, or start a program — your '
+                    'dashboard will fill in as you go.',
+                    style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
