@@ -61,8 +61,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(key: Key('community_tab_workouts'), text: 'Workouts'),
             Tab(key: Key('community_tab_programs'), text: 'Programs'),
+            Tab(key: Key('community_tab_workouts'), text: 'Workouts'),
           ],
         ),
       ),
@@ -84,8 +84,8 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _WorkoutsTab(query: _searchQuery, colorScheme: colorScheme),
                 _ProgramsTab(query: _searchQuery, colorScheme: colorScheme),
+                _WorkoutsTab(query: _searchQuery, colorScheme: colorScheme),
               ],
             ),
           ),
