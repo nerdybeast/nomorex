@@ -75,9 +75,9 @@ class AppShell extends ConsumerWidget {
                   ),
                   Expanded(
                     child: _NavItem(
-                      icon: Icons.list_outlined,
-                      selectedIcon: Icons.list,
-                      label: 'My PRs',
+                      icon: Icons.checklist_outlined,
+                      selectedIcon: Icons.checklist,
+                      label: 'Programs',
                       selected: shell.currentIndex == 1,
                       onTap: () => shell.goBranch(1),
                     ),
@@ -93,18 +93,18 @@ class AppShell extends ConsumerWidget {
                   ),
                   Expanded(
                     child: _NavItem(
-                      icon: Icons.public_outlined,
-                      selectedIcon: Icons.public,
-                      label: 'Community',
+                      icon: Icons.list_outlined,
+                      selectedIcon: Icons.list,
+                      label: 'My PRs',
                       selected: shell.currentIndex == 3,
                       onTap: () => shell.goBranch(3),
                     ),
                   ),
                   Expanded(
                     child: _NavItem(
-                      icon: Icons.checklist_outlined,
-                      selectedIcon: Icons.checklist,
-                      label: 'Programs',
+                      icon: Icons.public_outlined,
+                      selectedIcon: Icons.public,
+                      label: 'Community',
                       selected: shell.currentIndex == 4,
                       onTap: () => shell.goBranch(4),
                     ),
@@ -152,9 +152,9 @@ class AppShell extends ConsumerWidget {
                 label: Text('Home'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.list_outlined),
-                selectedIcon: Icon(Icons.list),
-                label: Text('My PRs'),
+                icon: Icon(Icons.checklist_outlined),
+                selectedIcon: Icon(Icons.checklist),
+                label: Text('Programs'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.fitness_center_outlined),
@@ -162,14 +162,14 @@ class AppShell extends ConsumerWidget {
                 label: Text('Workouts'),
               ),
               NavigationRailDestination(
+                icon: Icon(Icons.list_outlined),
+                selectedIcon: Icon(Icons.list),
+                label: Text('My PRs'),
+              ),
+              NavigationRailDestination(
                 icon: Icon(Icons.public_outlined),
                 selectedIcon: Icon(Icons.public),
                 label: Text('Community'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.checklist_outlined),
-                selectedIcon: Icon(Icons.checklist),
-                label: Text('Programs'),
               ),
             ],
           ),
