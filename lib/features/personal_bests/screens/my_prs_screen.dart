@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/my_prs_grouped_provider.dart';
 import '../providers/personal_bests_provider.dart';
+import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/pr_card.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 import '../utils/estimated_pr_label.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/weight_converter.dart';
@@ -87,6 +89,20 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
                 ),
               ),
               data: (_) {
+                if (grouped.isEmpty) {
+                  return ListView(
+                    padding: shellListPadding(context),
+                    children: [
+                      DashboardEmptyStateCard(
+                        icon: Icons.emoji_events_outlined,
+                        title: 'No PRs yet.',
+                        message: 'Log a personal best to start tracking your progress.',
+                        ctaLabel: 'Log your first PR',
+                        onCta: () => context.push(AppConstants.routeAddPr),
+                      ),
+                    ],
+                  );
+                }
                 if (filtered.isEmpty) {
                   return const Center(
                     child: Padding(
@@ -99,7 +115,7 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
                   );
                 }
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: shellListPadding(context),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final entry = filtered.entries.elementAt(index);

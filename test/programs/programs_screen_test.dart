@@ -6,6 +6,7 @@ import 'package:nomorex/features/programs/models/program_instance.dart';
 import 'package:nomorex/features/programs/providers/program_instances_list_provider.dart';
 import 'package:nomorex/features/programs/providers/programs_provider.dart';
 import 'package:nomorex/features/programs/screens/programs_screen.dart';
+import 'package:nomorex/shared/widgets/dashboard_empty_state_card.dart';
 
 class _StubProgramsNotifier extends ProgramsNotifier {
   _StubProgramsNotifier(this._programs);
@@ -47,6 +48,44 @@ Program _program(String id, String name, {String? description}) => Program(
     );
 
 void main() {
+  testWidgets('no programs shows an empty-state card pointing at the + button', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          programsProvider.overrideWith(() => _StubProgramsNotifier(const [])),
+          archivedProgramsProvider.overrideWith(() => _RecordingArchivedProgramsNotifier(() {})),
+          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+        ],
+        child: const MaterialApp(home: ProgramsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DashboardEmptyStateCard), findsOneWidget);
+    expect(find.text('No programs yet.'), findsOneWidget);
+    expect(find.textContaining('+ button'), findsOneWidget);
+  });
+
+  testWidgets('the archived view shows its own empty-state card', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          programsProvider.overrideWith(() => _StubProgramsNotifier(const [])),
+          archivedProgramsProvider.overrideWith(() => _RecordingArchivedProgramsNotifier(() {})),
+          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+        ],
+        child: const MaterialApp(home: ProgramsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Show archived programs'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DashboardEmptyStateCard), findsOneWidget);
+    expect(find.text('No archived programs.'), findsOneWidget);
+  });
+
   testWidgets('a description longer than 200 characters is truncated with an ellipsis', (
     tester,
   ) async {

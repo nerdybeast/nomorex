@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../shared/widgets/dashboard_empty_state_card.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 import '../providers/workouts_provider.dart';
 import '../utils/confirm_delete_workout.dart';
 
@@ -50,12 +52,6 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'workoutsNewFab',
-        onPressed: () => context.push(AppConstants.routeWorkoutNew),
-        icon: const Icon(Icons.add),
-        label: const Text('New workout'),
-      ),
       body: Column(
         children: [
           Padding(
@@ -75,7 +71,16 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
               error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
               data: (workouts) {
                 if (workouts.isEmpty) {
-                  return const Center(child: Text('No workouts yet. Tap "New workout" to start.'));
+                  return ListView(
+                    padding: shellListPadding(context),
+                    children: const [
+                      DashboardEmptyStateCard(
+                        icon: Icons.fitness_center_outlined,
+                        title: 'No workouts yet.',
+                        message: 'Tap the + button to create your first workout.',
+                      ),
+                    ],
+                  );
                 }
                 final filtered = _searchQuery.isEmpty
                     ? workouts
@@ -86,7 +91,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                   return const Center(child: Text('No workouts match your search.'));
                 }
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: shellListPadding(context),
                   itemCount: filtered.length,
                   itemBuilder: (context, i) {
                     final w = filtered[i];

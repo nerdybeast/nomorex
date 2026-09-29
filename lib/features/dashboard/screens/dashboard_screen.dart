@@ -6,6 +6,7 @@ import '../../../shared/widgets/pr_card.dart';
 import '../../personal_bests/utils/estimated_pr_label.dart';
 import '../../../shared/widgets/program_instance_card.dart';
 import '../../../shared/widgets/recent_workout_card.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/workout_in_progress_card.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/dark_theme.dart';
@@ -78,7 +79,7 @@ class DashboardScreen extends ConsumerWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: shellListPadding(context),
         children: [
           if (showWelcome) ...[
             const _DashboardWelcomeBanner(),

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../shared/widgets/dashboard_empty_state_card.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 import '../models/program.dart';
 import '../models/program_instance.dart';
 import '../providers/program_instances_list_provider.dart';
@@ -57,14 +59,6 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
           ),
         ],
       ),
-      floatingActionButton: _showArchived
-          ? null
-          : FloatingActionButton.extended(
-              heroTag: 'programsNewFab',
-              onPressed: () => context.push(AppConstants.routeProgramNew),
-              icon: const Icon(Icons.add),
-              label: const Text('New program'),
-            ),
       body: Column(
         children: [
           Padding(
@@ -85,10 +79,17 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
                   Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
               data: (programs) {
                 if (programs.isEmpty) {
-                  return Center(
-                    child: Text(_showArchived
-                        ? 'No archived programs.'
-                        : 'No programs yet. Tap "New program" to start.'),
+                  return ListView(
+                    padding: shellListPadding(context),
+                    children: [
+                      DashboardEmptyStateCard(
+                        icon: Icons.checklist_outlined,
+                        title: _showArchived ? 'No archived programs.' : 'No programs yet.',
+                        message: _showArchived
+                            ? 'Programs you archive will show up here.'
+                            : 'Tap the + button to create your first program.',
+                      ),
+                    ],
                   );
                 }
                 final query = _searchQuery.toLowerCase();
@@ -103,7 +104,7 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
                   return const Center(child: Text('No programs match your search.'));
                 }
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: shellListPadding(context),
                   itemCount: filtered.length,
                   itemBuilder: (context, i) {
                     final p = filtered[i];
