@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nomorex/features/workouts/models/workout.dart';
+import 'package:nomorex/features/workouts/models/workout_exercise.dart';
 import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
 import 'package:nomorex/features/workouts/screens/workouts_screen.dart';
 import 'package:nomorex/shared/widgets/dashboard_empty_state_card.dart';
@@ -25,6 +26,43 @@ class _RecordingWorkoutsNotifier extends WorkoutsNotifier {
 }
 
 void main() {
+  testWidgets('a workout card previews its exercises, counts them and shows its status', (
+    tester,
+  ) async {
+    final workout = Workout(
+      id: 'w1',
+      userId: 'u1',
+      title: 'Push Day',
+      date: DateTime(2026, 7, 1),
+      updatedAt: DateTime(2026, 7, 1),
+      workoutGroupId: 'w1',
+      status: 'in_progress',
+      exercises: [
+        for (var i = 0; i < 4; i++)
+          WorkoutExercise(
+            id: 'e$i',
+            workoutId: 'w1',
+            exerciseId: 'x$i',
+            exerciseName: ['Bench', 'OHP', 'Dip', 'Fly'][i],
+            position: i,
+          ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          workoutsProvider.overrideWith(() => _StubWorkoutsNotifier([workout])),
+        ],
+        child: const MaterialApp(home: WorkoutsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bench · OHP · Dip  +1 more'), findsOneWidget);
+    expect(find.text('4 exercises'), findsOneWidget);
+    expect(find.text('In progress'), findsOneWidget);
+  });
+
   testWidgets('no workouts shows an empty-state card pointing at the + button', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
