@@ -5,6 +5,8 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../../shared/widgets/summary_card.dart';
+import '../models/workout.dart';
 import '../providers/workouts_provider.dart';
 import '../utils/confirm_delete_workout.dart';
 
@@ -97,37 +99,70 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                     final w = filtered[i];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: Card(
-                        clipBehavior: Clip.antiAlias,
-                        child: ListTile(
-                          title: Text(w.title),
-                          subtitle: Text('${formatDate(w.date)} · ${w.exercises.length} exercises'),
-                          onTap: () => context.push(AppConstants.routeWorkoutDetail(w.id)),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (value) async {
-                              final notifier = ref.read(workoutsProvider.notifier);
-                              if (value == 'duplicate') {
-                                await notifier.duplicateWorkout(w.id);
-                              } else if (value == 'edit') {
-                                if (context.mounted) context.push(AppConstants.routeWorkoutEdit(w.id));
-                              } else if (value == 'delete') {
-                                await confirmAndDeleteWorkout(context, ref, w);
-                              }
-                            },
-                            itemBuilder: (_) => const [
-                              PopupMenuItem(value: 'edit', child: Text('Edit')),
-                              PopupMenuItem(value: 'duplicate', child: Text('Duplicate')),
-                              PopupMenuItem(value: 'delete', child: Text('Delete')),
-                            ],
-                          ),
-                        ),
-                      ),
+                      child: _WorkoutTile(workout: w),
                     );
                   },
                 );
               },
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WorkoutTile extends ConsumerWidget {
+  const _WorkoutTile({required this.workout});
+
+  final Workout workout;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final w = workout;
+    final names = w.exercises.map((e) => e.exerciseName).where((n) => n.isNotEmpty).toList();
+    final text = names.isEmpty ? w.notes?.trim() : exercisePreview(names);
+    final statusLabel = switch (w.status) {
+      'in_progress' => 'In progress',
+      'paused' => 'Paused',
+      'finished' => 'Finished',
+      _ => null,
+    };
+    return SummaryCard(
+      icon: Icons.fitness_center_outlined,
+      title: w.title,
+      body: text == null || text.isEmpty
+          ? null
+          : Text(text, maxLines: 2, overflow: TextOverflow.ellipsis),
+      status: statusLabel == null
+          ? null
+          : Text(
+              statusLabel,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+      chips: [
+        SummaryInfoChip(Icons.event_outlined, formatDate(w.date)),
+        SummaryInfoChip(Icons.list_alt_outlined, pluralize(w.exercises.length, 'exercise')),
+      ],
+      onTap: () => context.push(AppConstants.routeWorkoutDetail(w.id)),
+      trailing: PopupMenuButton<String>(
+        onSelected: (value) async {
+          final notifier = ref.read(workoutsProvider.notifier);
+          if (value == 'duplicate') {
+            await notifier.duplicateWorkout(w.id);
+          } else if (value == 'edit') {
+            if (context.mounted) context.push(AppConstants.routeWorkoutEdit(w.id));
+          } else if (value == 'delete') {
+            await confirmAndDeleteWorkout(context, ref, w);
+          }
+        },
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'edit', child: Text('Edit')),
+          PopupMenuItem(value: 'duplicate', child: Text('Duplicate')),
+          PopupMenuItem(value: 'delete', child: Text('Delete')),
         ],
       ),
     );

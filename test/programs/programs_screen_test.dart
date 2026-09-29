@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/features/programs/models/program.dart';
+import 'package:nomorex/features/programs/models/program_day.dart';
+import 'package:nomorex/features/programs/models/program_week.dart';
 import 'package:nomorex/features/programs/models/program_instance.dart';
 import 'package:nomorex/features/programs/providers/program_instances_list_provider.dart';
 import 'package:nomorex/features/programs/providers/programs_provider.dart';
@@ -48,6 +50,46 @@ Program _program(String id, String name, {String? description}) => Program(
     );
 
 void main() {
+  testWidgets('a program card shows weeks and training days (rest days excluded)', (tester) async {
+    ProgramDay day(String id, {bool rest = false}) => ProgramDay(
+          id: id,
+          programWeekId: 'w1',
+          dayNumber: 1,
+          title: 'Day',
+          position: 0,
+          isRestDay: rest,
+        );
+    final program = Program(
+      id: 'p1',
+      userId: 'u1',
+      name: 'Squat Block',
+      createdAt: DateTime(2026, 8, 1),
+      updatedAt: DateTime(2026, 8, 1),
+      weeks: [
+        ProgramWeek(
+          id: 'w1',
+          programId: 'p1',
+          weekNumber: 1,
+          position: 0,
+          days: [day('d1'), day('d2'), day('d3', rest: true)],
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          programsProvider.overrideWith(() => _StubProgramsNotifier([program])),
+          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+        ],
+        child: const MaterialApp(home: ProgramsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 week'), findsOneWidget);
+    expect(find.text('2 training days'), findsOneWidget);
+  });
+
   testWidgets('no programs shows an empty-state card pointing at the + button', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
