@@ -82,8 +82,8 @@ GoRouter router(Ref ref) {
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
-              path: AppConstants.routePrs,
-              builder: (_, _) => const MyPrsScreen(),
+              path: AppConstants.routePrograms,
+              builder: (_, _) => const ProgramsScreen(),
             ),
           ]),
           StatefulShellBranch(routes: [
@@ -94,14 +94,14 @@ GoRouter router(Ref ref) {
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
-              path: AppConstants.routeCommunity,
-              builder: (_, _) => const CommunityScreen(),
+              path: AppConstants.routePrs,
+              builder: (_, _) => const MyPrsScreen(),
             ),
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
-              path: AppConstants.routePrograms,
-              builder: (_, _) => const ProgramsScreen(),
+              path: AppConstants.routeCommunity,
+              builder: (_, _) => const CommunityScreen(),
             ),
           ]),
         ],

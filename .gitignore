@@ -88,6 +88,7 @@ coverage/
 **/ios/Runner/GeneratedPluginRegistrant.*
 
 # macOS/XCode related
+**/macos/**/xcuserdata/
 **/macos/**/xcshareddata/swiftpm/
 
 # Exceptions to above rules.

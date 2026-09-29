@@ -106,6 +106,9 @@ void main() {
       _workout(id: 'w2', title: 'Push Pull Legs', owner: 'BeastModeB'),
     ]);
 
+    await tester.tap(find.byKey(const Key('community_tab_workouts')));
+    await tester.pumpAndSettle();
+
     expect(find.text('5x5 Strength'), findsOneWidget);
     expect(find.text('Push Pull Legs'), findsOneWidget);
     expect(find.textContaining('by BeastModeB'), findsNWidgets(2));
@@ -117,6 +120,9 @@ void main() {
       _workout(id: 'w1', title: '5x5 Strength'),
     ]);
 
+    await tester.tap(find.byKey(const Key('community_tab_workouts')));
+    await tester.pumpAndSettle();
+
     expect(find.textContaining('by $kAnonymousOwnerName'), findsOneWidget);
   });
 
@@ -125,6 +131,9 @@ void main() {
       _workout(id: 'w1', title: '5x5 Strength', owner: 'Ann'),
       _workout(id: 'w2', title: 'Push Pull Legs', owner: 'Bob'),
     ]);
+
+    await tester.tap(find.byKey(const Key('community_tab_workouts')));
+    await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('community_search')), '5x5');
     await tester.pumpAndSettle();
@@ -138,6 +147,9 @@ void main() {
       _workout(id: 'w1', title: '5x5 Strength', owner: 'Ann'),
       _workout(id: 'w2', title: 'Push Pull Legs', owner: 'Bob'),
     ]);
+
+    await tester.tap(find.byKey(const Key('community_tab_workouts')));
+    await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('community_search')), 'bob');
     await tester.pumpAndSettle();
@@ -154,26 +166,26 @@ void main() {
       ],
     );
 
-    // The workouts tab is shown first, so the program is not on screen yet.
-    expect(find.text('Squat Block'), findsNothing);
-
-    await tester.tap(find.byKey(const Key('community_tab_programs')));
-    await tester.pumpAndSettle();
-
+    // The Programs tab is shown first, so the program is already on screen.
     expect(find.text('Squat Block'), findsOneWidget);
     expect(find.textContaining('by BeastModeB'), findsOneWidget);
     expect(find.textContaining('4 weeks'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('community_tab_workouts')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Squat Block'), findsNothing);
   });
 
   testWidgets('each tab has its own empty state', (tester) async {
     await _pumpCommunity(tester);
 
-    expect(find.text('No public workouts yet.'), findsOneWidget);
+    expect(find.text('No public programs yet.'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('community_tab_programs')));
+    await tester.tap(find.byKey(const Key('community_tab_workouts')));
     await tester.pumpAndSettle();
 
-    expect(find.text('No public programs yet.'), findsOneWidget);
+    expect(find.text('No public workouts yet.'), findsOneWidget);
   });
 
   testWidgets('tapping the refresh icon refreshes both lists', (tester) async {
