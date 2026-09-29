@@ -89,7 +89,7 @@ coverage/
 
 # macOS/XCode related
 **/macos/**/xcuserdata/
-**/macos/**/*.xcworkspace/xcshareddata/swiftpm/
+**/macos/**/xcshareddata/swiftpm/
 
 # Exceptions to above rules.
 !**/ios/**/default.mode1v3
