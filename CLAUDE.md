@@ -95,7 +95,8 @@ Any new table in `public` **must** enable RLS and add ownership policies `TO aut
 
 ## CI/CD
 
-- `.github/workflows/pr-checks.yml` — four parallel jobs, no `needs:` between them: `checks` (`flutter analyze`, `flutter test`, release web build), `build-android` (debug APK), `db-validate` (`supabase db reset` + `db lint`), and `e2e` (see E2E tests below). The Android build is deliberately its own job — the Gradle build dominated `checks` and was delaying analyze/test feedback. Only `build-android` sets up Java; the other jobs don't need it.
+- `.github/workflows/pr-checks.yml` — five parallel job definitions, no `needs:` between them: `checks` (`flutter analyze`, `flutter test`), `build-web` (matrix over `release`/`debug`/`profile`), `build-android` (matrix over the same three modes, APKs), `db-validate` (`supabase db reset` + `db lint`), and `e2e` (see E2E tests below). Both build matrices use `fail-fast: false` so one broken mode doesn't hide the others; release APKs are signed with the debug keys, so no signing secrets are needed. The builds are deliberately separate from `checks` — the Gradle build dominated it and was delaying analyze/test feedback. Only `build-android` sets up Java; the other jobs don't need it.
+- `.github/workflows/self-hosted-test.yml` — runs on every push (not on `pull_request`) on the self-hosted `arc-runner-set`: a `test` job (analyze + tests + coverage) and a `build-web` matrix (`release`/`debug`/`profile`) in parallel. Keep its Flutter version pin in sync with `pr-checks.yml`; it appears in both jobs.
 - `.github/workflows/deploy.yml` — on push to `main`, builds and publishes the web app to GitHub Pages (with `--base-href` set to the repo subpath).
 - Migrations are deployed **separately**, by the Supabase GitHub integration watching `supabase/`. The two are unordered relative to each other, so ship additive migrations ahead of the code that depends on them.
 

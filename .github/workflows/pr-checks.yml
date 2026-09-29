@@ -26,7 +26,7 @@ on:
 
 jobs:
   checks:
-    name: Analyze, Test & Build Web
+    name: Analyze & Test
     runs-on: ubuntu-latest
 
     # No setup-java here: Java is only needed for the Android Gradle build,
@@ -57,18 +57,45 @@ jobs:
         with:
           lcov: coverage/lcov.info
 
-      # Deploy builds a release web bundle (see deploy.yml); this only proves
-      # that target still compiles in release mode, so the values just need
+  build-web:
+    name: Build Web (${{ matrix.mode }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [release, debug, profile]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Pinned deliberately: `channel: stable` floats, and a Flutter
+          # release landing mid-PR has broken these checks on changes that
+          # touched nothing related. Bump this on purpose, not by surprise.
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Deploy builds a release web bundle (see deploy.yml); this proves the
+      # target still compiles in every build mode, so the values just need
       # to be well-formed, not real.
-      - name: Build web (release)
+      - name: Build web (${{ matrix.mode }})
         run: |
-          flutter build web --release \
+          flutter build web --${{ matrix.mode }} \
             --dart-define=SUPABASE_URL=https://placeholder.supabase.co \
             --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
 
   build-android:
-    name: Build Android APK
+    name: Build Android APK (${{ matrix.mode }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [release, debug, profile]
 
     # Split out of `checks` because the Gradle build dominated that job's
     # runtime. On its own runner it no longer gates analyze/test feedback.
@@ -92,8 +119,10 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK (debug)
-        run: flutter build apk --debug
+      # Release is signed with the debug keys (see android/app/build.gradle.kts),
+      # so all three modes build without any signing secrets.
+      - name: Build APK (${{ matrix.mode }})
+        run: flutter build apk --${{ matrix.mode }}
 
   db-validate:
     name: Validate DB migrations

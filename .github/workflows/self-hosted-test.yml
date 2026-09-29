@@ -36,11 +36,35 @@ jobs:
         with:
           lcov: coverage/lcov.info
 
-      # Deploy builds a release web bundle (see deploy.yml); this only proves
-      # that target still compiles in release mode, so the values just need
+  build-web:
+    name: Build Web (${{ matrix.mode }})
+    runs-on: arc-runner-set
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [release, debug, profile]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install xz-utils
+        run: sudo apt-get update && sudo apt-get install -y xz-utils
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Keep in sync with the pin in pr-checks.yml.
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Deploy builds a release web bundle (see deploy.yml); this proves the
+      # target still compiles in every build mode, so the values just need
       # to be well-formed, not real.
-      - name: Build web (release)
+      - name: Build web (${{ matrix.mode }})
         run: |
-          flutter build web --release \
+          flutter build web --${{ matrix.mode }} \
             --dart-define=SUPABASE_URL=https://placeholder.supabase.co \
             --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
