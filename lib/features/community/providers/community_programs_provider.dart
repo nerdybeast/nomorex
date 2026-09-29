@@ -6,8 +6,9 @@ import '../../auth/providers/auth_provider.dart';
 part 'community_programs_provider.g.dart';
 
 /// Public programs authored by *other* users, mirroring
-/// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks only, so
-/// the list can show a "N weeks" summary without pulling every day and set.
+/// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks and
+/// their day rows only (no exercises or sets), so the list can show week and
+/// training-day counts cheaply.
 @Riverpod(keepAlive: true)
 class CommunityProgramsNotifier extends _$CommunityProgramsNotifier {
   SupabaseClient get _db => Supabase.instance.client;
@@ -20,7 +21,7 @@ class CommunityProgramsNotifier extends _$CommunityProgramsNotifier {
 
     final data = await _db
         .from('programs')
-        .select('*, profiles(display_name), program_weeks(*)')
+        .select('*, profiles(display_name), program_weeks(*, program_days(*))')
         .eq('is_public', true)
         // Archiving is the app's stand-in for deleting a program, so an
         // archived one must not stay browsable just because it was public.

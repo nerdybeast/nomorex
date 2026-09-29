@@ -6,7 +6,9 @@ import 'package:nomorex/features/community/providers/community_programs_provider
 import 'package:nomorex/features/community/providers/community_workouts_provider.dart';
 import 'package:nomorex/features/community/screens/community_screen.dart';
 import 'package:nomorex/features/programs/models/program.dart';
+import 'package:nomorex/features/programs/models/program_day.dart';
 import 'package:nomorex/features/programs/models/program_week.dart';
+import 'package:nomorex/features/workouts/models/workout_exercise.dart';
 import 'package:nomorex/features/workouts/models/workout.dart';
 
 class _StubCommunityWorkoutsNotifier extends CommunityWorkoutsNotifier {
@@ -99,7 +101,90 @@ Future<void> _pumpCommunity(
   await tester.pumpAndSettle();
 }
 
+WorkoutExercise _exercise(String workoutId, int position, String name) => WorkoutExercise(
+      id: '$workoutId-e$position',
+      workoutId: workoutId,
+      exerciseId: 'ex-$name',
+      exerciseName: name,
+      position: position,
+    );
+
 void main() {
+  testWidgets('a workout card previews its exercises and counts them', (tester) async {
+    final workout = Workout(
+      id: 'w1',
+      userId: 'other-user',
+      title: 'Heavy Pull Day',
+      date: DateTime(2026, 7, 1),
+      updatedAt: DateTime(2026, 7, 1),
+      workoutGroupId: 'w1',
+      isPublic: true,
+      ownerDisplayName: 'BeastModeB',
+      exercises: [
+        for (var i = 0; i < 5; i++) _exercise('w1', i, ['Deadlift', 'Row', 'Curl', 'Shrug', 'Face Pull'][i]),
+      ],
+    );
+    await _pumpCommunity(tester, workouts: [workout]);
+    await tester.tap(find.byKey(const Key('community_tab_workouts')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Deadlift · Row · Curl  +2 more'), findsOneWidget);
+    expect(find.text('5 exercises'), findsOneWidget);
+  });
+
+  testWidgets('a single-exercise workout uses the singular', (tester) async {
+    final workout = Workout(
+      id: 'w1',
+      userId: 'other-user',
+      title: 'Heavy Pull Day',
+      date: DateTime(2026, 7, 1),
+      updatedAt: DateTime(2026, 7, 1),
+      workoutGroupId: 'w1',
+      isPublic: true,
+      exercises: [_exercise('w1', 0, 'Deadlift')],
+    );
+    await _pumpCommunity(tester, workouts: [workout]);
+    await tester.tap(find.byKey(const Key('community_tab_workouts')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 exercise'), findsOneWidget);
+  });
+
+  testWidgets('a program card shows its description, weeks and training days', (tester) async {
+    ProgramDay day(String id, {bool rest = false}) => ProgramDay(
+          id: id,
+          programWeekId: 'p1-w0',
+          dayNumber: 1,
+          title: 'Day',
+          position: 0,
+          isRestDay: rest,
+        );
+    final program = Program(
+      id: 'p1',
+      userId: 'other-user',
+      name: 'Squat Block',
+      description: 'Two weeks of heavy squats.',
+      createdAt: DateTime(2026, 7, 1),
+      updatedAt: DateTime(2026, 7, 1),
+      isPublic: true,
+      ownerDisplayName: 'BeastModeB',
+      weeks: [
+        ProgramWeek(
+          id: 'p1-w0',
+          programId: 'p1',
+          weekNumber: 1,
+          position: 0,
+          days: [day('d1'), day('d2'), day('d3', rest: true)],
+        ),
+      ],
+    );
+    await _pumpCommunity(tester, programs: [program]);
+
+    expect(find.text('Two weeks of heavy squats.'), findsOneWidget);
+    expect(find.text('1 week'), findsOneWidget);
+    expect(find.text('2 training days'), findsOneWidget);
+  });
+
   testWidgets('lists public workouts attributed to their owner', (tester) async {
     await _pumpCommunity(tester, workouts: [
       _workout(id: 'w1', title: '5x5 Strength', owner: 'BeastModeB'),

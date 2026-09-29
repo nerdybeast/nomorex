@@ -22,7 +22,7 @@ class MyPrsPage {
   Future<void> expectLoadedWithoutError() async {
     await waitUntilLoaded();
 
-    final empty = find.text('No PRs found.');
+    final empty = find.text('No PRs yet.');
     final cards = find.byType(PrCard);
     final deadline = DateTime.now().add(const Duration(seconds: 30));
     while (DateTime.now().isBefore(deadline)) {

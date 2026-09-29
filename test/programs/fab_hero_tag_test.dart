@@ -31,7 +31,9 @@ class _StubProgramDetailNotifier extends ProgramDetailNotifier {
 }
 
 void main() {
-  testWidgets('ProgramsScreen FAB declares a non-default heroTag', (tester) async {
+  testWidgets('ProgramsScreen renders no FAB of its own (the shell "+" is the only one)', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -43,10 +45,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final fab = tester.widget<FloatingActionButton>(
-      find.byType(FloatingActionButton),
-    );
-    expect(fab.heroTag, 'programsNewFab');
+    expect(find.byType(FloatingActionButton), findsNothing);
   });
 
   testWidgets('ProgramEditScreen FAB declares a non-default heroTag', (tester) async {

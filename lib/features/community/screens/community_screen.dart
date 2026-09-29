@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/owner_name.dart';
+import '../../../shared/widgets/dashboard_empty_state_card.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 import '../providers/community_programs_provider.dart';
 import '../providers/community_workouts_provider.dart';
+import '../widgets/community_cards.dart';
 
 class CommunityScreen extends ConsumerStatefulWidget {
   const CommunityScreen({super.key});
@@ -120,7 +122,16 @@ class _WorkoutsTab extends ConsumerWidget {
       error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
       data: (workouts) {
         if (workouts.isEmpty) {
-          return const Center(child: Text('No public workouts yet.'));
+          return ListView(
+            padding: shellListPadding(context),
+            children: const [
+              DashboardEmptyStateCard(
+                icon: Icons.fitness_center_outlined,
+                title: 'No public workouts yet.',
+                message: 'Workouts other lifters share will show up here.',
+              ),
+            ],
+          );
         }
         final filtered =
             workouts.where((w) => _matches(query, w.title, w.ownerDisplayName)).toList();
@@ -128,23 +139,15 @@ class _WorkoutsTab extends ConsumerWidget {
           return const Center(child: Text('No workouts match your search.'));
         }
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: shellListPadding(context),
           itemCount: filtered.length,
           itemBuilder: (context, i) {
             final w = filtered[i];
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Card(
-                clipBehavior: Clip.antiAlias,
-                child: ListTile(
-                  title: Text(w.title),
-                  subtitle: Text(
-                    'by ${ownerDisplayName(w.ownerDisplayName)} · '
-                    '${formatDate(w.date)} · ${w.exercises.length} exercises',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(AppConstants.routeCommunityWorkoutDetail(w.id)),
-                ),
+              child: CommunityWorkoutCard(
+                workout: w,
+                onTap: () => context.push(AppConstants.routeCommunityWorkoutDetail(w.id)),
               ),
             );
           },
@@ -169,7 +172,16 @@ class _ProgramsTab extends ConsumerWidget {
       error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
       data: (programs) {
         if (programs.isEmpty) {
-          return const Center(child: Text('No public programs yet.'));
+          return ListView(
+            padding: shellListPadding(context),
+            children: const [
+              DashboardEmptyStateCard(
+                icon: Icons.checklist_outlined,
+                title: 'No public programs yet.',
+                message: 'Programs other lifters share will show up here.',
+              ),
+            ],
+          );
         }
         final filtered =
             programs.where((p) => _matches(query, p.name, p.ownerDisplayName)).toList();
@@ -177,24 +189,15 @@ class _ProgramsTab extends ConsumerWidget {
           return const Center(child: Text('No programs match your search.'));
         }
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: shellListPadding(context),
           itemCount: filtered.length,
           itemBuilder: (context, i) {
             final p = filtered[i];
-            final weeks = p.weeks.length;
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Card(
-                clipBehavior: Clip.antiAlias,
-                child: ListTile(
-                  title: Text(p.name),
-                  subtitle: Text(
-                    'by ${ownerDisplayName(p.ownerDisplayName)} · '
-                    '$weeks ${weeks == 1 ? 'week' : 'weeks'}',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(AppConstants.routeCommunityProgramDetail(p.id)),
-                ),
+              child: CommunityProgramCard(
+                program: p,
+                onTap: () => context.push(AppConstants.routeCommunityProgramDetail(p.id)),
               ),
             );
           },

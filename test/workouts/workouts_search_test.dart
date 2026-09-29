@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:nomorex/features/workouts/models/workout.dart';
 import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
 import 'package:nomorex/features/workouts/screens/workouts_screen.dart';
+import 'package:nomorex/shared/widgets/dashboard_empty_state_card.dart';
+import 'package:nomorex/shared/widgets/responsive_layout.dart';
 
 class _StubWorkoutsNotifier extends WorkoutsNotifier {
   _StubWorkoutsNotifier(this._workouts);
@@ -23,6 +25,80 @@ class _RecordingWorkoutsNotifier extends WorkoutsNotifier {
 }
 
 void main() {
+  testWidgets('no workouts shows an empty-state card pointing at the + button', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          workoutsProvider.overrideWith(() => _StubWorkoutsNotifier(const [])),
+        ],
+        child: const MaterialApp(home: WorkoutsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DashboardEmptyStateCard), findsOneWidget);
+    expect(find.text('No workouts yet.'), findsOneWidget);
+    expect(find.textContaining('+ button'), findsOneWidget);
+  });
+
+  testWidgets('the list leaves room to scroll clear of the shell FAB on mobile', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final workouts = [
+      Workout(
+        id: 'w1',
+        userId: 'u1',
+        title: 'Push Day',
+        date: DateTime(2026, 7, 1),
+        updatedAt: DateTime(2026, 7, 1),
+        workoutGroupId: 'w1',
+      ),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          workoutsProvider.overrideWith(() => _StubWorkoutsNotifier(workouts)),
+        ],
+        child: const MaterialApp(home: WorkoutsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final padding = tester.widget<ListView>(find.byType(ListView)).padding!.resolve(TextDirection.ltr);
+    expect(padding.bottom, 16 + kShellFabClearance);
+  });
+
+  testWidgets('no extra FAB clearance on wide layouts (the + lives in the rail)', (tester) async {
+    tester.view.physicalSize = const Size(1000, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final workouts = [
+      Workout(
+        id: 'w1',
+        userId: 'u1',
+        title: 'Push Day',
+        date: DateTime(2026, 7, 1),
+        updatedAt: DateTime(2026, 7, 1),
+        workoutGroupId: 'w1',
+      ),
+    ];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          workoutsProvider.overrideWith(() => _StubWorkoutsNotifier(workouts)),
+        ],
+        child: const MaterialApp(home: WorkoutsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final padding = tester.widget<ListView>(find.byType(ListView)).padding!.resolve(TextDirection.ltr);
+    expect(padding.bottom, 16);
+  });
+
   testWidgets('search field filters the workouts list by title', (tester) async {
     final workouts = [
       Workout(
