@@ -60,14 +60,12 @@ void main() {
             exercisesProvider.overrideWith(
               () => _TestExercisesNotifier(completer.future),
             ),
-            workoutDetailProvider('w1').overrideWith(
-              () => _TestWorkoutDetailNotifier(workout),
-            ),
+            workoutDetailProvider(
+              'w1',
+            ).overrideWith(() => _TestWorkoutDetailNotifier(workout)),
             unitPreferenceProvider.overrideWithValue('kg'),
           ],
-          child: const MaterialApp(
-            home: EditWorkoutScreen(workoutId: 'w1'),
-          ),
+          child: const MaterialApp(home: EditWorkoutScreen(workoutId: 'w1')),
         ),
       );
       // Workout detail resolves; exercises are still loading (completer pending).
@@ -133,9 +131,7 @@ void main() {
             ),
             unitPreferenceProvider.overrideWithValue('kg'),
           ],
-          child: const MaterialApp(
-            home: EditWorkoutScreen(workoutId: 'w1'),
-          ),
+          child: const MaterialApp(home: EditWorkoutScreen(workoutId: 'w1')),
         ),
       );
       await tester.pumpAndSettle();

@@ -88,7 +88,11 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
                         title: _showArchived ? 'No archived programs.' : 'No programs yet.',
                         message: _showArchived
                             ? 'Programs you archive will show up here.'
-                            : 'Tap the + button to create your first program.',
+                            : 'Build a reusable template to plan your training.',
+                        ctaLabel: _showArchived ? null : 'Create your first program',
+                        onCta: _showArchived
+                            ? null
+                            : () => context.push(AppConstants.routeProgramNew),
                       ),
                     ],
                   );

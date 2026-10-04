@@ -11,17 +11,18 @@ import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
 import 'package:nomorex/shared/models/editable_set_row.dart';
 import 'package:nomorex/shared/models/one_rep_max.dart';
 
-const _otherExercise = Exercise(id: 'e2', name: 'Front Squat', isPredefined: true);
+const _otherExercise = Exercise(
+  id: 'e2',
+  name: 'Front Squat',
+  isPredefined: true,
+);
 
 class _StubExercisesNotifier extends ExercisesNotifier {
   @override
   Future<List<Exercise>> build() async => const [_otherExercise];
 }
 
-Widget _wrap(
-  Widget child, {
-  Map<String, OneRepMax> oneRepMaxes = const {},
-}) =>
+Widget _wrap(Widget child, {Map<String, OneRepMax> oneRepMaxes = const {}}) =>
     ProviderScope(
       overrides: [
         exercisesProvider.overrideWith(() => _StubExercisesNotifier()),
@@ -33,15 +34,15 @@ Widget _wrap(
 
 /// The editor under test, keyed to exercise 'e1' / 'Back Squat'.
 SetEditor _editor() => SetEditor(
-      sets: const [],
-      unit: 'kg',
-      currentExerciseId: 'e1',
-      currentExerciseName: 'Back Squat',
-      onAddPercentageSets: (_) {},
-      onAddAbsoluteSets: (_, _, _) {},
-      onDeleteSet: (_) {},
-      onReorderSets: (_) {},
-    );
+  sets: const [],
+  unit: 'kg',
+  currentExerciseId: 'e1',
+  currentExerciseName: 'Back Squat',
+  onAddPercentageSets: (_) {},
+  onAddAbsoluteSets: (_, _, _) {},
+  onDeleteSet: (_) {},
+  onReorderSets: (_) {},
+);
 
 Future<void> _tapStepper(
   WidgetTester tester, {
@@ -58,20 +59,24 @@ Future<void> _tapStepper(
 }
 
 void main() {
-  testWidgets('Add sets (%) supports a different percentage per set', (tester) async {
+  testWidgets('Add sets (%) supports a different percentage per set', (
+    tester,
+  ) async {
     List<ParsedSet>? added;
 
     await tester.pumpWidget(
-      _wrap(SetEditor(
-        sets: const [],
-        unit: 'kg',
-        currentExerciseId: 'e1',
-        currentExerciseName: 'Front Squat',
-        onAddPercentageSets: (parsed) => added = parsed,
-        onAddAbsoluteSets: (_, _, _) {},
-        onDeleteSet: (_) {},
-        onReorderSets: (_) {},
-      )),
+      _wrap(
+        SetEditor(
+          sets: const [],
+          unit: 'kg',
+          currentExerciseId: 'e1',
+          currentExerciseName: 'Front Squat',
+          onAddPercentageSets: (parsed) => added = parsed,
+          onAddAbsoluteSets: (_, _, _) {},
+          onDeleteSet: (_) {},
+          onReorderSets: (_) {},
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -79,13 +84,22 @@ void main() {
     await tester.pumpAndSettle();
 
     // Grow from 1 to 3 sets; a %1RM stepper should appear for each.
-    await _tapStepper(tester, label: 'Sets', icon: Icons.add_circle_outline, times: 2);
+    await _tapStepper(
+      tester,
+      label: 'Sets',
+      icon: Icons.add_circle_outline,
+      times: 2,
+    );
     expect(find.text('Set 1 %1RM'), findsOneWidget);
     expect(find.text('Set 2 %1RM'), findsOneWidget);
     expect(find.text('Set 3 %1RM'), findsOneWidget);
 
     // Nudge just the second set's percentage up from the 70 default.
-    await _tapStepper(tester, label: 'Set 2 %1RM', icon: Icons.add_circle_outline);
+    await _tapStepper(
+      tester,
+      label: 'Set 2 %1RM',
+      icon: Icons.add_circle_outline,
+    );
 
     await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
@@ -96,168 +110,199 @@ void main() {
     expect(added!.map((s) => s.basisExerciseId), [null, null, null]);
   });
 
-  testWidgets('"Based on" defaults to this exercise and flows through when changed',
-      (tester) async {
-    List<ParsedSet>? added;
+  testWidgets(
+    '"Based on" defaults to this exercise and flows through when changed',
+    (tester) async {
+      List<ParsedSet>? added;
 
-    await tester.pumpWidget(
-      _wrap(SetEditor(
-        sets: const [],
-        unit: 'kg',
-        currentExerciseId: 'e1',
-        currentExerciseName: 'Front Squat',
-        onAddPercentageSets: (parsed) => added = parsed,
-        onAddAbsoluteSets: (_, _, _) {},
-        onDeleteSet: (_) {},
-        onReorderSets: (_) {},
-      )),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        _wrap(
+          SetEditor(
+            sets: const [],
+            unit: 'kg',
+            currentExerciseId: 'e1',
+            currentExerciseName: 'Front Squat',
+            onAddPercentageSets: (parsed) => added = parsed,
+            onAddAbsoluteSets: (_, _, _) {},
+            onDeleteSet: (_) {},
+            onReorderSets: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Add sets (%)'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Add sets (%)'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('This exercise'), findsOneWidget);
+      expect(find.text('This exercise'), findsOneWidget);
 
-    await tester.tap(find.text('This exercise'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Front Squat').last);
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('This exercise'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Front Squat').last);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Add'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Add'));
+      await tester.pumpAndSettle();
 
-    expect(added, isNotNull);
-    expect(added!.single.basisExerciseId, 'e2');
-  });
-
-  testWidgets('Add sets (weight) collects sets/reps/weight and converts lbs to kg',
-      (tester) async {
-    int? capturedSets;
-    int? capturedReps;
-    double? capturedWeightKg;
-
-    await tester.pumpWidget(
-      _wrap(SetEditor(
-        sets: const [],
-        unit: 'lbs',
-        currentExerciseId: 'e1',
-        currentExerciseName: 'Front Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (sets, reps, weightKg) {
-          capturedSets = sets;
-          capturedReps = reps;
-          capturedWeightKg = weightKg;
-        },
-        onDeleteSet: (_) {},
-        onReorderSets: (_) {},
-      )),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Add sets (weight)'));
-    await tester.pumpAndSettle();
-
-    await _tapStepper(tester, label: 'Sets', icon: Icons.add_circle_outline);
-    await _tapStepper(tester, label: 'Reps', icon: Icons.add_circle_outline, times: 4);
-    await _tapStepper(tester, label: 'Weight (lbs)', icon: Icons.add_circle_outline);
-
-    await tester.tap(find.text('Add'));
-    await tester.pumpAndSettle();
-
-    expect(capturedSets, 2);
-    expect(capturedReps, 5);
-    expect(capturedWeightKg, closeTo(lbsToKg(5), 0.001));
-  });
+      expect(added, isNotNull);
+      expect(added!.single.basisExerciseId, 'e2');
+    },
+  );
 
   testWidgets(
-      'Add sets (weight) shows a static unit chip, not a toggle, when the '
-      'profile preference is fixed to lbs', (tester) async {
-    await tester.pumpWidget(
-      _wrap(SetEditor(
-        sets: const [],
-        unit: 'lbs',
-        currentExerciseId: 'e1',
-        currentExerciseName: 'Front Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (_, _, _) {},
-        onDeleteSet: (_) {},
-        onReorderSets: (_) {},
-      )),
-    );
-    await tester.pumpAndSettle();
+    'Add sets (weight) collects sets/reps/weight and converts lbs to kg',
+    (tester) async {
+      int? capturedSets;
+      int? capturedReps;
+      double? capturedWeightKg;
 
-    await tester.tap(find.text('Add sets (weight)'));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        _wrap(
+          SetEditor(
+            sets: const [],
+            unit: 'lbs',
+            currentExerciseId: 'e1',
+            currentExerciseName: 'Front Squat',
+            onAddPercentageSets: (_) {},
+            onAddAbsoluteSets: (sets, reps, weightKg) {
+              capturedSets = sets;
+              capturedReps = reps;
+              capturedWeightKg = weightKg;
+            },
+            onDeleteSet: (_) {},
+            onReorderSets: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Weight (lbs)'), findsOneWidget);
-    // No 'kg' segment to switch to — nothing to choose when the preference
-    // is fixed to a single unit.
-    expect(find.text('kg'), findsNothing);
-  });
+      await tester.tap(find.text('Add sets (weight)'));
+      await tester.pumpAndSettle();
 
-  testWidgets(
-      'Add sets (weight) unit toggle lets weight be entered in either unit '
-      "when the profile preference is 'both'", (tester) async {
-    double? capturedWeightKg;
+      await _tapStepper(tester, label: 'Sets', icon: Icons.add_circle_outline);
+      await _tapStepper(
+        tester,
+        label: 'Reps',
+        icon: Icons.add_circle_outline,
+        times: 4,
+      );
+      await _tapStepper(
+        tester,
+        label: 'Weight (lbs)',
+        icon: Icons.add_circle_outline,
+      );
 
-    await tester.pumpWidget(
-      _wrap(SetEditor(
-        sets: const [],
-        unit: 'both',
-        currentExerciseId: 'e1',
-        currentExerciseName: 'Front Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (_, _, weightKg) => capturedWeightKg = weightKg,
-        onDeleteSet: (_) {},
-        onReorderSets: (_) {},
-      )),
-    );
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Add'));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Add sets (weight)'));
-    await tester.pumpAndSettle();
-
-    // Defaults to kg when the preference is 'both'.
-    expect(find.text('Weight (kg)'), findsOneWidget);
-
-    await tester.tap(find.text('lbs'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Weight (lbs)'), findsOneWidget);
-
-    await tester.tap(find.text('kg'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Weight (kg)'), findsOneWidget);
-
-    await tester.enterText(find.widgetWithText(TextField, '0'), '100');
-    final repsRow = find.ancestor(of: find.text('Reps'), matching: find.byType(Row));
-    await tester.tap(find.descendant(of: repsRow, matching: find.byType(TextField)));
-    await tester.pump();
-
-    await tester.tap(find.text('Add'));
-    await tester.pumpAndSettle();
-
-    expect(capturedWeightKg, 100);
-  });
+      expect(capturedSets, 2);
+      expect(capturedReps, 5);
+      expect(capturedWeightKg, closeTo(lbsToKg(5), 0.001));
+    },
+  );
 
   testWidgets(
-      'typing a weight directly and moving focus away commits it, even '
+    'Add sets (weight) shows a static unit chip, not a toggle, when the '
+    'profile preference is fixed to lbs',
+    (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          SetEditor(
+            sets: const [],
+            unit: 'lbs',
+            currentExerciseId: 'e1',
+            currentExerciseName: 'Front Squat',
+            onAddPercentageSets: (_) {},
+            onAddAbsoluteSets: (_, _, _) {},
+            onDeleteSet: (_) {},
+            onReorderSets: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add sets (weight)'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Weight (lbs)'), findsOneWidget);
+      // No 'kg' segment to switch to — nothing to choose when the preference
+      // is fixed to a single unit.
+      expect(find.text('kg'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'Add sets (weight) unit toggle lets weight be entered in either unit '
+    "when the profile preference is 'both'",
+    (tester) async {
+      double? capturedWeightKg;
+
+      await tester.pumpWidget(
+        _wrap(
+          SetEditor(
+            sets: const [],
+            unit: 'both',
+            currentExerciseId: 'e1',
+            currentExerciseName: 'Front Squat',
+            onAddPercentageSets: (_) {},
+            onAddAbsoluteSets: (_, _, weightKg) => capturedWeightKg = weightKg,
+            onDeleteSet: (_) {},
+            onReorderSets: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add sets (weight)'));
+      await tester.pumpAndSettle();
+
+      // Defaults to kg when the preference is 'both'.
+      expect(find.text('Weight (kg)'), findsOneWidget);
+
+      await tester.tap(find.text('lbs'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Weight (lbs)'), findsOneWidget);
+
+      await tester.tap(find.text('kg'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Weight (kg)'), findsOneWidget);
+
+      await tester.enterText(find.widgetWithText(TextField, '0'), '100');
+      final repsRow = find.ancestor(
+        of: find.text('Reps'),
+        matching: find.byType(Row),
+      );
+      await tester.tap(
+        find.descendant(of: repsRow, matching: find.byType(TextField)),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Add'));
+      await tester.pumpAndSettle();
+
+      expect(capturedWeightKg, 100);
+    },
+  );
+
+  testWidgets('typing a weight directly and moving focus away commits it, even '
       'without pressing enter', (tester) async {
     double? capturedWeightKg;
 
     await tester.pumpWidget(
-      _wrap(SetEditor(
-        sets: const [],
-        unit: 'kg',
-        currentExerciseId: 'e1',
-        currentExerciseName: 'Front Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (_, _, weightKg) => capturedWeightKg = weightKg,
-        onDeleteSet: (_) {},
-        onReorderSets: (_) {},
-      )),
+      _wrap(
+        SetEditor(
+          sets: const [],
+          unit: 'kg',
+          currentExerciseId: 'e1',
+          currentExerciseName: 'Front Squat',
+          onAddPercentageSets: (_) {},
+          onAddAbsoluteSets: (_, _, weightKg) => capturedWeightKg = weightKg,
+          onDeleteSet: (_) {},
+          onReorderSets: (_) {},
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -268,8 +313,13 @@ void main() {
     // Move focus to another field (e.g. tabbing away) without submitting via
     // enter — a Text tap wouldn't actually shift focus, so target the Reps
     // TextField instead.
-    final repsRow = find.ancestor(of: find.text('Reps'), matching: find.byType(Row));
-    await tester.tap(find.descendant(of: repsRow, matching: find.byType(TextField)));
+    final repsRow = find.ancestor(
+      of: find.text('Reps'),
+      matching: find.byType(Row),
+    );
+    await tester.tap(
+      find.descendant(of: repsRow, matching: find.byType(TextField)),
+    );
     await tester.pump();
 
     await tester.tap(find.text('Add'));
@@ -280,51 +330,63 @@ void main() {
 
   testWidgets('sets stepper cannot go below 1', (tester) async {
     await tester.pumpWidget(
-      _wrap(SetEditor(
-        sets: const [],
-        unit: 'kg',
-        currentExerciseId: 'e1',
-        currentExerciseName: 'Front Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (_, _, _) {},
-        onDeleteSet: (_) {},
-        onReorderSets: (_) {},
-      )),
+      _wrap(
+        SetEditor(
+          sets: const [],
+          unit: 'kg',
+          currentExerciseId: 'e1',
+          currentExerciseName: 'Front Squat',
+          onAddPercentageSets: (_) {},
+          onAddAbsoluteSets: (_, _, _) {},
+          onDeleteSet: (_) {},
+          onReorderSets: (_) {},
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Add sets (weight)'));
     await tester.pumpAndSettle();
 
-    final row = find.ancestor(of: find.text('Sets'), matching: find.byType(Row));
+    final row = find.ancestor(
+      of: find.text('Sets'),
+      matching: find.byType(Row),
+    );
     final decrement = find.ancestor(
-      of: find.descendant(of: row, matching: find.byIcon(Icons.remove_circle_outline)),
+      of: find.descendant(
+        of: row,
+        matching: find.byIcon(Icons.remove_circle_outline),
+      ),
       matching: find.byType(IconButton),
     );
     expect(tester.widget<IconButton>(decrement).onPressed, isNull);
   });
 
-  testWidgets('renders "% of <basis>" when a set has a basis exercise', (tester) async {
+  testWidgets('renders "% of <basis>" when a set has a basis exercise', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      _wrap(SetEditor(
-        sets: const [
-          EditableSetRow(
-            id: 's1',
-            weightMode: 'percentage',
-            targetReps: 5,
-            percentage: 85,
-            basisExerciseId: 'e2',
-            basisExerciseName: 'Front Squat',
-          ),
-        ],
-        unit: 'kg',
-        currentExerciseId: 'e1',
-        currentExerciseName: 'Front Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (_, _, _) {},
-        onDeleteSet: (_) {},
-        onReorderSets: (_) {},
-      )),
+      _wrap(
+        SetEditor(
+          sets: const [
+            EditableSetRow(
+              id: 's1',
+              weightMode: 'percentage',
+              targetReps: 5,
+              percentage: 85,
+              basisExerciseId: 'e2',
+              basisExerciseName: 'Front Squat',
+            ),
+          ],
+          unit: 'kg',
+          currentExerciseId: 'e1',
+          currentExerciseName: 'Front Squat',
+          onAddPercentageSets: (_) {},
+          onAddAbsoluteSets: (_, _, _) {},
+          onDeleteSet: (_) {},
+          onReorderSets: (_) {},
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -333,10 +395,9 @@ void main() {
 
   group('Add sets (%) shows the 1RM the percentages resolve against', () {
     testWidgets('a measured single renders plainly', (tester) async {
-      await tester.pumpWidget(_wrap(
-        _editor(),
-        oneRepMaxes: const {'e1': OneRepMax.measured(165)},
-      ));
+      await tester.pumpWidget(
+        _wrap(_editor(), oneRepMaxes: const {'e1': OneRepMax.measured(165)}),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add sets (%)'));
@@ -346,10 +407,9 @@ void main() {
     });
 
     testWidgets('an inferred max is labelled as an estimate', (tester) async {
-      await tester.pumpWidget(_wrap(
-        _editor(),
-        oneRepMaxes: const {'e1': OneRepMax.estimated(112.5)},
-      ));
+      await tester.pumpWidget(
+        _wrap(_editor(), oneRepMaxes: const {'e1': OneRepMax.estimated(112.5)}),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add sets (%)'));
@@ -368,15 +428,18 @@ void main() {
       expect(find.text('No 1RM recorded for this lift'), findsOneWidget);
     });
 
-    testWidgets('follows the basis exercise chosen in the dropdown',
-        (tester) async {
-      await tester.pumpWidget(_wrap(
-        _editor(),
-        oneRepMaxes: const {
-          'e1': OneRepMax.measured(165),
-          'e2': OneRepMax.measured(90),
-        },
-      ));
+    testWidgets('follows the basis exercise chosen in the dropdown', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          _editor(),
+          oneRepMaxes: const {
+            'e1': OneRepMax.measured(165),
+            'e2': OneRepMax.measured(90),
+          },
+        ),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add sets (%)'));
@@ -399,20 +462,37 @@ void main() {
     List<String>? reordered;
 
     await tester.pumpWidget(
-      _wrap(SetEditor(
-        sets: const [
-          EditableSetRow(id: 's1', weightMode: 'absolute', targetReps: 14, absoluteWeightKg: 50),
-          EditableSetRow(id: 's2', weightMode: 'absolute', targetReps: 15, absoluteWeightKg: 45),
-          EditableSetRow(id: 's3', weightMode: 'absolute', targetReps: 16, absoluteWeightKg: 40),
-        ],
-        unit: 'kg',
-        currentExerciseId: 'e1',
-        currentExerciseName: 'Back Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (_, _, _) {},
-        onDeleteSet: (_) {},
-        onReorderSets: (ids) => reordered = ids,
-      )),
+      _wrap(
+        SetEditor(
+          sets: const [
+            EditableSetRow(
+              id: 's1',
+              weightMode: 'absolute',
+              targetReps: 14,
+              absoluteWeightKg: 50,
+            ),
+            EditableSetRow(
+              id: 's2',
+              weightMode: 'absolute',
+              targetReps: 15,
+              absoluteWeightKg: 45,
+            ),
+            EditableSetRow(
+              id: 's3',
+              weightMode: 'absolute',
+              targetReps: 16,
+              absoluteWeightKg: 40,
+            ),
+          ],
+          unit: 'kg',
+          currentExerciseId: 'e1',
+          currentExerciseName: 'Back Squat',
+          onAddPercentageSets: (_) {},
+          onAddAbsoluteSets: (_, _, _) {},
+          onDeleteSet: (_) {},
+          onReorderSets: (ids) => reordered = ids,
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -430,23 +510,37 @@ void main() {
     expect(reordered, ['s2', 's1', 's3']);
   });
 
-  testWidgets('deleting a set still works once rows are draggable', (tester) async {
+  testWidgets('deleting a set still works once rows are draggable', (
+    tester,
+  ) async {
     String? deletedId;
 
     await tester.pumpWidget(
-      _wrap(SetEditor(
-        sets: const [
-          EditableSetRow(id: 's1', weightMode: 'absolute', targetReps: 14, absoluteWeightKg: 50),
-          EditableSetRow(id: 's2', weightMode: 'absolute', targetReps: 15, absoluteWeightKg: 45),
-        ],
-        unit: 'kg',
-        currentExerciseId: 'e1',
-        currentExerciseName: 'Back Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (_, _, _) {},
-        onDeleteSet: (id) => deletedId = id,
-        onReorderSets: (_) {},
-      )),
+      _wrap(
+        SetEditor(
+          sets: const [
+            EditableSetRow(
+              id: 's1',
+              weightMode: 'absolute',
+              targetReps: 14,
+              absoluteWeightKg: 50,
+            ),
+            EditableSetRow(
+              id: 's2',
+              weightMode: 'absolute',
+              targetReps: 15,
+              absoluteWeightKg: 45,
+            ),
+          ],
+          unit: 'kg',
+          currentExerciseId: 'e1',
+          currentExerciseName: 'Back Squat',
+          onAddPercentageSets: (_) {},
+          onAddAbsoluteSets: (_, _, _) {},
+          onDeleteSet: (id) => deletedId = id,
+          onReorderSets: (_) {},
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 

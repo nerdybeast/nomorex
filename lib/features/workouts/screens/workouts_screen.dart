@@ -75,11 +75,13 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                 if (workouts.isEmpty) {
                   return ListView(
                     padding: shellListPadding(context),
-                    children: const [
+                    children: [
                       DashboardEmptyStateCard(
                         icon: Icons.fitness_center_outlined,
                         title: 'No workouts yet.',
-                        message: 'Tap the + button to create your first workout.',
+                        message: 'Create a workout to start logging your training.',
+                        ctaLabel: 'Create your first workout',
+                        onCta: () => context.push(AppConstants.routeWorkoutNew),
                       ),
                     ],
                   );

@@ -31,24 +31,29 @@ class _StubProgramDetailNotifier extends ProgramDetailNotifier {
 }
 
 void main() {
-  testWidgets('ProgramsScreen renders no FAB of its own (the shell "+" is the only one)', (
+  testWidgets(
+    'ProgramsScreen renders no FAB of its own (the shell "+" is the only one)',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            programsProvider.overrideWith(() => _EmptyProgramsNotifier()),
+            archivedProgramsProvider.overrideWith(
+              () => _EmptyArchivedProgramsNotifier(),
+            ),
+          ],
+          child: const MaterialApp(home: ProgramsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FloatingActionButton), findsNothing);
+    },
+  );
+
+  testWidgets('ProgramEditScreen FAB declares a non-default heroTag', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          programsProvider.overrideWith(() => _EmptyProgramsNotifier()),
-          archivedProgramsProvider.overrideWith(() => _EmptyArchivedProgramsNotifier()),
-        ],
-        child: const MaterialApp(home: ProgramsScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.byType(FloatingActionButton), findsNothing);
-  });
-
-  testWidgets('ProgramEditScreen FAB declares a non-default heroTag', (tester) async {
     final program = Program(
       id: 'p1',
       userId: 'u1',
@@ -59,7 +64,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          programDetailProvider('p1').overrideWith(() => _StubProgramDetailNotifier(program)),
+          programDetailProvider(
+            'p1',
+          ).overrideWith(() => _StubProgramDetailNotifier(program)),
           unitPreferenceProvider.overrideWithValue('kg'),
         ],
         child: const MaterialApp(home: ProgramEditScreen(programId: 'p1')),

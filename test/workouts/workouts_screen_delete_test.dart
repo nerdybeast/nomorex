@@ -33,31 +33,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          workoutsProvider.overrideWith(() => _RecordingWorkoutsNotifier([workout])),
-        ],
-        child: const MaterialApp(home: WorkoutsScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byType(PopupMenuButton<String>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Delete'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Delete workout?'), findsOneWidget);
-    expect(find.text('This permanently deletes "Push Day" and all of its exercises and sets.'),
-        findsOneWidget);
-  });
-
-  testWidgets('canceling the dialog leaves deleteWorkout uncalled', (tester) async {
-    String? deletedId;
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
           workoutsProvider.overrideWith(
-            () => _RecordingWorkoutsNotifier([workout], onDelete: (id) => deletedId = id),
+            () => _RecordingWorkoutsNotifier([workout]),
           ),
         ],
         child: const MaterialApp(home: WorkoutsScreen()),
@@ -70,24 +47,63 @@ void main() {
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.descendant(
-      of: find.byType(AlertDialog),
-      matching: find.text('Cancel'),
-    ));
-    await tester.pumpAndSettle();
-
-    expect(deletedId, isNull);
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('Delete workout?'), findsOneWidget);
+    expect(
+      find.text(
+        'This permanently deletes "Push Day" and all of its exercises and sets.',
+      ),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('confirming the dialog calls deleteWorkout with the right id', (tester) async {
+  testWidgets('canceling the dialog leaves deleteWorkout uncalled', (
+    tester,
+  ) async {
     String? deletedId;
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           workoutsProvider.overrideWith(
-            () => _RecordingWorkoutsNotifier([workout], onDelete: (id) => deletedId = id),
+            () => _RecordingWorkoutsNotifier([
+              workout,
+            ], onDelete: (id) => deletedId = id),
+          ),
+        ],
+        child: const MaterialApp(home: WorkoutsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Cancel'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(deletedId, isNull);
+    expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('confirming the dialog calls deleteWorkout with the right id', (
+    tester,
+  ) async {
+    String? deletedId;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          workoutsProvider.overrideWith(
+            () => _RecordingWorkoutsNotifier([
+              workout,
+            ], onDelete: (id) => deletedId = id),
           ),
         ],
         child: const MaterialApp(home: WorkoutsScreen()),
@@ -103,10 +119,12 @@ void main() {
     // The dialog's confirm button shares the label 'Delete' with the popup
     // menu item that's still technically in the tree behind it — scope to
     // the AlertDialog to disambiguate.
-    await tester.tap(find.descendant(
-      of: find.byType(AlertDialog),
-      matching: find.text('Delete'),
-    ));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Delete'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(deletedId, 'w1');
