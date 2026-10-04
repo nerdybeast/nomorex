@@ -8,7 +8,11 @@ import 'package:nomorex/features/personal_bests/models/personal_best.dart';
 import 'package:nomorex/features/personal_bests/providers/personal_bests_provider.dart';
 import 'package:nomorex/features/programs/models/program_instance.dart';
 import 'package:nomorex/features/programs/providers/program_instances_list_provider.dart';
+import 'package:nomorex/core/constants/app_constants.dart';
+import 'package:nomorex/features/programs/models/program.dart';
+import 'package:nomorex/features/programs/providers/programs_provider.dart';
 import 'package:nomorex/features/workouts/models/workout.dart';
+import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
 import 'package:nomorex/features/workouts/providers/finished_workouts_provider.dart';
 import 'package:nomorex/features/workouts/providers/in_progress_workouts_provider.dart';
 import 'package:nomorex/shared/widgets/pr_card.dart';
@@ -58,7 +62,8 @@ class _RecordingPersonalBestsNotifier extends PersonalBestsNotifier {
   Future<void> refresh() async => onRefresh();
 }
 
-class _RecordingProgramInstancesNotifier extends CurrentProgramInstancesNotifier {
+class _RecordingProgramInstancesNotifier
+    extends CurrentProgramInstancesNotifier {
   _RecordingProgramInstancesNotifier(this.onRefresh);
   final VoidCallback onRefresh;
   @override
@@ -97,15 +102,39 @@ class _RecordingFinishedWorkoutsNotifier extends FinishedWorkoutsNotifier {
   Future<void> refresh() async => onRefresh();
 }
 
+class _StubWorkoutsNotifier extends WorkoutsNotifier {
+  _StubWorkoutsNotifier(this.workouts);
+  final List<Workout> workouts;
+  @override
+  Future<List<Workout>> build() async => workouts;
+}
+
+class _StubProgramsNotifier extends ProgramsNotifier {
+  _StubProgramsNotifier(this.programs);
+  final List<Program> programs;
+  @override
+  Future<List<Program>> build() async => programs;
+}
+
 void main() {
-  testWidgets('shows empty state when no programs are in progress', (tester) async {
+  testWidgets('shows empty state when no programs are in progress', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
-          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsNotifier(),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -128,11 +157,18 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
-          currentProgramInstancesProvider
-              .overrideWith(() => _StubProgramInstancesNotifier([instance])),
-          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
-          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsNotifier(),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _StubProgramInstancesNotifier([instance]),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -159,11 +195,18 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
-          currentProgramInstancesProvider
-              .overrideWith(() => _StubProgramInstancesNotifier([instance])),
-          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
-          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsNotifier(),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _StubProgramInstancesNotifier([instance]),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -173,14 +216,24 @@ void main() {
     expect(find.textContaining('Upcoming'), findsOneWidget);
   });
 
-  testWidgets('shows empty state when no workouts are in progress', (tester) async {
+  testWidgets('shows empty state when no workouts are in progress', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
-          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsNotifier(),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -205,10 +258,18 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-          inProgressWorkoutsProvider.overrideWith(() => _StubInProgressWorkoutsNotifier([workout])),
-          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsNotifier(),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _StubInProgressWorkoutsNotifier([workout]),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -240,10 +301,18 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-          inProgressWorkoutsProvider.overrideWith(() => _StubInProgressWorkoutsNotifier([workout])),
-          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsNotifier(),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _StubInProgressWorkoutsNotifier([workout]),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -256,14 +325,24 @@ void main() {
     expect(find.text('00:15:00'), findsOneWidget);
   });
 
-  testWidgets('shows empty state when no workouts have been completed', (tester) async {
+  testWidgets('shows empty state when no workouts have been completed', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
-          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsNotifier(),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -281,7 +360,9 @@ void main() {
     expect(find.text('No completed workouts yet.'), findsOneWidget);
   });
 
-  testWidgets('shows up to 5 recent workouts, most recently completed first', (tester) async {
+  testWidgets('shows up to 5 recent workouts, most recently completed first', (
+    tester,
+  ) async {
     final finished = List.generate(
       6,
       (i) => Workout(
@@ -303,10 +384,18 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(newestFirst)),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsNotifier(),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _StubFinishedWorkoutsNotifier(newestFirst),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -328,7 +417,9 @@ void main() {
     expect(find.byIcon(Icons.chevron_right), findsNWidgets(5));
   });
 
-  testWidgets('shows the note on a recent PR, clipped to two lines', (tester) async {
+  testWidgets('shows the note on a recent PR, clipped to two lines', (
+    tester,
+  ) async {
     final prs = [
       PersonalBest(
         id: '1',
@@ -346,10 +437,18 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsWithPrsNotifier(prs)),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
-          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsWithPrsNotifier(prs),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -357,11 +456,19 @@ void main() {
     await tester.pumpAndSettle();
 
     final noteFinder = find.text('Felt strong, belt only.');
+    await tester.dragUntilVisible(
+      noteFinder,
+      find.byType(ListView),
+      const Offset(0, -300),
+    );
+    await tester.pumpAndSettle();
     expect(noteFinder, findsOneWidget);
     expect(tester.widget<Text>(noteFinder).maxLines, 2);
   });
 
-  testWidgets('tapping a recent PR opens that exercise\'s history', (tester) async {
+  testWidgets('tapping a recent PR opens that exercise\'s history', (
+    tester,
+  ) async {
     final prs = [
       PersonalBest(
         id: '1',
@@ -378,10 +485,14 @@ void main() {
     final router = GoRouter(
       initialLocation: '/shell/home',
       routes: [
-        GoRoute(path: '/shell/home', builder: (_, _) => const DashboardScreen()),
+        GoRoute(
+          path: '/shell/home',
+          builder: (_, _) => const DashboardScreen(),
+        ),
         GoRoute(
           path: '/prs/:exerciseId/history',
-          builder: (_, state) => Text('history:${state.pathParameters['exerciseId']}'),
+          builder: (_, state) =>
+              Text('history:${state.pathParameters['exerciseId']}'),
         ),
       ],
     );
@@ -389,13 +500,28 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsWithPrsNotifier(prs)),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
-          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsWithPrsNotifier(prs),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.dragUntilVisible(
+      find.byType(PrCard),
+      find.byType(ListView),
+      const Offset(0, -300),
     );
     await tester.pumpAndSettle();
 
@@ -408,7 +534,9 @@ void main() {
     expect(find.text('history:e1'), findsOneWidget);
   });
 
-  testWidgets('tapping the refresh icon refreshes all four data sources', (tester) async {
+  testWidgets('tapping the refresh icon refreshes all four data sources', (
+    tester,
+  ) async {
     var prsRefreshed = false;
     var instancesRefreshed = false;
     var workoutsRefreshed = false;
@@ -421,13 +549,19 @@ void main() {
             () => _RecordingPersonalBestsNotifier(() => prsRefreshed = true),
           ),
           currentProgramInstancesProvider.overrideWith(
-            () => _RecordingProgramInstancesNotifier(() => instancesRefreshed = true),
+            () => _RecordingProgramInstancesNotifier(
+              () => instancesRefreshed = true,
+            ),
           ),
           inProgressWorkoutsProvider.overrideWith(
-            () => _RecordingInProgressWorkoutsNotifier(() => workoutsRefreshed = true),
+            () => _RecordingInProgressWorkoutsNotifier(
+              () => workoutsRefreshed = true,
+            ),
           ),
           finishedWorkoutsProvider.overrideWith(
-            () => _RecordingFinishedWorkoutsNotifier(() => finishedWorkoutsRefreshed = true),
+            () => _RecordingFinishedWorkoutsNotifier(
+              () => finishedWorkoutsRefreshed = true,
+            ),
           ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
@@ -444,14 +578,24 @@ void main() {
     expect(finishedWorkoutsRefreshed, isTrue);
   });
 
-  testWidgets('shows the welcome banner when all four sections are empty', (tester) async {
+  testWidgets('shows the welcome banner when all four sections are empty', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
-          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsNotifier(),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -461,7 +605,9 @@ void main() {
     expect(find.text('Welcome to NoMoreX'), findsOneWidget);
   });
 
-  testWidgets('hides the welcome banner when at least one section has data', (tester) async {
+  testWidgets('hides the welcome banner when at least one section has data', (
+    tester,
+  ) async {
     final instance = ProgramInstance(
       id: 'pi1',
       programId: 'p1',
@@ -474,11 +620,18 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
-          currentProgramInstancesProvider
-              .overrideWith(() => _StubProgramInstancesNotifier([instance])),
-          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
-          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsNotifier(),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _StubProgramInstancesNotifier([instance]),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -488,22 +641,38 @@ void main() {
     expect(find.text('Welcome to NoMoreX'), findsNothing);
   });
 
-  testWidgets('tapping the Recent PRs empty-state CTA opens Add PR', (tester) async {
+  testWidgets('tapping the Recent PRs empty-state CTA opens Add PR', (
+    tester,
+  ) async {
     final router = GoRouter(
       initialLocation: '/shell/home',
       routes: [
-        GoRoute(path: '/shell/home', builder: (_, _) => const DashboardScreen()),
-        GoRoute(path: '/prs/add', builder: (_, _) => const Text('add-pr-screen')),
+        GoRoute(
+          path: '/shell/home',
+          builder: (_, _) => const DashboardScreen(),
+        ),
+        GoRoute(
+          path: '/prs/add',
+          builder: (_, _) => const Text('add-pr-screen'),
+        ),
       ],
     );
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-          inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
-          finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsNotifier(),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -521,4 +690,123 @@ void main() {
 
     expect(find.text('add-pr-screen'), findsOneWidget);
   });
+
+  group(
+    'empty-state CTAs depend on whether the user has any workouts/programs',
+    () {
+      Future<void> pump(
+        WidgetTester tester, {
+        List<Workout> workouts = const [],
+        List<Program> programs = const [],
+      }) async {
+        final router = GoRouter(
+          routes: [
+            GoRoute(path: '/', builder: (_, _) => const DashboardScreen()),
+            GoRoute(
+              path: AppConstants.routeWorkoutNew,
+              builder: (_, _) => const Text('new-workout'),
+            ),
+            GoRoute(
+              path: AppConstants.routeWorkouts,
+              builder: (_, _) => const Text('workouts-tab'),
+            ),
+            GoRoute(
+              path: AppConstants.routeProgramNew,
+              builder: (_, _) => const Text('new-program'),
+            ),
+            GoRoute(
+              path: AppConstants.routePrograms,
+              builder: (_, _) => const Text('programs-tab'),
+            ),
+          ],
+        );
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              personalBestsProvider.overrideWith(
+                () => _StubPersonalBestsNotifier(),
+              ),
+              currentProgramInstancesProvider.overrideWith(
+                () => _EmptyProgramInstancesNotifier(),
+              ),
+              inProgressWorkoutsProvider.overrideWith(
+                () => _EmptyInProgressWorkoutsNotifier(),
+              ),
+              finishedWorkoutsProvider.overrideWith(
+                () => _EmptyFinishedWorkoutsNotifier(),
+              ),
+              workoutsProvider.overrideWith(
+                () => _StubWorkoutsNotifier(workouts),
+              ),
+              programsProvider.overrideWith(
+                () => _StubProgramsNotifier(programs),
+              ),
+            ],
+            child: MaterialApp.router(routerConfig: router),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> tapText(WidgetTester tester, String text) async {
+        await tester.ensureVisible(find.text(text));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(text));
+        await tester.pumpAndSettle();
+      }
+
+      final workout = Workout(
+        id: 'w1',
+        userId: 'u1',
+        title: 'Leg day',
+        date: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+        workoutGroupId: 'g1',
+      );
+      final program = Program(
+        id: 'p1',
+        userId: 'u1',
+        name: 'Block 1',
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      );
+
+      testWidgets(
+        'no workouts or programs: offers to create the first of each',
+        (tester) async {
+          await pump(tester);
+
+          expect(find.text('Log your first workout'), findsOneWidget);
+          expect(find.text('Browse workouts'), findsNothing);
+          expect(find.text('Create your first program'), findsOneWidget);
+          expect(find.text('Browse programs'), findsNothing);
+
+          await tapText(tester, 'Log your first workout');
+          expect(find.text('new-workout'), findsOneWidget);
+        },
+      );
+
+      testWidgets('no programs: the CTA opens the new-program screen', (
+        tester,
+      ) async {
+        await pump(tester);
+        await tapText(tester, 'Create your first program');
+        expect(find.text('new-program'), findsOneWidget);
+      });
+
+      testWidgets('existing workouts and programs: offers to browse them', (
+        tester,
+      ) async {
+        await pump(tester, workouts: [workout], programs: [program]);
+
+        expect(find.text('Browse workouts'), findsOneWidget);
+        expect(find.text('Log your first workout'), findsNothing);
+        expect(find.text('Browse programs'), findsOneWidget);
+        expect(find.text('Create your first program'), findsNothing);
+
+        await tapText(tester, 'Browse workouts');
+        expect(find.text('workouts-tab'), findsOneWidget);
+      });
+    },
+  );
 }

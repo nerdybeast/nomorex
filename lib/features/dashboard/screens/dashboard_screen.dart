@@ -14,9 +14,11 @@ import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../personal_bests/providers/personal_bests_provider.dart';
 import '../../programs/providers/program_instances_list_provider.dart';
+import '../../programs/providers/programs_provider.dart';
 import '../../programs/utils/program_progress.dart';
 import '../../workouts/providers/finished_workouts_provider.dart';
 import '../../workouts/providers/in_progress_workouts_provider.dart';
+import '../../workouts/providers/workouts_provider.dart';
 import '../../workouts/widgets/elapsed_timer.dart';
 import '../../profile/providers/profile_provider.dart';
 
@@ -29,9 +31,16 @@ class DashboardScreen extends ConsumerWidget {
     final instancesAsync = ref.watch(currentProgramInstancesProvider);
     final inProgressWorkoutsAsync = ref.watch(inProgressWorkoutsProvider);
     final finishedWorkoutsAsync = ref.watch(finishedWorkoutsProvider);
+    // Only read by the empty states below, to pick "create your first" vs
+    // "browse". Not-yet-loaded counts as none, which is the safe default.
+    final hasWorkouts =
+        ref.watch(workoutsProvider).asData?.value.isNotEmpty ?? false;
+    final hasPrograms =
+        ref.watch(programsProvider).asData?.value.isNotEmpty ?? false;
     final unit = ref.watch(unitPreferenceProvider);
     final formula = ref.watch(oneRepMaxFormulaProvider);
-    final isRefreshing = inProgressWorkoutsAsync.isRefreshing ||
+    final isRefreshing =
+        inProgressWorkoutsAsync.isRefreshing ||
         instancesAsync.isRefreshing ||
         prsAsync.isRefreshing ||
         finishedWorkoutsAsync.isRefreshing;
@@ -45,7 +54,12 @@ class DashboardScreen extends ConsumerWidget {
       return asyncValue.hasError;
     }
 
-    final sections = [inProgressWorkoutsAsync, instancesAsync, prsAsync, finishedWorkoutsAsync];
+    final sections = [
+      inProgressWorkoutsAsync,
+      instancesAsync,
+      prsAsync,
+      finishedWorkoutsAsync,
+    ];
     final allSettled = sections.every((s) => s.hasValue || s.hasError);
     final showWelcome = allSettled && sections.every(isEmptyOrErrored);
 
@@ -66,7 +80,9 @@ class DashboardScreen extends ConsumerWidget {
                 ? null
                 : () {
                     ref.read(inProgressWorkoutsProvider.notifier).refresh();
-                    ref.read(currentProgramInstancesProvider.notifier).refresh();
+                    ref
+                        .read(currentProgramInstancesProvider.notifier)
+                        .refresh();
                     ref.read(personalBestsProvider.notifier).refresh();
                     ref.read(finishedWorkoutsProvider.notifier).refresh();
                   },
@@ -85,7 +101,10 @@ class DashboardScreen extends ConsumerWidget {
             const _DashboardWelcomeBanner(),
             const SizedBox(height: 24),
           ],
-          Text('WORKOUTS IN PROGRESS', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'WORKOUTS IN PROGRESS',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           inProgressWorkoutsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -95,10 +114,18 @@ class DashboardScreen extends ConsumerWidget {
             ),
             data: (workouts) {
               if (workouts.isEmpty) {
-                return const DashboardEmptyStateCard(
+                return DashboardEmptyStateCard(
                   icon: Icons.fitness_center_outlined,
                   title: 'No workouts currently in progress.',
-                  message: "Start a workout from the + button to see it here while it's active.",
+                  message: hasWorkouts
+                      ? 'Start one of your workouts to see it here while it\'s active.'
+                      : 'Create a workout to see it here while it\'s active.',
+                  ctaLabel: hasWorkouts
+                      ? 'Browse workouts'
+                      : 'Log your first workout',
+                  onCta: () => hasWorkouts
+                      ? context.go(AppConstants.routeWorkouts)
+                      : context.push(AppConstants.routeWorkoutNew),
                 );
               }
               return Column(
@@ -109,19 +136,28 @@ class DashboardScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: WorkoutInProgressCard(
                         title: workout.title,
-                        statusDisplay: workout.status == 'paused' ? 'Paused' : 'In progress',
+                        statusDisplay: workout.status == 'paused'
+                            ? 'Paused'
+                            : 'In progress',
                         // Ticks live for an in-progress workout and renders
                         // frozen for a paused one — ElapsedTimer handles both.
                         statusTrailing: ElapsedTimer(
                           startedAt: workout.startedAt!,
                           totalPausedSeconds: workout.totalPausedSeconds,
                           pausedAt: workout.pausedAt,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                fontFeatures: const [FontFeature.tabularFigures()],
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
                               ),
                         ),
-                        onTap: () => context.push(AppConstants.routeWorkoutDetail(workout.id)),
+                        onTap: () => context.push(
+                          AppConstants.routeWorkoutDetail(workout.id),
+                        ),
                       ),
                     ),
                 ],
@@ -129,7 +165,10 @@ class DashboardScreen extends ConsumerWidget {
             },
           ),
           const SizedBox(height: 24),
-          Text('CURRENT PROGRAMS', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'CURRENT PROGRAMS',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           instancesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -142,9 +181,15 @@ class DashboardScreen extends ConsumerWidget {
                 return DashboardEmptyStateCard(
                   icon: Icons.checklist_outlined,
                   title: 'No programs currently in progress.',
-                  message: 'Browse your programs to start one and track your progress.',
-                  ctaLabel: 'Browse programs',
-                  onCta: () => context.go(AppConstants.routePrograms),
+                  message: hasPrograms
+                      ? 'Browse your programs to start one and track your progress.'
+                      : 'Create a program to plan your training and track your progress.',
+                  ctaLabel: hasPrograms
+                      ? 'Browse programs'
+                      : 'Create your first program',
+                  onCta: () => hasPrograms
+                      ? context.go(AppConstants.routePrograms)
+                      : context.push(AppConstants.routeProgramNew),
                 );
               }
               return Column(
@@ -158,8 +203,9 @@ class DashboardScreen extends ConsumerWidget {
                         statusDisplay: isProgramUpcoming(instance.startedAt)
                             ? 'Upcoming — starts ${formatDate(instance.startedAt)}'
                             : 'In progress — started ${formatDate(instance.startedAt)}',
-                        onTap: () =>
-                            context.push(AppConstants.routeProgramInstanceDetail(instance.id)),
+                        onTap: () => context.push(
+                          AppConstants.routeProgramInstanceDetail(instance.id),
+                        ),
                       ),
                     ),
                 ],
@@ -185,7 +231,8 @@ class DashboardScreen extends ConsumerWidget {
                 return DashboardEmptyStateCard(
                   icon: Icons.emoji_events_outlined,
                   title: 'No PRs yet.',
-                  message: 'Log a personal best to start tracking your progress.',
+                  message:
+                      'Log a personal best to start tracking your progress.',
                   ctaLabel: 'Log your first PR',
                   onCta: () => context.push(AppConstants.routeAddPr),
                 );
@@ -198,14 +245,22 @@ class DashboardScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: PrCard(
                         exerciseName: pr.exerciseName,
-                        weightDisplay: formatWeightForPreference(pr.weightKg, unit),
+                        weightDisplay: formatWeightForPreference(
+                          pr.weightKg,
+                          unit,
+                        ),
                         reps: pr.reps,
                         dateDisplay: formatDate(pr.date),
                         notes: pr.notes,
                         notesMaxLines: 2,
-                        estimatedOneRepMaxDisplay:
-                            estimatedOneRepMaxLabel(pr, formula, unit),
-                        onTap: () => context.push(AppConstants.routePrHistory(pr.exerciseId)),
+                        estimatedOneRepMaxDisplay: estimatedOneRepMaxLabel(
+                          pr,
+                          formula,
+                          unit,
+                        ),
+                        onTap: () => context.push(
+                          AppConstants.routePrHistory(pr.exerciseId),
+                        ),
                       ),
                     ),
                 ],
@@ -213,7 +268,10 @@ class DashboardScreen extends ConsumerWidget {
             },
           ),
           const SizedBox(height: 24),
-          Text('RECENT WORKOUTS', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'RECENT WORKOUTS',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           finishedWorkoutsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -240,7 +298,9 @@ class DashboardScreen extends ConsumerWidget {
                         title: workout.title,
                         completedDisplay:
                             'Completed ${formatDate(workout.finishedAt!.toLocal())}',
-                        onTap: () => context.push(AppConstants.routeWorkoutDetail(workout.id)),
+                        onTap: () => context.push(
+                          AppConstants.routeWorkoutDetail(workout.id),
+                        ),
                       ),
                     ),
                 ],
@@ -283,12 +343,17 @@ class _DashboardWelcomeBanner extends StatelessWidget {
                 children: [
                   Text('GET STARTED', style: overline),
                   const SizedBox(height: 4),
-                  Text('Welcome to NoMoreX', style: theme.textTheme.headlineSmall),
+                  Text(
+                    'Welcome to NoMoreX',
+                    style: theme.textTheme.headlineSmall,
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     'Log a workout, hit a new PR, or start a program — your '
                     'dashboard will fill in as you go.',
-                    style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
