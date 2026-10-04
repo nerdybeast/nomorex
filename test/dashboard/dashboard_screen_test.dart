@@ -776,12 +776,12 @@ void main() {
         (tester) async {
           await pump(tester);
 
-          expect(find.text('Log your first workout'), findsOneWidget);
+          expect(find.text('Create your first workout'), findsOneWidget);
           expect(find.text('Browse workouts'), findsNothing);
           expect(find.text('Create your first program'), findsOneWidget);
           expect(find.text('Browse programs'), findsNothing);
 
-          await tapText(tester, 'Log your first workout');
+          await tapText(tester, 'Create your first workout');
           expect(find.text('new-workout'), findsOneWidget);
         },
       );
@@ -800,7 +800,7 @@ void main() {
         await pump(tester, workouts: [workout], programs: [program]);
 
         expect(find.text('Browse workouts'), findsOneWidget);
-        expect(find.text('Log your first workout'), findsNothing);
+        expect(find.text('Create your first workout'), findsNothing);
         expect(find.text('Browse programs'), findsOneWidget);
         expect(find.text('Create your first program'), findsNothing);
 

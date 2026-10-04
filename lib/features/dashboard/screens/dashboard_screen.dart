@@ -122,7 +122,7 @@ class DashboardScreen extends ConsumerWidget {
                       : 'Create a workout to see it here while it\'s active.',
                   ctaLabel: hasWorkouts
                       ? 'Browse workouts'
-                      : 'Log your first workout',
+                      : 'Create your first workout',
                   onCta: () => hasWorkouts
                       ? context.go(AppConstants.routeWorkouts)
                       : context.push(AppConstants.routeWorkoutNew),
