@@ -28,23 +28,26 @@ class _StubWorkoutDetailNotifier extends WorkoutDetailNotifier {
 }
 
 void main() {
-  testWidgets('WorkoutsScreen renders no FAB of its own (the shell "+" is the only one)', (
+  testWidgets(
+    'WorkoutsScreen renders no FAB of its own (the shell "+" is the only one)',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutsProvider.overrideWith(() => _EmptyWorkoutsNotifier()),
+          ],
+          child: const MaterialApp(home: WorkoutsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FloatingActionButton), findsNothing);
+    },
+  );
+
+  testWidgets('EditWorkoutScreen FAB declares a non-default heroTag', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutsProvider.overrideWith(() => _EmptyWorkoutsNotifier()),
-        ],
-        child: const MaterialApp(home: WorkoutsScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.byType(FloatingActionButton), findsNothing);
-  });
-
-  testWidgets('EditWorkoutScreen FAB declares a non-default heroTag', (tester) async {
     final workout = Workout(
       id: 'w1',
       userId: 'u1',
@@ -56,8 +59,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          workoutDetailProvider('w1')
-              .overrideWith(() => _StubWorkoutDetailNotifier(workout)),
+          workoutDetailProvider(
+            'w1',
+          ).overrideWith(() => _StubWorkoutDetailNotifier(workout)),
           unitPreferenceProvider.overrideWithValue('kg'),
         ],
         child: const MaterialApp(home: EditWorkoutScreen(workoutId: 'w1')),

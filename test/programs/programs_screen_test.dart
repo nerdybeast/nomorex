@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nomorex/core/constants/app_constants.dart';
 import 'package:nomorex/features/programs/models/program.dart';
 import 'package:nomorex/features/programs/models/program_day.dart';
 import 'package:nomorex/features/programs/models/program_week.dart';
@@ -41,62 +43,75 @@ class _RecordingArchivedProgramsNotifier extends ArchivedProgramsNotifier {
 }
 
 Program _program(String id, String name, {String? description}) => Program(
-      id: id,
-      userId: 'u1',
-      name: name,
-      description: description,
-      createdAt: DateTime(2026, 8, 1),
-      updatedAt: DateTime(2026, 8, 1),
-    );
+  id: id,
+  userId: 'u1',
+  name: name,
+  description: description,
+  createdAt: DateTime(2026, 8, 1),
+  updatedAt: DateTime(2026, 8, 1),
+);
 
 void main() {
-  testWidgets('a program card shows weeks and training days (rest days excluded)', (tester) async {
-    ProgramDay day(String id, {bool rest = false}) => ProgramDay(
-          id: id,
-          programWeekId: 'w1',
-          dayNumber: 1,
-          title: 'Day',
-          position: 0,
-          isRestDay: rest,
-        );
-    final program = Program(
-      id: 'p1',
-      userId: 'u1',
-      name: 'Squat Block',
-      createdAt: DateTime(2026, 8, 1),
-      updatedAt: DateTime(2026, 8, 1),
-      weeks: [
-        ProgramWeek(
-          id: 'w1',
-          programId: 'p1',
-          weekNumber: 1,
-          position: 0,
-          days: [day('d1'), day('d2'), day('d3', rest: true)],
-        ),
-      ],
-    );
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          programsProvider.overrideWith(() => _StubProgramsNotifier([program])),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+  testWidgets(
+    'a program card shows weeks and training days (rest days excluded)',
+    (tester) async {
+      ProgramDay day(String id, {bool rest = false}) => ProgramDay(
+        id: id,
+        programWeekId: 'w1',
+        dayNumber: 1,
+        title: 'Day',
+        position: 0,
+        isRestDay: rest,
+      );
+      final program = Program(
+        id: 'p1',
+        userId: 'u1',
+        name: 'Squat Block',
+        createdAt: DateTime(2026, 8, 1),
+        updatedAt: DateTime(2026, 8, 1),
+        weeks: [
+          ProgramWeek(
+            id: 'w1',
+            programId: 'p1',
+            weekNumber: 1,
+            position: 0,
+            days: [day('d1'), day('d2'), day('d3', rest: true)],
+          ),
         ],
-        child: const MaterialApp(home: ProgramsScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            programsProvider.overrideWith(
+              () => _StubProgramsNotifier([program]),
+            ),
+            currentProgramInstancesProvider.overrideWith(
+              () => _EmptyProgramInstancesNotifier(),
+            ),
+          ],
+          child: const MaterialApp(home: ProgramsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('1 week'), findsOneWidget);
-    expect(find.text('2 training days'), findsOneWidget);
-  });
+      expect(find.text('1 week'), findsOneWidget);
+      expect(find.text('2 training days'), findsOneWidget);
+    },
+  );
 
-  testWidgets('no programs shows an empty-state card pointing at the + button', (tester) async {
+  testWidgets('no programs shows an empty-state card with a create button', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           programsProvider.overrideWith(() => _StubProgramsNotifier(const [])),
-          archivedProgramsProvider.overrideWith(() => _RecordingArchivedProgramsNotifier(() {})),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+          archivedProgramsProvider.overrideWith(
+            () => _RecordingArchivedProgramsNotifier(() {}),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
         ],
         child: const MaterialApp(home: ProgramsScreen()),
       ),
@@ -105,16 +120,58 @@ void main() {
 
     expect(find.byType(DashboardEmptyStateCard), findsOneWidget);
     expect(find.text('No programs yet.'), findsOneWidget);
-    expect(find.textContaining('+ button'), findsOneWidget);
+    expect(find.text('Create your first program'), findsOneWidget);
   });
 
-  testWidgets('the archived view shows its own empty-state card', (tester) async {
+  testWidgets('the empty-state button opens the new-program route', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const ProgramsScreen()),
+        GoRoute(
+          path: AppConstants.routeProgramNew,
+          builder: (_, _) => const Text('new-program-screen'),
+        ),
+      ],
+    );
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           programsProvider.overrideWith(() => _StubProgramsNotifier(const [])),
-          archivedProgramsProvider.overrideWith(() => _RecordingArchivedProgramsNotifier(() {})),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+          archivedProgramsProvider.overrideWith(
+            () => _RecordingArchivedProgramsNotifier(() {}),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Create your first program'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create your first program'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('new-program-screen'), findsOneWidget);
+  });
+
+  testWidgets('the archived view shows its own empty-state card', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          programsProvider.overrideWith(() => _StubProgramsNotifier(const [])),
+          archivedProgramsProvider.overrideWith(
+            () => _RecordingArchivedProgramsNotifier(() {}),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
         ],
         child: const MaterialApp(home: ProgramsScreen()),
       ),
@@ -126,58 +183,81 @@ void main() {
 
     expect(find.byType(DashboardEmptyStateCard), findsOneWidget);
     expect(find.text('No archived programs.'), findsOneWidget);
+    expect(find.text('Create your first program'), findsNothing);
   });
 
-  testWidgets('a description longer than 200 characters is truncated with an ellipsis', (
+  testWidgets(
+    'a description longer than 200 characters is truncated with an ellipsis',
+    (tester) async {
+      final longDescription = 'A' * 250;
+      final programs = [
+        _program('p1', 'Long Program', description: longDescription),
+      ];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            programsProvider.overrideWith(
+              () => _StubProgramsNotifier(programs),
+            ),
+            currentProgramInstancesProvider.overrideWith(
+              () => _EmptyProgramInstancesNotifier(),
+            ),
+          ],
+          child: const MaterialApp(home: ProgramsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final expectedPreview = '${'A' * 200}...';
+      expect(find.text(expectedPreview), findsOneWidget);
+      expect(find.text(longDescription), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'a program with no description shows an italicized, faded placeholder',
+    (tester) async {
+      final programs = [_program('p1', 'Bare Program')];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            programsProvider.overrideWith(
+              () => _StubProgramsNotifier(programs),
+            ),
+            currentProgramInstancesProvider.overrideWith(
+              () => _EmptyProgramInstancesNotifier(),
+            ),
+          ],
+          child: const MaterialApp(home: ProgramsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final placeholder = tester.widget<Text>(find.text('No Description.'));
+      expect(placeholder.style?.fontStyle, FontStyle.italic);
+
+      final context = tester.element(find.text('No Description.'));
+      final colorScheme = Theme.of(context).colorScheme;
+      expect(placeholder.style?.color, colorScheme.onSurfaceVariant);
+    },
+  );
+
+  testWidgets('search filters programs by name and by description', (
     tester,
   ) async {
-    final longDescription = 'A' * 250;
-    final programs = [_program('p1', 'Long Program', description: longDescription)];
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          programsProvider.overrideWith(() => _StubProgramsNotifier(programs)),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-        ],
-        child: const MaterialApp(home: ProgramsScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    final expectedPreview = '${'A' * 200}...';
-    expect(find.text(expectedPreview), findsOneWidget);
-    expect(find.text(longDescription), findsNothing);
-  });
-
-  testWidgets('a program with no description shows an italicized, faded placeholder', (
-    tester,
-  ) async {
-    final programs = [_program('p1', 'Bare Program')];
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          programsProvider.overrideWith(() => _StubProgramsNotifier(programs)),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-        ],
-        child: const MaterialApp(home: ProgramsScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    final placeholder = tester.widget<Text>(find.text('No Description.'));
-    expect(placeholder.style?.fontStyle, FontStyle.italic);
-
-    final context = tester.element(find.text('No Description.'));
-    final colorScheme = Theme.of(context).colorScheme;
-    expect(placeholder.style?.color, colorScheme.onSurfaceVariant);
-  });
-
-  testWidgets('search filters programs by name and by description', (tester) async {
     final programs = [
-      _program('p1', 'Powerlifting Block', description: 'Squat, bench, deadlift focus.'),
-      _program('p2', 'Hypertrophy Plan', description: 'High volume accessory work.'),
+      _program(
+        'p1',
+        'Powerlifting Block',
+        description: 'Squat, bench, deadlift focus.',
+      ),
+      _program(
+        'p2',
+        'Hypertrophy Plan',
+        description: 'High volume accessory work.',
+      ),
       _program('p3', 'Deload Week', description: null),
     ];
 
@@ -185,7 +265,9 @@ void main() {
       ProviderScope(
         overrides: [
           programsProvider.overrideWith(() => _StubProgramsNotifier(programs)),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
         ],
         child: const MaterialApp(home: ProgramsScreen()),
       ),
@@ -216,14 +298,20 @@ void main() {
     expect(find.text('No programs match your search.'), findsOneWidget);
   });
 
-  testWidgets('tapping the refresh icon refreshes the active programs list', (tester) async {
+  testWidgets('tapping the refresh icon refreshes the active programs list', (
+    tester,
+  ) async {
     var refreshed = false;
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          programsProvider.overrideWith(() => _RecordingProgramsNotifier(() => refreshed = true)),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+          programsProvider.overrideWith(
+            () => _RecordingProgramsNotifier(() => refreshed = true),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
         ],
         child: const MaterialApp(home: ProgramsScreen()),
       ),
@@ -236,35 +324,40 @@ void main() {
     expect(refreshed, isTrue);
   });
 
-  testWidgets('tapping the refresh icon while viewing archived refreshes the archived list', (
-    tester,
-  ) async {
-    var activeRefreshed = false;
-    var archivedRefreshed = false;
+  testWidgets(
+    'tapping the refresh icon while viewing archived refreshes the archived list',
+    (tester) async {
+      var activeRefreshed = false;
+      var archivedRefreshed = false;
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          programsProvider.overrideWith(
-            () => _RecordingProgramsNotifier(() => activeRefreshed = true),
-          ),
-          archivedProgramsProvider.overrideWith(
-            () => _RecordingArchivedProgramsNotifier(() => archivedRefreshed = true),
-          ),
-          currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
-        ],
-        child: const MaterialApp(home: ProgramsScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            programsProvider.overrideWith(
+              () => _RecordingProgramsNotifier(() => activeRefreshed = true),
+            ),
+            archivedProgramsProvider.overrideWith(
+              () => _RecordingArchivedProgramsNotifier(
+                () => archivedRefreshed = true,
+              ),
+            ),
+            currentProgramInstancesProvider.overrideWith(
+              () => _EmptyProgramInstancesNotifier(),
+            ),
+          ],
+          child: const MaterialApp(home: ProgramsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.archive_outlined));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.archive_outlined));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.refresh));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.refresh));
+      await tester.pumpAndSettle();
 
-    expect(archivedRefreshed, isTrue);
-    expect(activeRefreshed, isFalse);
-  });
+      expect(archivedRefreshed, isTrue);
+      expect(activeRefreshed, isFalse);
+    },
+  );
 }

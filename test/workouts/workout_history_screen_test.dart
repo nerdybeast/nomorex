@@ -35,30 +35,51 @@ Workout _finished({
 }
 
 void main() {
-  testWidgets('shows an empty state when nothing has been completed yet', (tester) async {
+  testWidgets('shows an empty state when nothing has been completed yet', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
+          finishedWorkoutsProvider.overrideWith(
+            () => _StubFinishedWorkoutsNotifier(const []),
+          ),
         ],
         child: const MaterialApp(home: WorkoutHistoryScreen()),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text("You haven't completed any workouts yet."), findsOneWidget);
+    expect(
+      find.text("You haven't completed any workouts yet."),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('unfiltered: lists every completed workout, newest first', (tester) async {
+  testWidgets('unfiltered: lists every completed workout, newest first', (
+    tester,
+  ) async {
     final workouts = [
-      _finished(id: 'w2', groupId: 'g2', title: 'Pull Day', finishedAt: DateTime(2026, 8, 12)),
-      _finished(id: 'w1', groupId: 'g1', title: 'Push Day', finishedAt: DateTime(2026, 8, 5)),
+      _finished(
+        id: 'w2',
+        groupId: 'g2',
+        title: 'Pull Day',
+        finishedAt: DateTime(2026, 8, 12),
+      ),
+      _finished(
+        id: 'w1',
+        groupId: 'g1',
+        title: 'Push Day',
+        finishedAt: DateTime(2026, 8, 5),
+      ),
     ];
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(workouts)),
+          finishedWorkoutsProvider.overrideWith(
+            () => _StubFinishedWorkoutsNotifier(workouts),
+          ),
         ],
         child: const MaterialApp(home: WorkoutHistoryScreen()),
       ),
@@ -76,104 +97,152 @@ void main() {
     expect(pullTop, lessThan(pushTop));
   });
 
-  testWidgets('filtered by groupId: shows only matching completions, with a clear filter action',
-      (tester) async {
-    final workouts = [
-      _finished(id: 'w1', groupId: 'g1', title: 'Push Day', finishedAt: DateTime(2026, 8, 12)),
-      _finished(id: 'w1b', groupId: 'g1', title: 'Push Day', finishedAt: DateTime(2026, 8, 5)),
-      _finished(id: 'w2', groupId: 'g2', title: 'Pull Day', finishedAt: DateTime(2026, 8, 10)),
-    ];
+  testWidgets(
+    'filtered by groupId: shows only matching completions, with a clear filter action',
+    (tester) async {
+      final workouts = [
+        _finished(
+          id: 'w1',
+          groupId: 'g1',
+          title: 'Push Day',
+          finishedAt: DateTime(2026, 8, 12),
+        ),
+        _finished(
+          id: 'w1b',
+          groupId: 'g1',
+          title: 'Push Day',
+          finishedAt: DateTime(2026, 8, 5),
+        ),
+        _finished(
+          id: 'w2',
+          groupId: 'g2',
+          title: 'Pull Day',
+          finishedAt: DateTime(2026, 8, 10),
+        ),
+      ];
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(workouts)),
-        ],
-        child: const MaterialApp(home: WorkoutHistoryScreen(initialGroupId: 'g1')),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(workouts),
+            ),
+          ],
+          child: const MaterialApp(
+            home: WorkoutHistoryScreen(initialGroupId: 'g1'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Push Day'), findsNWidgets(2));
-    expect(find.text('Pull Day'), findsNothing);
-    expect(find.textContaining('Filtering: Push Day'), findsOneWidget);
+      expect(find.text('Push Day'), findsNWidgets(2));
+      expect(find.text('Pull Day'), findsNothing);
+      expect(find.textContaining('Filtering: Push Day'), findsOneWidget);
 
-    await tester.tap(find.text('Clear filter'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Clear filter'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Push Day'), findsNWidgets(2));
-    expect(find.text('Pull Day'), findsOneWidget);
-    expect(find.textContaining('Filtering:'), findsNothing);
-  });
+      expect(find.text('Push Day'), findsNWidgets(2));
+      expect(find.text('Pull Day'), findsOneWidget);
+      expect(find.textContaining('Filtering:'), findsNothing);
+    },
+  );
 
-  testWidgets('filtered with no matching completions shows the filtered empty state',
-      (tester) async {
-    final workouts = [
-      _finished(id: 'w2', groupId: 'g2', title: 'Pull Day', finishedAt: DateTime(2026, 8, 10)),
-    ];
+  testWidgets(
+    'filtered with no matching completions shows the filtered empty state',
+    (tester) async {
+      final workouts = [
+        _finished(
+          id: 'w2',
+          groupId: 'g2',
+          title: 'Pull Day',
+          finishedAt: DateTime(2026, 8, 10),
+        ),
+      ];
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(workouts)),
-        ],
-        // No workout with groupId 'g1' remains finished (e.g. it was
-        // discarded), so the filtered view has nothing to show even though
-        // unfiltered history is non-empty.
-        child: const MaterialApp(home: WorkoutHistoryScreen(initialGroupId: 'g1')),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(workouts),
+            ),
+          ],
+          // No workout with groupId 'g1' remains finished (e.g. it was
+          // discarded), so the filtered view has nothing to show even though
+          // unfiltered history is non-empty.
+          child: const MaterialApp(
+            home: WorkoutHistoryScreen(initialGroupId: 'g1'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('No completed sessions of this workout yet.'), findsOneWidget);
-  });
+      expect(
+        find.text('No completed sessions of this workout yet.'),
+        findsOneWidget,
+      );
+    },
+  );
 
-  testWidgets('shows completion date, duration, and typed notes for each entry',
-      (tester) async {
-    final workouts = [
-      _finished(
-        id: 'w1',
-        groupId: 'g1',
-        title: 'Push Day',
-        finishedAt: DateTime(2026, 8, 12),
-        duration: const Duration(hours: 1, minutes: 15, seconds: 30),
-        sessionNotes: 'Felt strong today',
-      ),
-    ];
+  testWidgets(
+    'shows completion date, duration, and typed notes for each entry',
+    (tester) async {
+      final workouts = [
+        _finished(
+          id: 'w1',
+          groupId: 'g1',
+          title: 'Push Day',
+          finishedAt: DateTime(2026, 8, 12),
+          duration: const Duration(hours: 1, minutes: 15, seconds: 30),
+          sessionNotes: 'Felt strong today',
+        ),
+      ];
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(workouts)),
-        ],
-        child: const MaterialApp(home: WorkoutHistoryScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(workouts),
+            ),
+          ],
+          child: const MaterialApp(home: WorkoutHistoryScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.textContaining('Completed'), findsOneWidget);
-    expect(find.text('Duration: 01:15:30'), findsOneWidget);
-    expect(find.text('Felt strong today'), findsOneWidget);
-    expect(find.text('No Notes Provided'), findsNothing);
-  });
+      expect(find.textContaining('Completed'), findsOneWidget);
+      expect(find.text('Duration: 01:15:30'), findsOneWidget);
+      expect(find.text('Felt strong today'), findsOneWidget);
+      expect(find.text('No Notes Provided'), findsNothing);
+    },
+  );
 
-  testWidgets('shows italicized "No Notes Provided" when no notes were entered',
-      (tester) async {
-    final workouts = [
-      _finished(id: 'w1', groupId: 'g1', title: 'Push Day', finishedAt: DateTime(2026, 8, 12)),
-    ];
+  testWidgets(
+    'shows italicized "No Notes Provided" when no notes were entered',
+    (tester) async {
+      final workouts = [
+        _finished(
+          id: 'w1',
+          groupId: 'g1',
+          title: 'Push Day',
+          finishedAt: DateTime(2026, 8, 12),
+        ),
+      ];
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(workouts)),
-        ],
-        child: const MaterialApp(home: WorkoutHistoryScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(workouts),
+            ),
+          ],
+          child: const MaterialApp(home: WorkoutHistoryScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    final noNotes = tester.widget<Text>(find.text('No Notes Provided'));
-    expect(noNotes.style?.fontStyle, FontStyle.italic);
-  });
+      final noNotes = tester.widget<Text>(find.text('No Notes Provided'));
+      expect(noNotes.style?.fontStyle, FontStyle.italic);
+    },
+  );
 }

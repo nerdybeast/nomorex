@@ -23,48 +23,48 @@ class _StubProgramDetailNotifier extends ProgramDetailNotifier {
 /// the *owner's* — a viewer browsing this as a public program has their own,
 /// different id for the same lift.
 Program _program() => Program(
-      id: 'p1',
-      userId: 'other-user',
-      name: 'Squat Block',
-      createdAt: DateTime(2026, 7, 1),
-      updatedAt: DateTime(2026, 7, 1),
-      weeks: [
-        ProgramWeek(
-          id: 'wk1',
-          programId: 'p1',
-          weekNumber: 1,
+  id: 'p1',
+  userId: 'other-user',
+  name: 'Squat Block',
+  createdAt: DateTime(2026, 7, 1),
+  updatedAt: DateTime(2026, 7, 1),
+  weeks: [
+    ProgramWeek(
+      id: 'wk1',
+      programId: 'p1',
+      weekNumber: 1,
+      position: 0,
+      days: const [
+        ProgramDay(
+          id: 'd1',
+          programWeekId: 'wk1',
+          dayNumber: 1,
+          title: 'Day 1',
           position: 0,
-          days: const [
-            ProgramDay(
-              id: 'd1',
-              programWeekId: 'wk1',
-              dayNumber: 1,
-              title: 'Day 1',
+          exercises: [
+            ProgramExercise(
+              id: 'pe1',
+              programDayId: 'd1',
+              exerciseId: 'owner-e1',
+              exerciseName: 'Back Squat',
               position: 0,
-              exercises: [
-                ProgramExercise(
-                  id: 'pe1',
-                  programDayId: 'd1',
-                  exerciseId: 'owner-e1',
-                  exerciseName: 'Back Squat',
+              sets: [
+                ProgramSet(
+                  id: 'ps1',
+                  programExerciseId: 'pe1',
                   position: 0,
-                  sets: [
-                    ProgramSet(
-                      id: 'ps1',
-                      programExerciseId: 'pe1',
-                      position: 0,
-                      weightMode: 'percentage',
-                      targetReps: 5,
-                      percentage: 80,
-                    ),
-                  ],
+                  weightMode: 'percentage',
+                  targetReps: 5,
+                  percentage: 80,
                 ),
               ],
             ),
           ],
         ),
       ],
-    );
+    ),
+  ],
+);
 
 Future<void> _pump(
   WidgetTester tester, {
@@ -74,7 +74,9 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        programDetailProvider('p1').overrideWith(() => _StubProgramDetailNotifier(_program())),
+        programDetailProvider(
+          'p1',
+        ).overrideWith(() => _StubProgramDetailNotifier(_program())),
         oneRepMaxProvider.overrideWith((ref) async => oneRepMaxes),
         oneRepMaxByNameProvider.overrideWith((ref) async => oneRepMaxesByName),
         unitPreferenceProvider.overrideWithValue('kg'),
@@ -88,25 +90,36 @@ Future<void> _pump(
 }
 
 void main() {
-  testWidgets('resolves a percentage set against the viewer 1RM matched by id',
-      (tester) async {
-    await _pump(tester, oneRepMaxes: const {'owner-e1': OneRepMax.measured(100)});
+  testWidgets(
+    'resolves a percentage set against the viewer 1RM matched by id',
+    (tester) async {
+      await _pump(
+        tester,
+        oneRepMaxes: const {'owner-e1': OneRepMax.measured(100)},
+      );
 
-    expect(find.textContaining('5 reps · 80% of 1RM'), findsOneWidget);
-    expect(find.textContaining('80 kg'), findsOneWidget);
-  });
+      expect(find.textContaining('5 reps · 80% of 1RM'), findsOneWidget);
+      expect(find.textContaining('80 kg'), findsOneWidget);
+    },
+  );
 
   testWidgets(
-      'resolves by exercise name when the viewer has their own id for the same lift',
-      (tester) async {
-    // The viewer's PR hangs off *their* exercise row, so nothing matches by id.
-    // Without the name fallback this set would render as unresolvable forever.
-    await _pump(tester, oneRepMaxesByName: const {'back squat': OneRepMax.measured(100)});
+    'resolves by exercise name when the viewer has their own id for the same lift',
+    (tester) async {
+      // The viewer's PR hangs off *their* exercise row, so nothing matches by id.
+      // Without the name fallback this set would render as unresolvable forever.
+      await _pump(
+        tester,
+        oneRepMaxesByName: const {'back squat': OneRepMax.measured(100)},
+      );
 
-    expect(find.textContaining('80 kg'), findsOneWidget);
-  });
+      expect(find.textContaining('80 kg'), findsOneWidget);
+    },
+  );
 
-  testWidgets('shows no resolved weight when the viewer has no 1RM at all', (tester) async {
+  testWidgets('shows no resolved weight when the viewer has no 1RM at all', (
+    tester,
+  ) async {
     await _pump(tester);
 
     expect(find.textContaining('5 reps · 80% of 1RM'), findsOneWidget);

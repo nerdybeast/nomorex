@@ -38,82 +38,88 @@ class _StubWorkoutDetailNotifier extends WorkoutDetailNotifier {
 }
 
 void main() {
-  testWidgets('toggling the Public switch calls updateVisibility with the flipped value',
-      (tester) async {
-    final workout = Workout(
-      id: 'w1',
-      userId: 'u1',
-      title: 'Day 1',
-      date: DateTime(2026, 7, 5),
-      updatedAt: DateTime(2026, 7, 5),
-      workoutGroupId: 'g1',
-      isPublic: false,
-    );
-    bool? toggledTo;
+  testWidgets(
+    'toggling the Public switch calls updateVisibility with the flipped value',
+    (tester) async {
+      final workout = Workout(
+        id: 'w1',
+        userId: 'u1',
+        title: 'Day 1',
+        date: DateTime(2026, 7, 5),
+        updatedAt: DateTime(2026, 7, 5),
+        workoutGroupId: 'g1',
+        isPublic: false,
+      );
+      bool? toggledTo;
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutDetailProvider('w1').overrideWith(
-            () => _StubWorkoutDetailNotifier(
-              workout,
-              onUpdateVisibility: (v) => toggledTo = v,
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutDetailProvider('w1').overrideWith(
+              () => _StubWorkoutDetailNotifier(
+                workout,
+                onUpdateVisibility: (v) => toggledTo = v,
+              ),
             ),
-          ),
-          unitPreferenceProvider.overrideWithValue('kg'),
-        ],
-        child: const MaterialApp(home: EditWorkoutScreen(workoutId: 'w1')),
-      ),
-    );
-    await tester.pumpAndSettle();
+            unitPreferenceProvider.overrideWithValue('kg'),
+          ],
+          child: const MaterialApp(home: EditWorkoutScreen(workoutId: 'w1')),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    final switchWidget = tester.widget<Switch>(find.byType(Switch));
-    expect(switchWidget.value, isFalse);
+      final switchWidget = tester.widget<Switch>(find.byType(Switch));
+      expect(switchWidget.value, isFalse);
 
-    await tester.tap(find.byType(Switch));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
 
-    expect(toggledTo, isTrue);
-  });
+      expect(toggledTo, isTrue);
+    },
+  );
 
-  testWidgets('submitting the Title field calls updateTitle with the trimmed value',
-      (tester) async {
-    final workout = Workout(
-      id: 'w1',
-      userId: 'u1',
-      title: 'Day 1',
-      date: DateTime(2026, 7, 5),
-      updatedAt: DateTime(2026, 7, 5),
-      workoutGroupId: 'g1',
-    );
-    String? updatedTitle;
+  testWidgets(
+    'submitting the Title field calls updateTitle with the trimmed value',
+    (tester) async {
+      final workout = Workout(
+        id: 'w1',
+        userId: 'u1',
+        title: 'Day 1',
+        date: DateTime(2026, 7, 5),
+        updatedAt: DateTime(2026, 7, 5),
+        workoutGroupId: 'g1',
+      );
+      String? updatedTitle;
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutDetailProvider('w1').overrideWith(
-            () => _StubWorkoutDetailNotifier(
-              workout,
-              onUpdateTitle: (v) => updatedTitle = v,
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutDetailProvider('w1').overrideWith(
+              () => _StubWorkoutDetailNotifier(
+                workout,
+                onUpdateTitle: (v) => updatedTitle = v,
+              ),
             ),
-          ),
-          unitPreferenceProvider.overrideWithValue('kg'),
-        ],
-        child: const MaterialApp(home: EditWorkoutScreen(workoutId: 'w1')),
-      ),
-    );
-    await tester.pumpAndSettle();
+            unitPreferenceProvider.overrideWithValue('kg'),
+          ],
+          child: const MaterialApp(home: EditWorkoutScreen(workoutId: 'w1')),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    // The Title field is the first TextFormField on the screen (Description
-    // is second); there are no exercises in this stub workout to add more.
-    await tester.enterText(find.byType(TextFormField).at(0), '  Heavy Day  ');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
+      // The Title field is the first TextFormField on the screen (Description
+      // is second); there are no exercises in this stub workout to add more.
+      await tester.enterText(find.byType(TextFormField).at(0), '  Heavy Day  ');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
 
-    expect(updatedTitle, 'Heavy Day');
-  });
+      expect(updatedTitle, 'Heavy Day');
+    },
+  );
 
-  testWidgets('submitting a blank Title does not call updateTitle', (tester) async {
+  testWidgets('submitting a blank Title does not call updateTitle', (
+    tester,
+  ) async {
     final workout = Workout(
       id: 'w1',
       userId: 'u1',
@@ -147,7 +153,9 @@ void main() {
     expect(called, isFalse);
   });
 
-  testWidgets('submitting the Description field calls updateDescription', (tester) async {
+  testWidgets('submitting the Description field calls updateDescription', (
+    tester,
+  ) async {
     final workout = Workout(
       id: 'w1',
       userId: 'u1',
@@ -174,7 +182,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).at(1), 'Heavy squat day, build to a 3RM');
+    await tester.enterText(
+      find.byType(TextFormField).at(1),
+      'Heavy squat day, build to a 3RM',
+    );
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 

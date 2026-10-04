@@ -11,7 +11,8 @@ class _StubWorkoutsNotifier extends WorkoutsNotifier {
     required String title,
     String? notes,
     required bool isPublic,
-  }) onCreateWorkout;
+  })
+  onCreateWorkout;
 
   @override
   Future<List<Workout>> build() async => const [];
@@ -34,7 +35,11 @@ void main() {
       ProviderScope(
         overrides: [
           workoutsProvider.overrideWith(
-            () => _StubWorkoutsNotifier(({required title, notes, required isPublic}) async {
+            () => _StubWorkoutsNotifier(({
+              required title,
+              notes,
+              required isPublic,
+            }) async {
               called = true;
               return 'new-id';
             }),
@@ -49,64 +54,79 @@ void main() {
     expect(called, isFalse);
   });
 
-  testWidgets('tapping Save with a blank title falls back to the default name',
-      (tester) async {
-    String? capturedTitle;
+  testWidgets(
+    'tapping Save with a blank title falls back to the default name',
+    (tester) async {
+      String? capturedTitle;
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutsProvider.overrideWith(
-            () => _StubWorkoutsNotifier(({required title, notes, required isPublic}) async {
-              capturedTitle = title;
-              return 'new-id';
-            }),
-          ),
-          nextWorkoutNameProvider.overrideWith((ref) async => 'Workout 3'),
-        ],
-        child: const MaterialApp(home: NewWorkoutScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutsProvider.overrideWith(
+              () => _StubWorkoutsNotifier(({
+                required title,
+                notes,
+                required isPublic,
+              }) async {
+                capturedTitle = title;
+                return 'new-id';
+              }),
+            ),
+            nextWorkoutNameProvider.overrideWith((ref) async => 'Workout 3'),
+          ],
+          child: const MaterialApp(home: NewWorkoutScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
 
-    expect(capturedTitle, 'Workout 3');
-  });
+      expect(capturedTitle, 'Workout 3');
+    },
+  );
 
-  testWidgets('tapping Save with a title creates the workout with entered fields',
-      (tester) async {
-    String? capturedTitle;
-    String? capturedNotes;
-    bool? capturedIsPublic;
+  testWidgets(
+    'tapping Save with a title creates the workout with entered fields',
+    (tester) async {
+      String? capturedTitle;
+      String? capturedNotes;
+      bool? capturedIsPublic;
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutsProvider.overrideWith(
-            () => _StubWorkoutsNotifier(({required title, notes, required isPublic}) async {
-              capturedTitle = title;
-              capturedNotes = notes;
-              capturedIsPublic = isPublic;
-              return 'new-id';
-            }),
-          ),
-          nextWorkoutNameProvider.overrideWith((ref) async => 'Workout 3'),
-        ],
-        child: const MaterialApp(home: NewWorkoutScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutsProvider.overrideWith(
+              () => _StubWorkoutsNotifier(({
+                required title,
+                notes,
+                required isPublic,
+              }) async {
+                capturedTitle = title;
+                capturedNotes = notes;
+                capturedIsPublic = isPublic;
+                return 'new-id';
+              }),
+            ),
+            nextWorkoutNameProvider.overrideWith((ref) async => 'Workout 3'),
+          ],
+          child: const MaterialApp(home: NewWorkoutScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).at(0), '  Heavy Day  ');
-    await tester.enterText(find.byType(TextFormField).at(1), 'Build to a heavy triple');
-    await tester.tap(find.byType(Switch));
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
-    await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(0), '  Heavy Day  ');
+      await tester.enterText(
+        find.byType(TextFormField).at(1),
+        'Build to a heavy triple',
+      );
+      await tester.tap(find.byType(Switch));
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
 
-    expect(capturedTitle, 'Heavy Day');
-    expect(capturedNotes, 'Build to a heavy triple');
-    expect(capturedIsPublic, isTrue);
-  });
+      expect(capturedTitle, 'Heavy Day');
+      expect(capturedNotes, 'Build to a heavy triple');
+      expect(capturedIsPublic, isTrue);
+    },
+  );
 }

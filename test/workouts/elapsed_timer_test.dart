@@ -4,14 +4,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/features/workouts/widgets/elapsed_timer.dart';
 
 void main() {
-  testWidgets('running timer advances only when a tick is received', (tester) async {
+  testWidgets('running timer advances only when a tick is received', (
+    tester,
+  ) async {
     final ticks = StreamController<void>();
     addTearDown(ticks.close);
     final startedAt = DateTime.now().subtract(const Duration(seconds: 5));
 
     await tester.pumpWidget(
       MaterialApp(
-        home: ElapsedTimer(startedAt: startedAt, totalPausedSeconds: 0, ticks: ticks.stream),
+        home: ElapsedTimer(
+          startedAt: startedAt,
+          totalPausedSeconds: 0,
+          ticks: ticks.stream,
+        ),
       ),
     );
 
@@ -27,37 +33,43 @@ void main() {
     expect(secondRender, isNotNull);
   });
 
-  testWidgets('paused timer renders a static value and never subscribes to ticks',
-      (tester) async {
-    final ticks = StreamController<void>.broadcast();
-    addTearDown(ticks.close);
-    final startedAt = DateTime(2026, 8, 11, 10, 0, 0);
-    final pausedAt = startedAt.add(const Duration(minutes: 10));
+  testWidgets(
+    'paused timer renders a static value and never subscribes to ticks',
+    (tester) async {
+      final ticks = StreamController<void>.broadcast();
+      addTearDown(ticks.close);
+      final startedAt = DateTime(2026, 8, 11, 10, 0, 0);
+      final pausedAt = startedAt.add(const Duration(minutes: 10));
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: ElapsedTimer(
-          startedAt: startedAt,
-          totalPausedSeconds: 0,
-          pausedAt: pausedAt,
-          ticks: ticks.stream,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ElapsedTimer(
+            startedAt: startedAt,
+            totalPausedSeconds: 0,
+            pausedAt: pausedAt,
+            ticks: ticks.stream,
+          ),
         ),
-      ),
-    );
+      );
 
-    expect(find.text('00:10:00'), findsOneWidget);
-    expect(ticks.hasListener, isFalse);
+      expect(find.text('00:10:00'), findsOneWidget);
+      expect(ticks.hasListener, isFalse);
 
-    // Pushing a tick (even though nothing should be listening) must not
-    // change the static, frozen display.
-    ticks.add(null);
-    await tester.pump();
-    expect(find.text('00:10:00'), findsOneWidget);
-  });
+      // Pushing a tick (even though nothing should be listening) must not
+      // change the static, frozen display.
+      ticks.add(null);
+      await tester.pump();
+      expect(find.text('00:10:00'), findsOneWidget);
+    },
+  );
 
-  testWidgets('finished timer renders a static value from finishedAt', (tester) async {
+  testWidgets('finished timer renders a static value from finishedAt', (
+    tester,
+  ) async {
     final startedAt = DateTime(2026, 8, 11, 10, 0, 0);
-    final finishedAt = startedAt.add(const Duration(hours: 1, minutes: 2, seconds: 3));
+    final finishedAt = startedAt.add(
+      const Duration(hours: 1, minutes: 2, seconds: 3),
+    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -72,24 +84,28 @@ void main() {
     expect(find.text('01:02:03'), findsOneWidget);
   });
 
-  testWidgets('stops ticking once it transitions from running to paused', (tester) async {
+  testWidgets('stops ticking once it transitions from running to paused', (
+    tester,
+  ) async {
     final ticks = StreamController<void>.broadcast();
     addTearDown(ticks.close);
     final startedAt = DateTime(2026, 8, 11, 10, 0, 0);
 
     Widget buildWidget({DateTime? pausedAt}) => MaterialApp(
-          home: ElapsedTimer(
-            startedAt: startedAt,
-            totalPausedSeconds: 0,
-            pausedAt: pausedAt,
-            ticks: ticks.stream,
-          ),
-        );
+      home: ElapsedTimer(
+        startedAt: startedAt,
+        totalPausedSeconds: 0,
+        pausedAt: pausedAt,
+        ticks: ticks.stream,
+      ),
+    );
 
     await tester.pumpWidget(buildWidget());
     expect(ticks.hasListener, isTrue);
 
-    await tester.pumpWidget(buildWidget(pausedAt: startedAt.add(const Duration(minutes: 3))));
+    await tester.pumpWidget(
+      buildWidget(pausedAt: startedAt.add(const Duration(minutes: 3))),
+    );
     expect(ticks.hasListener, isFalse);
     expect(find.text('00:03:00'), findsOneWidget);
   });
@@ -98,24 +114,29 @@ void main() {
     // The scaling lives in a FittedBox, which scales through a paint
     // transform — the child Text's own reported size stays unscaled, so these
     // assert on the FittedBox's box instead.
-    Widget build({required double surfaceWidth, required double maxScaledWidth}) => MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: SizedBox(
-                key: const Key('surface'),
-                width: surfaceWidth,
-                child: ElapsedTimer(
-                  startedAt: DateTime.now(),
-                  totalPausedSeconds: 0,
-                  finishedAt: DateTime.now(),
-                  maxScaledWidth: maxScaledWidth,
-                ),
-              ),
+    Widget build({
+      required double surfaceWidth,
+      required double maxScaledWidth,
+    }) => MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            key: const Key('surface'),
+            width: surfaceWidth,
+            child: ElapsedTimer(
+              startedAt: DateTime.now(),
+              totalPausedSeconds: 0,
+              finishedAt: DateTime.now(),
+              maxScaledWidth: maxScaledWidth,
             ),
           ),
-        );
+        ),
+      ),
+    );
 
-    testWidgets('is absent by default, leaving the timer unscaled', (tester) async {
+    testWidgets('is absent by default, leaving the timer unscaled', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: ElapsedTimer(
@@ -129,7 +150,9 @@ void main() {
       expect(find.byType(FittedBox), findsNothing);
     });
 
-    testWidgets('fills the available width when narrower than the cap', (tester) async {
+    testWidgets('fills the available width when narrower than the cap', (
+      tester,
+    ) async {
       await tester.pumpWidget(build(surfaceWidth: 320, maxScaledWidth: 400));
 
       expect(tester.getSize(find.byType(FittedBox)).width, 320);

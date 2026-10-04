@@ -48,9 +48,21 @@ void main() {
   });
 
   test('when every row is finished, the most recently finished one wins', () {
-    final older = _workout(id: 'w1', status: 'finished', finishedAt: DateTime(2026, 8, 1));
-    final newer = _workout(id: 'w2', status: 'finished', finishedAt: DateTime(2026, 8, 10));
-    final middle = _workout(id: 'w3', status: 'finished', finishedAt: DateTime(2026, 8, 5));
+    final older = _workout(
+      id: 'w1',
+      status: 'finished',
+      finishedAt: DateTime(2026, 8, 1),
+    );
+    final newer = _workout(
+      id: 'w2',
+      status: 'finished',
+      finishedAt: DateTime(2026, 8, 10),
+    );
+    final middle = _workout(
+      id: 'w3',
+      status: 'finished',
+      finishedAt: DateTime(2026, 8, 5),
+    );
 
     expect(pickGroupRepresentative([older, newer, middle])?.id, 'w2');
   });

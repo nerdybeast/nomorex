@@ -93,7 +93,11 @@ class _StubExercisesNotifier extends ExercisesNotifier {
   }
 }
 
-const _sumoDeadlift = Exercise(id: 'e1', name: 'Sumo Deadlift', isPredefined: true);
+const _sumoDeadlift = Exercise(
+  id: 'e1',
+  name: 'Sumo Deadlift',
+  isPredefined: true,
+);
 
 Workout _workoutWithPercentageSet({
   String status = 'not_started',
@@ -139,155 +143,195 @@ Workout _workoutWithPercentageSet({
 }
 
 void main() {
-  testWidgets('a percentage set with no 1RM shows a "set PR" link, not "set a 1RM"',
-      (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutDetailProvider('w1').overrideWith(
-            () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
-          ),
-          oneRepMaxProvider.overrideWith((ref) async => {}),
-          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
-          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
-        ],
-        child: const MaterialApp(home: WorkoutDetailScreen(workoutId: 'w1')),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('set a 1RM'), findsNothing);
-    expect(find.textContaining('set a 1RM'), findsNothing);
-    expect(find.text('set PR'), findsOneWidget);
-    expect(
-      find.byWidgetPredicate(
-        (w) => w is InkWell && w.child is Text && (w.child as Text).data == 'set PR',
-      ),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('tapping "set PR" navigates to the add-PR route for the basis exercise '
-      'and does not also toggle the set', (tester) async {
-    var toggled = false;
-
-    // WorkoutDetailScreen's "set PR" link uses context.push, which needs a
-    // GoRouter ancestor — a minimal two-route router stands in for the app's
-    // real one, with a dummy destination screen that surfaces the query
-    // param it was pushed with.
-    final router = GoRouter(
-      initialLocation: '/w1',
-      routes: [
-        GoRoute(path: '/w1', builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1')),
-        GoRoute(
-          path: '/prs/add',
-          builder: (_, state) => Text('destination:${state.uri.queryParameters['exerciseId']}'),
-        ),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutDetailProvider('w1').overrideWith(
-            () => _StubWorkoutDetailNotifier(
-              _workoutWithPercentageSet(),
-              onSetCompleted: (_, _) => toggled = true,
+  testWidgets(
+    'a percentage set with no 1RM shows a "set PR" link, not "set a 1RM"',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutDetailProvider('w1').overrideWith(
+              () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
             ),
-          ),
-          oneRepMaxProvider.overrideWith((ref) async => {}),
-          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
-          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
-        ],
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
-    await tester.pumpAndSettle();
+            oneRepMaxProvider.overrideWith((ref) async => {}),
+            oneRepMaxByNameProvider.overrideWith((ref) async => {}),
+            exercisesProvider.overrideWith(
+              () => _StubExercisesNotifier([_sumoDeadlift]),
+            ),
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(const []),
+            ),
+          ],
+          child: const MaterialApp(home: WorkoutDetailScreen(workoutId: 'w1')),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('set PR'));
-    await tester.pumpAndSettle();
-
-    expect(toggled, isFalse);
-    expect(find.text('destination:e1'), findsOneWidget);
-  });
-
-  testWidgets('a percentage set with a resolvable 1RM shows the weight, not a link',
-      (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutDetailProvider('w1').overrideWith(
-            () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
-          ),
-          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
-          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
-          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
-        ],
-        child: const MaterialApp(home: WorkoutDetailScreen(workoutId: 'w1')),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('set PR'), findsNothing);
-    expect(find.textContaining('73%'), findsOneWidget);
-  });
+      expect(find.text('set a 1RM'), findsNothing);
+      expect(find.textContaining('set a 1RM'), findsNothing);
+      expect(find.text('set PR'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is InkWell &&
+              w.child is Text &&
+              (w.child as Text).data == 'set PR',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets(
-      'a percentage set on an exercise the viewer cannot see still offers "set PR", '
-      'routed to the viewer\'s own copy of that exercise', (tester) async {
-    String? ensuredName;
+    'tapping "set PR" navigates to the add-PR route for the basis exercise '
+    'and does not also toggle the set',
+    (tester) async {
+      var toggled = false;
 
-    final router = GoRouter(
-      initialLocation: '/w1',
-      routes: [
-        GoRoute(path: '/w1', builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1')),
-        GoRoute(
-          path: '/prs/add',
-          builder: (_, state) => Text('destination:${state.uri.queryParameters['exerciseId']}'),
-        ),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutDetailProvider('w1').overrideWith(
-            () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
+      // WorkoutDetailScreen's "set PR" link uses context.push, which needs a
+      // GoRouter ancestor — a minimal two-route router stands in for the app's
+      // real one, with a dummy destination screen that surfaces the query
+      // param it was pushed with.
+      final router = GoRouter(
+        initialLocation: '/w1',
+        routes: [
+          GoRoute(
+            path: '/w1',
+            builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1'),
           ),
-          oneRepMaxProvider.overrideWith((ref) async => {}),
-          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
-          // The viewer's own exercise list does NOT contain 'e1' — e.g. this
-          // is someone else's public workout referencing a custom exercise
-          // only the workout's owner can see. Tapping "set PR" should give
-          // the viewer their own same-named exercise rather than dead-ending.
-          exercisesProvider.overrideWith(
-            () => _StubExercisesNotifier(
-              const [],
-              onEnsureByName: (name) {
-                ensuredName = name;
-                return const Exercise(id: 'mine-1', name: 'Sumo Deadlift', isPredefined: false);
-              },
-            ),
+          GoRoute(
+            path: '/prs/add',
+            builder: (_, state) =>
+                Text('destination:${state.uri.queryParameters['exerciseId']}'),
           ),
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
         ],
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
 
-    expect(find.textContaining('no PR recorded'), findsNothing);
-    expect(find.text('set PR'), findsOneWidget);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutDetailProvider('w1').overrideWith(
+              () => _StubWorkoutDetailNotifier(
+                _workoutWithPercentageSet(),
+                onSetCompleted: (_, _) => toggled = true,
+              ),
+            ),
+            oneRepMaxProvider.overrideWith((ref) async => {}),
+            oneRepMaxByNameProvider.overrideWith((ref) async => {}),
+            exercisesProvider.overrideWith(
+              () => _StubExercisesNotifier([_sumoDeadlift]),
+            ),
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(const []),
+            ),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('set PR'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('set PR'));
+      await tester.pumpAndSettle();
 
-    expect(ensuredName, 'Sumo Deadlift');
-    expect(find.text('destination:mine-1'), findsOneWidget);
-  });
+      expect(toggled, isFalse);
+      expect(find.text('destination:e1'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'a percentage set with a resolvable 1RM shows the weight, not a link',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutDetailProvider('w1').overrideWith(
+              () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
+            ),
+            oneRepMaxProvider.overrideWith(
+              (ref) async => {'e1': const OneRepMax.measured(100)},
+            ),
+            oneRepMaxByNameProvider.overrideWith((ref) async => {}),
+            exercisesProvider.overrideWith(
+              () => _StubExercisesNotifier([_sumoDeadlift]),
+            ),
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(const []),
+            ),
+          ],
+          child: const MaterialApp(home: WorkoutDetailScreen(workoutId: 'w1')),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('set PR'), findsNothing);
+      expect(find.textContaining('73%'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'a percentage set on an exercise the viewer cannot see still offers "set PR", '
+    'routed to the viewer\'s own copy of that exercise',
+    (tester) async {
+      String? ensuredName;
+
+      final router = GoRouter(
+        initialLocation: '/w1',
+        routes: [
+          GoRoute(
+            path: '/w1',
+            builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1'),
+          ),
+          GoRoute(
+            path: '/prs/add',
+            builder: (_, state) =>
+                Text('destination:${state.uri.queryParameters['exerciseId']}'),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutDetailProvider('w1').overrideWith(
+              () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
+            ),
+            oneRepMaxProvider.overrideWith((ref) async => {}),
+            oneRepMaxByNameProvider.overrideWith((ref) async => {}),
+            // The viewer's own exercise list does NOT contain 'e1' — e.g. this
+            // is someone else's public workout referencing a custom exercise
+            // only the workout's owner can see. Tapping "set PR" should give
+            // the viewer their own same-named exercise rather than dead-ending.
+            exercisesProvider.overrideWith(
+              () => _StubExercisesNotifier(
+                const [],
+                onEnsureByName: (name) {
+                  ensuredName = name;
+                  return const Exercise(
+                    id: 'mine-1',
+                    name: 'Sumo Deadlift',
+                    isPredefined: false,
+                  );
+                },
+              ),
+            ),
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(const []),
+            ),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('no PR recorded'), findsNothing);
+      expect(find.text('set PR'), findsOneWidget);
+
+      await tester.tap(find.text('set PR'));
+      await tester.pumpAndSettle();
+
+      expect(ensuredName, 'Sumo Deadlift');
+      expect(find.text('destination:mine-1'), findsOneWidget);
+    },
+  );
 
   Future<void> pumpDetailScreen(
     WidgetTester tester, {
@@ -310,9 +354,13 @@ void main() {
               onResume: onResume,
             ),
           ),
-          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
+          oneRepMaxProvider.overrideWith(
+            (ref) async => {'e1': const OneRepMax.measured(100)},
+          ),
           oneRepMaxByNameProvider.overrideWith((ref) async => {}),
-          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
+          exercisesProvider.overrideWith(
+            () => _StubExercisesNotifier([_sumoDeadlift]),
+          ),
           finishedWorkoutsProvider.overrideWith(
             () => _StubFinishedWorkoutsNotifier(finishedSiblings),
           ),
@@ -330,29 +378,37 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('not-started: shows "Start Workout" and a non-interactive checkbox',
-      (tester) async {
-    var toggled = false;
+  testWidgets(
+    'not-started: shows "Start Workout" and a non-interactive checkbox',
+    (tester) async {
+      var toggled = false;
+      await pumpDetailScreen(
+        tester,
+        workout: _workoutWithPercentageSet(),
+        onSetCompleted: (_, _) => toggled = true,
+      );
+
+      expect(find.text('Start Workout'), findsOneWidget);
+      expect(find.text('Pause'), findsNothing);
+      expect(find.text('Finish'), findsNothing);
+      expect(find.text('Do This Workout Again'), findsNothing);
+      expect(find.text('View History'), findsNothing);
+
+      await tester.tap(find.byType(CheckboxListTile));
+      await tester.pumpAndSettle();
+      expect(toggled, isFalse);
+    },
+  );
+
+  testWidgets('not-started: tapping "Start Workout" calls startWorkout', (
+    tester,
+  ) async {
+    var started = false;
     await pumpDetailScreen(
       tester,
       workout: _workoutWithPercentageSet(),
-      onSetCompleted: (_, _) => toggled = true,
+      onStart: () => started = true,
     );
-
-    expect(find.text('Start Workout'), findsOneWidget);
-    expect(find.text('Pause'), findsNothing);
-    expect(find.text('Finish'), findsNothing);
-    expect(find.text('Do This Workout Again'), findsNothing);
-    expect(find.text('View History'), findsNothing);
-
-    await tester.tap(find.byType(CheckboxListTile));
-    await tester.pumpAndSettle();
-    expect(toggled, isFalse);
-  });
-
-  testWidgets('not-started: tapping "Start Workout" calls startWorkout', (tester) async {
-    var started = false;
-    await pumpDetailScreen(tester, workout: _workoutWithPercentageSet(), onStart: () => started = true);
 
     await tester.tap(find.text('Start Workout'));
     await tester.pumpAndSettle();
@@ -361,115 +417,123 @@ void main() {
   });
 
   testWidgets(
-      'not-started: with a finished sibling in the group, shows "Do This Workout Again" '
-      'and "View History" instead of "Start Workout", and tapping it starts this same '
-      'workout', (tester) async {
-    var started = false;
-    final finishedSibling = _workoutWithPercentageSet(
-      status: 'finished',
-      startedAt: DateTime(2026, 8, 1, 9),
-      finishedAt: DateTime(2026, 8, 1, 10),
-    );
-    await pumpDetailScreen(
-      tester,
-      workout: _workoutWithPercentageSet(),
-      onStart: () => started = true,
-      finishedSiblings: [finishedSibling],
-    );
-
-    expect(find.text('Start Workout'), findsNothing);
-    expect(find.text('Do This Workout Again'), findsOneWidget);
-    expect(find.text('View History'), findsOneWidget);
-
-    await tester.tap(find.text('Do This Workout Again'));
-    await tester.pumpAndSettle();
-
-    expect(started, isTrue);
-  });
-
-  testWidgets('in-progress: shows the timer, "Pause"/"Finish", and an interactive checkbox',
-      (tester) async {
-    var toggled = false;
-    var paused = false;
-    await pumpDetailScreen(
-      tester,
-      workout: _workoutWithPercentageSet(
-        status: 'in_progress',
-        startedAt: DateTime.now().subtract(const Duration(minutes: 5)),
-      ),
-      onSetCompleted: (_, _) => toggled = true,
-      onPause: () => paused = true,
-    );
-
-    expect(find.text('Start Workout'), findsNothing);
-    expect(find.text('Pause'), findsOneWidget);
-    expect(find.text('Resume'), findsNothing);
-    expect(find.text('Finish'), findsOneWidget);
-
-    // pump(), not pumpAndSettle(): the running ElapsedTimer's real ticker
-    // never stops on its own within this stub (see the note in _pump above).
-    await tester.tap(find.byType(CheckboxListTile));
-    await tester.pump();
-    expect(toggled, isTrue);
-
-    await tester.tap(find.text('Pause'));
-    await tester.pump();
-    expect(paused, isTrue);
-  });
-
-  testWidgets('paused: shows "Resume" instead of "Pause", checkbox stays interactive',
-      (tester) async {
-    var toggled = false;
-    var resumed = false;
-    final startedAt = DateTime.now().subtract(const Duration(minutes: 20));
-    await pumpDetailScreen(
-      tester,
-      workout: _workoutWithPercentageSet(
-        status: 'paused',
-        startedAt: startedAt,
-        pausedAt: startedAt.add(const Duration(minutes: 10)),
-      ),
-      onSetCompleted: (_, _) => toggled = true,
-      onResume: () => resumed = true,
-    );
-
-    expect(find.text('Pause'), findsNothing);
-    expect(find.text('Resume'), findsOneWidget);
-    expect(find.text('Finish'), findsOneWidget);
-
-    await tester.tap(find.byType(CheckboxListTile));
-    await tester.pumpAndSettle();
-    expect(toggled, isTrue);
-
-    await tester.tap(find.text('Resume'));
-    await tester.pumpAndSettle();
-    expect(resumed, isTrue);
-  });
-
-  testWidgets('finished: shows a static duration and session notes, non-interactive checkbox',
-      (tester) async {
-    var toggled = false;
-    final startedAt = DateTime(2026, 8, 10, 9, 0, 0);
-    await pumpDetailScreen(
-      tester,
-      workout: _workoutWithPercentageSet(
+    'not-started: with a finished sibling in the group, shows "Do This Workout Again" '
+    'and "View History" instead of "Start Workout", and tapping it starts this same '
+    'workout',
+    (tester) async {
+      var started = false;
+      final finishedSibling = _workoutWithPercentageSet(
         status: 'finished',
-        startedAt: startedAt,
-        finishedAt: startedAt.add(const Duration(minutes: 45)),
-        sessionNotes: 'Great session',
-      ),
-      onSetCompleted: (_, _) => toggled = true,
-    );
+        startedAt: DateTime(2026, 8, 1, 9),
+        finishedAt: DateTime(2026, 8, 1, 10),
+      );
+      await pumpDetailScreen(
+        tester,
+        workout: _workoutWithPercentageSet(),
+        onStart: () => started = true,
+        finishedSiblings: [finishedSibling],
+      );
 
-    expect(find.text('00:45:00'), findsOneWidget);
-    expect(find.text('Great session'), findsOneWidget);
-    expect(find.text('Start Workout'), findsNothing);
-    expect(find.text('Pause'), findsNothing);
+      expect(find.text('Start Workout'), findsNothing);
+      expect(find.text('Do This Workout Again'), findsOneWidget);
+      expect(find.text('View History'), findsOneWidget);
 
-    await tester.tap(find.byType(CheckboxListTile));
-    await tester.pumpAndSettle();
-    expect(toggled, isFalse);
-  });
+      await tester.tap(find.text('Do This Workout Again'));
+      await tester.pumpAndSettle();
+
+      expect(started, isTrue);
+    },
+  );
+
+  testWidgets(
+    'in-progress: shows the timer, "Pause"/"Finish", and an interactive checkbox',
+    (tester) async {
+      var toggled = false;
+      var paused = false;
+      await pumpDetailScreen(
+        tester,
+        workout: _workoutWithPercentageSet(
+          status: 'in_progress',
+          startedAt: DateTime.now().subtract(const Duration(minutes: 5)),
+        ),
+        onSetCompleted: (_, _) => toggled = true,
+        onPause: () => paused = true,
+      );
+
+      expect(find.text('Start Workout'), findsNothing);
+      expect(find.text('Pause'), findsOneWidget);
+      expect(find.text('Resume'), findsNothing);
+      expect(find.text('Finish'), findsOneWidget);
+
+      // pump(), not pumpAndSettle(): the running ElapsedTimer's real ticker
+      // never stops on its own within this stub (see the note in _pump above).
+      await tester.tap(find.byType(CheckboxListTile));
+      await tester.pump();
+      expect(toggled, isTrue);
+
+      await tester.tap(find.text('Pause'));
+      await tester.pump();
+      expect(paused, isTrue);
+    },
+  );
+
+  testWidgets(
+    'paused: shows "Resume" instead of "Pause", checkbox stays interactive',
+    (tester) async {
+      var toggled = false;
+      var resumed = false;
+      final startedAt = DateTime.now().subtract(const Duration(minutes: 20));
+      await pumpDetailScreen(
+        tester,
+        workout: _workoutWithPercentageSet(
+          status: 'paused',
+          startedAt: startedAt,
+          pausedAt: startedAt.add(const Duration(minutes: 10)),
+        ),
+        onSetCompleted: (_, _) => toggled = true,
+        onResume: () => resumed = true,
+      );
+
+      expect(find.text('Pause'), findsNothing);
+      expect(find.text('Resume'), findsOneWidget);
+      expect(find.text('Finish'), findsOneWidget);
+
+      await tester.tap(find.byType(CheckboxListTile));
+      await tester.pumpAndSettle();
+      expect(toggled, isTrue);
+
+      await tester.tap(find.text('Resume'));
+      await tester.pumpAndSettle();
+      expect(resumed, isTrue);
+    },
+  );
+
+  testWidgets(
+    'finished: shows a static duration and session notes, non-interactive checkbox',
+    (tester) async {
+      var toggled = false;
+      final startedAt = DateTime(2026, 8, 10, 9, 0, 0);
+      await pumpDetailScreen(
+        tester,
+        workout: _workoutWithPercentageSet(
+          status: 'finished',
+          startedAt: startedAt,
+          finishedAt: startedAt.add(const Duration(minutes: 45)),
+          sessionNotes: 'Great session',
+        ),
+        onSetCompleted: (_, _) => toggled = true,
+      );
+
+      expect(find.text('00:45:00'), findsOneWidget);
+      expect(find.text('Great session'), findsOneWidget);
+      expect(find.text('Start Workout'), findsNothing);
+      expect(find.text('Pause'), findsNothing);
+
+      await tester.tap(find.byType(CheckboxListTile));
+      await tester.pumpAndSettle();
+      expect(toggled, isFalse);
+    },
+  );
 
   testWidgets('edit icon is shown only when not-started', (tester) async {
     await pumpDetailScreen(tester, workout: _workoutWithPercentageSet());
@@ -487,83 +551,108 @@ void main() {
     expect(find.byIcon(Icons.edit_outlined), findsNothing);
   });
 
-  testWidgets('delete icon is hidden for a workout materialized from a program',
-      (tester) async {
-    final workout = _workoutWithPercentageSet();
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutDetailProvider('w1').overrideWith(
-            () => _StubWorkoutDetailNotifier(
-              Workout(
-                id: workout.id,
-                userId: workout.userId,
-                title: workout.title,
-                date: workout.date,
-                updatedAt: workout.updatedAt,
-                workoutGroupId: workout.workoutGroupId,
-                exercises: workout.exercises,
-                programInstanceId: 'pi1',
+  testWidgets(
+    'delete icon is hidden for a workout materialized from a program',
+    (tester) async {
+      final workout = _workoutWithPercentageSet();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutDetailProvider('w1').overrideWith(
+              () => _StubWorkoutDetailNotifier(
+                Workout(
+                  id: workout.id,
+                  userId: workout.userId,
+                  title: workout.title,
+                  date: workout.date,
+                  updatedAt: workout.updatedAt,
+                  workoutGroupId: workout.workoutGroupId,
+                  exercises: workout.exercises,
+                  programInstanceId: 'pi1',
+                ),
               ),
             ),
+            oneRepMaxProvider.overrideWith(
+              (ref) async => {'e1': const OneRepMax.measured(100)},
+            ),
+            oneRepMaxByNameProvider.overrideWith((ref) async => {}),
+            exercisesProvider.overrideWith(
+              () => _StubExercisesNotifier([_sumoDeadlift]),
+            ),
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(const []),
+            ),
+          ],
+          child: const MaterialApp(home: WorkoutDetailScreen(workoutId: 'w1')),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.delete_outline), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'confirming delete calls deleteWorkout and navigates to the workouts list',
+    (tester) async {
+      String? deletedId;
+      final router = GoRouter(
+        initialLocation: '/w1',
+        routes: [
+          GoRoute(
+            path: '/w1',
+            builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1'),
           ),
-          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
-          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
-          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
+          GoRoute(
+            path: '/shell/workouts',
+            builder: (_, _) => const Text('destination:workouts'),
+          ),
         ],
-        child: const MaterialApp(home: WorkoutDetailScreen(workoutId: 'w1')),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
 
-    expect(find.byIcon(Icons.delete_outline), findsNothing);
-  });
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutDetailProvider('w1').overrideWith(
+              () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
+            ),
+            workoutsProvider.overrideWith(
+              () =>
+                  _RecordingWorkoutsNotifier(onDelete: (id) => deletedId = id),
+            ),
+            oneRepMaxProvider.overrideWith(
+              (ref) async => {'e1': const OneRepMax.measured(100)},
+            ),
+            oneRepMaxByNameProvider.overrideWith((ref) async => {}),
+            exercisesProvider.overrideWith(
+              () => _StubExercisesNotifier([_sumoDeadlift]),
+            ),
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(const []),
+            ),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-  testWidgets('confirming delete calls deleteWorkout and navigates to the workouts list',
-      (tester) async {
-    String? deletedId;
-    final router = GoRouter(
-      initialLocation: '/w1',
-      routes: [
-        GoRoute(path: '/w1', builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1')),
-        GoRoute(path: '/shell/workouts', builder: (_, _) => const Text('destination:workouts')),
-      ],
-    );
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutDetailProvider('w1').overrideWith(
-            () => _StubWorkoutDetailNotifier(_workoutWithPercentageSet()),
-          ),
-          workoutsProvider.overrideWith(
-            () => _RecordingWorkoutsNotifier(onDelete: (id) => deletedId = id),
-          ),
-          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
-          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
-          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
-        ],
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
-    await tester.pumpAndSettle();
+      expect(find.text('Delete workout?'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.delete_outline));
-    await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Delete'),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Delete workout?'), findsOneWidget);
-
-    await tester.tap(find.descendant(
-      of: find.byType(AlertDialog),
-      matching: find.text('Delete'),
-    ));
-    await tester.pumpAndSettle();
-
-    expect(deletedId, 'w1');
-    expect(find.text('destination:workouts'), findsOneWidget);
-  });
+      expect(deletedId, 'w1');
+      expect(find.text('destination:workouts'), findsOneWidget);
+    },
+  );
 
   Workout finishedWorkout() {
     final startedAt = DateTime(2026, 8, 10, 9, 0, 0);
@@ -574,102 +663,138 @@ void main() {
     );
   }
 
-  testWidgets('finished: "View History" navigates to the filtered history route',
-      (tester) async {
-    final router = GoRouter(
-      initialLocation: '/w1',
-      routes: [
-        GoRoute(path: '/w1', builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1')),
-        GoRoute(
-          path: '/workouts/history',
-          builder: (_, state) => Text('history:${state.uri.queryParameters['groupId']}'),
-        ),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutDetailProvider('w1').overrideWith(
-            () => _StubWorkoutDetailNotifier(finishedWorkout()),
+  testWidgets(
+    'finished: "View History" navigates to the filtered history route',
+    (tester) async {
+      final router = GoRouter(
+        initialLocation: '/w1',
+        routes: [
+          GoRoute(
+            path: '/w1',
+            builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1'),
           ),
-          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
-          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
-          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
+          GoRoute(
+            path: '/workouts/history',
+            builder: (_, state) =>
+                Text('history:${state.uri.queryParameters['groupId']}'),
+          ),
         ],
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
 
-    await tester.tap(find.text('View History'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('history:g1'), findsOneWidget);
-  });
-
-  testWidgets('finished: "Do This Workout Again" calls repeatWorkout and navigates to the '
-      'new workout', (tester) async {
-    final router = GoRouter(
-      initialLocation: '/w1',
-      routes: [
-        GoRoute(path: '/w1', builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1')),
-        GoRoute(path: '/workouts/:id', builder: (_, state) => Text('detail:${state.pathParameters['id']}')),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutDetailProvider('w1').overrideWith(
-            () => _StubWorkoutDetailNotifier(
-              finishedWorkout(),
-              onRepeat: () async => 'w2',
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutDetailProvider(
+              'w1',
+            ).overrideWith(() => _StubWorkoutDetailNotifier(finishedWorkout())),
+            oneRepMaxProvider.overrideWith(
+              (ref) async => {'e1': const OneRepMax.measured(100)},
             ),
-          ),
-          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
-          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
-          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
-        ],
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
-    await tester.pumpAndSettle();
+            oneRepMaxByNameProvider.overrideWith((ref) async => {}),
+            exercisesProvider.overrideWith(
+              () => _StubExercisesNotifier([_sumoDeadlift]),
+            ),
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(const []),
+            ),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Do This Workout Again'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('View History'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('detail:w2'), findsOneWidget);
-  });
+      expect(find.text('history:g1'), findsOneWidget);
+    },
+  );
 
   testWidgets(
-      'finished: "Do This Workout Again" shows a SnackBar instead of navigating when '
-      'already in progress', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutDetailProvider('w1').overrideWith(
-            () => _StubWorkoutDetailNotifier(
-              finishedWorkout(),
-              onRepeat: () async => throw StateError('This workout is already in progress.'),
-            ),
+    'finished: "Do This Workout Again" calls repeatWorkout and navigates to the '
+    'new workout',
+    (tester) async {
+      final router = GoRouter(
+        initialLocation: '/w1',
+        routes: [
+          GoRoute(
+            path: '/w1',
+            builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1'),
           ),
-          oneRepMaxProvider.overrideWith((ref) async => {'e1': const OneRepMax.measured(100)}),
-          oneRepMaxByNameProvider.overrideWith((ref) async => {}),
-          exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
-          finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
+          GoRoute(
+            path: '/workouts/:id',
+            builder: (_, state) => Text('detail:${state.pathParameters['id']}'),
+          ),
         ],
-        child: const MaterialApp(home: WorkoutDetailScreen(workoutId: 'w1')),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
 
-    await tester.tap(find.text('Do This Workout Again'));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutDetailProvider('w1').overrideWith(
+              () => _StubWorkoutDetailNotifier(
+                finishedWorkout(),
+                onRepeat: () async => 'w2',
+              ),
+            ),
+            oneRepMaxProvider.overrideWith(
+              (ref) async => {'e1': const OneRepMax.measured(100)},
+            ),
+            oneRepMaxByNameProvider.overrideWith((ref) async => {}),
+            exercisesProvider.overrideWith(
+              () => _StubExercisesNotifier([_sumoDeadlift]),
+            ),
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(const []),
+            ),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('This workout is already in progress.'), findsOneWidget);
-    expect(find.text('Do This Workout Again'), findsOneWidget);
-  });
+      await tester.tap(find.text('Do This Workout Again'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('detail:w2'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'finished: "Do This Workout Again" shows a SnackBar instead of navigating when '
+    'already in progress',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutDetailProvider('w1').overrideWith(
+              () => _StubWorkoutDetailNotifier(
+                finishedWorkout(),
+                onRepeat: () async =>
+                    throw StateError('This workout is already in progress.'),
+              ),
+            ),
+            oneRepMaxProvider.overrideWith(
+              (ref) async => {'e1': const OneRepMax.measured(100)},
+            ),
+            oneRepMaxByNameProvider.overrideWith((ref) async => {}),
+            exercisesProvider.overrideWith(
+              () => _StubExercisesNotifier([_sumoDeadlift]),
+            ),
+            finishedWorkoutsProvider.overrideWith(
+              () => _StubFinishedWorkoutsNotifier(const []),
+            ),
+          ],
+          child: const MaterialApp(home: WorkoutDetailScreen(workoutId: 'w1')),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Do This Workout Again'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('This workout is already in progress.'), findsOneWidget);
+      expect(find.text('Do This Workout Again'), findsOneWidget);
+    },
+  );
 }
