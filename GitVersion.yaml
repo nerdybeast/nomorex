@@ -1,0 +1,22 @@
+# GitVersion.yaml
+workflow: GitHubFlow/v1
+major-version-bump-message: "^(?i:build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\\([\\w.\\-,/\\\\@]*\\))?!:|(?:^|\\n)BREAKING[ -]CHANGE:\\s.+"
+minor-version-bump-message: "^(?i:feat)(\\([\\w.\\-,/\\\\@]*\\))?:"
+patch-version-bump-message: "^(?i:fix|perf|revert)(\\([\\w.\\-,/\\\\@]*\\))?:"
+no-bump-message: "^(?i:chore|docs|style|test|build|ci|refactor)(\\([\\w.\\-,/\\\\@]*\\))?:"
+branches:
+  main:
+    mode: ContinuousDeployment
+    increment: None
+  release:
+    mode: ContinuousDelivery
+    increment: None
+  feature:
+    mode: ContinuousDelivery
+    increment: None
+  pull-request:
+    mode: ContinuousDelivery
+    increment: None
+  unknown:
+    mode: ContinuousDelivery
+    increment: None

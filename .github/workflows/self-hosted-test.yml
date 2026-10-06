@@ -5,12 +5,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  version:
+    uses: ./.github/workflows/version.yml
+
   test:
     name: Flutter Test
+    needs: version
     runs-on: arc-runner-set
 
     steps:
       - uses: actions/checkout@v7
+
+      # Ties this run's result to the exact version it was built/tested as.
+      - name: Record app version
+        run: |
+          echo "**App version:** \`${{ needs.version.outputs.semver }}\` (build ${{ needs.version.outputs.build-name }}+${{ needs.version.outputs.build-number }})" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install xz-utils
         run: sudo apt-get update && sudo apt-get install -y xz-utils
@@ -38,6 +47,7 @@ jobs:
 
   build-web:
     name: Build Web (${{ matrix.mode }})
+    needs: version
     runs-on: arc-runner-set
     strategy:
       fail-fast: false
@@ -46,6 +56,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+
+      # Ties this run's result to the exact version it was built/tested as.
+      - name: Record app version
+        run: |
+          echo "**App version:** \`${{ needs.version.outputs.semver }}\` (build ${{ needs.version.outputs.build-name }}+${{ needs.version.outputs.build-number }})" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install xz-utils
         run: sudo apt-get update && sudo apt-get install -y xz-utils
@@ -66,5 +81,7 @@ jobs:
       - name: Build web (${{ matrix.mode }})
         run: |
           flutter build web --${{ matrix.mode }} \
+            --build-name="${{ needs.version.outputs.build-name }}" \
+            --build-number="${{ needs.version.outputs.build-number }}" \
             --dart-define=SUPABASE_URL=https://placeholder.supabase.co \
             --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
