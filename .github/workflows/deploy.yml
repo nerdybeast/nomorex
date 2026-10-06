@@ -40,8 +40,43 @@ concurrency:
 # watches supabase/ and deploys on push to main. This workflow only builds and
 # publishes the web app.
 jobs:
+  # The app version comes from GitVersion (see GitVersion.yaml), not pubspec.yaml:
+  # the pubspec `version:` is only a fallback for local builds, and the values
+  # below override it via --build-name/--build-number.
+  determine-version:
+    name: Determine app version
+    runs-on: ubuntu-latest
+    outputs:
+      build-name: ${{ steps.app-version.outputs.build-name }}
+      build-number: ${{ steps.app-version.outputs.build-number }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # GitVersion and the commit count both need full history and tags.
+          fetch-depth: 0
+
+      - uses: gittools/actions/gitversion/setup@v4
+        with:
+          versionSpec: 6.x
+
+      - name: Determine version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v4
+
+      # build-name is the semantic version; build-number is the commit count so
+      # it only ever increases (Android's versionCode must).
+      - name: Compute app version
+        id: app-version
+        run: |
+          build_name="${{ steps.gitversion.outputs.majorMinorPatch }}"
+          build_number="$(git rev-list --count HEAD)"
+          echo "App version: $build_name+$build_number"
+          echo "build-name=$build_name" >> "$GITHUB_OUTPUT"
+          echo "build-number=$build_number" >> "$GITHUB_OUTPUT"
+
   deploy-web:
     name: Build & deploy web
+    needs: determine-version
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -87,6 +122,8 @@ jobs:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
           flutter build web --release \
+            --build-name="${{ needs.determine-version.outputs.build-name }}" \
+            --build-number="${{ needs.determine-version.outputs.build-number }}" \
             --base-href="/${GITHUB_REPOSITORY#*/}/" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
@@ -103,3 +140,26 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  # Releasing after a successful deploy keeps the tag in step with what was
+  # actually published, and the tag is what lets GitVersion advance on the next
+  # run. Most deploys share a MajorMinorPatch (only a tagged bump changes it),
+  # so an existing tag is left alone.
+  release:
+    name: Create GitHub release
+    needs: [determine-version, deploy-web]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create release if this version is new
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ needs.determine-version.outputs.build-name }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists, skipping."
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" --generate-notes
+          fi
