@@ -25,14 +25,23 @@ on:
   workflow_dispatch:
 
 jobs:
+  version:
+    uses: ./.github/workflows/version.yml
+
   checks:
     name: Analyze & Test
+    needs: version
     runs-on: ubuntu-latest
 
     # No setup-java here: Java is only needed for the Android Gradle build,
     # which now lives in the build-android job.
     steps:
       - uses: actions/checkout@v7
+
+      # Ties this run's result to the exact version it was built/tested as.
+      - name: Record app version
+        run: |
+          echo "**App version:** \`${{ needs.version.outputs.semver }}\` (build ${{ needs.version.outputs.build-name }}+${{ needs.version.outputs.build-number }})" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -59,6 +68,7 @@ jobs:
 
   build-web:
     name: Build Web (${{ matrix.mode }})
+    needs: version
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -67,6 +77,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+
+      # Ties this run's result to the exact version it was built/tested as.
+      - name: Record app version
+        run: |
+          echo "**App version:** \`${{ needs.version.outputs.semver }}\` (build ${{ needs.version.outputs.build-name }}+${{ needs.version.outputs.build-number }})" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -86,11 +101,14 @@ jobs:
       - name: Build web (${{ matrix.mode }})
         run: |
           flutter build web --${{ matrix.mode }} \
+            --build-name="${{ needs.version.outputs.build-name }}" \
+            --build-number="${{ needs.version.outputs.build-number }}" \
             --dart-define=SUPABASE_URL=https://placeholder.supabase.co \
             --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
 
   build-android:
     name: Build Android APK (${{ matrix.mode }})
+    needs: version
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -101,6 +119,11 @@ jobs:
     # runtime. On its own runner it no longer gates analyze/test feedback.
     steps:
       - uses: actions/checkout@v7
+
+      # Ties this run's result to the exact version it was built/tested as.
+      - name: Record app version
+        run: |
+          echo "**App version:** \`${{ needs.version.outputs.semver }}\` (build ${{ needs.version.outputs.build-name }}+${{ needs.version.outputs.build-number }})" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/setup-java@v5
         with:
@@ -122,7 +145,10 @@ jobs:
       # Release is signed with the debug keys (see android/app/build.gradle.kts),
       # so all three modes build without any signing secrets.
       - name: Build APK (${{ matrix.mode }})
-        run: flutter build apk --${{ matrix.mode }}
+        run: |
+          flutter build apk --${{ matrix.mode }} \
+            --build-name="${{ needs.version.outputs.build-name }}" \
+            --build-number="${{ needs.version.outputs.build-number }}"
 
   db-validate:
     name: Validate DB migrations
@@ -148,6 +174,7 @@ jobs:
 
   e2e:
     name: E2E (integration_test)
+    needs: version
     runs-on: ubuntu-latest
 
     # Runs on Linux desktop rather than macOS: the suite needs a real Supabase
@@ -156,6 +183,11 @@ jobs:
     # the same suite runs against `-d macos` via ./scripts/e2e.sh.
     steps:
       - uses: actions/checkout@v7
+
+      # Ties this run's result to the exact version it was built/tested as.
+      - name: Record app version
+        run: |
+          echo "**App version:** \`${{ needs.version.outputs.semver }}\` (build ${{ needs.version.outputs.build-name }}+${{ needs.version.outputs.build-number }})" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: supabase/setup-cli@v3
         with:

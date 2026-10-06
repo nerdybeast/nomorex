@@ -44,35 +44,7 @@ jobs:
   # the pubspec `version:` is only a fallback for local builds, and the values
   # below override it via --build-name/--build-number.
   determine-version:
-    name: Determine app version
-    runs-on: ubuntu-latest
-    outputs:
-      build-name: ${{ steps.app-version.outputs.build-name }}
-      build-number: ${{ steps.app-version.outputs.build-number }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          # GitVersion and the commit count both need full history and tags.
-          fetch-depth: 0
-
-      - uses: gittools/actions/gitversion/setup@v4
-        with:
-          versionSpec: 6.x
-
-      - name: Determine version
-        id: gitversion
-        uses: gittools/actions/gitversion/execute@v4
-
-      # build-name is the semantic version; build-number is the commit count so
-      # it only ever increases (Android's versionCode must).
-      - name: Compute app version
-        id: app-version
-        run: |
-          build_name="${{ steps.gitversion.outputs.majorMinorPatch }}"
-          build_number="$(git rev-list --count HEAD)"
-          echo "App version: $build_name+$build_number"
-          echo "build-name=$build_name" >> "$GITHUB_OUTPUT"
-          echo "build-number=$build_number" >> "$GITHUB_OUTPUT"
+    uses: ./.github/workflows/version.yml
 
   deploy-web:
     name: Build & deploy web
