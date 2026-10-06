@@ -113,7 +113,8 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v5
 
-  # Releasing after a successful deploy keeps the tag in step with what was
+  # Marked as a pre-release: a separate production-release workflow will promote
+  # versions later. Releasing after a successful deploy keeps the tag in step with what was
   # actually published, and the tag is what lets GitVersion advance on the next
   # run. Most deploys share a MajorMinorPatch (only a tagged bump changes it),
   # so an existing tag is left alone.
@@ -133,5 +134,5 @@ jobs:
             echo "Release $TAG already exists, skipping."
           else
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" --generate-notes
+              --target "$GITHUB_SHA" --generate-notes --prerelease
           fi
