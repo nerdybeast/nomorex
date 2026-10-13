@@ -2912,3 +2912,85 @@ insert into public.program_sets (program_exercise_id, user_id, position, target_
   ('e1a27dc0-5e83-4f96-17be-9d3082f4b567', (select id from auth.users where email = 'b@b.com'), 0, 5, 'percentage', 70, null, null, null),
   ('e1a27dc0-5e83-4f96-17be-9d3082f4b567', (select id from auth.users where email = 'b@b.com'), 1, 5, 'percentage', 75, null, null, null),
   ('f2b38ed1-6f94-40a7-28cf-0e4193a5c678', (select id from auth.users where email = 'b@b.com'), 0, 3, 'percentage', 85, null, null, null);
+
+-- =========================================================================
+-- Save/start-from-Community seed data (specs/001-save-community-content).
+-- More public content owned by b@b.com, shaped to exercise the copy RPCs:
+-- a b-only custom exercise (must be mapped into the viewer's catalog by name),
+-- an absolute-weight set, a percentage set with a different basis lift, an
+-- exercise note, and a program sized to the SC-003 target (12 weeks x 6 days,
+-- ~5 exercises/day, 4 sets/exercise) for the copy timing check. Local/CI only.
+-- =========================================================================
+
+insert into public.exercises (id, name, is_predefined, user_id) values
+  ('5e0b7c1a-2d3f-4e5a-8b6c-7d8e9f0a1b2c', 'Dude Pulls', false,
+   (select id from auth.users where email = 'b@b.com'));
+
+-- ---- Public workout with a custom lift ----
+insert into public.workouts (id, user_id, title, date, notes, is_public, workout_group_id) values
+  ('6f1c8d2b-3e4a-4f5b-9c7d-8e9fa0b1c2d3', (select id from auth.users where email = 'b@b.com'),
+   'Accessory Grinder', current_date, 'Keep rest under 90s.', true,
+   'c0ffee00-0000-4000-8000-000000000002');
+
+insert into public.workout_exercises (id, workout_id, user_id, exercise_id, position, notes) values
+  ('7a2d9e3c-4f5b-405c-ad8e-9fa0b1c2d3e4', '6f1c8d2b-3e4a-4f5b-9c7d-8e9fa0b1c2d3',
+   (select id from auth.users where email = 'b@b.com'),
+   '5e0b7c1a-2d3f-4e5a-8b6c-7d8e9f0a1b2c', 0, 'Slow negatives'),
+  ('8b3eaf4d-505c-416d-be9f-a0b1c2d3e4f5', '6f1c8d2b-3e4a-4f5b-9c7d-8e9fa0b1c2d3',
+   (select id from auth.users where email = 'b@b.com'),
+   (select id from public.exercises where name = 'Front Squat' and is_predefined limit 1), 1, null);
+
+insert into public.workout_sets (workout_exercise_id, user_id, position, target_reps, weight_mode, percentage, absolute_weight_kg, basis_exercise_id) values
+  ('7a2d9e3c-4f5b-405c-ad8e-9fa0b1c2d3e4', (select id from auth.users where email = 'b@b.com'), 0, 10, 'absolute', null, 40, null),
+  ('7a2d9e3c-4f5b-405c-ad8e-9fa0b1c2d3e4', (select id from auth.users where email = 'b@b.com'), 1, 10, 'absolute', null, 40, null),
+  -- Front Squat programmed off Back Squat: the copy must keep the basis lift.
+  ('8b3eaf4d-505c-416d-be9f-a0b1c2d3e4f5', (select id from auth.users where email = 'b@b.com'), 0, 3, 'percentage', 70, null,
+   (select id from public.exercises where name = 'Back Squat' and is_predefined limit 1));
+
+-- ---- Public 12-week program (SC-003 sizing) ----
+insert into public.programs (id, user_id, name, description, is_public, is_archived) values
+  ('9c4fb05e-616d-427e-8fa0-b1c2d3e4f5a6', (select id from auth.users where email = 'b@b.com'),
+   'B''s 12-Week Volume Block', 'Large public program used to check copy speed.', true, false);
+
+with b as (
+  select id as uid from auth.users where email = 'b@b.com'
+), lifts as (
+  select row_number() over (order by name) - 1 as idx, id
+  from public.exercises
+  where is_predefined and name in ('Back Squat', 'Bench Press', 'Front Squat', 'Clean Pull', 'Arnold Press')
+), wk as (
+  select gen_random_uuid() as id, w
+  from generate_series(1, 12) as w
+), ins_wk as (
+  insert into public.program_weeks (id, program_id, user_id, week_number, label, notes, position)
+  select wk.id, '9c4fb05e-616d-427e-8fa0-b1c2d3e4f5a6', b.uid, wk.w, 'Week ' || wk.w, null, wk.w - 1
+  from wk, b
+), dy as (
+  select gen_random_uuid() as id, wk.id as week_id, wk.w, d,
+         (wk.w - 1) * 6 + (d - 1) as pos, d = 6 as is_rest
+  from wk, generate_series(1, 6) as d
+), ins_dy as (
+  insert into public.program_days (id, program_id, program_week_id, user_id, day_number, title, is_rest_day, notes, position)
+  select dy.id, '9c4fb05e-616d-427e-8fa0-b1c2d3e4f5a6', dy.week_id, b.uid, dy.d,
+         case when dy.is_rest then 'Rest' else 'Day ' || dy.d end, dy.is_rest, null, dy.pos
+  from dy, b
+), ex as (
+  select gen_random_uuid() as id, dy.id as day_id, e
+  from dy, generate_series(0, 4) as e
+  where not dy.is_rest
+), ins_ex as (
+  insert into public.program_exercises (id, program_day_id, user_id, exercise_id, position, notes)
+  select ex.id, ex.day_id, b.uid,
+         -- First slot is b's custom lift, the rest cycle predefined lifts.
+         case when ex.e = 0 then '5e0b7c1a-2d3f-4e5a-8b6c-7d8e9f0a1b2c'::uuid
+              else (select id from lifts where idx = ex.e - 1) end,
+         ex.e, null
+  from ex, b
+)
+insert into public.program_sets (program_exercise_id, user_id, position, target_reps, weight_mode, percentage, absolute_weight_kg, basis_exercise_id, note)
+select ex.id, b.uid, s, 5,
+       case when ex.e = 1 then 'percentage' else 'absolute' end,
+       case when ex.e = 1 then 70 + s * 5 else null end,
+       case when ex.e = 1 then null else 50 end,
+       null, null
+from ex, b, generate_series(0, 3) as s;
