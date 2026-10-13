@@ -163,4 +163,29 @@ void main() {
     });
     expect(instance.programName, isNull);
   });
+
+  test('Program.fromJson parses copy attribution and defaults to not a copy', () {
+    Map<String, dynamic> base() => {
+          'id': 'p1',
+          'user_id': 'u1',
+          'name': 'Block',
+          'created_at': '2026-10-12T00:00:00Z',
+          'updated_at': '2026-10-12T00:00:00Z',
+        };
+    final copy = Program.fromJson({
+      ...base(),
+      'is_copy': true,
+      'copied_from_user_id': 'u2',
+      'copied_from_display_name': 'BeastModeB',
+      'copied_from_program_id': 'p0',
+    });
+    expect(copy.isCopy, isTrue);
+    expect(copy.copiedFromUserId, 'u2');
+    expect(copy.copiedFromDisplayName, 'BeastModeB');
+    expect(copy.copiedFromProgramId, 'p0');
+
+    final own = Program.fromJson(base());
+    expect(own.isCopy, isFalse);
+    expect(own.copiedFromProgramId, isNull);
+  });
 }

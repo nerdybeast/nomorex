@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shared/widgets/copied_from_badge.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../models/program_week.dart';
@@ -43,6 +44,18 @@ class ProgramInstanceDetailScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 Text(instance.programName ?? program.name, style: Theme.of(context).textTheme.headlineSmall),
+                if (program.isCopy) ...[
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: CopiedFromBadge(
+              isCopy: true,
+              copiedFromUserId: program.copiedFromUserId,
+              copiedFromDisplayName: program.copiedFromDisplayName,
+              copiedFromSourceId: program.copiedFromProgramId,
+            ),
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Text(
                   upcoming

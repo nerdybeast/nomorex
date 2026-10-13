@@ -180,4 +180,53 @@ void main() {
     expect(s.basisExerciseId, isNull);
     expect(s.basisExerciseName, isNull);
   });
+
+  test('Workout.fromJson parses copy attribution', () {
+    final w = Workout.fromJson({
+      'id': 'w1',
+      'user_id': 'u1',
+      'workout_group_id': 'g1',
+      'title': 'Accessory Grinder',
+      'date': '2026-10-12',
+      'updated_at': '2026-10-12T00:00:00Z',
+      'is_copy': true,
+      'copied_from_user_id': 'u2',
+      'copied_from_display_name': 'BeastModeB',
+      'copied_from_workout_id': 'w0',
+      'copied_from_program_id': null,
+    });
+    expect(w.isCopy, isTrue);
+    expect(w.copiedFromUserId, 'u2');
+    expect(w.copiedFromDisplayName, 'BeastModeB');
+    expect(w.copiedFromSourceId, 'w0');
+  });
+
+  test('Workout.copiedFromSourceId falls back to the program for program runs', () {
+    final w = Workout.fromJson({
+      'id': 'w1',
+      'user_id': 'u1',
+      'workout_group_id': 'g1',
+      'title': 'Day 1',
+      'date': '2026-10-12',
+      'updated_at': '2026-10-12T00:00:00Z',
+      'is_copy': true,
+      'copied_from_user_id': 'u2',
+      'copied_from_program_id': 'p0',
+    });
+    expect(w.copiedFromSourceId, 'p0');
+  });
+
+  test('Workout.fromJson defaults to not a copy', () {
+    final w = Workout.fromJson({
+      'id': 'w1',
+      'user_id': 'u1',
+      'workout_group_id': 'g1',
+      'title': 'Day 1',
+      'date': '2026-10-12',
+      'updated_at': '2026-10-12T00:00:00Z',
+    });
+    expect(w.isCopy, isFalse);
+    expect(w.copiedFromUserId, isNull);
+    expect(w.copiedFromSourceId, isNull);
+  });
 }

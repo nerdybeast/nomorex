@@ -5,9 +5,11 @@ import '../utils/workout_copier.dart';
 import '../utils/workout_group_representative.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../community/providers/community_workouts_provider.dart';
+import '../../exercises/providers/exercises_provider.dart';
 import '../../../core/utils/sequential_naming.dart';
 import 'finished_workouts_provider.dart';
 import 'in_progress_workouts_provider.dart';
+import 'workout_copy_count_provider.dart';
 import 'workout_detail_provider.dart';
 
 part 'workouts_provider.g.dart';
@@ -81,6 +83,8 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
     ref.invalidate(finishedWorkoutsProvider);
     ref.invalidate(communityWorkoutsProvider);
     ref.invalidate(workoutDetailProvider(id));
+    // The deleted row may have been a saved copy of a community workout.
+    ref.invalidate(workoutCopyCountProvider);
     ref.invalidateSelf();
     await future;
   }
@@ -101,6 +105,7 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
       'title': '${src.title} (copy)',
       'date': DateTime.now().toIso8601String().split('T').first,
       if (src.notes != null) 'notes': src.notes,
+      ...copyAttributionColumns(src),
     }).select('id').single();
     final newWorkoutId = newWorkout['id'] as String;
 
@@ -113,6 +118,27 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
 
     ref.invalidateSelf();
     await future;
+  }
+
+  /// Saves a copy of another user's public workout into the viewer's own
+  /// workouts and, with [start], begins a session on it — all in one
+  /// transaction via the `copy_workout` RPC (exercises are mapped into the
+  /// viewer's catalog by name, so this can create custom exercises). Returns
+  /// the new workout's id. Errors are `PostgrestException`s whose message
+  /// `copyErrorMessage()` turns into user-facing text.
+  Future<String> saveCommunityWorkout(String sourceWorkoutId, {bool start = false}) async {
+    final newId = await _db.rpc('copy_workout', params: {
+      'p_source_workout_id': sourceWorkoutId,
+      'p_today': DateTime.now().toIso8601String().split('T').first,
+      'p_start': start,
+    }) as String;
+
+    ref.invalidate(exercisesProvider);
+    ref.invalidate(workoutCopyCountProvider);
+    if (start) ref.invalidate(inProgressWorkoutsProvider);
+    ref.invalidateSelf();
+    await future;
+    return newId;
   }
 
   Future<void> refresh() async {

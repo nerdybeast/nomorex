@@ -16,6 +16,10 @@ class Program {
     this.archivedAt,
     this.weeks = const [],
     this.ownerDisplayName,
+    this.isCopy = false,
+    this.copiedFromUserId,
+    this.copiedFromDisplayName,
+    this.copiedFromProgramId,
   });
 
   final String id;
@@ -33,6 +37,15 @@ class Program {
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<ProgramWeek> weeks;
+
+  /// A saved copy of another user's public program. Permanent and never
+  /// public; see `Workout.isCopy`.
+  final bool isCopy;
+  final String? copiedFromUserId;
+
+  /// The author's display name, snapshotted when the copy was made.
+  final String? copiedFromDisplayName;
+  final String? copiedFromProgramId;
 
   factory Program.fromJson(Map<String, dynamic> json) {
     final rawWeeks = (json['program_weeks'] as List?) ?? const [];
@@ -54,6 +67,10 @@ class Program {
       updatedAt: DateTime.parse(json['updated_at'] as String),
       weeks: weeks,
       ownerDisplayName: (json['profiles'] as Map<String, dynamic>?)?['display_name'] as String?,
+      isCopy: (json['is_copy'] as bool?) ?? false,
+      copiedFromUserId: json['copied_from_user_id'] as String?,
+      copiedFromDisplayName: json['copied_from_display_name'] as String?,
+      copiedFromProgramId: json['copied_from_program_id'] as String?,
     );
   }
 }

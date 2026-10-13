@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shared/widgets/copied_from_badge.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
@@ -159,6 +160,14 @@ class _ProgramTile extends ConsumerWidget {
     return SummaryCard(
       icon: Icons.checklist_outlined,
       title: program.name,
+      badge: program.isCopy
+          ? CopiedFromBadge(
+              isCopy: true,
+              copiedFromUserId: program.copiedFromUserId,
+              copiedFromDisplayName: program.copiedFromDisplayName,
+              copiedFromSourceId: program.copiedFromProgramId,
+            )
+          : null,
       body: (description == null || description.isEmpty)
           ? Text(
               'No Description.',

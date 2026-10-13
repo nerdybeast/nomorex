@@ -30,6 +30,7 @@ class ShellPage {
   Future<void> goToMyPrs() => goToTab('My PRs');
   Future<void> goToWorkouts() => goToTab('Workouts');
   Future<void> goToPrograms() => goToTab('Programs');
+  Future<void> goToCommunity() => goToTab('Community');
 
   /// Opens the FAB bottom sheet and picks one of its three entries:
   /// "New Personal Best", "New Workout", "New Program".

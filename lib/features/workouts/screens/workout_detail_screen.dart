@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/dark_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/weight_converter.dart';
+import '../../../shared/widgets/copied_from_badge.dart';
 import '../../../shared/widgets/set_pr_link.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../models/workout.dart';
@@ -63,6 +64,19 @@ class WorkoutDetailScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             Text(workout.title, style: Theme.of(context).textTheme.headlineSmall),
+            if (workout.isCopy) ...[
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: CopiedFromBadge(
+                  isCopy: true,
+                  copiedFromUserId: workout.copiedFromUserId,
+                  copiedFromDisplayName: workout.copiedFromDisplayName,
+                  copiedFromSourceId: workout.copiedFromSourceId,
+                ),
+              ),
+              const SizedBox(height: 4),
+            ],
             Text(formatDate(workout.date)),
             if (workout.notes != null && workout.notes!.isNotEmpty) ...[
               const SizedBox(height: 8),
