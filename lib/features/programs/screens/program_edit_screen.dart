@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/utils/copy_errors.dart';
+import '../../../shared/widgets/copied_from_badge.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -141,6 +143,18 @@ class ProgramEditScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (program.isCopy) ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: CopiedFromBadge(
+              isCopy: true,
+              copiedFromUserId: program.copiedFromUserId,
+              copiedFromDisplayName: program.copiedFromDisplayName,
+              copiedFromSourceId: program.copiedFromProgramId,
+            ),
+                ),
+                const SizedBox(height: 12),
+              ],
               _AutoSaveField(
                 initialValue: program.name,
                 labelText: 'Name',
@@ -159,9 +173,12 @@ class ProgramEditScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               ToggleCard(
                 title: 'Public',
-                subtitle: 'Other users can view this program',
+                subtitle: program.isCopy
+                    ? kCopyNotShareableMessage
+                    : 'Other users can view this program',
                 value: program.isPublic,
-                onChanged: (v) => notifier.updateVisibility(v),
+                // Copies can't be published — the database rejects it too.
+                onChanged: program.isCopy ? null : (v) => notifier.updateVisibility(v),
               ),
               const Divider(height: 32),
               if (program.weeks.isEmpty)

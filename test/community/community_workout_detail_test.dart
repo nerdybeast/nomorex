@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/shared/models/one_rep_max.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nomorex/core/theme/dark_theme.dart';
+import 'package:nomorex/core/utils/copy_errors.dart';
 import 'package:nomorex/core/utils/owner_name.dart';
+import 'package:nomorex/features/auth/providers/auth_provider.dart';
 import 'package:nomorex/features/community/providers/community_workout_detail_provider.dart';
 import 'package:nomorex/features/community/screens/community_workout_detail_screen.dart';
 import 'package:nomorex/features/exercises/models/exercise.dart';
@@ -14,6 +18,9 @@ import 'package:nomorex/features/workouts/models/workout.dart';
 import 'package:nomorex/features/workouts/models/workout_exercise.dart';
 import 'package:nomorex/features/workouts/models/workout_set.dart';
 import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
+import 'package:nomorex/features/workouts/providers/workout_copy_count_provider.dart';
+import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _StubCommunityWorkoutDetailNotifier extends CommunityWorkoutDetailNotifier {
   _StubCommunityWorkoutDetailNotifier(this._workout);
@@ -38,6 +45,31 @@ class _StubExercisesNotifier extends ExercisesNotifier {
     return onEnsureByName!(name);
   }
 }
+
+/// Records save/start calls instead of hitting the copy_workout RPC.
+class RecordingWorkoutsNotifier extends WorkoutsNotifier {
+  RecordingWorkoutsNotifier({this.onSave});
+  final Future<String> Function(String sourceId, bool start)? onSave;
+  final calls = <({String sourceId, bool start})>[];
+
+  @override
+  Future<List<Workout>> build() async => const [];
+
+  @override
+  Future<String> saveCommunityWorkout(String sourceWorkoutId, {bool start = false}) async {
+    calls.add((sourceId: sourceWorkoutId, start: start));
+    if (onSave != null) return onSave!(sourceWorkoutId, start);
+    return 'copy-1';
+  }
+}
+
+User _user(String id) => User(
+      id: id,
+      appMetadata: const {},
+      userMetadata: const {},
+      aud: 'authenticated',
+      createdAt: '2026-01-01T00:00:00Z',
+    );
 
 const _backSquat = Exercise(id: 'e1', name: 'Back Squat', isPredefined: true);
 const _cleanAndJerk = Exercise(id: 'e2', name: 'Clean & Jerk', isPredefined: true);
@@ -89,6 +121,9 @@ Future<void> pumpCommunityDetail(
   String unit = 'kg',
   Exercise Function(String name)? onEnsureByName,
   GoRouter? router,
+  String viewerId = 'viewer',
+  int copyCount = 0,
+  RecordingWorkoutsNotifier? workoutsNotifier,
 }) async {
   final overrides = [
     communityWorkoutDetailProvider('w1').overrideWith(
@@ -100,17 +135,29 @@ Future<void> pumpCommunityDetail(
       () => _StubExercisesNotifier(viewerExercises, onEnsureByName: onEnsureByName),
     ),
     unitPreferenceProvider.overrideWithValue(unit),
+    currentAuthUserProvider.overrideWithValue(_user(viewerId)),
+    workoutCopyCountProvider('w1').overrideWith((ref) async => copyCount),
+    workoutsProvider.overrideWith(() => workoutsNotifier ?? RecordingWorkoutsNotifier()),
   ];
 
   await tester.pumpWidget(
     ProviderScope(
       overrides: overrides,
-      child: router != null
-          ? MaterialApp.router(theme: AppDarkTheme.sleekOrange(), routerConfig: router)
-          : MaterialApp(
-              theme: AppDarkTheme.sleekOrange(),
-              home: const CommunityWorkoutDetailScreen(workoutId: 'w1'),
+      // Always under a GoRouter, as in the app: the save/start actions
+      // capture it up front for their SnackBar actions.
+      child: MaterialApp.router(
+        theme: AppDarkTheme.sleekOrange(),
+        routerConfig: router ??
+            GoRouter(
+              initialLocation: '/community/w1',
+              routes: [
+                GoRoute(
+                  path: '/community/w1',
+                  builder: (_, _) => const CommunityWorkoutDetailScreen(workoutId: 'w1'),
+                ),
+              ],
             ),
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -341,5 +388,214 @@ void main() {
     );
 
     expect(find.textContaining('5 reps · 80% 1RM · 176.4 lbs'), findsOneWidget);
+  });
+
+  group('save / start (FR-001, FR-014, FR-018)', () {
+    GoRouter routerWithDetail() => GoRouter(
+          initialLocation: '/community/w1',
+          routes: [
+            GoRoute(
+              path: '/community/w1',
+              builder: (_, _) => const CommunityWorkoutDetailScreen(workoutId: 'w1'),
+            ),
+            GoRoute(
+              path: '/workouts/:id',
+              builder: (_, state) => Text('workout:${state.pathParameters['id']}'),
+            ),
+          ],
+        );
+
+    testWidgets("offers Start and Save on another user's workout", (tester) async {
+      await pumpCommunityDetail(tester, workout: _publicWorkout());
+
+      expect(find.byKey(const Key('community_workout_start')), findsOneWidget);
+      expect(find.byKey(const Key('community_workout_save')), findsOneWidget);
+      expect(find.byKey(const Key('community_workout_saved_hint')), findsNothing);
+    });
+
+    testWidgets('offers neither on your own workout', (tester) async {
+      await pumpCommunityDetail(tester, workout: _publicWorkout(), viewerId: 'other-user');
+
+      expect(find.byKey(const Key('community_workout_start')), findsNothing);
+      expect(find.byKey(const Key('community_workout_save')), findsNothing);
+    });
+
+    testWidgets('says when the viewer already has copies, but still allows another save',
+        (tester) async {
+      await pumpCommunityDetail(tester, workout: _publicWorkout(), copyCount: 2);
+
+      expect(find.byKey(const Key('community_workout_saved_hint')), findsOneWidget);
+      expect(find.text("You've saved this 2 times"), findsOneWidget);
+      final save = tester.widget<ButtonStyleButton>(
+        find.byKey(const Key('community_workout_save')),
+      );
+      expect(save.onPressed, isNotNull);
+    });
+
+    testWidgets('Save copies without starting, confirms, and View opens the copy',
+        (tester) async {
+      final notifier = RecordingWorkoutsNotifier();
+      await pumpCommunityDetail(
+        tester,
+        workout: _publicWorkout(),
+        workoutsNotifier: notifier,
+        router: routerWithDetail(),
+      );
+
+      await tester.ensureVisible(find.byKey(const Key('community_workout_save')));
+      await tester.tap(find.byKey(const Key('community_workout_save')));
+      await tester.pumpAndSettle();
+
+      expect(notifier.calls, [(sourceId: 'w1', start: false)]);
+      expect(find.text('Saved to your workouts'), findsOneWidget);
+
+      await tester.tap(find.text('View'));
+      await tester.pumpAndSettle();
+      expect(find.text('workout:copy-1'), findsOneWidget);
+    });
+
+    GoRouter routerFromList() => GoRouter(
+          initialLocation: '/',
+          routes: [
+            GoRoute(
+              path: '/',
+              builder: (context, _) => Scaffold(
+                body: TextButton(
+                  onPressed: () => context.push('/community/w1'),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+            GoRoute(
+              path: '/community/w1',
+              builder: (_, _) => const CommunityWorkoutDetailScreen(workoutId: 'w1'),
+            ),
+            GoRoute(
+              path: '/workouts/:id',
+              builder: (_, state) => Text('workout:${state.pathParameters['id']}'),
+            ),
+          ],
+        );
+
+    // The SnackBar lives on the app-wide ScaffoldMessenger, so without the
+    // screen closing it, it follows the user back to the list.
+    testWidgets('leaving the screen closes its "Saved" SnackBar', (tester) async {
+      final router = routerFromList();
+      await pumpCommunityDetail(tester, workout: _publicWorkout(), router: router);
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byKey(const Key('community_workout_save')));
+      await tester.tap(find.byKey(const Key('community_workout_save')));
+      await tester.pumpAndSettle();
+      expect(find.text('Saved to your workouts'), findsOneWidget);
+
+      router.pop();
+      await tester.pumpAndSettle();
+
+      expect(find.text('open'), findsOneWidget);
+      expect(find.text('Saved to your workouts'), findsNothing);
+    });
+
+    testWidgets('the "Saved" SnackBar times out instead of persisting', (tester) async {
+      await pumpCommunityDetail(tester, workout: _publicWorkout());
+
+      await tester.ensureVisible(find.byKey(const Key('community_workout_save')));
+      await tester.tap(find.byKey(const Key('community_workout_save')));
+      await tester.pumpAndSettle();
+      expect(find.text('Saved to your workouts'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      expect(find.text('Saved to your workouts'), findsNothing);
+    });
+
+    // Scrolling the buttons out of the ListView must not dispose them (which
+    // would close the SnackBar, or leave View holding a dead context).
+    testWidgets('View still opens the copy after scrolling the buttons away', (tester) async {
+      final workout = _publicWorkout(extraExercises: [
+        for (var i = 0; i < 12; i++)
+          WorkoutExercise(
+            id: 'x$i',
+            workoutId: 'w1',
+            exerciseId: 'e1',
+            exerciseName: 'Filler $i',
+            position: i + 1,
+          ),
+      ]);
+      await pumpCommunityDetail(tester, workout: workout, router: routerFromList());
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byKey(const Key('community_workout_save')));
+      await tester.tap(find.byKey(const Key('community_workout_save')));
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.byType(ListView), const Offset(0, -3000));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('community_workout_save'), skipOffstage: true), findsNothing);
+
+      await tester.tap(find.text('View'));
+      await tester.pumpAndSettle();
+      expect(find.text('workout:copy-1'), findsOneWidget);
+    });
+
+    testWidgets('Start copies with start and opens the new session', (tester) async {
+      final notifier = RecordingWorkoutsNotifier();
+      await pumpCommunityDetail(
+        tester,
+        workout: _publicWorkout(),
+        workoutsNotifier: notifier,
+        router: routerWithDetail(),
+      );
+
+      await tester.ensureVisible(find.byKey(const Key('community_workout_start')));
+      await tester.tap(find.byKey(const Key('community_workout_start')));
+      await tester.pumpAndSettle();
+
+      expect(notifier.calls, [(sourceId: 'w1', start: true)]);
+      expect(find.text('workout:copy-1'), findsOneWidget);
+    });
+
+    testWidgets('both buttons are disabled while a copy is in flight', (tester) async {
+      final pending = Completer<String>();
+      await pumpCommunityDetail(
+        tester,
+        workout: _publicWorkout(),
+        workoutsNotifier: RecordingWorkoutsNotifier(onSave: (_, _) => pending.future),
+      );
+
+      await tester.ensureVisible(find.byKey(const Key('community_workout_save')));
+      await tester.tap(find.byKey(const Key('community_workout_save')));
+      await tester.pump();
+
+      for (final key in ['community_workout_start', 'community_workout_save']) {
+        expect(tester.widget<ButtonStyleButton>(find.byKey(Key(key))).onPressed, isNull);
+      }
+
+      pending.complete('copy-1');
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a failed save explains why and offers Retry', (tester) async {
+      await pumpCommunityDetail(
+        tester,
+        workout: _publicWorkout(),
+        workoutsNotifier: RecordingWorkoutsNotifier(
+          onSave: (_, _) => Future.error(
+            const PostgrestException(message: 'not_found: gone', code: 'P0001'),
+          ),
+        ),
+      );
+
+      await tester.ensureVisible(find.byKey(const Key('community_workout_save')));
+      await tester.tap(find.byKey(const Key('community_workout_save')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(copyErrorMessage(
+        const PostgrestException(message: 'not_found: gone', code: 'P0001'),
+      )), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+    });
   });
 }

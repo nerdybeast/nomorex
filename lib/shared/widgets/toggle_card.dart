@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 /// A card row pairing a title/subtitle with a trailing [Switch] — the
 /// "Public" toggle shape used by the New/Edit Program and Workout screens.
+/// A null [onChanged] disables the switch (e.g. "Public" on a saved copy).
 class ToggleCard extends StatelessWidget {
   const ToggleCard({
     super.key,
@@ -14,7 +15,7 @@ class ToggleCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final bool value;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {

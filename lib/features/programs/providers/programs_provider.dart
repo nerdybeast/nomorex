@@ -2,7 +2,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/program.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../exercises/providers/exercises_provider.dart';
 import '../../../core/utils/sequential_naming.dart';
+import 'program_copy_count_provider.dart';
+import 'program_instances_list_provider.dart';
 
 part 'programs_provider.g.dart';
 
@@ -54,6 +57,8 @@ class ProgramsNotifier extends _$ProgramsNotifier {
       'archived_at': DateTime.now().toIso8601String(),
     }).eq('id', id);
     ref.invalidate(archivedProgramsProvider);
+    // Archived copies don't count toward the community "saved" hint.
+    ref.invalidate(programCopyCountProvider);
     ref.invalidateSelf();
     await future;
   }
@@ -64,8 +69,34 @@ class ProgramsNotifier extends _$ProgramsNotifier {
       'archived_at': null,
     }).eq('id', id);
     ref.invalidate(archivedProgramsProvider);
+    ref.invalidate(programCopyCountProvider);
     ref.invalidateSelf();
     await future;
+  }
+
+  /// Saves a copy of another user's public program into the viewer's own
+  /// programs and, with [startDate], starts a run of the copy — one
+  /// transaction via the `copy_program` RPC, which reuses `start_program` so
+  /// scheduling matches starting your own program. Exercises are mapped into
+  /// the viewer's catalog by name (this can create custom exercises).
+  Future<({String programId, String? instanceId})> saveCommunityProgram(
+    String sourceProgramId, {
+    DateTime? startDate,
+  }) async {
+    final result = await _db.rpc('copy_program', params: {
+      'p_source_program_id': sourceProgramId,
+      'p_start_date': startDate?.toIso8601String().substring(0, 10),
+    }) as Map<String, dynamic>;
+
+    ref.invalidate(exercisesProvider);
+    ref.invalidate(programCopyCountProvider);
+    if (startDate != null) ref.invalidate(currentProgramInstancesProvider);
+    ref.invalidateSelf();
+    await future;
+    return (
+      programId: result['program_id'] as String,
+      instanceId: result['instance_id'] as String?,
+    );
   }
 
   Future<void> refresh() async {

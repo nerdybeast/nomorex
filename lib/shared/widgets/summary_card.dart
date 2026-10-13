@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 /// Shared chrome for a list entry that summarizes a program or workout: an
 /// icon badge, a bold [title], an optional muted [subtitle] (e.g. the author),
-/// an optional [body] and [status] line, and a row of small [chips].
+/// an optional [badge] (e.g. a `CopiedFromBadge`), an optional [body] and
+/// [status] line, and a row of small [chips].
 ///
 /// [trailing] defaults to a chevron; pass a menu button for owner-editable
 /// lists.
@@ -13,6 +14,7 @@ class SummaryCard extends StatelessWidget {
     required this.title,
     required this.onTap,
     this.subtitle,
+    this.badge,
     this.body,
     this.status,
     this.chips = const [],
@@ -23,6 +25,7 @@ class SummaryCard extends StatelessWidget {
   final String title;
   final VoidCallback onTap;
   final String? subtitle;
+  final Widget? badge;
   final Widget? body;
   final Widget? status;
   final List<SummaryInfoChip> chips;
@@ -69,6 +72,7 @@ class SummaryCard extends StatelessWidget {
                             ?.copyWith(color: colorScheme.onSurfaceVariant),
                       ),
                     ],
+                    if (badge != null) ...[const SizedBox(height: 6), badge!],
                     if (body != null) ...[const SizedBox(height: 8), body!],
                     if (status != null) ...[const SizedBox(height: 8), status!],
                     if (chips.isNotEmpty) ...[

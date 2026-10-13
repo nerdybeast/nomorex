@@ -3,15 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../shared/widgets/copied_from_badge.dart';
 import '../models/program_instance.dart';
 import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
 import '../providers/program_instances_list_provider.dart';
 import '../providers/program_instances_provider.dart';
-import '../utils/program_day_date.dart';
 import '../utils/program_day_summary.dart';
 import '../utils/program_progress.dart';
 import '../widgets/program_day_card.dart';
+import '../widgets/start_program_dialog.dart';
 
 /// Read-only rollup of an authored program (mirrors WorkoutDetailScreen's
 /// read affordances), plus the "Start Program" call to action that
@@ -21,49 +22,8 @@ class ProgramDetailScreen extends ConsumerWidget {
   final String programId;
 
   Future<void> _startProgram(BuildContext context, WidgetRef ref, int dayCount) async {
-    var startDate = DateTime.now();
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: const Text('Start Program'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Start date'),
-                subtitle: Text(formatDate(startDate)),
-                trailing: const Icon(Icons.calendar_today_outlined),
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: ctx,
-                    initialDate: startDate,
-                    firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                    lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
-                  );
-                  if (picked != null) setState(() => startDate = picked);
-                },
-              ),
-              if (dayCount > 0)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'Ends around ${formatDate(programDayDate(startDate, dayCount - 1))}.',
-                    style: Theme.of(ctx).textTheme.bodySmall,
-                  ),
-                ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Start')),
-          ],
-        ),
-      ),
-    );
-    if (confirmed != true) return;
+    final startDate = await showStartProgramDialog(context, dayCount: dayCount);
+    if (startDate == null || !context.mounted) return;
 
     try {
       final instanceId =
@@ -111,6 +71,18 @@ class ProgramDetailScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             Text(program.name, style: Theme.of(context).textTheme.headlineSmall),
+            if (program.isCopy) ...[
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: CopiedFromBadge(
+              isCopy: true,
+              copiedFromUserId: program.copiedFromUserId,
+              copiedFromDisplayName: program.copiedFromDisplayName,
+              copiedFromSourceId: program.copiedFromProgramId,
+            ),
+              ),
+            ],
             if (program.description != null && program.description!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(program.description!),

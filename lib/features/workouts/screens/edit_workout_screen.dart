@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../../core/utils/copy_errors.dart';
 import '../../../shared/widgets/toggle_card.dart';
 import '../providers/workout_detail_provider.dart';
 import '../utils/confirm_delete_workout.dart';
@@ -127,9 +128,12 @@ class EditWorkoutScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     ToggleCard(
                       title: 'Public',
-                      subtitle: 'Other users can view this workout',
+                      subtitle: workout.isCopy
+                          ? kCopyNotShareableMessage
+                          : 'Other users can view this workout',
                       value: workout.isPublic,
-                      onChanged: (v) => notifier.updateVisibility(v),
+                      // Copies can't be published — the database rejects it too.
+                      onChanged: workout.isCopy ? null : (v) => notifier.updateVisibility(v),
                     ),
                     const Divider(height: 32),
                     if (workout.exercises.isEmpty)

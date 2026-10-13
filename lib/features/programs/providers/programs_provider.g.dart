@@ -33,7 +33,7 @@ final class ProgramsNotifierProvider
   ProgramsNotifier create() => ProgramsNotifier();
 }
 
-String _$programsNotifierHash() => r'eafd60f9e20114cd719c8e9bc83681f7d44ada11';
+String _$programsNotifierHash() => r'fc678c49e98867493babd30584eb28d0a9c7ac2a';
 
 abstract class _$ProgramsNotifier extends $AsyncNotifier<List<Program>> {
   FutureOr<List<Program>> build();

@@ -234,6 +234,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
           'date': DateTime.now().toIso8601String().split('T').first,
           if (current.notes != null) 'notes': current.notes,
           'workout_group_id': current.workoutGroupId,
+          ...copyAttributionColumns(current),
         }).select('id').single();
         await copyWorkoutContents(
           _db,
@@ -291,6 +292,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
         'date': DateTime.now().toIso8601String().split('T').first,
         if (current.notes != null) 'notes': current.notes,
         'workout_group_id': groupId,
+        ...copyAttributionColumns(current),
       }).select('id').single();
       targetId = newWorkout['id'] as String;
 

@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../../shared/widgets/copied_from_badge.dart';
 import '../../../shared/widgets/summary_card.dart';
 import '../models/workout.dart';
 import '../providers/workouts_provider.dart';
@@ -133,6 +134,14 @@ class _WorkoutTile extends ConsumerWidget {
     return SummaryCard(
       icon: Icons.fitness_center_outlined,
       title: w.title,
+      badge: w.isCopy
+          ? CopiedFromBadge(
+              isCopy: true,
+              copiedFromUserId: w.copiedFromUserId,
+              copiedFromDisplayName: w.copiedFromDisplayName,
+              copiedFromSourceId: w.copiedFromSourceId,
+            )
+          : null,
       body: text == null || text.isEmpty
           ? null
           : Text(text, maxLines: 2, overflow: TextOverflow.ellipsis),

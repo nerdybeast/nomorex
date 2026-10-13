@@ -9,20 +9,23 @@ part of 'community_programs_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Public programs authored by *other* users, mirroring
-/// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks only, so
-/// the list can show a "N weeks" summary without pulling every day and set.
+/// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks and
+/// their day rows only (no exercises or sets), so the list can show week and
+/// training-day counts cheaply.
 
 @ProviderFor(CommunityProgramsNotifier)
 final communityProgramsProvider = CommunityProgramsNotifierProvider._();
 
 /// Public programs authored by *other* users, mirroring
-/// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks only, so
-/// the list can show a "N weeks" summary without pulling every day and set.
+/// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks and
+/// their day rows only (no exercises or sets), so the list can show week and
+/// training-day counts cheaply.
 final class CommunityProgramsNotifierProvider
     extends $AsyncNotifierProvider<CommunityProgramsNotifier, List<Program>> {
   /// Public programs authored by *other* users, mirroring
-  /// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks only, so
-  /// the list can show a "N weeks" summary without pulling every day and set.
+  /// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks and
+  /// their day rows only (no exercises or sets), so the list can show week and
+  /// training-day counts cheaply.
   CommunityProgramsNotifierProvider._()
     : super(
         from: null,
@@ -43,11 +46,12 @@ final class CommunityProgramsNotifierProvider
 }
 
 String _$communityProgramsNotifierHash() =>
-    r'd814ee3632eb8bb0665a3e99e51138a36ffa871f';
+    r'75d9bdb677328233a9a5144c59f819306d8a8fd6';
 
 /// Public programs authored by *other* users, mirroring
-/// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks only, so
-/// the list can show a "N weeks" summary without pulling every day and set.
+/// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks and
+/// their day rows only (no exercises or sets), so the list can show week and
+/// training-day counts cheaply.
 
 abstract class _$CommunityProgramsNotifier
     extends $AsyncNotifier<List<Program>> {
