@@ -75,7 +75,7 @@ class EditWorkoutScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('EDIT WORKOUT'),
+        title: const Text('Edit workout'),
         actions: [
           if (showDeleteIcon)
             IconButton(

@@ -1,15 +1,16 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/shared/widgets/pr_card.dart';
 
 import '../harness.dart';
 
-/// The "MY PRS" tab at `/shell/prs`.
+/// The "My PRs" tab at `/shell/prs`.
 class MyPrsPage {
   MyPrsPage(this.tester);
 
   final WidgetTester tester;
 
-  static final title = find.text('MY PRS');
+  static final title = find.descendant(of: find.byType(AppBar), matching: find.text('My PRs'));
 
   Future<void> waitUntilLoaded() => waitFor(tester, title);
 

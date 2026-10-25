@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/shared/models/one_rep_max.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nomorex/core/theme/dark_theme.dart';
+import 'package:nomorex/core/theme/app_theme.dart';
 import 'package:nomorex/core/utils/copy_errors.dart';
 import 'package:nomorex/core/utils/owner_name.dart';
 import 'package:nomorex/features/auth/providers/auth_provider.dart';
@@ -146,7 +146,7 @@ Future<void> pumpCommunityDetail(
       // Always under a GoRouter, as in the app: the save/start actions
       // capture it up front for their SnackBar actions.
       child: MaterialApp.router(
-        theme: AppDarkTheme.sleekOrange(),
+        theme: AppTheme.dark(),
         routerConfig: router ??
             GoRouter(
               initialLocation: '/community/w1',
@@ -219,9 +219,9 @@ void main() {
     expect(find.textContaining('5 reps · 80% 1RM · 80 kg'), findsOneWidget);
     expect(find.text('set PR'), findsNothing);
 
-    final accent = AppDarkTheme.sleekOrange()
-        .extension<NomorexDarkTokens>()!
-        .secondaryAccent;
+    final accent = AppTheme.dark()
+        .extension<NomorexTokens>()!
+        .info;
     expect(colorOfSpan(tester, '80 kg'), accent);
   });
 

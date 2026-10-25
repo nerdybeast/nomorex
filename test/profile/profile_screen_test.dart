@@ -255,7 +255,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.logout));
     await tester.pumpAndSettle();
 
-    expect(find.text('Log Out'), findsNWidgets(2)); // dialog title + confirm button
+    expect(find.text('Log out'), findsNWidgets(2)); // dialog title + confirm button
     expect(find.text('Are you sure you want to log out?'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
   });
@@ -291,7 +291,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.logout));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Log Out'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Log out'));
     await tester.pumpAndSettle();
 
     expect(signedOut, isTrue);

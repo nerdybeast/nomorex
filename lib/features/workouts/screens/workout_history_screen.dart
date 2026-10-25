@@ -31,7 +31,7 @@ class _WorkoutHistoryScreenState extends ConsumerState<WorkoutHistoryScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('WORKOUT HISTORY')),
+      appBar: AppBar(title: const Text('Workout history')),
       body: historyAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
@@ -131,7 +131,7 @@ class _HistoryEntryCard extends StatelessWidget {
               hasNotes
                   ? Text(notes)
                   : Text(
-                      'No Notes Provided',
+                      'No notes provided',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontStyle: FontStyle.italic,
                         color: theme.colorScheme.onSurfaceVariant,

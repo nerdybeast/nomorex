@@ -162,7 +162,7 @@ void main() {
       // exercise" dialog, so scope to it specifically rather than matching
       // any TextField showing the typed text.
       final customExerciseDialog = find.ancestor(
-        of: find.text('Custom Exercise'),
+        of: find.text('Custom exercise'),
         matching: find.byType(AlertDialog),
       );
       expect(

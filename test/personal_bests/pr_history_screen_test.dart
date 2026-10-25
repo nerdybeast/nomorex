@@ -76,7 +76,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('PR HISTORY'), findsOneWidget);
+    expect(find.text('PR history'), findsOneWidget);
     expect(find.text('Back Squat'), findsWidgets);
     expect(find.text('Bench Press'), findsNothing);
   });

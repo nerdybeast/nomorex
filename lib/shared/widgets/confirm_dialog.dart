@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/dark_theme.dart';
+import '../../core/theme/app_theme.dart';
 
 /// "Are you sure" confirmation for a destructive action, matching the style
 /// of FinishWorkoutScreen's "Discard workout?" dialog. Returns true only if
@@ -11,7 +11,7 @@ Future<bool> showConfirmDialog(
   required String confirmLabel,
   String cancelLabel = 'Cancel',
 }) async {
-  final tokens = Theme.of(context).extension<NomorexDarkTokens>();
+  final tokens = Theme.of(context).extension<NomorexTokens>();
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(

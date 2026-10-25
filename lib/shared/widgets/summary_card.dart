@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import 'list_group.dart';
 
-/// Shared chrome for a list entry that summarizes a program or workout: an
-/// icon badge, a bold [title], an optional muted [subtitle] (e.g. the author),
+/// Shared chrome for a list entry that summarizes a program or workout: a
+/// bordered icon tile, a bold [title], an optional muted [subtitle] (e.g. the author),
 /// an optional [badge] (e.g. a `CopiedFromBadge`), an optional [body] and
 /// [status] line, and a row of small [chips].
 ///
@@ -34,63 +36,58 @@ class SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final palette = NomorexTokens.of(context).palette;
     final sub = subtitle;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: colorScheme.primary, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    if (sub != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        sub,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: colorScheme.onSurfaceVariant),
-                      ),
-                    ],
-                    if (badge != null) ...[const SizedBox(height: 6), badge!],
-                    if (body != null) ...[const SizedBox(height: 8), body!],
-                    if (status != null) ...[const SizedBox(height: 8), status!],
-                    if (chips.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Wrap(spacing: 16, runSpacing: 6, children: chips),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              trailing ??
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant),
-                  ),
-            ],
+    return GroupableTile(
+      onTap: onTap,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Neutral icon tile: bordered, bg-2, fg-2 icon — no orange here.
+          Container(
+            width: NomorexSizes.iconTileSize,
+            height: NomorexSizes.iconTileSize,
+            decoration: BoxDecoration(
+              color: palette.bg2,
+              border: Border.all(color: palette.borderDefault),
+              borderRadius: BorderRadius.circular(NomorexSizes.radiusMd),
+            ),
+            child: Icon(icon, color: palette.fg2, size: 18),
           ),
-        ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleSmall),
+                if (sub != null) ...[
+                  const SizedBox(height: 2),
+                  Text(sub, style: theme.textTheme.bodySmall?.copyWith(color: palette.fg3)),
+                ],
+                if (badge != null) ...[const SizedBox(height: 6), badge!],
+                if (body != null) ...[
+                  const SizedBox(height: 4),
+                  DefaultTextStyle.merge(
+                    style: TextStyle(fontSize: 13, height: 18 / 13, color: palette.fg2),
+                    child: body!,
+                  ),
+                ],
+                if (status != null) ...[const SizedBox(height: 6), status!],
+                if (chips.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 12, runSpacing: 4, children: chips),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          trailing ??
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Icon(Icons.chevron_right, size: 20, color: palette.fg3),
+              ),
+        ],
       ),
     );
   }
@@ -106,11 +103,11 @@ class SummaryInfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = theme.colorScheme.onSurfaceVariant;
+    final color = NomorexTokens.of(context).fg3;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: color),
+        Icon(icon, size: 15, color: color),
         const SizedBox(width: 4),
         Text(label, style: theme.textTheme.bodySmall?.copyWith(color: color)),
       ],

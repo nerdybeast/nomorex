@@ -94,7 +94,7 @@ class _ExercisePickerState extends State<ExercisePicker> {
                               text: _fieldController?.text ?? '',
                             );
                             return AlertDialog(
-                              title: const Text('Custom Exercise'),
+                              title: const Text('Custom exercise'),
                               content: TextField(
                                 controller: nameCtrl,
                                 textCapitalization: TextCapitalization.sentences,

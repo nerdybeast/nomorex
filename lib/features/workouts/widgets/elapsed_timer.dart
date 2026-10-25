@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 import '../utils/workout_timer.dart';
 import '../../../core/utils/duration_formatter.dart';
 
@@ -82,23 +83,11 @@ class _ElapsedTimerState extends State<ElapsedTimer> {
     );
     final text = Text(
       formatDuration(elapsed),
-      // Deliberately not Theme.of(context).textTheme.displaySmall: that
-      // style uses the app's custom Google Font (Barlow), whose glyph
-      // metrics overshoot its calculated line box at this weight/size,
-      // visually overlapping whatever renders right after it. An explicit
-      // style with a generous height avoids that.
-      //
-      // tabularFigures is load-bearing when scaling (see below): with
-      // proportional digits the string's width changes as 1s and 2s swap in,
-      // which would make the FittedBox re-scale — and the whole timer visibly
-      // jump — every second.
-      style: widget.style ??
-          const TextStyle(
-            fontSize: 36,
-            fontWeight: FontWeight.bold,
-            height: 1.4,
-            fontFeatures: [FontFeature.tabularFigures()],
-          ),
+      // The design system's `timer` style (Inter 40/600). tabularFigures is
+      // load-bearing when scaling (see below): with proportional digits the
+      // string's width changes as 1s and 2s swap in, which would make the
+      // FittedBox re-scale — and the whole timer visibly jump — every second.
+      style: widget.style ?? NomorexTokens.of(context).timer,
     );
 
     final maxScaledWidth = widget.maxScaledWidth;

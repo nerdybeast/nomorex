@@ -173,7 +173,7 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Save Personal Best'));
+    await tester.tap(find.text('Save personal best'));
     await tester.pumpAndSettle();
 
     expect(captured, 100);
@@ -366,9 +366,9 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, '0'), '100');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Save Personal Best'));
+    await tester.ensureVisible(find.text('Save personal best'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save Personal Best'));
+    await tester.tap(find.text('Save personal best'));
     await tester.pumpAndSettle();
 
     expect(savedExerciseId, 'custom-zercher squat');

@@ -21,7 +21,7 @@ void main() {
 
       final shell = ShellPage(tester);
       await shell.waitUntilLoaded();
-      await shell.createNew('New Personal Best');
+      await shell.createNew('New personal best');
 
       final addPr = AddPrPage(tester);
       await addPr.waitUntilLoaded();

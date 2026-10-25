@@ -77,13 +77,13 @@ void main() {
 
     expect(find.text('205'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.add_circle_outline));
+    await tester.tap(find.byIcon(Icons.add));
     await tester.pump();
 
     // 205 + 2.5 -> 207.5, a genuine fraction, so the decimal now shows.
     expect(find.text('207.5'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.add_circle_outline));
+    await tester.tap(find.byIcon(Icons.add));
     await tester.pump();
 
     // 207.5 + 2.5 -> 210, back to a whole number.

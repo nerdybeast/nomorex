@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/copy_errors.dart';
-import '../../../core/theme/dark_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/owner_name.dart';
 import '../../../core/utils/weight_converter.dart';
@@ -38,7 +38,7 @@ class CommunityWorkoutDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('WORKOUT'),
+        title: const Text('Workout'),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),
@@ -54,7 +54,7 @@ class CommunityWorkoutDetailScreen extends ConsumerWidget {
         data: (workout) => ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            Text(workout.title, style: Theme.of(context).textTheme.headlineSmall),
+            Text(workout.title, style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 4),
             Text(
               'by ${ownerDisplayName(workout.ownerDisplayName)} · ${formatDate(workout.date)}',
@@ -186,7 +186,7 @@ class _CopyActionsState extends ConsumerState<_CopyActions> with AutomaticKeepAl
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
+    final tokens = Theme.of(context).extension<NomorexTokens>();
     final copies = ref.watch(workoutCopyCountProvider(widget.workoutId)).asData?.value ?? 0;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -347,7 +347,7 @@ class _SetRow extends StatelessWidget {
     final target = '$reps · ${set.percentage?.toStringAsFixed(0)}% $basisLabel · ';
 
     final baseStyle = DefaultTextStyle.of(context).style;
-    final accent = Theme.of(context).extension<NomorexDarkTokens>()?.secondaryAccent;
+    final accent = Theme.of(context).extension<NomorexTokens>()?.info;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

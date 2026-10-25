@@ -10,6 +10,7 @@ import '../providers/program_instance_detail_provider.dart';
 import '../providers/program_instance_workouts_provider.dart';
 import '../utils/program_day_summary.dart';
 import '../utils/program_progress.dart';
+import '../../../shared/widgets/list_group.dart';
 import '../widgets/program_day_card.dart';
 
 /// A running (or upcoming) program: the same week/day layout as the
@@ -27,7 +28,7 @@ class ProgramInstanceDetailScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('PROGRAM')),
+      appBar: AppBar(title: const Text('Program')),
       body: instanceAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
@@ -43,7 +44,7 @@ class ProgramInstanceDetailScreen extends ConsumerWidget {
             data: (program) => ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Text(instance.programName ?? program.name, style: Theme.of(context).textTheme.headlineSmall),
+                Text(instance.programName ?? program.name, style: Theme.of(context).textTheme.headlineMedium),
                 if (program.isCopy) ...[
                   const SizedBox(height: 4),
                   Align(
@@ -102,16 +103,20 @@ class _InstanceWeekSection extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
-          for (final day in week.days)
-            ProgramDayCard(
-              title: day.title,
-              subtitle: programDaySubtitle(day),
-              highlighted: isProgramDayToday(startedAt, day.position),
-              showChevron: programDayHasContent(day) && dayToWorkoutId.containsKey(day.id),
-              onTap: dayToWorkoutId.containsKey(day.id)
-                  ? () => context.push(AppConstants.routeWorkoutDetail(dayToWorkoutId[day.id]!))
-                  : null,
-            ),
+          ListGroup(
+            children: [
+              for (final day in week.days)
+                ProgramDayCard(
+                  title: day.title,
+                  subtitle: programDaySubtitle(day),
+                  highlighted: isProgramDayToday(startedAt, day.position),
+                  showChevron: programDayHasContent(day) && dayToWorkoutId.containsKey(day.id),
+                  onTap: dayToWorkoutId.containsKey(day.id)
+                      ? () => context.push(AppConstants.routeWorkoutDetail(dayToWorkoutId[day.id]!))
+                      : null,
+                ),
+            ],
+          ),
         ],
       ),
     );

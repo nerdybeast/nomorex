@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
 import '../models/program_instance.dart';
 import '../models/program_week.dart';
@@ -56,7 +57,7 @@ class ProgramDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PROGRAM'),
+        title: const Text('Program'),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -70,7 +71,7 @@ class ProgramDetailScreen extends ConsumerWidget {
         data: (program) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text(program.name, style: Theme.of(context).textTheme.headlineSmall),
+            Text(program.name, style: Theme.of(context).textTheme.headlineMedium),
             if (program.isCopy) ...[
               const SizedBox(height: 4),
               Align(
@@ -111,7 +112,7 @@ class ProgramDetailScreen extends ConsumerWidget {
                   onPressed: () => context
                       .push(AppConstants.routeProgramInstanceDetail(activeInstance!.id)),
                   icon: const Icon(Icons.visibility_outlined),
-                  label: const Text('View Progress'),
+                  label: const Text('View progress'),
                 ),
               ] else
                 FilledButton.icon(
@@ -121,7 +122,7 @@ class ProgramDetailScreen extends ConsumerWidget {
                     program.weeks.fold<int>(0, (sum, w) => sum + w.days.length),
                   ),
                   icon: const Icon(Icons.play_arrow),
-                  label: const Text('Start Program'),
+                  label: const Text('Start program'),
                 ),
               const SizedBox(height: 16),
               for (final week in program.weeks) _WeekSection(week: week, programId: programId),
@@ -156,15 +157,19 @@ class _WeekSection extends StatelessWidget {
               child: Text(week.notes!, style: Theme.of(context).textTheme.bodySmall),
             ),
           const SizedBox(height: 8),
-          for (final day in week.days)
-            ProgramDayCard(
-              title: day.title,
-              subtitle: programDaySubtitle(day),
-              showChevron: programDayHasContent(day),
-              onTap: programDayHasContent(day)
-                  ? () => context.push(AppConstants.routeProgramDayDetail(programId, day.id))
-                  : null,
-            ),
+          ListGroup(
+            children: [
+              for (final day in week.days)
+                ProgramDayCard(
+                  title: day.title,
+                  subtitle: programDaySubtitle(day),
+                  showChevron: programDayHasContent(day),
+                  onTap: programDayHasContent(day)
+                      ? () => context.push(AppConstants.routeProgramDayDetail(programId, day.id))
+                      : null,
+                ),
+            ],
+          ),
         ],
       ),
     );

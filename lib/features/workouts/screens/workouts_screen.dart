@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
@@ -28,7 +29,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('WORKOUTS'),
+        title: const Text('Workouts'),
         actions: [
           IconButton(
             icon: workoutsAsync.isRefreshing
@@ -45,7 +46,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.history),
-            tooltip: 'Workout History',
+            tooltip: 'Workout history',
             onPressed: () => context.push(AppConstants.routeWorkoutHistory),
           ),
           IconButton(
@@ -95,16 +96,12 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                 if (filtered.isEmpty) {
                   return const Center(child: Text('No workouts match your search.'));
                 }
-                return ListView.builder(
+                // Rows in one bordered container rather than a card each.
+                return ListView(
                   padding: shellListPadding(context),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, i) {
-                    final w = filtered[i];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _WorkoutTile(workout: w),
-                    );
-                  },
+                  children: [
+                    ListGroup(children: [for (final w in filtered) _WorkoutTile(workout: w)]),
+                  ],
                 );
               },
             ),
@@ -150,8 +147,9 @@ class _WorkoutTile extends ConsumerWidget {
           : Text(
               statusLabel,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
               ),
             ),
       chips: [

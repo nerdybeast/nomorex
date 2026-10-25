@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/theme/dark_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/one_rep_max_formula.dart';
 import '../../../core/utils/owner_name.dart';
@@ -12,11 +12,11 @@ class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
-    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
+    final tokens = Theme.of(context).extension<NomorexTokens>();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Log Out'),
+        title: const Text('Log out'),
         content: const Text('Are you sure you want to log out?'),
         actions: [
           Row(
@@ -32,7 +32,7 @@ class ProfileScreen extends ConsumerWidget {
               Expanded(
                 child: FilledButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Log Out'),
+                  child: const Text('Log out'),
                 ),
               ),
             ],
@@ -57,7 +57,7 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PROFILE'),
+        title: const Text('Profile'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -75,7 +75,7 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('PROFILE INFORMATION', style: Theme.of(context).textTheme.titleMedium),
+                  Text('PROFILE INFORMATION', style: NomorexTokens.of(context).eyebrow),
                   const SizedBox(height: 12),
                   _ProfileField(label: 'User ID', value: user?.id ?? '—', copyable: true),
                   const SizedBox(height: 16),
@@ -83,11 +83,11 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   _ProfileField(label: 'Member since', value: memberSince),
                   const SizedBox(height: 28),
-                  Text('DISPLAY NAME', style: Theme.of(context).textTheme.titleMedium),
+                  Text('DISPLAY NAME', style: NomorexTokens.of(context).eyebrow),
                   const SizedBox(height: 12),
                   const _DisplayNameField(),
                   const SizedBox(height: 28),
-                  Text('PREFERENCES', style: Theme.of(context).textTheme.titleMedium),
+                  Text('PREFERENCES', style: NomorexTokens.of(context).eyebrow),
                   const SizedBox(height: 12),
                   Text(
                     'Weight unit',
@@ -229,7 +229,7 @@ class _DisplayNameFieldState extends ConsumerState<_DisplayNameField> {
           onPressed: _saving ? null : _save,
           child: _saving
               ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Save Display Name'),
+              : const Text('Save display name'),
         ),
       ],
     );

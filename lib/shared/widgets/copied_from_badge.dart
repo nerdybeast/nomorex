@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/copy_attribution.dart';
 
 /// "Copied from …" pill for a workout or program the user saved from
@@ -29,23 +30,24 @@ class CopiedFromBadge extends StatelessWidget {
     );
     if (label == null) return const SizedBox.shrink();
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final palette = NomorexTokens.of(context).palette;
+    // Outlined, unfilled pill: border-default edge, fg-2 icon and label.
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        border: Border.all(color: palette.borderDefault),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.content_copy_outlined, size: 12, color: colorScheme.onSurfaceVariant),
-          const SizedBox(width: 6),
+          Icon(Icons.content_copy_outlined, size: 14, color: palette.fg2),
+          const SizedBox(width: 4),
           Flexible(
             child: Text(
               label,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              style: TextStyle(fontSize: 12, height: 16 / 12, color: palette.fg2),
             ),
           ),
         ],

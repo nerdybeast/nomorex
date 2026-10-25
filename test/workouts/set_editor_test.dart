@@ -87,7 +87,7 @@ void main() {
     await _tapStepper(
       tester,
       label: 'Sets',
-      icon: Icons.add_circle_outline,
+      icon: Icons.add,
       times: 2,
     );
     expect(find.text('Set 1 %1RM'), findsOneWidget);
@@ -98,7 +98,7 @@ void main() {
     await _tapStepper(
       tester,
       label: 'Set 2 %1RM',
-      icon: Icons.add_circle_outline,
+      icon: Icons.add,
     );
 
     await tester.tap(find.text('Add'));
@@ -179,17 +179,17 @@ void main() {
       await tester.tap(find.text('Add sets (weight)'));
       await tester.pumpAndSettle();
 
-      await _tapStepper(tester, label: 'Sets', icon: Icons.add_circle_outline);
+      await _tapStepper(tester, label: 'Sets', icon: Icons.add);
       await _tapStepper(
         tester,
         label: 'Reps',
-        icon: Icons.add_circle_outline,
+        icon: Icons.add,
         times: 4,
       );
       await _tapStepper(
         tester,
         label: 'Weight (lbs)',
-        icon: Icons.add_circle_outline,
+        icon: Icons.add,
       );
 
       await tester.tap(find.text('Add'));
@@ -355,7 +355,7 @@ void main() {
     final decrement = find.ancestor(
       of: find.descendant(
         of: row,
-        matching: find.byIcon(Icons.remove_circle_outline),
+        matching: find.byIcon(Icons.remove),
       ),
       matching: find.byType(IconButton),
     );

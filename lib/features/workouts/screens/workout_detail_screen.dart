@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/dark_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
+import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/set_pr_link.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../models/workout.dart';
@@ -42,7 +43,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('WORKOUT'),
+        title: const Text('Workout'),
         actions: [
           if (showEditIcon)
             IconButton(
@@ -63,7 +64,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
         data: (workout) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text(workout.title, style: Theme.of(context).textTheme.headlineSmall),
+            Text(workout.title, style: Theme.of(context).textTheme.headlineMedium),
             if (workout.isCopy) ...[
               const SizedBox(height: 4),
               Align(
@@ -77,7 +78,10 @@ class WorkoutDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 4),
             ],
-            Text(formatDate(workout.date)),
+            Text(
+              formatDate(workout.date),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
             if (workout.notes != null && workout.notes!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(workout.notes!),
@@ -138,11 +142,42 @@ class _StatusSection extends StatelessWidget {
     switch (workout.status) {
       case 'in_progress':
       case 'paused':
-        return ElapsedTimer(
-          startedAt: workout.startedAt!,
-          totalPausedSeconds: workout.totalPausedSeconds,
-          pausedAt: workout.pausedAt,
-          maxScaledWidth: AppConstants.kWorkoutTimerMaxWidth,
+        final tokens = NomorexTokens.of(context);
+        final palette = tokens.palette;
+        final isLive = workout.status == 'in_progress';
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // State line: the live dot is the only orange here.
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isLive ? palette.primary : palette.fg3,
+                    boxShadow: isLive
+                        ? [BoxShadow(color: palette.primarySubtle, spreadRadius: 3)]
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isLive ? 'In progress' : 'Paused',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: palette.fg2),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            ElapsedTimer(
+              startedAt: workout.startedAt!,
+              totalPausedSeconds: workout.totalPausedSeconds,
+              pausedAt: workout.pausedAt,
+              maxScaledWidth: AppConstants.kWorkoutTimerMaxWidth,
+              style: tokens.timer.copyWith(color: isLive ? palette.fg1 : palette.fg3),
+            ),
+          ],
         );
       case 'finished':
         final colorScheme = Theme.of(context).colorScheme;
@@ -175,7 +210,7 @@ class _StatusSection extends StatelessWidget {
         }
         return FilledButton(
           onPressed: isBusy ? null : () => notifier.startWorkout(),
-          child: const Text('Start Workout'),
+          child: const Text('Start workout'),
         );
     }
   }
@@ -199,7 +234,7 @@ class _StatusActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
+    final tokens = Theme.of(context).extension<NomorexTokens>();
     return Row(
       children: [
         Expanded(
@@ -270,7 +305,7 @@ class _FinishedActionsState extends State<_FinishedActions> {
   @override
   Widget build(BuildContext context) {
     return _PrimaryAndHistoryButtons(
-      primaryLabel: 'Do This Workout Again',
+      primaryLabel: 'Do this workout again',
       isBusy: _isRepeating,
       onPrimary: _isRepeating ? null : _repeat,
       workoutGroupId: widget.workout.workoutGroupId,
@@ -308,7 +343,7 @@ class _NotStartedWithHistoryActionsState extends State<_NotStartedWithHistoryAct
   @override
   Widget build(BuildContext context) {
     return _PrimaryAndHistoryButtons(
-      primaryLabel: 'Do This Workout Again',
+      primaryLabel: 'Do this workout again',
       isBusy: _isStarting,
       onPrimary: _isStarting ? null : _start,
       workoutGroupId: widget.workoutGroupId,
@@ -348,11 +383,11 @@ class _PrimaryAndHistoryButtons extends StatelessWidget {
         ),
         Align(
           alignment: Alignment.centerRight,
+          // Ghost button: neutral, no hardcoded color.
           child: TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.blue),
             onPressed: () =>
                 context.push(AppConstants.routeWorkoutHistoryFiltered(workoutGroupId)),
-            child: const Text('View History'),
+            child: const Text('View history'),
           ),
         ),
       ],
@@ -379,24 +414,46 @@ class _ExerciseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(exercise.exerciseName, style: Theme.of(context).textTheme.titleMedium),
-            if (exercise.notes != null && exercise.notes!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(exercise.notes!,
-                    style: Theme.of(context).textTheme.bodySmall),
+    final theme = Theme.of(context);
+    final tokens = NomorexTokens.of(context);
+    final notes = exercise.notes;
+    final done = exercise.sets.where((s) => s.completed).length;
+    // One list container per exercise: a bg-0 header (name, notes, a mono
+    // "2/4 sets" count) over one row per set.
+    return ListGroup(
+      margin: const EdgeInsets.only(bottom: 12),
+      header: ColoredBox(
+        color: tokens.palette.bg0,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      exercise.exerciseName,
+                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    if (notes != null && notes.isNotEmpty)
+                      Text(
+                        notes,
+                        style: theme.textTheme.bodySmall?.copyWith(color: tokens.fg3),
+                      ),
+                  ],
+                ),
               ),
-            const SizedBox(height: 4),
-            for (final s in exercise.sets) _setTile(s),
-          ],
+              if (exercise.sets.isNotEmpty)
+                Text(
+                  '$done/${exercise.sets.length} sets',
+                  style: tokens.eyebrow.copyWith(letterSpacing: 0),
+                ),
+            ],
+          ),
         ),
       ),
+      children: [for (final s in exercise.sets) _setTile(s)],
     );
   }
 
@@ -485,12 +542,20 @@ class _SetTile extends StatelessWidget {
       subtitle = Text(trailingText);
     }
 
+    // The whole row toggles the set. A completed set's reps drop to fg-2 but
+    // the weight stays readable — no strikethrough.
     return CheckboxListTile(
       dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
       controlAffinity: ListTileControlAffinity.leading,
       value: set.completed,
       onChanged: interactive ? (v) => onToggle?.call(set.id, v ?? false) : null,
-      title: Text('${set.targetReps ?? '-'} reps'),
+      title: Text(
+        '${set.targetReps ?? '-'} reps',
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: set.completed ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
+            ),
+      ),
       subtitle: subtitle,
     );
   }

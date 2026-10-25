@@ -121,7 +121,7 @@ class ProgramEditScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('EDIT PROGRAM'),
+        title: const Text('Edit program'),
         actions: [
           TextButton(
             onPressed: () => context.pop(),

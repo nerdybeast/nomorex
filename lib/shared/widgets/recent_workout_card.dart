@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import 'list_group.dart';
 
 /// Card for a completed workout. [completedDisplay] is pre-formatted (e.g.
 /// "Completed Aug 11, 2026") so this widget has no dependency on the data
@@ -18,34 +20,29 @@ class RecentWorkoutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(
-                      completedDisplay,
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                  ],
+    final palette = NomorexTokens.of(context).palette;
+    return GroupableTile(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  completedDisplay,
+                  style: theme.textTheme.bodySmall?.copyWith(color: palette.fg3),
                 ),
-              ),
-              if (onTap != null) ...[
-                const SizedBox(width: 8),
-                Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
               ],
-            ],
+            ),
           ),
-        ),
+          if (onTap != null) ...[
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right, size: 20, color: palette.fg3),
+          ],
+        ],
       ),
     );
   }

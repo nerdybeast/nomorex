@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import 'list_group.dart';
 
 /// Dashboard card for one running (or upcoming) program instance.
 /// [statusDisplay] is pre-formatted (e.g. "Upcoming — starts Aug 12, 2026"
@@ -19,34 +21,29 @@ class ProgramInstanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(programName, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(
-                      statusDisplay,
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                  ],
+    final palette = NomorexTokens.of(context).palette;
+    return GroupableTile(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(programName, style: theme.textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  statusDisplay,
+                  style: theme.textTheme.bodySmall?.copyWith(color: palette.fg3),
                 ),
-              ),
-              if (onTap != null) ...[
-                const SizedBox(width: 8),
-                Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
               ],
-            ],
+            ),
           ),
-        ),
+          if (onTap != null) ...[
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right, size: 20, color: palette.fg3),
+          ],
+        ],
       ),
     );
   }

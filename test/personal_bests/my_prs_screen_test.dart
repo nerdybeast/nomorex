@@ -111,7 +111,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('MY PRS'), findsOneWidget);
+    expect(find.text('My PRs'), findsOneWidget);
     expect(find.text('Back Squat'), findsOneWidget);
     expect(find.byIcon(Icons.refresh), findsOneWidget);
   });

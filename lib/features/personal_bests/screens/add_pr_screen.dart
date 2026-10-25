@@ -6,7 +6,7 @@ import '../../exercises/models/exercise.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
 import '../../profile/providers/profile_provider.dart';
-import '../../../core/theme/dark_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/one_rep_max_formula.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
@@ -131,11 +131,11 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
         ? estimateOneRepMaxKg(
             weightKg: entryWeightKg, reps: _reps, formula: formula)
         : null;
-    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
-    final overline = tokens?.overline;
+    final tokens = Theme.of(context).extension<NomorexTokens>();
+    final overline = tokens?.eyebrow;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('NEW PERSONAL BEST')),
+      appBar: AppBar(title: const Text('New personal best')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -226,7 +226,7 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                         key: const Key('add_pr_estimated_1rm'),
                         textAlign: TextAlign.right,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: tokens?.secondaryAccent,
+                              color: tokens?.info,
                               fontWeight: FontWeight.w600,
                             ),
                       ),
@@ -267,7 +267,7 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                       onPressed: (_loading || _selectedExercise == null) ? null : _submit,
                       child: _loading
                           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Save Personal Best'),
+                          : const Text('Save personal best'),
                     ),
                   ],
                 ),

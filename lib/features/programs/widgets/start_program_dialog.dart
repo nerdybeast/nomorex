@@ -16,7 +16,7 @@ Future<DateTime?> showStartProgramDialog(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setState) => AlertDialog(
-        title: const Text('Start Program'),
+        title: const Text('Start program'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
