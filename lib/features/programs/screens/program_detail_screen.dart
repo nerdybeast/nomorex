@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
+import '../../../shared/widgets/summary_card.dart';
+import '../models/program.dart';
 import '../models/program_instance.dart';
 import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
@@ -56,7 +59,7 @@ class ProgramDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PROGRAM'),
+        title: const Text('Program'),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -70,9 +73,9 @@ class ProgramDetailScreen extends ConsumerWidget {
         data: (program) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text(program.name, style: Theme.of(context).textTheme.headlineSmall),
+            Text(program.name, style: Theme.of(context).textTheme.headlineMedium),
             if (program.isCopy) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerLeft,
                 child: CopiedFromBadge(
@@ -84,15 +87,12 @@ class ProgramDetailScreen extends ConsumerWidget {
               ),
             ],
             if (program.description != null && program.description!.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(program.description!),
             ],
-            const SizedBox(height: 4),
-            Text(
-              '${program.weeks.length} ${program.weeks.length == 1 ? 'week' : 'weeks'}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            _ProgramFacts(program: program),
+            const SizedBox(height: 24),
             if (program.weeks.isEmpty)
               const Center(child: Text('This program has no weeks yet.'))
             else ...[
@@ -111,7 +111,7 @@ class ProgramDetailScreen extends ConsumerWidget {
                   onPressed: () => context
                       .push(AppConstants.routeProgramInstanceDetail(activeInstance!.id)),
                   icon: const Icon(Icons.visibility_outlined),
-                  label: const Text('View Progress'),
+                  label: const Text('View progress'),
                 ),
               ] else
                 FilledButton.icon(
@@ -121,7 +121,7 @@ class ProgramDetailScreen extends ConsumerWidget {
                     program.weeks.fold<int>(0, (sum, w) => sum + w.days.length),
                   ),
                   icon: const Icon(Icons.play_arrow),
-                  label: const Text('Start Program'),
+                  label: const Text('Start program'),
                 ),
               const SizedBox(height: 16),
               for (final week in program.weeks) _WeekSection(week: week, programId: programId),
@@ -129,6 +129,31 @@ class ProgramDetailScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Weeks, training days and created date with their icons — the same facts
+/// the Programs list shows under each program.
+class _ProgramFacts extends StatelessWidget {
+  const _ProgramFacts({required this.program});
+
+  final Program program;
+
+  @override
+  Widget build(BuildContext context) {
+    final trainingDays = countTrainingDays(
+      program.weeks.map((w) => w.days.map((d) => d.isRestDay)),
+    );
+    return Wrap(
+      spacing: 12,
+      runSpacing: 4,
+      children: [
+        SummaryInfoChip(Icons.calendar_view_week_outlined, pluralize(program.weeks.length, 'week')),
+        if (trainingDays > 0)
+          SummaryInfoChip(Icons.fitness_center_outlined, pluralize(trainingDays, 'training day')),
+        SummaryInfoChip(Icons.event_outlined, formatDate(program.createdAt)),
+      ],
     );
   }
 }
@@ -156,15 +181,19 @@ class _WeekSection extends StatelessWidget {
               child: Text(week.notes!, style: Theme.of(context).textTheme.bodySmall),
             ),
           const SizedBox(height: 8),
-          for (final day in week.days)
-            ProgramDayCard(
-              title: day.title,
-              subtitle: programDaySubtitle(day),
-              showChevron: programDayHasContent(day),
-              onTap: programDayHasContent(day)
-                  ? () => context.push(AppConstants.routeProgramDayDetail(programId, day.id))
-                  : null,
-            ),
+          ListGroup(
+            children: [
+              for (final day in week.days)
+                ProgramDayCard(
+                  title: day.title,
+                  subtitle: programDaySubtitle(day),
+                  showChevron: programDayHasContent(day),
+                  onTap: programDayHasContent(day)
+                      ? () => context.push(AppConstants.routeProgramDayDetail(programId, day.id))
+                      : null,
+                ),
+            ],
+          ),
         ],
       ),
     );

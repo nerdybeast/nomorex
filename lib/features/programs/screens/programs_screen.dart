@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
@@ -32,7 +33,7 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_showArchived ? 'ARCHIVED PROGRAMS' : 'PROGRAMS'),
+        title: Text(_showArchived ? 'Archived programs' : 'Programs'),
         actions: [
           IconButton(
             icon: programsAsync.isRefreshing
@@ -85,6 +86,7 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
                     padding: shellListPadding(context),
                     children: [
                       DashboardEmptyStateCard(
+                        ctaStyle: EmptyStateCtaStyle.link,
                         icon: Icons.checklist_outlined,
                         title: _showArchived ? 'No archived programs.' : 'No programs yet.',
                         message: _showArchived
@@ -109,16 +111,16 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
                 if (filtered.isEmpty) {
                   return const Center(child: Text('No programs match your search.'));
                 }
-                return ListView.builder(
+                // Rows in one bordered container rather than a card each.
+                return ListView(
                   padding: shellListPadding(context),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, i) {
-                    final p = filtered[i];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: _ProgramTile(program: p, showArchived: _showArchived),
-                    );
-                  },
+                  children: [
+                    ListGroup(
+                      children: [
+                        for (final p in filtered) _ProgramTile(program: p, showArchived: _showArchived),
+                      ],
+                    ),
+                  ],
                 );
               },
             ),

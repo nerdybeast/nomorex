@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_theme.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
@@ -17,7 +18,7 @@ class AppShell extends ConsumerWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.emoji_events_outlined),
-              title: const Text('New Personal Best'),
+              title: const Text('New personal best'),
               onTap: () {
                 Navigator.pop(ctx);
                 context.push(AppConstants.routeAddPr);
@@ -25,7 +26,7 @@ class AppShell extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.fitness_center_outlined),
-              title: const Text('New Workout'),
+              title: const Text('New workout'),
               onTap: () {
                 Navigator.pop(ctx);
                 context.push(AppConstants.routeWorkoutNew);
@@ -33,7 +34,7 @@ class AppShell extends ConsumerWidget {
             ),
             ListTile(
               leading: const Icon(Icons.checklist_outlined),
-              title: const Text('New Program'),
+              title: const Text('New program'),
               onTap: () {
                 Navigator.pop(ctx);
                 context.push(AppConstants.routeProgramNew);
@@ -55,13 +56,13 @@ class AppShell extends ConsumerWidget {
         body: shell,
         bottomNavigationBar: DecoratedBox(
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
+            color: colorScheme.surfaceContainerLowest,
             border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
           ),
           child: SafeArea(
             top: false,
             child: SizedBox(
-              height: 56,
+              height: NomorexSizes.navBarHeight,
               child: Row(
                 children: [
                   Expanded(
@@ -119,8 +120,7 @@ class AppShell extends ConsumerWidget {
           heroTag: 'shellAddFab',
           onPressed: () => _showAddMenu(context),
           tooltip: 'Add',
-          shape: const CircleBorder(),
-          child: const Icon(Icons.add),
+          child: const Icon(Icons.add, size: 26),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       );
@@ -142,8 +142,7 @@ class AppShell extends ConsumerWidget {
               onPressed: () => _showAddMenu(context),
               mini: true,
               tooltip: 'Add',
-              shape: const CircleBorder(),
-              child: const Icon(Icons.add),
+              child: const Icon(Icons.add, size: 22),
             ),
             destinations: const [
               NavigationRailDestination(
@@ -198,21 +197,25 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final color = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+    final theme = Theme.of(context);
+    final palette = NomorexTokens.of(context).palette;
+    // Selected: filled icon in primary-text, label in fg-1. Everything else
+    // stays fg-3 — no pill or indicator behind the icon.
     return InkWell(
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(selected ? selectedIcon : icon, size: 20, color: color),
-          const SizedBox(height: 3),
+          Icon(
+            selected ? selectedIcon : icon,
+            size: 20,
+            color: selected ? palette.primaryText : palette.fg3,
+          ),
+          const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 11,
-              color: color,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: selected ? palette.fg1 : palette.fg3,
             ),
           ),
         ],

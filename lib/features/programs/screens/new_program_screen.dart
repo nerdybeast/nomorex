@@ -62,7 +62,7 @@ class _NewProgramScreenState extends ConsumerState<NewProgramScreen> {
     final defaultName = ref.watch(nextProgramNameProvider).value;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('NEW PROGRAM')),
+      appBar: AppBar(title: const Text('New program')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -117,7 +117,7 @@ class _NewProgramScreenState extends ConsumerState<NewProgramScreen> {
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Save Program'),
+                          : const Text('Save program'),
                     ),
                   ],
                 ),

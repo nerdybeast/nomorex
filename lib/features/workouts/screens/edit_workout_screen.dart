@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/copy_errors.dart';
 import '../../../shared/widgets/toggle_card.dart';
 import '../providers/workout_detail_provider.dart';
@@ -75,7 +76,7 @@ class EditWorkoutScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('EDIT WORKOUT'),
+        title: const Text('Edit workout'),
         actions: [
           if (showDeleteIcon)
             IconButton(
@@ -92,12 +93,6 @@ class EditWorkoutScreen extends ConsumerWidget {
             child: const Text('Done'),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'editWorkoutFab',
-        onPressed: () => _addExercise(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('Exercise'),
       ),
       body: detail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -139,7 +134,7 @@ class EditWorkoutScreen extends ConsumerWidget {
                     if (workout.exercises.isEmpty)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Center(child: Text('No exercises yet. Tap "Exercise" to add one.')),
+                        child: Center(child: Text('No exercises yet. Tap "Add exercise" to add one.')),
                       ),
                   ]),
                 ),
@@ -214,6 +209,18 @@ class EditWorkoutScreen extends ConsumerWidget {
                     },
                   ),
                 ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                sliver: SliverToBoxAdapter(
+                  child: FilledButton.icon(
+                    key: const Key('edit_workout_add_exercise'),
+                    style: NomorexTokens.of(context).secondaryButtonStyle,
+                    onPressed: () => _addExercise(context, ref),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add exercise'),
+                  ),
+                ),
+              ),
             ],
           );
         },

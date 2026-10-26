@@ -213,7 +213,7 @@ void main() {
       expect(find.textContaining('Completed'), findsOneWidget);
       expect(find.text('Duration: 01:15:30'), findsOneWidget);
       expect(find.text('Felt strong today'), findsOneWidget);
-      expect(find.text('No Notes Provided'), findsNothing);
+      expect(find.text('No notes provided'), findsNothing);
     },
   );
 
@@ -241,7 +241,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final noNotes = tester.widget<Text>(find.text('No Notes Provided'));
+      final noNotes = tester.widget<Text>(find.text('No notes provided'));
       expect(noNotes.style?.fontStyle, FontStyle.italic);
     },
   );

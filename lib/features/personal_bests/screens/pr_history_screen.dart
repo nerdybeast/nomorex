@@ -37,7 +37,7 @@ class PrHistoryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PR HISTORY'),
+        title: const Text('PR history'),
         actions: [
           IconButton(
             key: const Key('pr_history_add'),
@@ -58,7 +58,7 @@ class PrHistoryScreen extends ConsumerWidget {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Text(history.first.exerciseName, style: theme.textTheme.headlineSmall),
+                Text(history.first.exerciseName, style: theme.textTheme.headlineMedium),
                 const SizedBox(height: 16),
                 for (final pr in history)
                   Padding(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/theme/dark_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../shared/models/editable_set_row.dart';
 import '../../../shared/widgets/number_stepper_field.dart';
@@ -49,7 +49,7 @@ class SetEditor extends ConsumerWidget {
     var reps = 1;
     var percentages = <double>[70];
     Exercise? basisExercise;
-    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
+    final tokens = Theme.of(context).extension<NomorexTokens>();
 
     await showDialog<void>(
       context: context,
@@ -164,7 +164,7 @@ class SetEditor extends ConsumerWidget {
     var reps = 1;
     var weightDisplay = 0.0;
     var dialogUnit = unit == 'both' ? 'kg' : unit;
-    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
+    final tokens = Theme.of(context).extension<NomorexTokens>();
 
     await showDialog<void>(
       context: context,
@@ -361,7 +361,7 @@ class _BasisOneRepMax extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final tokens = theme.extension<NomorexDarkTokens>();
+    final tokens = theme.extension<NomorexTokens>();
     final byId = ref.watch(oneRepMaxProvider).asData?.value ??
         const <String, OneRepMax>{};
     final byName = ref.watch(oneRepMaxByNameProvider).asData?.value ??
@@ -387,7 +387,7 @@ class _BasisOneRepMax extends ConsumerWidget {
         oneRepMax.isEstimated ? 'Est. 1RM $weight' : '1RM $weight',
         style: theme.textTheme.bodyMedium?.copyWith(
           fontWeight: FontWeight.w600,
-          color: oneRepMax.isEstimated ? tokens?.secondaryAccent : null,
+          color: oneRepMax.isEstimated ? tokens?.info : null,
         ),
       );
     }

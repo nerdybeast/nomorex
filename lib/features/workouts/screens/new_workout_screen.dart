@@ -62,7 +62,7 @@ class _NewWorkoutScreenState extends ConsumerState<NewWorkoutScreen> {
     final defaultTitle = ref.watch(nextWorkoutNameProvider).value;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('NEW WORKOUT')),
+      appBar: AppBar(title: const Text('New workout')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),

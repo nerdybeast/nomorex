@@ -388,11 +388,11 @@ void main() {
         onSetCompleted: (_, _) => toggled = true,
       );
 
-      expect(find.text('Start Workout'), findsOneWidget);
+      expect(find.text('Start workout'), findsOneWidget);
       expect(find.text('Pause'), findsNothing);
       expect(find.text('Finish'), findsNothing);
-      expect(find.text('Do This Workout Again'), findsNothing);
-      expect(find.text('View History'), findsNothing);
+      expect(find.text('Do this workout again'), findsNothing);
+      expect(find.text('View history'), findsNothing);
 
       await tester.tap(find.byType(CheckboxListTile));
       await tester.pumpAndSettle();
@@ -410,7 +410,7 @@ void main() {
       onStart: () => started = true,
     );
 
-    await tester.tap(find.text('Start Workout'));
+    await tester.tap(find.text('Start workout'));
     await tester.pumpAndSettle();
 
     expect(started, isTrue);
@@ -434,11 +434,11 @@ void main() {
         finishedSiblings: [finishedSibling],
       );
 
-      expect(find.text('Start Workout'), findsNothing);
-      expect(find.text('Do This Workout Again'), findsOneWidget);
-      expect(find.text('View History'), findsOneWidget);
+      expect(find.text('Start workout'), findsNothing);
+      expect(find.text('Do this workout again'), findsOneWidget);
+      expect(find.text('View history'), findsOneWidget);
 
-      await tester.tap(find.text('Do This Workout Again'));
+      await tester.tap(find.text('Do this workout again'));
       await tester.pumpAndSettle();
 
       expect(started, isTrue);
@@ -460,7 +460,7 @@ void main() {
         onPause: () => paused = true,
       );
 
-      expect(find.text('Start Workout'), findsNothing);
+      expect(find.text('Start workout'), findsNothing);
       expect(find.text('Pause'), findsOneWidget);
       expect(find.text('Resume'), findsNothing);
       expect(find.text('Finish'), findsOneWidget);
@@ -526,7 +526,7 @@ void main() {
 
       expect(find.text('00:45:00'), findsOneWidget);
       expect(find.text('Great session'), findsOneWidget);
-      expect(find.text('Start Workout'), findsNothing);
+      expect(find.text('Start workout'), findsNothing);
       expect(find.text('Pause'), findsNothing);
 
       await tester.tap(find.byType(CheckboxListTile));
@@ -703,7 +703,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('View History'));
+      await tester.tap(find.text('View history'));
       await tester.pumpAndSettle();
 
       expect(find.text('history:g1'), findsOneWidget);
@@ -753,7 +753,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Do This Workout Again'));
+      await tester.tap(find.text('Do this workout again'));
       await tester.pumpAndSettle();
 
       expect(find.text('detail:w2'), findsOneWidget);
@@ -790,11 +790,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Do This Workout Again'));
+      await tester.tap(find.text('Do this workout again'));
       await tester.pumpAndSettle();
 
       expect(find.text('This workout is already in progress.'), findsOneWidget);
-      expect(find.text('Do This Workout Again'), findsOneWidget);
+      expect(find.text('Do this workout again'), findsOneWidget);
     },
   );
 }

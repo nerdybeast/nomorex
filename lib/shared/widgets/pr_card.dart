@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/dark_theme.dart';
+import '../../core/theme/app_theme.dart';
+import 'list_group.dart';
 
 /// Displays a single personal best entry.
 /// [exerciseName], [weightDisplay] (pre-formatted, e.g. "120.0 kg"),
@@ -40,85 +41,81 @@ class PrCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = NomorexTokens.of(context);
+    final palette = tokens.palette;
     final note = notes;
     final estimate = estimatedOneRepMaxDisplay;
-    final accent = theme.extension<NomorexDarkTokens>()?.secondaryAccent;
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return GroupableTile(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(exerciseName, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 4),
-                        Text(
-                          dateDisplay,
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                        ),
-                      ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(exerciseName, style: theme.textTheme.titleSmall),
+                    const SizedBox(height: 2),
+                    Text(
+                      dateDisplay,
+                      style: theme.textTheme.bodySmall?.copyWith(color: palette.fg3),
                     ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(weightDisplay, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                      Text(
-                        reps == 1 ? '1 rep' : '$reps reps',
-                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                      ),
-                    ],
-                  ),
-                  if (onDelete != null) ...[
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      tooltip: 'Delete',
-                      onPressed: onDelete,
-                    ),
-                  ] else if (onTap != null) ...[
-                    const SizedBox(width: 8),
-                    Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
                   ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Weights are always mono, so loads line up down a list.
+                  Text(weightDisplay, style: tokens.weightMd.copyWith(color: palette.fg1)),
+                  Text(
+                    reps == 1 ? '1 rep' : '$reps reps',
+                    style: theme.textTheme.bodySmall?.copyWith(color: palette.fg3),
+                  ),
                 ],
               ),
-              // Right-aligned so it reads as part of the numbers column, but
-              // laid out full-width rather than as a third line inside it —
-              // the 'both' unit preference makes this string long enough
-              // ("Est. 1RM 394 lbs / 179 kg") to overflow a narrow column.
-              if (estimate != null) ...[
-                const SizedBox(height: 4),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    estimate,
-                    style: theme.textTheme.bodySmall?.copyWith(color: accent),
-                  ),
+              if (onDelete != null) ...[
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  tooltip: 'Delete',
+                  onPressed: onDelete,
                 ),
-              ],
-              // Full-width rather than tucked into the left column, so a long
-              // note wraps across the whole card and the weight/reps column
-              // stays lined up with the exercise name.
-              if (note != null && note.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  note,
-                  maxLines: notesMaxLines,
-                  overflow: notesMaxLines == null ? null : TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
+              ] else if (onTap != null) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.chevron_right, size: 20, color: palette.fg3),
               ],
             ],
           ),
-        ),
+          // Right-aligned so it reads as part of the numbers column, but
+          // laid out full-width rather than as a third line inside it —
+          // the 'both' unit preference makes this string long enough
+          // ("Est. 1RM 394 lbs / 179 kg") to overflow a narrow column.
+          if (estimate != null) ...[
+            const SizedBox(height: 2),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                estimate,
+                style: tokens.weight.copyWith(fontSize: 12, height: 16 / 12, color: palette.info),
+              ),
+            ),
+          ],
+          // Full-width rather than tucked into the left column, so a long
+          // note wraps across the whole row and the weight/reps column
+          // stays lined up with the exercise name.
+          if (note != null && note.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              note,
+              maxLines: notesMaxLines,
+              overflow: notesMaxLines == null ? null : TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(fontSize: 13, height: 18 / 13, color: palette.fg2),
+            ),
+          ],
+        ],
       ),
     );
   }

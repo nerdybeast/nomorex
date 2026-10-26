@@ -12,8 +12,9 @@ import 'package:nomorex/features/workouts/screens/workouts_screen.dart';
 // Any FAB rendered by a workouts screen therefore coexists with the shell FAB
 // and, if both use the default hero tag, collides during route transitions
 // ("multiple heroes that share the same tag") — which can escalate to a hard
-// framework crash. Each workout FAB must declare its own heroTag. (The
-// Workouts list itself has no FAB: creating a workout goes through the shell.)
+// framework crash. Each workout FAB must declare its own heroTag. (Neither
+// screen here has one now: creating a workout goes through the shell, and
+// Edit workout adds exercises with an in-page button.)
 
 class _EmptyWorkoutsNotifier extends WorkoutsNotifier {
   @override
@@ -45,7 +46,7 @@ void main() {
     },
   );
 
-  testWidgets('EditWorkoutScreen FAB declares a non-default heroTag', (
+  testWidgets('EditWorkoutScreen renders no FAB (adding an exercise is an in-page button)', (
     tester,
   ) async {
     final workout = Workout(
@@ -69,9 +70,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final fab = tester.widget<FloatingActionButton>(
-      find.byType(FloatingActionButton),
-    );
-    expect(fab.heroTag, 'editWorkoutFab');
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.byKey(const Key('edit_workout_add_exercise')), findsOneWidget);
   });
 }

@@ -84,12 +84,17 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Expanded(child: Text(widget.label)),
+          Expanded(
+            child: Text(
+              widget.label,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
           IconButton(
-            icon: const Icon(Icons.remove_circle_outline),
+            icon: const Icon(Icons.remove, size: 20),
             style: widget.decrementButtonStyle,
             onPressed: widget.value - widget.step < widget.min
                 ? null
@@ -97,7 +102,7 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
           ),
           const SizedBox(width: 8),
           SizedBox(
-            width: 88,
+            width: 80,
             child: TextField(
               controller: _controller,
               focusNode: _focusNode,
@@ -110,7 +115,7 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(Icons.add_circle_outline),
+            icon: const Icon(Icons.add, size: 20),
             style: widget.incrementButtonStyle,
             onPressed: () => _apply(widget.value + widget.step),
           ),

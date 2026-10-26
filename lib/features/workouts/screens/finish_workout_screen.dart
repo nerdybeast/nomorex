@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/dark_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../providers/workout_detail_provider.dart';
 import '../widgets/elapsed_timer.dart';
 
@@ -54,7 +54,7 @@ class _FinishWorkoutScreenState extends ConsumerState<FinishWorkoutScreen> {
     // evenly — asserts when queried for an intrinsic size outside an actual
     // Flex layout pass. A Column gives the inner Row a normal bounded-width
     // layout instead, sidestepping that.
-    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
+    final tokens = Theme.of(context).extension<NomorexTokens>();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -106,10 +106,10 @@ class _FinishWorkoutScreenState extends ConsumerState<FinishWorkoutScreen> {
   Widget build(BuildContext context) {
     final detail = ref.watch(workoutDetailProvider(widget.workoutId));
     final colorScheme = Theme.of(context).colorScheme;
-    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
+    final tokens = Theme.of(context).extension<NomorexTokens>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('FINISH WORKOUT')),
+      appBar: AppBar(title: const Text('Finish workout')),
       body: detail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),

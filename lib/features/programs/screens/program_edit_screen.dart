@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/copy_errors.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
 import '../../exercises/providers/exercises_provider.dart';
@@ -121,19 +122,13 @@ class ProgramEditScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('EDIT PROGRAM'),
+        title: const Text('Edit program'),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
             child: const Text('Done'),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'editProgramFab',
-        onPressed: () => ref.read(programDetailProvider(programId).notifier).addWeek(),
-        icon: const Icon(Icons.add),
-        label: const Text('Week'),
       ),
       body: detail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -184,7 +179,7 @@ class ProgramEditScreen extends ConsumerWidget {
               if (program.weeks.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: Text('No weeks yet. Tap "Week" to add one.')),
+                  child: Center(child: Text('No weeks yet. Tap "Add week" to add one.')),
                 )
               else
                 for (final week in program.weeks)
@@ -196,6 +191,15 @@ class ProgramEditScreen extends ConsumerWidget {
                     onAddDay: (week) => _addDay(context, ref, week),
                     onAddExercise: (dayId) => _addExercise(context, ref, dayId),
                   ),
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                key: const Key('edit_program_add_week'),
+                style: NomorexTokens.of(context).secondaryButtonStyle,
+                onPressed: () => notifier.addWeek(),
+                icon: const Icon(Icons.add),
+                label: const Text('Add week'),
+              ),
+              const SizedBox(height: 8),
             ],
           );
         },

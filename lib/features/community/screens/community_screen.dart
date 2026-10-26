@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/owner_name.dart';
+import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../providers/community_programs_provider.dart';
@@ -36,7 +37,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('COMMUNITY'),
+        title: const Text('Community'),
         actions: [
           IconButton(
             icon: isRefreshing
@@ -138,19 +139,19 @@ class _WorkoutsTab extends ConsumerWidget {
         if (filtered.isEmpty) {
           return const Center(child: Text('No workouts match your search.'));
         }
-        return ListView.builder(
+        return ListView(
           padding: shellListPadding(context),
-          itemCount: filtered.length,
-          itemBuilder: (context, i) {
-            final w = filtered[i];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: CommunityWorkoutCard(
-                workout: w,
-                onTap: () => context.push(AppConstants.routeCommunityWorkoutDetail(w.id)),
-              ),
-            );
-          },
+          children: [
+            ListGroup(
+              children: [
+                for (final w in filtered)
+                  CommunityWorkoutCard(
+                    workout: w,
+                    onTap: () => context.push(AppConstants.routeCommunityWorkoutDetail(w.id)),
+                  ),
+              ],
+            ),
+          ],
         );
       },
     );
@@ -188,19 +189,19 @@ class _ProgramsTab extends ConsumerWidget {
         if (filtered.isEmpty) {
           return const Center(child: Text('No programs match your search.'));
         }
-        return ListView.builder(
+        return ListView(
           padding: shellListPadding(context),
-          itemCount: filtered.length,
-          itemBuilder: (context, i) {
-            final p = filtered[i];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: CommunityProgramCard(
-                program: p,
-                onTap: () => context.push(AppConstants.routeCommunityProgramDetail(p.id)),
-              ),
-            );
-          },
+          children: [
+            ListGroup(
+              children: [
+                for (final p in filtered)
+                  CommunityProgramCard(
+                    program: p,
+                    onTap: () => context.push(AppConstants.routeCommunityProgramDetail(p.id)),
+                  ),
+              ],
+            ),
+          ],
         );
       },
     );

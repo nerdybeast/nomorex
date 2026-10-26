@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/my_prs_grouped_provider.dart';
 import '../providers/personal_bests_provider.dart';
+import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/pr_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
@@ -40,7 +41,7 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MY PRS'),
+        title: const Text('My PRs'),
         actions: [
           IconButton(
             icon: prsAsync.isRefreshing
@@ -94,6 +95,7 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
                     padding: shellListPadding(context),
                     children: [
                       DashboardEmptyStateCard(
+                        ctaStyle: EmptyStateCtaStyle.link,
                         icon: Icons.emoji_events_outlined,
                         title: 'No PRs yet.',
                         message: 'Log a personal best to start tracking your progress.',
@@ -114,30 +116,30 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
                     ),
                   );
                 }
-                return ListView.builder(
+                // Rows in one bordered container rather than a card each.
+                return ListView(
                   padding: shellListPadding(context),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final entry = filtered.entries.elementAt(index);
-                    final exerciseName = entry.key;
-                    final prs = entry.value;
-                    final best = prs.first; // sorted by date desc, first = most recent
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: PrCard(
-                        exerciseName: exerciseName,
-                        weightDisplay: formatWeightForPreference(best.weightKg, unit),
-                        reps: best.reps,
-                        dateDisplay: formatDate(best.date),
-                        notes: best.notes,
-                        notesMaxLines: 2,
-                        estimatedOneRepMaxDisplay:
-                            estimatedOneRepMaxLabel(best, formula, unit),
-                        onTap: () => context.push(AppConstants.routePrHistory(best.exerciseId)),
-                      ),
-                    );
-                  },
+                  children: [
+                    ListGroup(
+                      children: [
+                        for (final entry in filtered.entries)
+                          // Each value list is sorted by date desc, so first =
+                          // most recent.
+                          PrCard(
+                            exerciseName: entry.key,
+                            weightDisplay: formatWeightForPreference(entry.value.first.weightKg, unit),
+                            reps: entry.value.first.reps,
+                            dateDisplay: formatDate(entry.value.first.date),
+                            notes: entry.value.first.notes,
+                            notesMaxLines: 2,
+                            estimatedOneRepMaxDisplay:
+                                estimatedOneRepMaxLabel(entry.value.first, formula, unit),
+                            onTap: () =>
+                                context.push(AppConstants.routePrHistory(entry.value.first.exerciseId)),
+                          ),
+                      ],
+                    ),
+                  ],
                 );
               },
             ),

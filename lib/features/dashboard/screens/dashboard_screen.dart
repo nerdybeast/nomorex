@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
+import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/pr_card.dart';
 import '../../personal_bests/utils/estimated_pr_label.dart';
 import '../../../shared/widgets/program_instance_card.dart';
@@ -9,7 +10,7 @@ import '../../../shared/widgets/recent_workout_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/workout_in_progress_card.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/dark_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../personal_bests/providers/personal_bests_provider.dart';
@@ -65,7 +66,7 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('DASHBOARD'),
+        title: const Text('Dashboard'),
         actions: [
           IconButton(
             icon: isRefreshing
@@ -101,10 +102,7 @@ class DashboardScreen extends ConsumerWidget {
             const _DashboardWelcomeBanner(),
             const SizedBox(height: 24),
           ],
-          Text(
-            'WORKOUTS IN PROGRESS',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          const _SectionLabel('Workouts in progress'),
           const SizedBox(height: 8),
           inProgressWorkoutsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -115,6 +113,7 @@ class DashboardScreen extends ConsumerWidget {
             data: (workouts) {
               if (workouts.isEmpty) {
                 return DashboardEmptyStateCard(
+                  ctaStyle: EmptyStateCtaStyle.link,
                   icon: Icons.fitness_center_outlined,
                   title: 'No workouts currently in progress.',
                   message: hasWorkouts
@@ -128,17 +127,15 @@ class DashboardScreen extends ConsumerWidget {
                       : context.push(AppConstants.routeWorkoutNew),
                 );
               }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              return ListGroup(
                 children: [
                   for (final workout in workouts)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: WorkoutInProgressCard(
+                    WorkoutInProgressCard(
                         title: workout.title,
                         statusDisplay: workout.status == 'paused'
                             ? 'Paused'
                             : 'In progress',
+                        isLive: workout.status != 'paused',
                         // Ticks live for an in-progress workout and renders
                         // frozen for a paused one — ElapsedTimer handles both.
                         statusTrailing: ElapsedTimer(
@@ -147,9 +144,7 @@ class DashboardScreen extends ConsumerWidget {
                           pausedAt: workout.pausedAt,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                                color: NomorexTokens.of(context).palette.fg1,
                                 fontFeatures: const [
                                   FontFeature.tabularFigures(),
                                 ],
@@ -159,16 +154,12 @@ class DashboardScreen extends ConsumerWidget {
                           AppConstants.routeWorkoutDetail(workout.id),
                         ),
                       ),
-                    ),
                 ],
               );
             },
           ),
           const SizedBox(height: 24),
-          Text(
-            'CURRENT PROGRAMS',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          const _SectionLabel('Current programs'),
           const SizedBox(height: 8),
           instancesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -179,6 +170,7 @@ class DashboardScreen extends ConsumerWidget {
             data: (instances) {
               if (instances.isEmpty) {
                 return DashboardEmptyStateCard(
+                  ctaStyle: EmptyStateCtaStyle.link,
                   icon: Icons.checklist_outlined,
                   title: 'No programs currently in progress.',
                   message: hasPrograms
@@ -192,13 +184,10 @@ class DashboardScreen extends ConsumerWidget {
                       : context.push(AppConstants.routeProgramNew),
                 );
               }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              return ListGroup(
                 children: [
                   for (final instance in instances)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: ProgramInstanceCard(
+                    ProgramInstanceCard(
                         programName: instance.programName ?? 'Program',
                         statusDisplay: isProgramUpcoming(instance.startedAt)
                             ? 'Upcoming — starts ${formatDate(instance.startedAt)}'
@@ -207,13 +196,12 @@ class DashboardScreen extends ConsumerWidget {
                           AppConstants.routeProgramInstanceDetail(instance.id),
                         ),
                       ),
-                    ),
                 ],
               );
             },
           ),
           const SizedBox(height: 24),
-          Text('RECENT PRS', style: Theme.of(context).textTheme.titleMedium),
+          const _SectionLabel('Recent PRs'),
           const SizedBox(height: 8),
           prsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -229,6 +217,7 @@ class DashboardScreen extends ConsumerWidget {
                   .toList();
               if (prs.isEmpty) {
                 return DashboardEmptyStateCard(
+                  ctaStyle: EmptyStateCtaStyle.link,
                   icon: Icons.emoji_events_outlined,
                   title: 'No PRs yet.',
                   message:
@@ -237,13 +226,10 @@ class DashboardScreen extends ConsumerWidget {
                   onCta: () => context.push(AppConstants.routeAddPr),
                 );
               }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              return ListGroup(
                 children: [
                   for (final pr in prs)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: PrCard(
+                    PrCard(
                         exerciseName: pr.exerciseName,
                         weightDisplay: formatWeightForPreference(
                           pr.weightKg,
@@ -262,16 +248,12 @@ class DashboardScreen extends ConsumerWidget {
                           AppConstants.routePrHistory(pr.exerciseId),
                         ),
                       ),
-                    ),
                 ],
               );
             },
           ),
           const SizedBox(height: 24),
-          Text(
-            'RECENT WORKOUTS',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          const _SectionLabel('Recent workouts'),
           const SizedBox(height: 8),
           finishedWorkoutsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -288,13 +270,10 @@ class DashboardScreen extends ConsumerWidget {
                   message: "Finish a workout and it'll show up here.",
                 );
               }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              return ListGroup(
                 children: [
                   for (final workout in recent)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: RecentWorkoutCard(
+                    RecentWorkoutCard(
                         title: workout.title,
                         completedDisplay:
                             'Completed ${formatDate(workout.finishedAt!.toLocal())}',
@@ -302,7 +281,6 @@ class DashboardScreen extends ConsumerWidget {
                           AppConstants.routeWorkoutDetail(workout.id),
                         ),
                       ),
-                    ),
                 ],
               );
             },
@@ -313,48 +291,55 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
+/// A section's eyebrow label: mono caps in fg-3, above its rows.
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(label.toUpperCase(), style: NomorexTokens.of(context).eyebrow);
+  }
+}
+
 /// Shown above the section list only when the user has no data anywhere on
 /// the dashboard yet, so a brand-new sign-in doesn't read as 4 stacked
-/// empty sections with no framing.
+/// empty sections with no framing. The orange is in the eyebrow only — no
+/// orange fill or border on the card.
 class _DashboardWelcomeBanner extends StatelessWidget {
   const _DashboardWelcomeBanner();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final overline = theme.extension<NomorexDarkTokens>()?.overline;
+    final tokens = NomorexTokens.of(context);
+    final palette = tokens.palette;
+    final emphasis = TextStyle(color: palette.fg1, fontWeight: FontWeight.w500);
     return Card(
-      color: colorScheme.primaryContainer,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: colorScheme.primary),
-      ),
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+        padding: const EdgeInsets.all(20),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.flag_outlined, color: colorScheme.primary, size: 28),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Text('GET STARTED', style: tokens.eyebrow.copyWith(color: palette.primaryText)),
+            const SizedBox(height: 6),
+            Text('Welcome to NoMoreX', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 6),
+            Text.rich(
+              TextSpan(
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontSize: 13,
+                  height: 18 / 13,
+                  color: palette.fg2,
+                ),
                 children: [
-                  Text('GET STARTED', style: overline),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Welcome to NoMoreX',
-                    style: theme.textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Log a workout, hit a new PR, or start a program — your '
-                    'dashboard will fill in as you go.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+                  const TextSpan(text: 'Log a workout, hit a '),
+                  TextSpan(text: 'new PR', style: emphasis),
+                  const TextSpan(text: ', or start a '),
+                  TextSpan(text: 'program', style: emphasis),
+                  const TextSpan(text: '. Your dashboard fills in as you go.'),
                 ],
               ),
             ),

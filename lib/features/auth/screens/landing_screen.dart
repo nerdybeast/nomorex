@@ -36,7 +36,7 @@ class LandingScreen extends StatelessWidget {
                 onPressed: () => context.push(AppConstants.routeLogin),
                 child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 4),
-                  child: Text('Log In'),
+                  child: Text('Log in'),
                 ),
               ),
               const SizedBox(height: 32),

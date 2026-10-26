@@ -7,8 +7,7 @@ import '../harness.dart';
 ///
 /// Both desktop targets open a window wider than `kMobileBreakpoint` (600px),
 /// so `AppShell` renders its `NavigationRail` branch. Tab labels below are the
-/// rail destination labels; the mobile `BottomAppBar` branch uses the same
-/// strings, so these finders would still work if the window were narrow.
+/// rail destination labels, and [goToTab] only looks inside the rail.
 class ShellPage {
   ShellPage(this.tester);
 
@@ -20,7 +19,12 @@ class ShellPage {
   Future<void> waitUntilLoaded() => waitFor(tester, addFab);
 
   Future<void> goToTab(String label) async {
-    final destination = find.text(label);
+    // Scoped to the rail: screen titles now share these labels (sentence
+    // case), so a bare find.text could hit the app bar instead.
+    final destination = find.descendant(
+      of: find.byType(NavigationRail),
+      matching: find.text(label),
+    );
     await waitFor(tester, destination);
     await tester.tap(destination.first);
     await tester.pumpAndSettle();
@@ -33,7 +37,7 @@ class ShellPage {
   Future<void> goToCommunity() => goToTab('Community');
 
   /// Opens the FAB bottom sheet and picks one of its three entries:
-  /// "New Personal Best", "New Workout", "New Program".
+  /// "New personal best", "New workout", "New program".
   Future<void> createNew(String entry) async {
     await tester.tap(addFab);
     await tester.pumpAndSettle();

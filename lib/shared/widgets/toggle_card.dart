@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import 'list_group.dart';
 
 /// A card row pairing a title/subtitle with a trailing [Switch] — the
 /// "Public" toggle shape used by the New/Edit Program and Workout screens.
@@ -19,29 +21,28 @@ class ToggleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
+    final theme = Theme.of(context);
+    final palette = NomorexTokens.of(context).palette;
+    return GroupableTile(
       margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(color: palette.fg3),
+                ),
+              ],
             ),
-            Switch(value: value, onChanged: onChanged),
-          ],
-        ),
+          ),
+          Switch(value: value, onChanged: onChanged),
+        ],
       ),
     );
   }

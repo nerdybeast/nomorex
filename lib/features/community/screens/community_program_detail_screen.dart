@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/dark_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/copy_errors.dart';
 import '../../../core/utils/owner_name.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -10,6 +10,7 @@ import '../../programs/models/program_week.dart';
 import '../../programs/providers/program_copy_count_provider.dart';
 import '../../programs/providers/programs_provider.dart';
 import '../../programs/utils/program_day_summary.dart';
+import '../../../shared/widgets/list_group.dart';
 import '../../programs/widgets/program_day_card.dart';
 import '../../programs/widgets/start_program_dialog.dart';
 import '../providers/community_program_detail_provider.dart';
@@ -32,7 +33,7 @@ class CommunityProgramDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PROGRAM'),
+        title: const Text('Program'),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),
@@ -50,7 +51,7 @@ class CommunityProgramDetailScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              Text(program.name, style: Theme.of(context).textTheme.headlineSmall),
+              Text(program.name, style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 4),
               Text(
                 'by ${ownerDisplayName(program.ownerDisplayName)} · '
@@ -196,7 +197,7 @@ class _CopyActionsState extends ConsumerState<_CopyActions> with AutomaticKeepAl
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final tokens = Theme.of(context).extension<NomorexDarkTokens>();
+    final tokens = Theme.of(context).extension<NomorexTokens>();
     final copies = ref.watch(programCopyCountProvider(widget.programId)).asData?.value ?? 0;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -265,17 +266,21 @@ class _WeekSection extends StatelessWidget {
               child: Text(week.notes!, style: Theme.of(context).textTheme.bodySmall),
             ),
           const SizedBox(height: 8),
-          for (final day in week.days)
-            ProgramDayCard(
-              title: day.title,
-              subtitle: programDaySubtitle(day),
-              showChevron: programDayHasContent(day),
-              // ProgramDayDetailScreen has no edit affordances of its own, so
-              // it doubles as the read-only day view for a foreign program.
-              onTap: programDayHasContent(day)
-                  ? () => context.push(AppConstants.routeProgramDayDetail(programId, day.id))
-                  : null,
-            ),
+          ListGroup(
+            children: [
+              for (final day in week.days)
+                ProgramDayCard(
+                  title: day.title,
+                  subtitle: programDaySubtitle(day),
+                  showChevron: programDayHasContent(day),
+                  // ProgramDayDetailScreen has no edit affordances of its own, so
+                  // it doubles as the read-only day view for a foreign program.
+                  onTap: programDayHasContent(day)
+                      ? () => context.push(AppConstants.routeProgramDayDetail(programId, day.id))
+                      : null,
+                ),
+            ],
+          ),
         ],
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 
 /// Displays the unit a weight value is being entered/shown in. When
 /// [preference] is fixed to a single unit ('kg' or 'lbs') there's nothing to
@@ -21,59 +22,51 @@ class UnitToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final tokens = NomorexTokens.of(context);
+    final palette = tokens.palette;
+    // Mono, so the tag sits naturally beside a mono weight.
+    final labelStyle = tokens.weight.copyWith(fontSize: 11, height: 16 / 11);
 
     if (preference != 'both') {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: palette.borderDefault),
+          borderRadius: BorderRadius.circular(NomorexSizes.radiusSm),
         ),
-        child: Text(
-          preference,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
+        child: Text(preference, style: labelStyle.copyWith(color: palette.fg2)),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.all(2),
+      padding: const EdgeInsets.all(1),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: palette.borderDefault),
+        borderRadius: BorderRadius.circular(NomorexSizes.radiusSm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (final u in const ['kg', 'lbs']) _segment(context, colorScheme, u),
+          for (final u in const ['kg', 'lbs']) _segment(palette, labelStyle, u),
         ],
       ),
     );
   }
 
-  Widget _segment(BuildContext context, ColorScheme colorScheme, String u) {
+  Widget _segment(NomorexPalette palette, TextStyle labelStyle, String u) {
     final selected = u == value;
     return InkWell(
       onTap: selected ? null : () => onChanged(u),
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(3),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: selected ? colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
+          color: selected ? palette.primarySubtle : Colors.transparent,
+          borderRadius: BorderRadius.circular(3),
         ),
         child: Text(
           u,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: selected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
-          ),
+          style: labelStyle.copyWith(color: selected ? palette.primaryText : palette.fg2),
         ),
       ),
     );

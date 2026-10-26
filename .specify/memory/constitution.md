@@ -53,7 +53,7 @@ New code MUST read like existing code; new abstractions require justification.
 - Async providers read inside callbacks MUST use `await ref.read(p.future)`, not `.asData`.
 - Models are hand-written immutable classes with `fromJson`; no code-generated serialization.
 - Route paths MUST be constants in `app_constants.dart`; design tokens MUST live on the theme or
-  `NomorexDarkTokens`, never hardcoded at call sites. `colorScheme.secondary` is not a second
+  `NomorexTokens`, never hardcoded at call sites. `colorScheme.secondary` is not a second
   color.
 - Any FAB inside the shell MUST set an explicit `heroTag`.
 

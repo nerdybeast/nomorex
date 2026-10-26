@@ -72,7 +72,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Open the "Add exercise" dialog WHILE exercises are still loading.
-      await tester.tap(find.byType(FloatingActionButton));
+      await tester.tap(find.byKey(const Key('edit_workout_add_exercise')));
       await tester.pump();
 
       // Exercises finish loading only now — after the dialog is already open.
@@ -136,7 +136,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(FloatingActionButton));
+      await tester.tap(find.byKey(const Key('edit_workout_add_exercise')));
       await tester.pumpAndSettle();
 
       // Typed name matches no existing exercise (no "Bench" substring), so
@@ -162,7 +162,7 @@ void main() {
       // exercise" dialog, so scope to it specifically rather than matching
       // any TextField showing the typed text.
       final customExerciseDialog = find.ancestor(
-        of: find.text('Custom Exercise'),
+        of: find.text('Custom exercise'),
         matching: find.byType(AlertDialog),
       );
       expect(

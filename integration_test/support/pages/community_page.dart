@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomorex/shared/widgets/summary_card.dart';
 
 import '../harness.dart';
 
@@ -29,8 +30,10 @@ class CommunityPage {
     await tester.pumpAndSettle();
     await tester.enterText(search, title);
     await tester.pump();
-    // The search field also renders [title]; the card is what we want.
-    final card = find.widgetWithText(Card, title);
+    // The search field also renders [title]; the list row is what we want.
+    // Rows share one bordered container now, so match the row widget rather
+    // than a per-item Card.
+    final card = find.widgetWithText(SummaryCard, title);
     await waitFor(tester, card);
     await tester.tap(card.first);
     await tester.pumpAndSettle();
