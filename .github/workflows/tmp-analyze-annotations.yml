@@ -30,6 +30,33 @@ jobs:
             echo "::error file=$rel,line=$line,col=$col::[$sev $code] $msg"
           done < analyze.txt
           echo "::notice::analyzer issues: $n"
+      - name: Analyze (plain exit code)
+        if: always()
+        run: |
+          set +e
+          flutter analyze > plain.txt 2>&1
+          code=$?
+          tail -5 plain.txt | tr '\n' ' ' | sed 's/^/::notice::analyze exit '"$code"': /'
+          echo
       - name: Test (as annotations)
         if: always()
-        run: flutter test --reporter github
+        run: |
+          flutter test --machine > results.jsonl || true
+          python3 - <<'PY'
+          import json
+          names, errs = {}, {}
+          for line in open('results.jsonl'):
+              line = line.strip()
+              if not line.startswith('{'): continue
+              try: e = json.loads(line)
+              except Exception: continue
+              t = e.get('type')
+              if t == 'testStart':
+                  test = e['test']; names[test['id']] = (test['name'], (test.get('url') or '').split('/')[-1])
+              elif t == 'error':
+                  errs.setdefault(e['testID'], []).append(e.get('error', ''))
+          for tid, es in errs.items():
+              name, url = names.get(tid, ('?', '?'))
+              msg = ' | '.join(es)[:1500].replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+              print(f"::error::{url} :: {name} :: {msg}")
+          PY
