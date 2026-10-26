@@ -571,12 +571,14 @@ abstract final class AppTheme {
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
+          // Selected takes the same orange wash + orange label as the
+          // selected unit in UnitToggle; the check icon follows the label.
           backgroundColor: WidgetStateProperty.resolveWith(
-            (s) => s.contains(WidgetState.selected) ? p.bg1 : p.bg3,
+            (s) => s.contains(WidgetState.selected) ? p.primarySubtle : p.bg3,
           ),
           foregroundColor: WidgetStateProperty.resolveWith((s) {
             if (s.contains(WidgetState.disabled)) return p.fg3;
-            return s.contains(WidgetState.selected) ? p.fg1 : p.fg2;
+            return s.contains(WidgetState.selected) ? p.primaryText : p.fg2;
           }),
           side: WidgetStatePropertyAll(BorderSide(color: p.borderDefault)),
           shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: rMd)),
