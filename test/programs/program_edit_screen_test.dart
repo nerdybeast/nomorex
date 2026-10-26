@@ -100,7 +100,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(FloatingActionButton));
+    await tester.tap(find.byKey(const Key('edit_program_add_week')));
     await tester.pumpAndSettle();
 
     expect(addWeekCalled, isTrue);
@@ -376,7 +376,9 @@ void main() {
 
       final handles = find.byIcon(Icons.drag_handle);
       expect(handles, findsNWidgets(2));
-      await tester.ensureVisible(handles.last);
+      // The first handle, not the last: with the "Add week" button below the
+      // list, revealing the last one scrolls the first under the app bar.
+      await tester.ensureVisible(handles.first);
       await tester.pumpAndSettle();
 
       final drag = await tester.startGesture(tester.getCenter(handles.first));

@@ -11,7 +11,8 @@ import 'package:nomorex/features/programs/screens/programs_screen.dart';
 // Same rule as test/workouts/fab_hero_tag_test.dart: the app shell always
 // renders its own FAB, so any FAB on a screen inside the shell must declare
 // a non-default heroTag or it collides with the shell FAB during route
-// transitions.
+// transitions. (Edit program has no FAB now: adding a week is an in-page
+// button.)
 
 class _EmptyProgramsNotifier extends ProgramsNotifier {
   @override
@@ -51,7 +52,7 @@ void main() {
     },
   );
 
-  testWidgets('ProgramEditScreen FAB declares a non-default heroTag', (
+  testWidgets('ProgramEditScreen renders no FAB (adding a week is an in-page button)', (
     tester,
   ) async {
     final program = Program(
@@ -74,9 +75,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final fab = tester.widget<FloatingActionButton>(
-      find.byType(FloatingActionButton),
-    );
-    expect(fab.heroTag, 'editProgramFab');
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.byKey(const Key('edit_program_add_week')), findsOneWidget);
   });
 }
