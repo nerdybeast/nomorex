@@ -44,7 +44,7 @@ jobs:
           flutter test --machine > results.jsonl || true
           python3 - <<'PY'
           import json
-          names, errs = {}, {}
+          names, errs, prints = {}, {}, {}
           for line in open('results.jsonl'):
               line = line.strip()
               if not line.startswith('{'): continue
@@ -55,8 +55,14 @@ jobs:
                   test = e['test']; names[test['id']] = (test['name'], (test.get('url') or '').split('/')[-1])
               elif t == 'error':
                   errs.setdefault(e['testID'], []).append(e.get('error', ''))
+              elif t == 'print':
+                  prints.setdefault(e['testID'], []).append(e.get('message', ''))
           for tid, es in errs.items():
               name, url = names.get(tid, ('?', '?'))
-              msg = ' | '.join(es)[:1500].replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+              log = '\n'.join(prints.get(tid, []))
+              # Keep the exception headline and the first frames.
+              i = log.find('EXCEPTION CAUGHT')
+              log = log[i:i + 2500] if i >= 0 else log[:2500]
+              msg = (log or ' | '.join(es))[:2500].replace('%', '%25').replace('\r', '').replace('\n', '%0A')
               print(f"::error::{url} :: {name} :: {msg}")
           PY
