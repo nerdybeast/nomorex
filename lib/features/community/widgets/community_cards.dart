@@ -29,6 +29,7 @@ class CommunityProgramCard extends StatelessWidget {
         SummaryInfoChip(Icons.calendar_view_week_outlined, pluralize(program.weeks.length, 'week')),
         if (trainingDays > 0)
           SummaryInfoChip(Icons.fitness_center_outlined, pluralize(trainingDays, 'training day')),
+        SummaryInfoChip(Icons.event_outlined, formatDate(program.createdAt)),
       ],
     );
   }
