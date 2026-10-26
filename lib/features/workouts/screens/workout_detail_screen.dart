@@ -8,6 +8,7 @@ import '../../../core/utils/weight_converter.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/set_pr_link.dart';
+import '../../../shared/widgets/summary_card.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
@@ -66,7 +67,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
           children: [
             Text(workout.title, style: Theme.of(context).textTheme.headlineMedium),
             if (workout.isCopy) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerLeft,
                 child: CopiedFromBadge(
@@ -76,22 +77,14 @@ class WorkoutDetailScreen extends ConsumerWidget {
                   copiedFromSourceId: workout.copiedFromSourceId,
                 ),
               ),
-              const SizedBox(height: 4),
             ],
-            Text(
-              formatDate(workout.date),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-            ),
             if (workout.notes != null && workout.notes!.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(workout.notes!),
             ],
-            const SizedBox(height: 4),
-            Text(
-              'Last edited ${formatDate(workout.updatedAt)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            _WorkoutFacts(workout: workout),
+            const SizedBox(height: 24),
             _StatusSection(
               workout: workout,
               notifier: notifier,
@@ -557,6 +550,27 @@ class _SetTile extends StatelessWidget {
             ),
       ),
       subtitle: subtitle,
+    );
+  }
+}
+
+/// Date, exercise count and last edit with their icons — the same facts the
+/// Workouts list shows under each workout.
+class _WorkoutFacts extends StatelessWidget {
+  const _WorkoutFacts({required this.workout});
+
+  final Workout workout;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 4,
+      children: [
+        SummaryInfoChip(Icons.event_outlined, formatDate(workout.date)),
+        SummaryInfoChip(Icons.list_alt_outlined, pluralize(workout.exercises.length, 'exercise')),
+        SummaryInfoChip(Icons.update, 'Edited ${formatDate(workout.updatedAt)}'),
+      ],
     );
   }
 }
