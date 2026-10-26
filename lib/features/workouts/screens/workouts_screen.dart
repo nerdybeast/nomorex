@@ -79,6 +79,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                     padding: shellListPadding(context),
                     children: [
                       DashboardEmptyStateCard(
+                        ctaStyle: EmptyStateCtaStyle.link,
                         icon: Icons.fitness_center_outlined,
                         title: 'No workouts yet.',
                         message: 'Create a workout to start logging your training.',

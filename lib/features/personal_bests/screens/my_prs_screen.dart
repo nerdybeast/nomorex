@@ -95,6 +95,7 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
                     padding: shellListPadding(context),
                     children: [
                       DashboardEmptyStateCard(
+                        ctaStyle: EmptyStateCtaStyle.link,
                         icon: Icons.emoji_events_outlined,
                         title: 'No PRs yet.',
                         message: 'Log a personal best to start tracking your progress.',

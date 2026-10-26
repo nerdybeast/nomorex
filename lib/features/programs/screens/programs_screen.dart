@@ -86,6 +86,7 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
                     padding: shellListPadding(context),
                     children: [
                       DashboardEmptyStateCard(
+                        ctaStyle: EmptyStateCtaStyle.link,
                         icon: Icons.checklist_outlined,
                         title: _showArchived ? 'No archived programs.' : 'No programs yet.',
                         message: _showArchived

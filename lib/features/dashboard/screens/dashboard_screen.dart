@@ -113,6 +113,7 @@ class DashboardScreen extends ConsumerWidget {
             data: (workouts) {
               if (workouts.isEmpty) {
                 return DashboardEmptyStateCard(
+                  ctaStyle: EmptyStateCtaStyle.link,
                   icon: Icons.fitness_center_outlined,
                   title: 'No workouts currently in progress.',
                   message: hasWorkouts
@@ -169,6 +170,7 @@ class DashboardScreen extends ConsumerWidget {
             data: (instances) {
               if (instances.isEmpty) {
                 return DashboardEmptyStateCard(
+                  ctaStyle: EmptyStateCtaStyle.link,
                   icon: Icons.checklist_outlined,
                   title: 'No programs currently in progress.',
                   message: hasPrograms
@@ -215,6 +217,7 @@ class DashboardScreen extends ConsumerWidget {
                   .toList();
               if (prs.isEmpty) {
                 return DashboardEmptyStateCard(
+                  ctaStyle: EmptyStateCtaStyle.link,
                   icon: Icons.emoji_events_outlined,
                   title: 'No PRs yet.',
                   message:
