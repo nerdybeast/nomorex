@@ -684,6 +684,10 @@ void main() {
       find.byType(ListView),
       const Offset(0, -300),
     );
+    // dragUntilVisible stops as soon as any part of the label is on screen,
+    // which can leave the button's center (where tap() aims) off the bottom.
+    await tester.ensureVisible(find.text('Log your first PR'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Log your first PR'));
     await tester.pumpAndSettle();

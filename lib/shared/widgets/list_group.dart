@@ -97,12 +97,6 @@ class ListGroupHeader extends StatelessWidget {
   }
 }
 
-BoxDecoration _groupDecoration(NomorexPalette p) => BoxDecoration(
-      color: p.bg1,
-      border: Border.all(color: p.borderSubtle),
-      borderRadius: BorderRadius.circular(NomorexSizes.radiusLg),
-    );
-
 /// Related rows in one bordered container, divided by hairlines, instead of
 /// a separate card per item. For short, non-scrolling lists (dashboard
 /// sections, and the main lists, where a user's item counts stay small).
@@ -116,10 +110,15 @@ class ListGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = NomorexTokens.of(context).palette;
-    return Container(
-      margin: margin,
-      decoration: _groupDecoration(palette),
+    // A Material, not a decorated Container: rows like CheckboxListTile paint
+    // their ink on the nearest Material, which a colored box would hide.
+    final group = Material(
+      color: palette.bg1,
       clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(NomorexSizes.radiusLg),
+        side: BorderSide(color: palette.borderSubtle),
+      ),
       child: ListGroupScope(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -134,5 +133,7 @@ class ListGroup extends StatelessWidget {
         ),
       ),
     );
+    final m = margin;
+    return m == null ? group : Padding(padding: m, child: group);
   }
 }
