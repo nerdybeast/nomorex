@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../shared/widgets/archived_pill.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
 import '../../../shared/widgets/summary_card.dart';
@@ -12,6 +14,7 @@ import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
 import '../providers/program_instances_list_provider.dart';
 import '../providers/program_instances_provider.dart';
+import '../providers/programs_provider.dart';
 import '../utils/program_day_summary.dart';
 import '../utils/program_progress.dart';
 import '../widgets/program_day_card.dart';
@@ -57,14 +60,18 @@ class ProgramDetailScreen extends ConsumerWidget {
       }
     }
 
+    // An archived program opens read-only: restoring is the only action.
+    final isArchived = detail.asData?.value.isArchived ?? false;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Program'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => context.push(AppConstants.routeProgramEdit(programId)),
-          ),
+          if (!isArchived)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => context.push(AppConstants.routeProgramEdit(programId)),
+            ),
         ],
       ),
       body: detail.when(
@@ -74,6 +81,10 @@ class ProgramDetailScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             Text(program.name, style: Theme.of(context).textTheme.headlineMedium),
+            if (program.isArchived) ...[
+              const SizedBox(height: 8),
+              const Align(alignment: Alignment.centerLeft, child: ArchivedPill()),
+            ],
             if (program.isCopy) ...[
               const SizedBox(height: 8),
               Align(
@@ -93,10 +104,22 @@ class ProgramDetailScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             _ProgramFacts(program: program),
             const SizedBox(height: 24),
+            if (program.isArchived) ...[
+              FilledButton(
+                key: const Key('program_detail_restore'),
+                style: NomorexTokens.of(context).secondaryButtonStyle,
+                onPressed: () =>
+                    ref.read(programsProvider.notifier).restoreProgram(program.id),
+                child: const Text('Restore'),
+              ),
+              const SizedBox(height: 16),
+            ],
             if (program.weeks.isEmpty)
               const Center(child: Text('This program has no weeks yet.'))
             else ...[
-              if (activeInstance != null) ...[
+              if (program.isArchived)
+                const SizedBox.shrink()
+              else if (activeInstance != null) ...[
                 Text(
                   isProgramUpcoming(activeInstance.startedAt)
                       ? 'Upcoming — starts ${formatDate(activeInstance.startedAt)}'

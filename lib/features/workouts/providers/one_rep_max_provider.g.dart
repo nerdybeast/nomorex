@@ -8,16 +8,14 @@ part of 'one_rep_max_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// exerciseId -> the user's 1RM (kg) for that lift: their heaviest recorded
-/// single, or — when they've never tested one — the best estimate from their
-/// multi-rep PRs.
+/// exerciseId -> the user's current 1RM (kg) for that lift: their latest PR
+/// entry, estimated when it isn't a single. See [foldOneRepMaxes].
 
 @ProviderFor(oneRepMax)
 final oneRepMaxProvider = OneRepMaxProvider._();
 
-/// exerciseId -> the user's 1RM (kg) for that lift: their heaviest recorded
-/// single, or — when they've never tested one — the best estimate from their
-/// multi-rep PRs.
+/// exerciseId -> the user's current 1RM (kg) for that lift: their latest PR
+/// entry, estimated when it isn't a single. See [foldOneRepMaxes].
 
 final class OneRepMaxProvider
     extends
@@ -29,9 +27,8 @@ final class OneRepMaxProvider
     with
         $FutureModifier<Map<String, OneRepMax>>,
         $FutureProvider<Map<String, OneRepMax>> {
-  /// exerciseId -> the user's 1RM (kg) for that lift: their heaviest recorded
-  /// single, or — when they've never tested one — the best estimate from their
-  /// multi-rep PRs.
+  /// exerciseId -> the user's current 1RM (kg) for that lift: their latest PR
+  /// entry, estimated when it isn't a single. See [foldOneRepMaxes].
   OneRepMaxProvider._()
     : super(
         from: null,
@@ -58,9 +55,10 @@ final class OneRepMaxProvider
   }
 }
 
-String _$oneRepMaxHash() => r'c56233de095327bb91b0a15be4399cc6a7eeff0f';
+String _$oneRepMaxHash() => r'69d41be518cb1bcfc9a3af664d1e7d6ab86dc87e';
 
-/// Lowercased exercise name -> the user's 1RM (kg), measured or estimated.
+/// Lowercased exercise name -> the user's current 1RM (kg), by the same
+/// latest-entry rule as [oneRepMax].
 ///
 /// [oneRepMax]'s id keying is enough for the user's own workouts, but misses
 /// on someone else's: a public workout's percentage set carries the *owner's*
@@ -73,7 +71,8 @@ String _$oneRepMaxHash() => r'c56233de095327bb91b0a15be4399cc6a7eeff0f';
 @ProviderFor(oneRepMaxByName)
 final oneRepMaxByNameProvider = OneRepMaxByNameProvider._();
 
-/// Lowercased exercise name -> the user's 1RM (kg), measured or estimated.
+/// Lowercased exercise name -> the user's current 1RM (kg), by the same
+/// latest-entry rule as [oneRepMax].
 ///
 /// [oneRepMax]'s id keying is enough for the user's own workouts, but misses
 /// on someone else's: a public workout's percentage set carries the *owner's*
@@ -93,7 +92,8 @@ final class OneRepMaxByNameProvider
     with
         $FutureModifier<Map<String, OneRepMax>>,
         $FutureProvider<Map<String, OneRepMax>> {
-  /// Lowercased exercise name -> the user's 1RM (kg), measured or estimated.
+  /// Lowercased exercise name -> the user's current 1RM (kg), by the same
+  /// latest-entry rule as [oneRepMax].
   ///
   /// [oneRepMax]'s id keying is enough for the user's own workouts, but misses
   /// on someone else's: a public workout's percentage set carries the *owner's*
@@ -128,4 +128,4 @@ final class OneRepMaxByNameProvider
   }
 }
 
-String _$oneRepMaxByNameHash() => r'0d8b785ad3dac9f5dcdf5cf9c100565cb4e62164';
+String _$oneRepMaxByNameHash() => r'4d8cdd2cff1b1de3bcb2a1a3e864c3ecedf6663d';

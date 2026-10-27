@@ -34,7 +34,7 @@ final class CommunityWorkoutsNotifierProvider
 }
 
 String _$communityWorkoutsNotifierHash() =>
-    r'b1c09aa9c9244eb0b35c5fe2b219f898d2eb7678';
+    r'db3507b31472a1e0fa6803777f5e744c409e8a3d';
 
 abstract class _$CommunityWorkoutsNotifier
     extends $AsyncNotifier<List<Workout>> {

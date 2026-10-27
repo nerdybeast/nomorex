@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/weight_converter.dart';
+import '../../../shared/widgets/archived_pill.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/set_pr_link.dart';
@@ -16,7 +17,8 @@ import '../models/workout_set.dart';
 import '../providers/one_rep_max_provider.dart';
 import '../providers/workout_detail_provider.dart';
 import '../providers/workout_group_history_provider.dart';
-import '../utils/confirm_delete_workout.dart';
+import '../providers/workouts_provider.dart';
+import '../utils/can_archive_workout.dart';
 import '../utils/set_resolver.dart';
 import '../../../shared/models/one_rep_max.dart';
 import '../widgets/elapsed_timer.dart';
@@ -34,10 +36,12 @@ class WorkoutDetailScreen extends ConsumerWidget {
     final notifier = ref.read(workoutDetailProvider(workoutId).notifier);
     final colorScheme = Theme.of(context).colorScheme;
     final workout = detail.asData?.value;
-    final showEditIcon = workout == null || workout.status == 'not_started';
-    // Unlike edit, a destructive action shouldn't be tappable before we've
-    // confirmed the loaded workout isn't materialized from a program.
-    final showDeleteIcon = workout != null && workout.programInstanceId == null;
+    // An archived workout opens read-only: restoring is the only action.
+    final showEditIcon =
+        workout == null || (workout.status == 'not_started' && !workout.isArchived);
+    // Unlike edit, Archive shouldn't be tappable before we've confirmed the
+    // loaded workout isn't materialized from a program or mid-session.
+    final showArchiveIcon = workout != null && canArchiveWorkout(workout);
     final isBusy = detail.isLoading;
     final hasHistory =
         workout != null && ref.watch(groupHasFinishedHistoryProvider(workout.workoutGroupId));
@@ -51,11 +55,15 @@ class WorkoutDetailScreen extends ConsumerWidget {
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => context.push(AppConstants.routeWorkoutEdit(workoutId)),
             ),
-          if (showDeleteIcon)
+          if (showArchiveIcon)
             IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () =>
-                  confirmAndDeleteWorkout(context, ref, workout, navigateToListOnDelete: true),
+              key: const Key('workout_detail_archive'),
+              icon: const Icon(Icons.archive_outlined),
+              tooltip: 'Archive',
+              onPressed: () async {
+                await ref.read(workoutsProvider.notifier).archiveWorkout(workout);
+                if (context.mounted) context.go(AppConstants.routeWorkouts);
+              },
             ),
         ],
       ),
@@ -66,6 +74,10 @@ class WorkoutDetailScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             Text(workout.title, style: Theme.of(context).textTheme.headlineMedium),
+            if (workout.isArchived) ...[
+              const SizedBox(height: 8),
+              const Align(alignment: Alignment.centerLeft, child: ArchivedPill()),
+            ],
             if (workout.isCopy) ...[
               const SizedBox(height: 8),
               Align(
@@ -85,6 +97,15 @@ class WorkoutDetailScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             _WorkoutFacts(workout: workout),
             const SizedBox(height: 24),
+            if (workout.isArchived) ...[
+              FilledButton(
+                key: const Key('workout_detail_restore'),
+                style: NomorexTokens.of(context).secondaryButtonStyle,
+                onPressed: () => ref.read(workoutsProvider.notifier).restoreWorkout(workout),
+                child: const Text('Restore'),
+              ),
+              const SizedBox(height: 16),
+            ],
             _StatusSection(
               workout: workout,
               notifier: notifier,
@@ -190,11 +211,15 @@ class _StatusSection extends StatelessWidget {
               Text('Notes', style: labelStyle),
               Text(workout.sessionNotes!),
             ],
-            const SizedBox(height: 16),
-            _FinishedActions(workout: workout, notifier: notifier),
+            // Repeating would add a live session to an archived group.
+            if (!workout.isArchived) ...[
+              const SizedBox(height: 16),
+              _FinishedActions(workout: workout, notifier: notifier),
+            ],
           ],
         );
       default: // 'not_started'
+        if (workout.isArchived) return const SizedBox.shrink();
         if (hasHistory) {
           return _NotStartedWithHistoryActions(
             workoutGroupId: workout.workoutGroupId,

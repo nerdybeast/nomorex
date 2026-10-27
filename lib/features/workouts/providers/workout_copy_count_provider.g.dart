@@ -8,26 +8,29 @@ part of 'workout_copy_count_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// How many copies of another user's public workout the viewer has saved —
-/// drives the "You've saved this" hint on the community screen. Invalidated as
-/// a whole family by WorkoutsNotifier.saveCommunityWorkout and deleteWorkout,
-/// so the hint can't outlive a deleted copy.
+/// How many (non-archived) copies of another user's public workout the viewer
+/// has saved — drives the "You've saved this" hint on the community screen.
+/// Invalidated as a whole family by WorkoutsNotifier.saveCommunityWorkout,
+/// archiveWorkout, restoreWorkout and deleteWorkoutPermanently, so the hint
+/// can't outlive an archived or deleted copy.
 
 @ProviderFor(workoutCopyCount)
 final workoutCopyCountProvider = WorkoutCopyCountFamily._();
 
-/// How many copies of another user's public workout the viewer has saved —
-/// drives the "You've saved this" hint on the community screen. Invalidated as
-/// a whole family by WorkoutsNotifier.saveCommunityWorkout and deleteWorkout,
-/// so the hint can't outlive a deleted copy.
+/// How many (non-archived) copies of another user's public workout the viewer
+/// has saved — drives the "You've saved this" hint on the community screen.
+/// Invalidated as a whole family by WorkoutsNotifier.saveCommunityWorkout,
+/// archiveWorkout, restoreWorkout and deleteWorkoutPermanently, so the hint
+/// can't outlive an archived or deleted copy.
 
 final class WorkoutCopyCountProvider
     extends $FunctionalProvider<AsyncValue<int>, int, FutureOr<int>>
     with $FutureModifier<int>, $FutureProvider<int> {
-  /// How many copies of another user's public workout the viewer has saved —
-  /// drives the "You've saved this" hint on the community screen. Invalidated as
-  /// a whole family by WorkoutsNotifier.saveCommunityWorkout and deleteWorkout,
-  /// so the hint can't outlive a deleted copy.
+  /// How many (non-archived) copies of another user's public workout the viewer
+  /// has saved — drives the "You've saved this" hint on the community screen.
+  /// Invalidated as a whole family by WorkoutsNotifier.saveCommunityWorkout,
+  /// archiveWorkout, restoreWorkout and deleteWorkoutPermanently, so the hint
+  /// can't outlive an archived or deleted copy.
   WorkoutCopyCountProvider._({
     required WorkoutCopyCountFamily super.from,
     required String super.argument,
@@ -71,12 +74,13 @@ final class WorkoutCopyCountProvider
   }
 }
 
-String _$workoutCopyCountHash() => r'20738486dae360fa5ff5f5579fd82aa66636b43a';
+String _$workoutCopyCountHash() => r'341511c13773c52c7745c44b79d651c281c6f817';
 
-/// How many copies of another user's public workout the viewer has saved —
-/// drives the "You've saved this" hint on the community screen. Invalidated as
-/// a whole family by WorkoutsNotifier.saveCommunityWorkout and deleteWorkout,
-/// so the hint can't outlive a deleted copy.
+/// How many (non-archived) copies of another user's public workout the viewer
+/// has saved — drives the "You've saved this" hint on the community screen.
+/// Invalidated as a whole family by WorkoutsNotifier.saveCommunityWorkout,
+/// archiveWorkout, restoreWorkout and deleteWorkoutPermanently, so the hint
+/// can't outlive an archived or deleted copy.
 
 final class WorkoutCopyCountFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<int>, String> {
@@ -89,10 +93,11 @@ final class WorkoutCopyCountFamily extends $Family
         isAutoDispose: false,
       );
 
-  /// How many copies of another user's public workout the viewer has saved —
-  /// drives the "You've saved this" hint on the community screen. Invalidated as
-  /// a whole family by WorkoutsNotifier.saveCommunityWorkout and deleteWorkout,
-  /// so the hint can't outlive a deleted copy.
+  /// How many (non-archived) copies of another user's public workout the viewer
+  /// has saved — drives the "You've saved this" hint on the community screen.
+  /// Invalidated as a whole family by WorkoutsNotifier.saveCommunityWorkout,
+  /// archiveWorkout, restoreWorkout and deleteWorkoutPermanently, so the hint
+  /// can't outlive an archived or deleted copy.
 
   WorkoutCopyCountProvider call(String sourceWorkoutId) =>
       WorkoutCopyCountProvider._(argument: sourceWorkoutId, from: this);

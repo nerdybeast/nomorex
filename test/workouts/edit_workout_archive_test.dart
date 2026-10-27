@@ -16,15 +16,15 @@ class _TestWorkoutDetailNotifier extends WorkoutDetailNotifier {
 }
 
 class _RecordingWorkoutsNotifier extends WorkoutsNotifier {
-  _RecordingWorkoutsNotifier({this.onDelete});
-  final void Function(String id)? onDelete;
+  _RecordingWorkoutsNotifier({this.onArchive});
+  final void Function(String id)? onArchive;
 
   @override
   Future<List<Workout>> build() async => const [];
 
   @override
-  Future<void> deleteWorkout(String id) async {
-    onDelete?.call(id);
+  Future<void> archiveWorkout(Workout workout) async {
+    onArchive?.call(workout.id);
   }
 }
 
@@ -40,7 +40,7 @@ Workout _workout({String? programInstanceId}) => Workout(
 
 void main() {
   testWidgets(
-    'delete icon is hidden for a workout materialized from a program',
+    'archive icon is hidden for a workout materialized from a program',
     (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -57,14 +57,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.delete_outline), findsNothing);
+      expect(find.byKey(const Key('edit_workout_archive')), findsNothing);
     },
   );
 
   testWidgets(
-    'confirming delete calls deleteWorkout and navigates to the workouts list',
+    'tapping Archive archives the workout and navigates to the workouts list',
     (tester) async {
-      String? deletedId;
+      String? archivedId;
       final router = GoRouter(
         initialLocation: '/w1/edit',
         routes: [
@@ -87,7 +87,7 @@ void main() {
             ).overrideWith(() => _TestWorkoutDetailNotifier(_workout())),
             workoutsProvider.overrideWith(
               () =>
-                  _RecordingWorkoutsNotifier(onDelete: (id) => deletedId = id),
+                  _RecordingWorkoutsNotifier(onArchive: (id) => archivedId = id),
             ),
             unitPreferenceProvider.overrideWithValue('kg'),
           ],
@@ -96,55 +96,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.tap(find.byKey(const Key('edit_workout_archive')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Delete workout?'), findsOneWidget);
-
-      await tester.tap(
-        find.descendant(
-          of: find.byType(AlertDialog),
-          matching: find.text('Delete'),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(deletedId, 'w1');
+      expect(archivedId, 'w1');
       expect(find.text('destination:workouts'), findsOneWidget);
     },
   );
-
-  testWidgets('canceling delete leaves the workout untouched', (tester) async {
-    String? deletedId;
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          workoutDetailProvider(
-            'w1',
-          ).overrideWith(() => _TestWorkoutDetailNotifier(_workout())),
-          workoutsProvider.overrideWith(
-            () => _RecordingWorkoutsNotifier(onDelete: (id) => deletedId = id),
-          ),
-          unitPreferenceProvider.overrideWithValue('kg'),
-        ],
-        child: const MaterialApp(home: EditWorkoutScreen(workoutId: 'w1')),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byIcon(Icons.delete_outline));
-    await tester.pumpAndSettle();
-
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.text('Cancel'),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(deletedId, isNull);
-    expect(find.byType(EditWorkoutScreen), findsOneWidget);
-  });
 }

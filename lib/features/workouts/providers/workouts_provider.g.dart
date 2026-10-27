@@ -33,9 +33,65 @@ final class WorkoutsNotifierProvider
   WorkoutsNotifier create() => WorkoutsNotifier();
 }
 
-String _$workoutsNotifierHash() => r'0ea616b014aa46d8ac32bdee431ec3fa28b3b92e';
+String _$workoutsNotifierHash() => r'5d405950af3db28ca1382e0dc08004e75d95b282';
 
 abstract class _$WorkoutsNotifier extends $AsyncNotifier<List<Workout>> {
+  FutureOr<List<Workout>> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<List<Workout>>, List<Workout>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<List<Workout>>, List<Workout>>,
+              AsyncValue<List<Workout>>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+/// Mirrors [WorkoutsNotifier] but surfaces the archived list, so a user can
+/// restore a workout or delete it permanently.
+
+@ProviderFor(ArchivedWorkoutsNotifier)
+final archivedWorkoutsProvider = ArchivedWorkoutsNotifierProvider._();
+
+/// Mirrors [WorkoutsNotifier] but surfaces the archived list, so a user can
+/// restore a workout or delete it permanently.
+final class ArchivedWorkoutsNotifierProvider
+    extends $AsyncNotifierProvider<ArchivedWorkoutsNotifier, List<Workout>> {
+  /// Mirrors [WorkoutsNotifier] but surfaces the archived list, so a user can
+  /// restore a workout or delete it permanently.
+  ArchivedWorkoutsNotifierProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'archivedWorkoutsProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$archivedWorkoutsNotifierHash();
+
+  @$internal
+  @override
+  ArchivedWorkoutsNotifier create() => ArchivedWorkoutsNotifier();
+}
+
+String _$archivedWorkoutsNotifierHash() =>
+    r'ede8ae20012ad805f5d5988c7b50a1797a8b6656';
+
+/// Mirrors [WorkoutsNotifier] but surfaces the archived list, so a user can
+/// restore a workout or delete it permanently.
+
+abstract class _$ArchivedWorkoutsNotifier
+    extends $AsyncNotifier<List<Workout>> {
   FutureOr<List<Workout>> build();
   @$mustCallSuper
   @override
