@@ -32,26 +32,11 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
         .select('*, workout_exercises(*, exercises(name))')
         .eq('user_id', userId)
         .filter('program_instance_id', 'is', null)
+        .eq('is_archived', false)
         .order('date', ascending: false);
 
-    final all = (data as List)
-        .map((e) => Workout.fromJson(e as Map<String, dynamic>))
-        .toList();
-
-    // One card per logical workout, not one per completion: group by
-    // workoutGroupId and keep only the live/actionable row per group (see
-    // pickGroupRepresentative). Every completion still has its own row for
-    // history — this only affects what this list surfaces.
-    final byGroup = <String, List<Workout>>{};
-    for (final w in all) {
-      byGroup.putIfAbsent(w.workoutGroupId, () => []).add(w);
-    }
-    final representatives = byGroup.values
-        .map(pickGroupRepresentative)
-        .whereType<Workout>()
-        .toList()
+    return _groupRepresentatives(data as List)
       ..sort((a, b) => b.date.compareTo(a.date));
-    return representatives;
   }
 
   Future<String> createWorkout({
@@ -73,20 +58,60 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
     return row['id'] as String;
   }
 
-  Future<void> deleteWorkout(String id) async {
-    await _db.from('workouts').delete().eq('id', id);
-    // inProgressWorkoutsProvider/finishedWorkoutsProvider/communityWorkoutsProvider
-    // all cache their own copy of this row; workoutDetailProvider(id) is
-    // keepAlive too, so it must be invalidated or a later revisit of this
-    // workout's route would render stale (deleted) data instead of an error.
+  /// Archives [workout] and every other session in its group: one card in
+  /// this list stands for the whole group, so archiving only the
+  /// representative would just surface a sibling in its place. Logged history
+  /// stays visible (finishedWorkoutsProvider doesn't filter on it).
+  Future<void> archiveWorkout(Workout workout) async {
+    await _db
+        .from('workouts')
+        .update({
+          'is_archived': true,
+          'archived_at': DateTime.now().toIso8601String(),
+        })
+        .eq('user_id', _db.auth.currentUser!.id)
+        .eq('workout_group_id', workout.workoutGroupId);
+    _invalidateArchiveState();
+    await future;
+  }
+
+  Future<void> restoreWorkout(Workout workout) async {
+    await _db
+        .from('workouts')
+        .update({'is_archived': false, 'archived_at': null})
+        .eq('user_id', _db.auth.currentUser!.id)
+        .eq('workout_group_id', workout.workoutGroupId);
+    _invalidateArchiveState();
+    await future;
+  }
+
+  /// Hard-deletes [workout]'s whole group, history included. Only ever
+  /// offered from the Archived tab, and the `is_archived` filter makes that a
+  /// guarantee: an active workout can't be deleted through here.
+  Future<void> deleteWorkoutPermanently(Workout workout) async {
+    await _db
+        .from('workouts')
+        .delete()
+        .eq('user_id', _db.auth.currentUser!.id)
+        .eq('workout_group_id', workout.workoutGroupId)
+        .eq('is_archived', true);
+    // The group's finished sessions were still showing in history.
     ref.invalidate(inProgressWorkoutsProvider);
     ref.invalidate(finishedWorkoutsProvider);
-    ref.invalidate(communityWorkoutsProvider);
-    ref.invalidate(workoutDetailProvider(id));
-    // The deleted row may have been a saved copy of a community workout.
-    ref.invalidate(workoutCopyCountProvider);
-    ref.invalidateSelf();
+    _invalidateArchiveState();
     await future;
+  }
+
+  /// Every provider whose rendered output changes when a group moves between
+  /// active, archived and gone. workoutDetailProvider is invalidated as a
+  /// whole family because the change spans every row in the group.
+  void _invalidateArchiveState() {
+    ref.invalidate(archivedWorkoutsProvider);
+    ref.invalidate(communityWorkoutsProvider);
+    // An archived or deleted copy no longer counts as "saved".
+    ref.invalidate(workoutCopyCountProvider);
+    ref.invalidate(workoutDetailProvider);
+    ref.invalidateSelf();
   }
 
   /// Deep-copies a workout (and its exercises + sets) to a new workout dated
@@ -145,6 +170,48 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
     ref.invalidateSelf();
     await future;
   }
+}
+
+/// Mirrors [WorkoutsNotifier] but surfaces the archived list, so a user can
+/// restore a workout or delete it permanently.
+@Riverpod(keepAlive: true)
+class ArchivedWorkoutsNotifier extends _$ArchivedWorkoutsNotifier {
+  SupabaseClient get _db => Supabase.instance.client;
+
+  @override
+  Future<List<Workout>> build() async {
+    ref.watch(authStateProvider);
+    final userId = _db.auth.currentUser?.id;
+    if (userId == null) return [];
+
+    final data = await _db
+        .from('workouts')
+        .select('*, workout_exercises(*, exercises(name))')
+        .eq('user_id', userId)
+        .filter('program_instance_id', 'is', null)
+        .eq('is_archived', true);
+
+    return _groupRepresentatives(data as List)
+      ..sort((a, b) => (b.archivedAt ?? b.updatedAt).compareTo(a.archivedAt ?? a.updatedAt));
+  }
+
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+    await future;
+  }
+}
+
+/// One card per logical workout, not one per completion: groups rows by
+/// workoutGroupId and keeps only the live/actionable row per group (see
+/// pickGroupRepresentative). Every completion still has its own row for
+/// history — this only affects what a list surfaces.
+List<Workout> _groupRepresentatives(List<dynamic> rows) {
+  final byGroup = <String, List<Workout>>{};
+  for (final row in rows) {
+    final w = Workout.fromJson(row as Map<String, dynamic>);
+    byGroup.putIfAbsent(w.workoutGroupId, () => []).add(w);
+  }
+  return byGroup.values.map(pickGroupRepresentative).whereType<Workout>().toList();
 }
 
 /// "Workout N" where N is one past the highest numbered workout title the

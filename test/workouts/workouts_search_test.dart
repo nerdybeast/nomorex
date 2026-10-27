@@ -26,6 +26,15 @@ class _RecordingWorkoutsNotifier extends WorkoutsNotifier {
   Future<void> refresh() async => onRefresh();
 }
 
+class _RecordingArchivedWorkoutsNotifier extends ArchivedWorkoutsNotifier {
+  _RecordingArchivedWorkoutsNotifier(this.onRefresh);
+  final VoidCallback onRefresh;
+  @override
+  Future<List<Workout>> build() async => const [];
+  @override
+  Future<void> refresh() async => onRefresh();
+}
+
 void main() {
   testWidgets(
     'a workout card previews its exercises, counts them and shows its status',
@@ -271,16 +280,20 @@ void main() {
     expect(find.text('No workouts match your search.'), findsOneWidget);
   });
 
-  testWidgets('tapping the refresh icon calls refresh on the notifier', (
+  testWidgets('tapping the refresh icon refreshes the active and archived lists', (
     tester,
   ) async {
     var refreshed = false;
+    var archivedRefreshed = false;
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           workoutsProvider.overrideWith(
             () => _RecordingWorkoutsNotifier(() => refreshed = true),
+          ),
+          archivedWorkoutsProvider.overrideWith(
+            () => _RecordingArchivedWorkoutsNotifier(() => archivedRefreshed = true),
           ),
         ],
         child: const MaterialApp(home: WorkoutsScreen()),
@@ -292,6 +305,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(refreshed, isTrue);
+    expect(archivedRefreshed, isTrue);
   });
 
   testWidgets(

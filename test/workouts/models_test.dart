@@ -62,6 +62,34 @@ void main() {
     expect(w.isPublic, isFalse);
   });
 
+  test('Workout.fromJson parses is_archived and archived_at', () {
+    final w = Workout.fromJson({
+      'id': 'w1',
+      'user_id': 'u1',
+      'workout_group_id': 'g1',
+      'title': 'Old',
+      'date': '2026-06-28',
+      'updated_at': '2026-06-28T00:00:00Z',
+      'is_archived': true,
+      'archived_at': '2026-10-26T12:00:00Z',
+    });
+    expect(w.isArchived, isTrue);
+    expect(w.archivedAt, DateTime.utc(2026, 10, 26, 12));
+  });
+
+  test('Workout.fromJson defaults to not archived', () {
+    final w = Workout.fromJson({
+      'id': 'w1',
+      'user_id': 'u1',
+      'workout_group_id': 'g1',
+      'title': 'Live',
+      'date': '2026-06-28',
+      'updated_at': '2026-06-28T00:00:00Z',
+    });
+    expect(w.isArchived, isFalse);
+    expect(w.archivedAt, isNull);
+  });
+
   test('Workout.fromJson parses is_public', () {
     final w = Workout.fromJson({
       'id': 'w1',

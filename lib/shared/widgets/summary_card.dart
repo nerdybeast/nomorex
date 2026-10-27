@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import 'archived_pill.dart';
 import 'list_group.dart';
 
 /// Shared chrome for a list entry that summarizes a program or workout: a
@@ -9,6 +10,11 @@ import 'list_group.dart';
 ///
 /// [trailing] defaults to a chevron; pass a menu button for owner-editable
 /// lists.
+///
+/// [archived] renders the design system's archived state: an `archive` icon
+/// in fg-3 instead of [icon], the title dropped to fg-2 and followed by an
+/// [ArchivedPill], and [trailing] centered (callers pass `ArchivedRowActions`
+/// and an `Archived <date>` chip). No orange anywhere on the row.
 class SummaryCard extends StatelessWidget {
   const SummaryCard({
     super.key,
@@ -21,6 +27,7 @@ class SummaryCard extends StatelessWidget {
     this.status,
     this.chips = const [],
     this.trailing,
+    this.archived = false,
   });
 
   final IconData icon;
@@ -32,6 +39,7 @@ class SummaryCard extends StatelessWidget {
   final Widget? status;
   final List<SummaryInfoChip> chips;
   final Widget? trailing;
+  final bool archived;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +50,9 @@ class SummaryCard extends StatelessWidget {
     return GroupableTile(
       onTap: onTap,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        // An archived row is two short lines; centering it keeps the Restore
+        // button level with them rather than pinned to the top.
+        crossAxisAlignment: archived ? CrossAxisAlignment.center : CrossAxisAlignment.start,
         children: [
           // Neutral icon tile: bordered, bg-2, fg-2 icon — no orange here.
           Container(
@@ -53,14 +63,27 @@ class SummaryCard extends StatelessWidget {
               border: Border.all(color: palette.borderDefault),
               borderRadius: BorderRadius.circular(NomorexSizes.radiusMd),
             ),
-            child: Icon(icon, color: palette.fg2, size: 18),
+            child: archived
+                ? Icon(Icons.archive_outlined, color: palette.fg3, size: 18)
+                : Icon(icon, color: palette.fg2, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: theme.textTheme.titleSmall),
+                if (archived)
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(title, style: theme.textTheme.titleSmall?.copyWith(color: palette.fg2)),
+                      const ArchivedPill(),
+                    ],
+                  )
+                else
+                  Text(title, style: theme.textTheme.titleSmall),
                 if (sub != null) ...[
                   const SizedBox(height: 2),
                   Text(sub, style: theme.textTheme.bodySmall?.copyWith(color: palette.fg3)),

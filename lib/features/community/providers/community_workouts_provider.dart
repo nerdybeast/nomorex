@@ -19,6 +19,9 @@ class CommunityWorkoutsNotifier extends _$CommunityWorkoutsNotifier {
         .from('workouts')
         .select('*, profiles(display_name), workout_exercises(*, exercises(name))')
         .eq('is_public', true)
+        // Archiving is a workout's step before deletion, so an archived one
+        // must not stay browsable just because it was public.
+        .eq('is_archived', false)
         .neq('user_id', userId)
         .order('date', ascending: false);
 

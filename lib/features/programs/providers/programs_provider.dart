@@ -5,6 +5,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../../core/utils/sequential_naming.dart';
 import 'program_copy_count_provider.dart';
+import 'program_detail_provider.dart';
 import 'program_instances_list_provider.dart';
 
 part 'programs_provider.g.dart';
@@ -57,6 +58,8 @@ class ProgramsNotifier extends _$ProgramsNotifier {
       'archived_at': DateTime.now().toIso8601String(),
     }).eq('id', id);
     ref.invalidate(archivedProgramsProvider);
+    // The detail screen turns read-only for an archived program.
+    ref.invalidate(programDetailProvider(id));
     // Archived copies don't count toward the community "saved" hint.
     ref.invalidate(programCopyCountProvider);
     ref.invalidateSelf();
@@ -69,6 +72,7 @@ class ProgramsNotifier extends _$ProgramsNotifier {
       'archived_at': null,
     }).eq('id', id);
     ref.invalidate(archivedProgramsProvider);
+    ref.invalidate(programDetailProvider(id));
     ref.invalidate(programCopyCountProvider);
     ref.invalidateSelf();
     await future;
@@ -106,8 +110,8 @@ class ProgramsNotifier extends _$ProgramsNotifier {
 }
 
 /// Mirrors [ProgramsNotifier] but surfaces the archived list, so a user can
-/// find and restore a program they archived. No hard delete is ever
-/// exposed — see `programs.is_archived` in the Phase 3 migration.
+/// find and restore a program they archived. Unlike workouts, no hard delete
+/// is ever exposed — see `programs.is_archived` in the Phase 3 migration.
 @Riverpod(keepAlive: true)
 class ArchivedProgramsNotifier extends _$ArchivedProgramsNotifier {
   SupabaseClient get _db => Supabase.instance.client;

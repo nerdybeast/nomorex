@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/copy_errors.dart';
 import '../../../shared/widgets/toggle_card.dart';
 import '../providers/workout_detail_provider.dart';
-import '../utils/confirm_delete_workout.dart';
+import '../providers/workouts_provider.dart';
+import '../utils/can_archive_workout.dart';
 import '../widgets/set_editor.dart';
 
 class EditWorkoutScreen extends ConsumerWidget {
@@ -69,8 +71,8 @@ class EditWorkoutScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(workoutDetailProvider(workoutId));
     final unit = ref.watch(unitPreferenceProvider);
-    final workoutForDelete = detail.asData?.value;
-    final showDeleteIcon = workoutForDelete != null && workoutForDelete.programInstanceId == null;
+    final workoutForArchive = detail.asData?.value;
+    final showArchiveIcon = workoutForArchive != null && canArchiveWorkout(workoutForArchive);
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -78,15 +80,15 @@ class EditWorkoutScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Edit workout'),
         actions: [
-          if (showDeleteIcon)
+          if (showArchiveIcon)
             IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => confirmAndDeleteWorkout(
-                context,
-                ref,
-                workoutForDelete,
-                navigateToListOnDelete: true,
-              ),
+              key: const Key('edit_workout_archive'),
+              icon: const Icon(Icons.archive_outlined),
+              tooltip: 'Archive',
+              onPressed: () async {
+                await ref.read(workoutsProvider.notifier).archiveWorkout(workoutForArchive);
+                if (context.mounted) context.go(AppConstants.routeWorkouts);
+              },
             ),
           TextButton(
             onPressed: () => context.pop(),

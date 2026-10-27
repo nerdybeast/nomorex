@@ -10,6 +10,7 @@ import 'package:nomorex/features/programs/models/program_instance.dart';
 import 'package:nomorex/features/programs/providers/program_instances_list_provider.dart';
 import 'package:nomorex/features/programs/providers/programs_provider.dart';
 import 'package:nomorex/features/programs/screens/programs_screen.dart';
+import 'package:nomorex/shared/widgets/archived_pill.dart';
 import 'package:nomorex/shared/widgets/dashboard_empty_state_card.dart';
 
 class _StubProgramsNotifier extends ProgramsNotifier {
@@ -31,6 +32,13 @@ class _RecordingProgramsNotifier extends ProgramsNotifier {
   Future<List<Program>> build() async => const [];
   @override
   Future<void> refresh() async => onRefresh();
+}
+
+class _StubArchivedProgramsNotifier extends ArchivedProgramsNotifier {
+  _StubArchivedProgramsNotifier(this._programs);
+  final List<Program> _programs;
+  @override
+  Future<List<Program>> build() async => _programs;
 }
 
 class _RecordingArchivedProgramsNotifier extends ArchivedProgramsNotifier {
@@ -178,12 +186,60 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Show archived programs'));
+    await tester.tap(find.byKey(const Key('tab_archived')));
     await tester.pumpAndSettle();
 
     expect(find.byType(DashboardEmptyStateCard), findsOneWidget);
-    expect(find.text('No archived programs.'), findsOneWidget);
+    expect(find.text('No archived programs'), findsOneWidget);
+    expect(find.text('Programs you archive show up here.'), findsOneWidget);
     expect(find.text('Create your first program'), findsNothing);
+  });
+
+  testWidgets('an archived program row shows the pill, its date and Restore only', (
+    tester,
+  ) async {
+    final archived = Program(
+      id: 'p9',
+      userId: 'u1',
+      name: 'Old Block',
+      createdAt: DateTime(2026, 8, 1),
+      updatedAt: DateTime(2026, 8, 1),
+      isArchived: true,
+      archivedAt: DateTime(2026, 10, 26),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          programsProvider.overrideWith(() => _StubProgramsNotifier([_program('p1', 'Live')])),
+          archivedProgramsProvider.overrideWith(() => _StubArchivedProgramsNotifier([archived])),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+        ],
+        child: const MaterialApp(home: ProgramsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Both tabs carry their counts.
+    expect(
+      find.descendant(of: find.byKey(const Key('tab_active')), matching: find.text('1')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: find.byKey(const Key('tab_archived')), matching: find.text('1')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('tab_archived')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ArchivedPill), findsOneWidget);
+    expect(find.text('Archived Oct 26, 2026'), findsOneWidget);
+    expect(find.byKey(const Key('archived_restore')), findsOneWidget);
+    // Programs are never hard-deleted, so there's no menu beside Restore.
+    expect(find.byKey(const Key('archived_menu')), findsNothing);
+    expect(find.byType(PopupMenuButton<String>), findsNothing);
   });
 
   testWidgets(
@@ -298,16 +354,18 @@ void main() {
     expect(find.text('No programs match your search.'), findsOneWidget);
   });
 
-  testWidgets('tapping the refresh icon refreshes the active programs list', (
-    tester,
-  ) async {
-    var refreshed = false;
+  testWidgets('tapping the refresh icon refreshes both lists', (tester) async {
+    var activeRefreshed = false;
+    var archivedRefreshed = false;
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           programsProvider.overrideWith(
-            () => _RecordingProgramsNotifier(() => refreshed = true),
+            () => _RecordingProgramsNotifier(() => activeRefreshed = true),
+          ),
+          archivedProgramsProvider.overrideWith(
+            () => _RecordingArchivedProgramsNotifier(() => archivedRefreshed = true),
           ),
           currentProgramInstancesProvider.overrideWith(
             () => _EmptyProgramInstancesNotifier(),
@@ -321,43 +379,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.refresh));
     await tester.pumpAndSettle();
 
-    expect(refreshed, isTrue);
+    expect(activeRefreshed, isTrue);
+    expect(archivedRefreshed, isTrue);
   });
-
-  testWidgets(
-    'tapping the refresh icon while viewing archived refreshes the archived list',
-    (tester) async {
-      var activeRefreshed = false;
-      var archivedRefreshed = false;
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            programsProvider.overrideWith(
-              () => _RecordingProgramsNotifier(() => activeRefreshed = true),
-            ),
-            archivedProgramsProvider.overrideWith(
-              () => _RecordingArchivedProgramsNotifier(
-                () => archivedRefreshed = true,
-              ),
-            ),
-            currentProgramInstancesProvider.overrideWith(
-              () => _EmptyProgramInstancesNotifier(),
-            ),
-          ],
-          child: const MaterialApp(home: ProgramsScreen()),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.archive_outlined));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.refresh));
-      await tester.pumpAndSettle();
-
-      expect(archivedRefreshed, isTrue);
-      expect(activeRefreshed, isFalse);
-    },
-  );
 }
