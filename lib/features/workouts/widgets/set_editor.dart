@@ -47,7 +47,7 @@ class SetEditor extends ConsumerWidget {
   ) async {
     var sets = 1;
     var reps = 1;
-    var percentages = <double>[70];
+    var percentage = 70.0;
     Exercise? basisExercise;
     final tokens = Theme.of(context).extension<NomorexTokens>();
 
@@ -89,19 +89,7 @@ class SetEditor extends ConsumerWidget {
                   min: 1,
                   step: 1,
                   decimals: 0,
-                  onChanged: (v) => setState(() {
-                    final newSets = v.round();
-                    if (newSets > percentages.length) {
-                      percentages = [
-                        ...percentages,
-                        for (var i = percentages.length; i < newSets; i++)
-                          percentages.last,
-                      ];
-                    } else if (newSets < percentages.length) {
-                      percentages = percentages.sublist(0, newSets);
-                    }
-                    sets = newSets;
-                  }),
+                  onChanged: (v) => setState(() => sets = v.round()),
                   valueTextStyle: tokens?.stepperValue,
                   valueDecoration: tokens?.stepperValueDecoration,
                   decrementButtonStyle: tokens?.stepperDecrementStyle,
@@ -121,24 +109,20 @@ class SetEditor extends ConsumerWidget {
                   incrementButtonStyle: tokens?.stepperIncrementStyle,
                 ),
                 const SizedBox(height: 12),
-                // One stepper per set (rather than a single shared value) so
-                // wave-loading (a different %1RM per set) stays possible.
-                for (var i = 0; i < percentages.length; i++)
-                  Padding(
-                    padding: EdgeInsets.only(top: i == 0 ? 0 : 12),
-                    child: NumberStepperField(
-                      label: 'Set ${i + 1} %1RM',
-                      value: percentages[i],
-                      min: 0,
-                      step: 5,
-                      decimals: 0,
-                      onChanged: (v) => setState(() => percentages[i] = v),
-                      valueTextStyle: tokens?.stepperValue,
-                      valueDecoration: tokens?.stepperValueDecoration,
-                      decrementButtonStyle: tokens?.stepperDecrementStyle,
-                      incrementButtonStyle: tokens?.stepperIncrementStyle,
-                    ),
-                  ),
+                // One %1RM shared by the whole batch keeps the dialog a fixed
+                // height; wave-loading is another batch at the next percentage.
+                NumberStepperField(
+                  label: '%1RM',
+                  value: percentage,
+                  min: 0,
+                  step: 5,
+                  decimals: 0,
+                  onChanged: (v) => setState(() => percentage = v),
+                  valueTextStyle: tokens?.stepperValue,
+                  valueDecoration: tokens?.stepperValueDecoration,
+                  decrementButtonStyle: tokens?.stepperDecrementStyle,
+                  incrementButtonStyle: tokens?.stepperIncrementStyle,
+                ),
               ],
             ),
           ),
@@ -147,7 +131,8 @@ class SetEditor extends ConsumerWidget {
             FilledButton(
               onPressed: () {
                 onAddPercentageSets([
-                  for (final p in percentages) ParsedSet(reps, p, basisExercise?.id),
+                  for (var i = 0; i < sets; i++)
+                    ParsedSet(reps, percentage, basisExercise?.id),
                 ]);
                 Navigator.pop(ctx);
               },

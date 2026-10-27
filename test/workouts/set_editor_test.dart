@@ -59,7 +59,7 @@ Future<void> _tapStepper(
 }
 
 void main() {
-  testWidgets('Add sets (%) supports a different percentage per set', (
+  testWidgets('Add sets (%) applies one percentage to every set in the batch', (
     tester,
   ) async {
     List<ParsedSet>? added;
@@ -83,21 +83,22 @@ void main() {
     await tester.tap(find.text('Add sets (%)'));
     await tester.pumpAndSettle();
 
-    // Grow from 1 to 3 sets; a %1RM stepper should appear for each.
+    // Growing from 1 to 3 sets must not add a stepper per set — the dialog
+    // stays a fixed height.
     await _tapStepper(
       tester,
       label: 'Sets',
       icon: Icons.add,
       times: 2,
     );
-    expect(find.text('Set 1 %1RM'), findsOneWidget);
-    expect(find.text('Set 2 %1RM'), findsOneWidget);
-    expect(find.text('Set 3 %1RM'), findsOneWidget);
+    expect(find.text('%1RM'), findsOneWidget);
+    expect(find.text('Set 1 %1RM'), findsNothing);
+    expect(find.text('Set 2 %1RM'), findsNothing);
 
-    // Nudge just the second set's percentage up from the 70 default.
+    // Nudge the shared percentage up from the 70 default.
     await _tapStepper(
       tester,
-      label: 'Set 2 %1RM',
+      label: '%1RM',
       icon: Icons.add,
     );
 
@@ -106,7 +107,7 @@ void main() {
 
     expect(added, isNotNull);
     expect(added!.map((s) => s.targetReps), [1, 1, 1]);
-    expect(added!.map((s) => s.percentage), [70, 75, 70]);
+    expect(added!.map((s) => s.percentage), [75, 75, 75]);
     expect(added!.map((s) => s.basisExerciseId), [null, null, null]);
   });
 
