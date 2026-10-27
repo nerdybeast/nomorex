@@ -1,7 +1,10 @@
 name: Self-Hosted Test
 
 on:
-  push:
+  # Every 4 hours (UTC) rather than on every push. Scheduled runs always use
+  # the default branch; run it by hand from the Actions tab for anything else.
+  schedule:
+    - cron: '0 */4 * * *'
   workflow_dispatch:
 
 jobs:
