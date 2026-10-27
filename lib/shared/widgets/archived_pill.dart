@@ -13,12 +13,16 @@ class ArchivedPill extends StatelessWidget {
     return Container(
       height: 18,
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         border: Border.all(color: tokens.palette.borderDefault),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text('ARCHIVED', style: tokens.eyebrow.copyWith(height: 1)),
+      // A min-size Row centers the label vertically without the Container
+      // stretching to the full width it's offered (as `alignment` would).
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [Text('ARCHIVED', style: tokens.eyebrow.copyWith(height: 1))],
+      ),
     );
   }
 }

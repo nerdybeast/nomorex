@@ -35,6 +35,14 @@ void main() {
     expect(find.text('Restore'), findsOneWidget);
   });
 
+  testWidgets('the ARCHIVED pill hugs its label instead of filling the row', (tester) async {
+    await tester.pumpWidget(_wrap(
+      SummaryCard(archived: true, icon: Icons.fitness_center_outlined, title: 'A', onTap: () {}),
+    ));
+
+    expect(tester.getSize(find.byType(ArchivedPill)).width, lessThan(200));
+  });
+
   testWidgets('ArchivedRowActions adds the delete menu only when onDelete is set', (tester) async {
     var deleted = false;
     await tester.pumpWidget(_wrap(
