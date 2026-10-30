@@ -41,6 +41,10 @@ supabase status                 # prints local URL + publishable key for .env.lo
 
 **Never run `supabase db reset` (or any `--linked` variant of it) against the production/linked project.** It drops and recreates the database, which deletes real user data. `db reset` defaults to `--local` and that's the only form that should ever run in this repo or in CI. If asked to reset the linked/remote project, always stop and ask for explicit confirmation first, and be clear that it is a destructive action that can delete user data.
 
+## Cloud sessions (Claude Code on the web)
+
+The `SessionStart` hook sets up the CI toolchain and a local Supabase stack (see `docs/build.md`). Before calling a change done, run `./scripts/verify.sh` and report its summary as is. If a stage shows `SKIP`/`WARNING` (e.g. Docker unavailable), say that stage is unproven rather than implying it passed.
+
 ## Configuration
 
 `lib/main.dart` reads `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` via `String.fromEnvironment()`. These are **compile-time** constants, not runtime env vars — OS environment variables have no effect; the values must arrive via `--dart-define` / `--dart-define-from-file`. Unset values default to empty strings with no error. `.env.json` (prod) and `.env.local.json` (local stack) are gitignored and created per machine. Android emulators reach a local stack at `10.0.2.2`, not `127.0.0.1`. Full details in `docs/build.md`.
