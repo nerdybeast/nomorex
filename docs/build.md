@@ -76,8 +76,8 @@ to end from a phone. Provisioning is split in two:
   Supabase CLI at the versions pinned in `.github/workflows/pr-checks.yml` (read
   from there, so bump them in one place), the Linux desktop build deps and
   xvfb the E2E job uses, the Supabase Docker images, and Playwright's Chromium
-  (for `scripts/web-shot.mjs`; rendering only, since Flutter's canvas makes taps
-  unreliable). Installs run in parallel to fit the ~5 minute cache budget, it
+  (for `scripts/web-shot.mjs`, which signs in and can run a click-driven flow
+  from `scripts/web-flows/`; coordinate clicks work in headless Chromium). Installs run in parallel to fit the ~5 minute cache budget, it
   always exits 0, and it writes per-stage results to
   `/var/lib/nomorex-cloud-setup.status`.
 - **`.claude/hooks/session-start.sh`** is the light, per-session half: `flutter
