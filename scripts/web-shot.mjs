@@ -5,21 +5,44 @@
 //
 // Usage:
 //   flutter build web --debug --dart-define-from-file=.env.local.json
-//   node scripts/web-shot.mjs [route] [out.png]
+//   node scripts/web-shot.mjs [route] [out.png] [--flow scripts/web-flows/x.mjs]
 //   node scripts/web-shot.mjs /shell/home /tmp/home.png
+//   node scripts/web-shot.mjs /shell/prs /tmp/prs.png --flow scripts/web-flows/add-pr.mjs
 //
-// Verifies RENDERING only. Flutter paints to a canvas, so list-tile taps are
-// unreliable here; cover tap-driven behaviour with widget tests instead. Signs
-// in through the DOM login inputs as the seeded a@a.com / 123456 user, so the
-// local Supabase stack must be up and seeded.
+// Signs in as the seeded a@a.com / 123456 user (the local Supabase stack must
+// be up and seeded), optionally runs a flow, then screenshots the route.
+//
+// Flutter paints to a canvas, so there are no DOM elements to select. Drive it
+// with page.mouse.click(x, y) + page.keyboard.type(...): in headless Chromium
+// that works for buttons, text fields, autocomplete options and steppers
+// (unlike claude-in-chrome). Screenshot first to read off the coordinates.
+// A flow is an ES module whose default export is `async (page, { base, shot })`
+// that runs after sign-in; `shot(name)` saves a screenshot next to out.png.
+// Navigate inside a flow with `page.goto(`${base}/#/route`)`.
 
 import { createServer } from 'node:http';
+import { execSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
-import { extname, join, normalize } from 'node:path';
-import { chromium } from 'playwright';
+import { dirname, extname, join, normalize, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
-const route = process.argv[2] ?? '/shell/home';
-const out = process.argv[3] ?? 'web-shot.png';
+// Playwright is installed globally in cloud sessions, and ES module imports
+// ignore NODE_PATH, so fall back to the global root when a bare import fails.
+async function loadPlaywright() {
+  try {
+    return await import('playwright');
+  } catch {
+    const globalRoot = execSync('npm root -g').toString().trim();
+    return await import(pathToFileURL(join(globalRoot, 'playwright', 'index.mjs')));
+  }
+}
+const { chromium } = await loadPlaywright();
+
+const args = process.argv.slice(2);
+const flowIdx = args.indexOf('--flow');
+const flowPath = flowIdx >= 0 ? args.splice(flowIdx, 2)[1] : null;
+const route = args[0] ?? '/shell/home';
+const out = args[1] ?? 'web-shot.png';
 const root = join(process.cwd(), 'build', 'web');
 
 const types = {
@@ -48,14 +71,28 @@ try {
   const page = await browser.newPage({ viewport: { width: 420, height: 900 } });
   await page.goto(base);
 
-  // Flutter's login fields are DOM-backed inputs once semantics are enabled.
-  await page.getByRole('textbox').first().waitFor({ timeout: 60_000 }).catch(() => {});
-  const boxes = page.getByRole('textbox');
-  if ((await boxes.count()) >= 2) {
-    await boxes.nth(0).fill('a@a.com');
-    await boxes.nth(1).fill('123456');
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(3000);
+  // The app opens on the landing page; the login form lives at /login. Its
+  // fields are canvas-drawn (a DOM input only exists while focused), so click
+  // at the centre column: email, password, then the submit button.
+  const { width } = page.viewportSize();
+  const x = width / 2;
+  await page.goto(`${base}/#/login`);
+  await page.waitForTimeout(8_000);
+  await page.mouse.click(x, 128);
+  await page.keyboard.type('a@a.com');
+  await page.mouse.click(x, 196);
+  await page.keyboard.type('123456');
+  await page.mouse.click(x, 262);
+  await page.waitForTimeout(4_000);
+
+  const shot = async (name) => {
+    const file = join(dirname(resolve(out)), `${name}.png`);
+    await page.screenshot({ path: file });
+    console.log(`wrote ${file}`);
+  };
+  if (flowPath) {
+    const flow = (await import(pathToFileURL(resolve(flowPath)))).default;
+    await flow(page, { base, shot });
   }
 
   await page.goto(`${base}/#${route}`);
