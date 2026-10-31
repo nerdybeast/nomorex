@@ -97,8 +97,20 @@ hook's fallback only fires when the toolchain is *missing*).
 
 ```bash
 #!/bin/bash
-bash "${CLAUDE_PROJECT_DIR:-$PWD}/scripts/cloud-setup.sh" || true
+script="$(find / -maxdepth 6 -path '*/scripts/cloud-setup.sh' \
+  -not -path '/proc/*' -not -path '/sys/*' 2>/dev/null | head -n 1)"
+if [ -n "$script" ]; then
+  bash "$script" || true
+else
+  echo "cloud-setup.sh not found; the SessionStart hook will provision instead"
+fi
 ```
+
+`$CLAUDE_PROJECT_DIR` is not set when a setup script runs and the working
+directory is not the repo (it was `/home/user`), so the stub locates the script
+rather than assuming a path. It always exits 0, because a non-zero exit stops
+the session from starting; a green "Ran setup script" check therefore does not
+mean it worked, so read its output.
 
 Run `./scripts/verify.sh` to prove a change: analyze, widget tests, `db reset`
 + `db lint`, E2E under xvfb, and a web build. `--no-e2e`, `--no-db` and

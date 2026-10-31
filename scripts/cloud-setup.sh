@@ -9,7 +9,13 @@
 # skip it. Paste this stub into that dialog once:
 #
 #   #!/bin/bash
-#   bash "${CLAUDE_PROJECT_DIR:-$PWD}/scripts/cloud-setup.sh" || true
+#   script="$(find / -maxdepth 6 -path '*/scripts/cloud-setup.sh' \
+#     -not -path '/proc/*' -not -path '/sys/*' 2>/dev/null | head -n 1)"
+#   if [ -n "$script" ]; then
+#     bash "$script" || true
+#   else
+#     echo "cloud-setup.sh not found; the SessionStart hook will provision instead"
+#   fi
 #
 # The SessionStart hook runs this same script itself when the toolchain is
 # missing (no setup script configured, or the cache was rebuilt), so both paths
