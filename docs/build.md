@@ -70,18 +70,35 @@ emulators reach the host at `10.0.2.2`, not `127.0.0.1`.
 ### Claude Code on the web
 
 Cloud sessions run the same local stack CI does, so a change can be proven end
-to end from a phone. The `SessionStart` hook (`.claude/hooks/session-start.sh`)
-installs and starts everything:
+to end from a phone. Provisioning is split in two:
 
-- Flutter and the Supabase CLI at the versions pinned in
-  `.github/workflows/pr-checks.yml` (the hook reads them from there, so bump
-  them in one place), plus the Linux desktop build deps and xvfb that the E2E
-  job uses.
-- Docker, then `supabase start`, then a generated `.env.local.json` pointing at
-  that stack (never overwritten if one already exists). `SENTRY_DSN` is left
-  unset, which disables Sentry.
-- Playwright's Chromium, for `scripts/web-shot.mjs` screenshots (rendering only;
-  Flutter's canvas makes taps unreliable, so cover those with widget tests).
+- **`scripts/cloud-setup.sh`** is the heavy, slow-changing half: Flutter and the
+  Supabase CLI at the versions pinned in `.github/workflows/pr-checks.yml` (read
+  from there, so bump them in one place), the Linux desktop build deps and
+  xvfb the E2E job uses, the Supabase Docker images, and Playwright's Chromium
+  (for `scripts/web-shot.mjs`; rendering only, since Flutter's canvas makes taps
+  unreliable). Installs run in parallel to fit the ~5 minute cache budget, it
+  always exits 0, and it writes per-stage results to
+  `/var/lib/nomorex-cloud-setup.status`.
+- **`.claude/hooks/session-start.sh`** is the light, per-session half: `flutter
+  pub get`, start Docker and `supabase start` (processes don't survive the
+  environment snapshot), and write `.env.local.json` for that stack (never
+  overwritten if present; `SENTRY_DSN` stays unset, which disables Sentry). If
+  the toolchain isn't on disk it runs `cloud-setup.sh` itself, so it works
+  with no setup script configured, only slower.
+
+**One-time setup:** in claude.ai/code, open the environment, select **Setup
+script**, paste the stub below once, and save. It is stored on the environment,
+applies to every session (phone included), runs on the first session and is
+then snapshotted. It reruns when you edit it or the allowed hosts, and when the
+cache expires after about a week. Because the cache is a snapshot, a change to
+`cloud-setup.sh` on `main` is not picked up until one of those happens (the
+hook's fallback only fires when the toolchain is *missing*).
+
+```bash
+#!/bin/bash
+bash "${CLAUDE_PROJECT_DIR:-$PWD}/scripts/cloud-setup.sh" || true
+```
 
 Run `./scripts/verify.sh` to prove a change: analyze, widget tests, `db reset`
 + `db lint`, E2E under xvfb, and a web build. `--no-e2e`, `--no-db` and
