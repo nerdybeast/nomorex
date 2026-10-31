@@ -84,7 +84,7 @@ install_apt_deps() {
   done
   [ ${#missing[@]} -eq 0 ] && return 0
   $SUDO apt-get -o DPkg::Lock::Timeout=300 update
-  $SUDO DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300 install -y "${missing[@]}"
+  $SUDO env DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300 install -y "${missing[@]}"
 }
 
 chain_apt_playwright() {

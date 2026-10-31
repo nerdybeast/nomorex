@@ -44,7 +44,7 @@ run_step() {
 STARTED_DOCKERD=false
 ensure_docker() {
   if ! command -v docker >/dev/null 2>&1; then
-    $SUDO DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300 install -y docker.io
+    $SUDO env DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300 install -y docker.io
   fi
   if docker info >/dev/null 2>&1; then return 0; fi
   $SUDO sh -c 'nohup dockerd >/var/log/dockerd.log 2>&1 &'
