@@ -38,6 +38,23 @@ FLUTTER_DIR="/opt/flutter"
 STATUS=()
 note() { STATUS+=("$1"); echo "==> $1"; }
 
+# Run a best-effort step with its output captured. A clean run stays quiet; a
+# failure prints the exit code and the tail of the real output (to stdout, which
+# is what the session shows) instead of a bare "failed". Returns the step's
+# exit code so callers can still choose the warning to record.
+LOG_DIR="$(mktemp -d)"
+run_step() {
+  local label="$1"; shift
+  local log="$LOG_DIR/${label//[^A-Za-z0-9]/_}.log" rc=0
+  "$@" >"$log" 2>&1 || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "!!! $label failed (exit $rc). Last 40 lines of output:"
+    tail -n 40 "$log" | sed 's/^/    /'
+    echo "!!! full log: $log"
+  fi
+  return "$rc"
+}
+
 # Append a line to the session env file once, however many times we re-run.
 persist_env() {
   local line="$1"
@@ -54,7 +71,7 @@ fi
 export PATH="$PATH:$FLUTTER_DIR/bin"
 persist_env "export PATH=\"\$PATH:$FLUTTER_DIR/bin\""
 
-flutter config --no-analytics --enable-linux-desktop --enable-web >/dev/null
+flutter config --no-analytics --enable-linux-desktop --enable-web
 flutter precache --linux --web
 flutter pub get   # *.g.dart are committed, so no build_runner here
 note "Flutter $FLUTTER_VERSION ready; dependencies fetched"
@@ -70,13 +87,13 @@ install_apt_deps() {
     dpkg -s "$p" >/dev/null 2>&1 || missing+=("$p")
   done
   [ ${#missing[@]} -eq 0 ] && return 0
-  $SUDO apt-get update -qq
-  $SUDO DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${missing[@]}"
+  $SUDO apt-get update
+  $SUDO DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing[@]}"
 }
-if install_apt_deps; then
+if run_step "apt dependencies" install_apt_deps; then
   note "Linux desktop build deps + xvfb installed (E2E can build)"
 else
-  note "WARNING: apt dependencies failed — E2E cannot build in this session"
+  note "WARNING: apt dependencies failed (details above) — E2E cannot build in this session"
 fi
 
 install_supabase_cli() {
@@ -96,16 +113,16 @@ install_supabase_cli() {
   $SUDO install -m 0755 "$tmp/supabase" /usr/local/bin/supabase
   rm -rf "$tmp"
 }
-if install_supabase_cli; then
+if run_step "Supabase CLI install" install_supabase_cli; then
   note "Supabase CLI $SUPABASE_VERSION installed"
 else
-  note "WARNING: Supabase CLI install failed — migrations/E2E unavailable"
+  note "WARNING: Supabase CLI install failed (details above) — migrations/E2E unavailable"
 fi
 
 # Docker: the local Supabase stack runs in containers.
 ensure_docker() {
   if ! command -v docker >/dev/null 2>&1; then
-    $SUDO DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker.io
+    $SUDO DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io
   fi
   if docker info >/dev/null 2>&1; then return 0; fi
   $SUDO sh -c 'nohup dockerd >/var/log/dockerd.log 2>&1 &'
@@ -113,12 +130,13 @@ ensure_docker() {
     docker info >/dev/null 2>&1 && return 0
     sleep 1
   done
-  tail -n 20 /var/log/dockerd.log >&2 || true
+  echo "dockerd did not become ready in 30s; last 20 lines of /var/log/dockerd.log:"
+  tail -n 20 /var/log/dockerd.log || echo "(no dockerd log)"
   return 1
 }
 
 STACK_UP=false
-if ensure_docker; then
+if run_step "Docker setup" ensure_docker; then
   # `supabase start` pulls images from several registries. If the cloud
   # environment's network access level blocks them, this is where it shows up.
   if supabase start; then
@@ -128,7 +146,7 @@ if ensure_docker; then
     note "WARNING: 'supabase start' failed — likely the environment's network access level; see docs/build.md. E2E and migration proof NOT possible"
   fi
 else
-  note "WARNING: Docker daemon unavailable — E2E and migration proof NOT possible in this session"
+  note "WARNING: Docker daemon unavailable (details above) — E2E and migration proof NOT possible in this session"
 fi
 
 # Point the app at the local stack, exactly as a developer's machine does.
@@ -151,11 +169,12 @@ fi
 
 # Headless Chromium for rendering checks (claude-in-chrome isn't available in
 # cloud sessions). Used by scripts/web-shot.mjs.
-if command -v npx >/dev/null 2>&1 \
-   && npx --yes "playwright@$PLAYWRIGHT_VERSION" install --with-deps chromium >/dev/null 2>&1; then
+if ! command -v npx >/dev/null 2>&1; then
+  note "WARNING: npx not found — Playwright/Chromium not installed, web screenshots NOT possible"
+elif run_step "Playwright install" npx --yes "playwright@$PLAYWRIGHT_VERSION" install --with-deps chromium; then
   note "Playwright $PLAYWRIGHT_VERSION Chromium installed (web screenshots available)"
 else
-  note "WARNING: Playwright/Chromium unavailable — web screenshots NOT possible"
+  note "WARNING: Playwright/Chromium install failed (details above) — web screenshots NOT possible"
 fi
 
 echo ""
