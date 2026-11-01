@@ -19,6 +19,11 @@ on:
         description: Full semantic version incl. pre-release label, e.g. 1.4.2-my-branch.3
         value: ${{ jobs.version.outputs.semver }}
 
+# Least privilege for GITHUB_TOKEN: these jobs only check out code and read
+# tags/history; nothing here writes to the repo.
+permissions:
+  contents: read
+
 jobs:
   version:
     name: Determine app version
