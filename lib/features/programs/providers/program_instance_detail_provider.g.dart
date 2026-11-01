@@ -53,7 +53,7 @@ final class ProgramInstanceDetailNotifierProvider
 }
 
 String _$programInstanceDetailNotifierHash() =>
-    r'2ae65a63b3e2f4a225fb732aa5cc1a8526219d45';
+    r'954644f2b87c86859b043744acae30520eea296b';
 
 final class ProgramInstanceDetailNotifierFamily extends $Family
     with

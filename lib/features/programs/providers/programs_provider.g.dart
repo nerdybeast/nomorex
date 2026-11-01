@@ -33,7 +33,7 @@ final class ProgramsNotifierProvider
   ProgramsNotifier create() => ProgramsNotifier();
 }
 
-String _$programsNotifierHash() => r'fc678c49e98867493babd30584eb28d0a9c7ac2a';
+String _$programsNotifierHash() => r'c5f179eb63ca2605c529d0ea7e01c1755f4534e7';
 
 abstract class _$ProgramsNotifier extends $AsyncNotifier<List<Program>> {
   FutureOr<List<Program>> build();
@@ -54,20 +54,20 @@ abstract class _$ProgramsNotifier extends $AsyncNotifier<List<Program>> {
 }
 
 /// Mirrors [ProgramsNotifier] but surfaces the archived list, so a user can
-/// find and restore a program they archived. No hard delete is ever
-/// exposed — see `programs.is_archived` in the Phase 3 migration.
+/// find and restore a program they archived. Unlike workouts, no hard delete
+/// is ever exposed — see `programs.is_archived` in the Phase 3 migration.
 
 @ProviderFor(ArchivedProgramsNotifier)
 final archivedProgramsProvider = ArchivedProgramsNotifierProvider._();
 
 /// Mirrors [ProgramsNotifier] but surfaces the archived list, so a user can
-/// find and restore a program they archived. No hard delete is ever
-/// exposed — see `programs.is_archived` in the Phase 3 migration.
+/// find and restore a program they archived. Unlike workouts, no hard delete
+/// is ever exposed — see `programs.is_archived` in the Phase 3 migration.
 final class ArchivedProgramsNotifierProvider
     extends $AsyncNotifierProvider<ArchivedProgramsNotifier, List<Program>> {
   /// Mirrors [ProgramsNotifier] but surfaces the archived list, so a user can
-  /// find and restore a program they archived. No hard delete is ever
-  /// exposed — see `programs.is_archived` in the Phase 3 migration.
+  /// find and restore a program they archived. Unlike workouts, no hard delete
+  /// is ever exposed — see `programs.is_archived` in the Phase 3 migration.
   ArchivedProgramsNotifierProvider._()
     : super(
         from: null,
@@ -91,8 +91,8 @@ String _$archivedProgramsNotifierHash() =>
     r'9419b2da3ecbf24b1724881065ba813b14763db1';
 
 /// Mirrors [ProgramsNotifier] but surfaces the archived list, so a user can
-/// find and restore a program they archived. No hard delete is ever
-/// exposed — see `programs.is_archived` in the Phase 3 migration.
+/// find and restore a program they archived. Unlike workouts, no hard delete
+/// is ever exposed — see `programs.is_archived` in the Phase 3 migration.
 
 abstract class _$ArchivedProgramsNotifier
     extends $AsyncNotifier<List<Program>> {

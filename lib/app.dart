@@ -28,6 +28,7 @@ import 'features/community/screens/community_program_detail_screen.dart';
 import 'features/community/screens/community_workout_detail_screen.dart';
 import 'features/programs/screens/programs_screen.dart';
 import 'features/programs/screens/new_program_screen.dart';
+import 'features/programs/screens/program_history_screen.dart';
 import 'features/programs/screens/program_edit_screen.dart';
 import 'features/programs/screens/program_detail_screen.dart';
 import 'features/programs/screens/program_day_detail_screen.dart';
@@ -163,6 +164,11 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: AppConstants.routeProgramNew,
         builder: (_, _) => const NewProgramScreen(),
+      ),
+      // Static segment, declared ahead of '/programs/:id'.
+      GoRoute(
+        path: AppConstants.routeProgramHistory,
+        builder: (_, _) => const ProgramHistoryScreen(),
       ),
       GoRoute(
         path: '/programs/:id/edit',

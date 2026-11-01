@@ -2,6 +2,23 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/list_group.dart';
 
+/// The small check mark that says a day or week is done.
+class CompletedCheck extends StatelessWidget {
+  const CompletedCheck({super.key, this.size = 18});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        label: 'Completed',
+        child: Icon(
+          Icons.check_circle,
+          size: size,
+          color: NomorexTokens.of(context).palette.primaryText,
+        ),
+      );
+}
+
 /// One day row in a program's week/day list — shared by the template browse
 /// screen and the running-instance screen. [highlighted] gives the current
 /// day (in an active instance) a subtle tint and a "TODAY" pill; [showChevron]/[onTap] are only
@@ -13,6 +30,7 @@ class ProgramDayCard extends StatelessWidget {
     required this.subtitle,
     this.showChevron = false,
     this.highlighted = false,
+    this.completed = false,
     this.onTap,
   });
 
@@ -20,6 +38,10 @@ class ProgramDayCard extends StatelessWidget {
   final String subtitle;
   final bool showChevron;
   final bool highlighted;
+
+  /// Shows a check mark after the title (a finished workout, or a rest day
+  /// that has passed) — only the running-instance screen sets it.
+  final bool completed;
   final VoidCallback? onTap;
 
   @override
@@ -43,6 +65,10 @@ class ProgramDayCard extends StatelessWidget {
                 Row(
                   children: [
                     Flexible(child: Text(title, style: theme.textTheme.titleSmall)),
+                    if (completed) ...[
+                      const SizedBox(width: 6),
+                      CompletedCheck(key: const Key('program_day_completed')),
+                    ],
                     if (highlighted) ...[
                       const SizedBox(width: 8),
                       Container(

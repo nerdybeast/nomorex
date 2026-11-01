@@ -17,6 +17,7 @@ import '../../personal_bests/providers/personal_bests_provider.dart';
 import '../../programs/providers/program_instances_list_provider.dart';
 import '../../programs/providers/programs_provider.dart';
 import '../../programs/utils/program_progress.dart';
+import '../../programs/widgets/program_stats_chips.dart';
 import '../../workouts/providers/finished_workouts_provider.dart';
 import '../../workouts/providers/in_progress_workouts_provider.dart';
 import '../../workouts/providers/workouts_provider.dart';
@@ -159,7 +160,7 @@ class DashboardScreen extends ConsumerWidget {
             },
           ),
           const SizedBox(height: 24),
-          const _SectionLabel('Current programs'),
+          const _SectionLabel('Programs in progress'),
           const SizedBox(height: 8),
           instancesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -192,6 +193,9 @@ class DashboardScreen extends ConsumerWidget {
                         statusDisplay: isProgramUpcoming(instance.startedAt)
                             ? 'Upcoming — starts ${formatDate(instance.startedAt)}'
                             : 'In progress — started ${formatDate(instance.startedAt)}',
+                        chips: [
+                          if (instance.stats case final stats?) ...programStatsChips(stats),
+                        ],
                         onTap: () => context.push(
                           AppConstants.routeProgramInstanceDetail(instance.id),
                         ),

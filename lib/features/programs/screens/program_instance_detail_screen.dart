@@ -4,14 +4,18 @@ import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../models/program_instance.dart';
 import '../models/program_week.dart';
+import '../providers/program_instances_provider.dart';
 import '../providers/program_detail_provider.dart';
 import '../providers/program_instance_detail_provider.dart';
 import '../providers/program_instance_workouts_provider.dart';
 import '../utils/program_day_summary.dart';
 import '../utils/program_progress.dart';
 import '../../../shared/widgets/list_group.dart';
+import '../utils/program_stats.dart';
 import '../widgets/program_day_card.dart';
+import '../widgets/program_stats_chips.dart';
 
 /// A running (or upcoming) program: the same week/day layout as the
 /// template browse screen, but each day is highlighted if it's today and
@@ -21,6 +25,47 @@ class ProgramInstanceDetailScreen extends ConsumerWidget {
   const ProgramInstanceDetailScreen({super.key, required this.instanceId});
 
   final String instanceId;
+
+  static String _statusLabel(ProgramInstance instance, bool upcoming) {
+    if (!instance.isActive) {
+      final verb = instance.status == 'abandoned' ? 'Abandoned' : 'Completed';
+      final endedAt = instance.completedAt;
+      return endedAt == null ? verb : '$verb ${formatDate(endedAt.toLocal())}';
+    }
+    return upcoming
+        ? 'Upcoming — starts ${formatDate(instance.startedAt)}'
+        : 'Started ${formatDate(instance.startedAt)}';
+  }
+
+  Future<void> _confirmEnd(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool complete,
+  }) async {
+    final noun = complete ? 'Complete' : 'Abandon';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('$noun this program?'),
+        content: Text(
+          complete
+              ? 'It will move to your program history. Your logged workouts are kept.'
+              : 'It will move to your program history marked as abandoned. Your logged workouts are kept.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(noun)),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final notifier = ref.read(programInstancesProvider.notifier);
+    if (complete) {
+      await notifier.completeProgramInstance(instanceId);
+    } else {
+      await notifier.abandonProgramInstance(instanceId);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -59,16 +104,40 @@ class ProgramInstanceDetailScreen extends ConsumerWidget {
                 ],
                 const SizedBox(height: 4),
                 Text(
-                  upcoming
-                      ? 'Upcoming — starts ${formatDate(instance.startedAt)}'
-                      : 'Started ${formatDate(instance.startedAt)}',
+                  _statusLabel(instance, upcoming),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
+                if (instance.stats case final stats?) ...[
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 12, runSpacing: 4, children: programStatsChips(stats)),
+                ],
+                if (instance.isActive) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      // The theme makes FilledButton full-width, so it must be
+                      // Expanded inside a Row (unbounded width otherwise).
+                      Expanded(
+                        child: FilledButton(
+                          key: const Key('program_instance_complete'),
+                          onPressed: () => _confirmEnd(context, ref, complete: true),
+                          child: const Text('Complete program'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        key: const Key('program_instance_abandon'),
+                        onPressed: () => _confirmEnd(context, ref, complete: false),
+                        child: const Text('Abandon'),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 16),
                 for (final week in program.weeks)
                   _InstanceWeekSection(
                     week: week,
-                    startedAt: instance.startedAt,
+                    instance: instance,
                     dayToWorkoutId: dayToWorkoutId,
                   ),
               ],
@@ -83,12 +152,12 @@ class ProgramInstanceDetailScreen extends ConsumerWidget {
 class _InstanceWeekSection extends StatelessWidget {
   const _InstanceWeekSection({
     required this.week,
-    required this.startedAt,
+    required this.instance,
     required this.dayToWorkoutId,
   });
 
   final ProgramWeek week;
-  final DateTime startedAt;
+  final ProgramInstance instance;
   final Map<String, String> dayToWorkoutId;
 
   @override
@@ -98,9 +167,19 @@ class _InstanceWeekSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Week ${week.weekNumber}${week.label != null ? ' — ${week.label}' : ''}',
-            style: Theme.of(context).textTheme.titleLarge,
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  'Week ${week.weekNumber}${week.label != null ? ' — ${week.label}' : ''}',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              if (instance.isWeekCheckedFor(StatsWeek.fromWeek(week))) ...[
+                const SizedBox(width: 8),
+                const CompletedCheck(key: Key('program_week_completed'), size: 22),
+              ],
+            ],
           ),
           const SizedBox(height: 8),
           ListGroup(
@@ -109,7 +188,8 @@ class _InstanceWeekSection extends StatelessWidget {
                 ProgramDayCard(
                   title: day.title,
                   subtitle: programDaySubtitle(day),
-                  highlighted: isProgramDayToday(startedAt, day.position),
+                  highlighted: isProgramDayToday(instance.startedAt, day.position),
+                  completed: instance.isDayCheckedFor(StatsDay.fromDay(day)),
                   showChevron: programDayHasContent(day) && dayToWorkoutId.containsKey(day.id),
                   onTap: dayToWorkoutId.containsKey(day.id)
                       ? () => context.push(AppConstants.routeWorkoutDetail(dayToWorkoutId[day.id]!))

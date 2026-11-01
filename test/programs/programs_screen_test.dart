@@ -8,6 +8,7 @@ import 'package:nomorex/features/programs/models/program_day.dart';
 import 'package:nomorex/features/programs/models/program_week.dart';
 import 'package:nomorex/features/programs/models/program_instance.dart';
 import 'package:nomorex/features/programs/providers/program_instances_list_provider.dart';
+import 'package:nomorex/features/programs/utils/program_stats.dart';
 import 'package:nomorex/features/programs/providers/programs_provider.dart';
 import 'package:nomorex/features/programs/screens/programs_screen.dart';
 import 'package:nomorex/shared/widgets/archived_pill.dart';
@@ -23,6 +24,13 @@ class _StubProgramsNotifier extends ProgramsNotifier {
 class _EmptyProgramInstancesNotifier extends CurrentProgramInstancesNotifier {
   @override
   Future<List<ProgramInstance>> build() async => [];
+}
+
+class _StubRunsNotifier extends CurrentProgramInstancesNotifier {
+  _StubRunsNotifier(this._runs);
+  final List<ProgramInstance> _runs;
+  @override
+  Future<List<ProgramInstance>> build() async => _runs;
 }
 
 class _RecordingProgramsNotifier extends ProgramsNotifier {
@@ -61,7 +69,7 @@ Program _program(String id, String name, {String? description}) => Program(
 
 void main() {
   testWidgets(
-    'a program card shows weeks and training days (rest days excluded)',
+    'a program card shows weeks, days (rest included) and workouts (rest excluded)',
     (tester) async {
       ProgramDay day(String id, {bool rest = false}) => ProgramDay(
         id: id,
@@ -103,9 +111,52 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('1 week'), findsOneWidget);
-      expect(find.text('2 training days'), findsOneWidget);
+      expect(find.text('3 days'), findsOneWidget);
+      expect(find.text('2 workouts'), findsOneWidget);
     },
   );
+
+  testWidgets('a program in progress shows completed-of-total counts', (
+    tester,
+  ) async {
+    final program = Program(
+      id: 'p1',
+      userId: 'u1',
+      name: 'Squat Block',
+      createdAt: DateTime(2026, 8, 1),
+      updatedAt: DateTime(2026, 8, 1),
+    );
+    final run = ProgramInstance(
+      id: 'run-1',
+      programId: 'p1',
+      userId: 'u1',
+      startedAt: DateTime(2000, 1, 1),
+      status: 'active',
+      structure: const [
+        StatsWeek([
+          StatsDay(id: 'd1', position: 0, isRest: false),
+          StatsDay(id: 'd2', position: 1, isRest: false),
+          StatsDay(id: 'd3', position: 2, isRest: true),
+        ]),
+        StatsWeek([StatsDay(id: 'd4', position: 3, isRest: false)]),
+      ],
+      workoutStatusByDayId: const {'d1': 'finished', 'd2': 'finished', 'd4': 'not_started'},
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          programsProvider.overrideWith(() => _StubProgramsNotifier([program])),
+          currentProgramInstancesProvider.overrideWith(() => _StubRunsNotifier([run])),
+        ],
+        child: const MaterialApp(home: ProgramsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 of 2 weeks'), findsOneWidget);
+    expect(find.text('4 of 4 days'), findsOneWidget); // started long ago
+    expect(find.text('2 of 3 workouts'), findsOneWidget);
+  });
 
   testWidgets('no programs shows an empty-state card with a create button', (
     tester,
@@ -165,6 +216,38 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('new-program-screen'), findsOneWidget);
+  });
+
+  testWidgets('the history icon opens the program history route', (tester) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const ProgramsScreen()),
+        GoRoute(
+          path: AppConstants.routeProgramHistory,
+          builder: (_, _) => const Text('program-history-screen'),
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          programsProvider.overrideWith(() => _StubProgramsNotifier(const [])),
+          archivedProgramsProvider.overrideWith(
+            () => _RecordingArchivedProgramsNotifier(() {}),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Program history'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('program-history-screen'), findsOneWidget);
   });
 
   testWidgets('the archived view shows its own empty-state card', (

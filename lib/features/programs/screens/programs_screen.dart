@@ -10,6 +10,8 @@ import '../../../core/utils/date_formatter.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/summary_card.dart';
+import '../utils/program_stats.dart';
+import '../widgets/program_stats_chips.dart';
 import '../models/program.dart';
 import '../models/program_instance.dart';
 import '../providers/program_instances_list_provider.dart';
@@ -53,6 +55,11 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
                       ref.read(programsProvider.notifier).refresh();
                       ref.read(archivedProgramsProvider.notifier).refresh();
                     },
+            ),
+            IconButton(
+              icon: const Icon(Icons.history),
+              tooltip: 'Program history',
+              onPressed: () => context.push(AppConstants.routeProgramHistory),
             ),
             IconButton(
               icon: const Icon(Icons.person_outline),
@@ -160,7 +167,6 @@ class _ProgramTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final weekCount = program.weeks.length;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final description = program.description?.trim();
@@ -176,9 +182,17 @@ class _ProgramTile extends ConsumerWidget {
       }
     }
 
-    final trainingDays = countTrainingDays(
-      program.weeks.map((w) => w.days.map((d) => d.isRestDay)),
-    );
+    // A running program reads "2 of 8 weeks"; otherwise plain totals from the
+    // template. The run's own structure wins so "of Y" matches what it started
+    // with even if the template was edited since.
+    final stats = activeInstance?.stats ??
+        templateStats([
+          for (final w in program.weeks)
+            StatsWeek([
+              for (final d in w.days)
+                StatsDay(id: d.id, position: d.position, isRest: d.isRestDay),
+            ]),
+        ]);
 
     if (showArchived) {
       return SummaryCard(
@@ -227,9 +241,7 @@ class _ProgramTile extends ConsumerWidget {
               style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
             ),
       chips: [
-        SummaryInfoChip(Icons.calendar_view_week_outlined, pluralize(weekCount, 'week')),
-        if (trainingDays > 0)
-          SummaryInfoChip(Icons.fitness_center_outlined, pluralize(trainingDays, 'training day')),
+        ...programStatsChips(stats),
         SummaryInfoChip(Icons.event_outlined, formatDate(program.createdAt)),
       ],
       onTap: () => context.push(AppConstants.routeProgramDetail(program.id)),

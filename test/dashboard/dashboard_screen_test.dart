@@ -8,6 +8,7 @@ import 'package:nomorex/features/personal_bests/models/personal_best.dart';
 import 'package:nomorex/features/personal_bests/providers/personal_bests_provider.dart';
 import 'package:nomorex/features/programs/models/program_instance.dart';
 import 'package:nomorex/features/programs/providers/program_instances_list_provider.dart';
+import 'package:nomorex/features/programs/utils/program_stats.dart';
 import 'package:nomorex/core/constants/app_constants.dart';
 import 'package:nomorex/features/programs/models/program.dart';
 import 'package:nomorex/features/programs/providers/programs_provider.dart';
@@ -180,6 +181,49 @@ void main() {
     // The card navigates to the instance detail screen, so it carries the
     // app-wide "this row goes somewhere" chevron.
     expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+  });
+
+  testWidgets('a program in progress shows its completed-of-total counts', (
+    tester,
+  ) async {
+    final instance = ProgramInstance(
+      id: 'run-1',
+      programId: 'p1',
+      programName: 'Strong Like Bull',
+      userId: 'u1',
+      startedAt: DateTime(2000, 1, 1),
+      status: 'active',
+      structure: const [
+        StatsWeek([
+          StatsDay(id: 'd1', position: 0, isRest: false),
+          StatsDay(id: 'd2', position: 1, isRest: true),
+        ]),
+      ],
+      workoutStatusByDayId: const {'d1': 'finished'},
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier()),
+          currentProgramInstancesProvider.overrideWith(
+            () => _StubProgramInstancesNotifier([instance]),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 of 1 week'), findsOneWidget);
+    expect(find.text('2 of 2 days'), findsOneWidget);
+    expect(find.text('1 of 1 workout'), findsOneWidget);
   });
 
   testWidgets('shows an upcoming program as upcoming', (tester) async {

@@ -1,5 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'finished_program_instances_provider.dart';
+import 'program_instance_detail_provider.dart';
 import 'program_instances_list_provider.dart';
 
 part 'program_instances_provider.g.dart';
@@ -26,11 +28,20 @@ class ProgramInstancesNotifier extends _$ProgramInstancesNotifier {
     return instanceId;
   }
 
-  Future<void> completeProgramInstance(String id) async {
-    await _db.from('program_instances').update({'status': 'completed'}).eq('id', id);
-  }
+  Future<void> completeProgramInstance(String id) => _endInstance(id, 'completed');
 
-  Future<void> abandonProgramInstance(String id) async {
-    await _db.from('program_instances').update({'status': 'abandoned'}).eq('id', id);
+  Future<void> abandonProgramInstance(String id) => _endInstance(id, 'abandoned');
+
+  /// Ends a run and refreshes every provider that renders it: the active
+  /// list (dashboard + Programs tile status), the history list, and the
+  /// instance's own detail.
+  Future<void> _endInstance(String id, String status) async {
+    await _db.from('program_instances').update({
+      'status': status,
+      'completed_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', id);
+    ref.invalidate(currentProgramInstancesProvider);
+    ref.invalidate(finishedProgramInstancesProvider);
+    ref.invalidate(programInstanceDetailProvider(id));
   }
 }
