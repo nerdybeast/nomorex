@@ -154,38 +154,154 @@ For GitHub Actions (or any CI system), pass the values as secrets. Store `SUPABA
 
 > Note: Dart's `--dart-define` reads from the build command, not from OS environment variables. For CI, pass them explicitly via `--dart-define` flags or `--dart-define-from-file` pointed at a generated file.
 
-`.github/workflows/deploy.yml` is the only workflow that builds a real deployed
-environment (the GitHub Pages web app), so it's also the only one that passes
+`.github/workflows/deploy.yml` (the GitHub Pages web app) and
+`.github/workflows/deploy-ios.yml` (TestFlight) are the only workflows that
+build a real deployed app, so they're also the only ones that pass
 `SENTRY_DSN` — as a `SENTRY_DSN` repository secret holding the **Nomorex**
 (production) project's DSN. `pr-checks.yml` never deploys anywhere real, so it
 intentionally leaves `SENTRY_DSN` unset; an empty DSN just disables the Sentry
 SDK for that build, same as an unset Supabase secret leaves it unable to
 connect.
 
-## iOS signing and `flutter build ipa`
+## iOS: TestFlight deploys
 
-`flutter build ipa` defaults to `--export-method app-store`, which requires an
-"iOS Distribution" certificate and an App Store provisioning profile — both of
-which require an active **paid** Apple Developer Program membership ($99/yr).
-On a free/personal Apple team, that export always fails with errors like:
+`.github/workflows/deploy-ios.yml` builds a signed release IPA on every push to
+`main` (same idea as the web deploy, with its own `paths-ignore`) and uploads it
+to App Store Connect, where it shows up in TestFlight. Run it by hand from the
+Actions tab (`workflow_dispatch`) to retry or force a build. It runs on a
+GitHub-hosted `macos-26` runner, which is free because the repo is public.
 
-```
-error: exportArchive No signing certificate "iOS Distribution" found
-error: exportArchive Team "<name>" does not have permission to create "iOS App Store" provisioning profiles.
-```
+**Versioning.** It uses the same `version.yml` outputs as the web deploy:
+`CFBundleShortVersionString` is GitVersion's MajorMinorPatch and
+`CFBundleVersion` is the commit count. Many builds share one version (e.g.
+1.4.2 builds 312, 313, ...), which TestFlight accepts because the build number
+always goes up.
 
-This is expected on a free team, not a misconfiguration. Apple restricts free
-teams to **development** signing (install on devices registered with that
-Apple ID via Xcode). To produce an installable IPA without a paid membership:
+**Signing is cloud-managed.** No certificate or provisioning profile is stored
+anywhere. `xcodebuild archive`/`-exportArchive` run with
+`-allowProvisioningUpdates` and an App Store Connect API key, so Xcode uses the
+team's cloud-managed distribution certificate and creates/refreshes the App
+Store profile itself. `ios/ExportOptions.plist` sets `destination=upload`, so
+the export step also does the upload. `flutter build ipa` isn't used because it
+can't pass the API-key flags through to xcodebuild. Instead
+`flutter build ios --config-only` bakes the dart-defines and version into the
+Xcode config first.
 
-```bash
-flutter build ipa --export-method development
-```
+**Export compliance.** `Info.plist` declares `ITSAppUsesNonExemptEncryption =
+false` (the app only uses HTTPS/TLS, which is exempt), so App Store Connect
+doesn't ask the encryption question on every build.
 
-Moving to `--export-method ad-hoc` or the `app-store` default later requires
-enrolling in the paid Apple Developer Program — at that point,
-`DEVELOPMENT_TEAM` in `ios/Runner.xcodeproj/project.pbxproj` may also need to
-point at the paid team's ID if it differs from the free team currently used.
+### One-time Apple setup
+
+Already done for this repo (Nov 2026): the app record exists (App Store Connect
+Apple ID `6829556503`) and the three `APP_STORE_CONNECT_*` secrets are set.
+These steps are the reference for redoing it, e.g. on a new Apple account or
+after rotating the key.
+
+1. **Paid Apple Developer Program membership** for team `K6AJD8M75Q` (the
+   `DEVELOPMENT_TEAM` in `ios/Runner.xcodeproj/project.pbxproj`). Check it at
+   <https://developer.apple.com/account>. It renews yearly. App Store /
+   TestFlight distribution needs a paid team. On a free or lapsed team, the
+   export fails with `No signing certificate "iOS Distribution" found` or
+   `does not have permission to create "iOS App Store" provisioning profiles`.
+
+2. **App ID.** At <https://developer.apple.com/account/resources/identifiers/list>,
+   click **+**, choose **App IDs**, then **App**, and register the explicit
+   bundle ID `com.nomorex.app`. No extra capabilities are needed. Automatic
+   signing can create it on the first CI run, but registering it up front
+   avoids a confusing signing failure.
+
+3. **App record.** At <https://appstoreconnect.apple.com/apps>, click **+**
+   and choose **New App**:
+   - Platform: iOS
+   - Name: must be unique across the whole App Store
+   - Primary language: your choice
+   - Bundle ID: `com.nomorex.app`
+   - SKU: any string, e.g. `nomorex`
+
+   The App Store Connect name is what the store shows. The name under the
+   icon on a device comes from `CFBundleDisplayName` in `ios/Runner/Info.plist`
+   (`NoMoreX`).
+
+4. **App Store Connect API key** (CI uses it to sign and upload).
+   - Open <https://appstoreconnect.apple.com/access/integrations/api>. To get
+     there by clicking: **Users and Access**, then the **Integrations** tab,
+     then **App Store Connect API** in the left sidebar.
+   - Choose the **Team Keys** tab, **not** Individual Keys. Cloud-managed
+     signing needs a team key.
+   - The first time, the page shows a **Request Access** button instead of a
+     keys list. Only the **Account Holder** can click it. Accept the terms and
+     the Team Keys page appears immediately.
+   - Click **Generate API Key** (or **+**). Name: anything, e.g.
+     `GitHub Actions`. Access: **Admin**. Lower roles can't create the
+     cloud-managed distribution certificate, and signing fails.
+   - Collect three values from that page:
+     - **Issuer ID**: the UUID shown above the keys table (it has a Copy link).
+     - **Key ID**: in the new key's row.
+     - **Private key**: the **Download** link in that row gives
+       `AuthKey_<KEYID>.p8`. **It can only be downloaded once.** Keep it in a
+       password manager or delete it after creating the secret. Never commit it.
+
+5. **Repository secrets.** In GitHub, open nerdybeast/nomorex, then
+   **Settings > Secrets and variables > Actions > New repository secret**:
+
+   | Secret | Value |
+   |---|---|
+   | `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID |
+   | `APP_STORE_CONNECT_KEY_ID` | Key ID |
+   | `APP_STORE_CONNECT_API_KEY_P8` | base64 of the .p8 (see below) |
+
+   ```bash
+   base64 -i ~/Downloads/AuthKey_XXXXXXXXXX.p8 | pbcopy   # then paste as the secret value
+   gh secret list | grep APP_STORE                        # confirm all three exist
+   ```
+
+   `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `SENTRY_DSN` are the same
+   secrets the web deploy uses. The workflow's first step fails with a clear
+   error if any required secret is missing, or if the .p8 secret doesn't decode
+   to a private key.
+
+6. **TestFlight testers.** After the first build finishes processing, open
+   the app in App Store Connect and go to the **TestFlight** tab. Create an
+   **Internal Testing** group, add yourself and any other testers (they must be
+   users on the App Store Connect team), and turn on **automatic
+   distribution** so every new build reaches them without manual steps.
+   Testers install through Apple's TestFlight app. External testers (anyone
+   outside the team) additionally need Beta App Review, test information and a
+   feedback email.
+
+### After a merge
+
+The **Deploy iOS (TestFlight)** run's export step uploads the build. It then
+appears under the app's TestFlight tab as *Processing* (usually 10–30 minutes)
+and then *Ready to Test*. There's no export-compliance prompt, because of the
+`ITSAppUsesNonExemptEncryption` key. Apple also emails the Account Holder when
+processing finishes or fails.
+
+### Troubleshooting and maintenance
+
+- **Signing or upload failures.** Download the run's `xcodebuild-logs`
+  artifact. The usual causes:
+  - a lapsed membership (step 1)
+  - an API key that isn't Admin, or is an Individual key (step 4)
+  - a missing App ID or app record (steps 2–3)
+- **"bundle version must be higher".** The build number is the commit count
+  from `version.yml`. It only repeats if a run is re-triggered for a commit
+  that already uploaded. Push a new commit instead.
+- **Rotating or revoking the key.** Revoke it on the same Team Keys page,
+  generate a new one (step 4) and replace the three secrets (step 5). Nothing
+  in the repo changes.
+- **Xcode/SDK requirements.** The workflow selects the runner's latest stable
+  Xcode (`maxim-lobanov/setup-xcode`). If Apple starts rejecting uploads for an
+  old SDK, bump `runs-on: macos-26` in both `deploy-ios.yml` and
+  `pr-checks.yml`'s `build-ios` job.
+
+### Local builds
+
+`pr-checks.yml`'s `build-ios` job runs `flutter build ios --release
+--no-codesign` on every PR. Locally, the same command needs no Apple account.
+To install on your own device, use `flutter run` with a development
+certificate, or `flutter build ipa --export-method development`.
 
 ## A Note on the Publishable Key
 

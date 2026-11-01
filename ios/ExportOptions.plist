@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Used by .github/workflows/deploy-ios.yml for `xcodebuild -exportArchive`.
+  destination=upload sends the signed build straight to App Store Connect
+  (TestFlight), so there is no separate altool/Transporter step. Signing is
+  automatic and cloud-managed, authorized by the App Store Connect API key
+  passed on the xcodebuild command line; see docs/build.md.
+-->
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>destination</key>
+	<string>upload</string>
+	<key>signingStyle</key>
+	<string>automatic</string>
+	<key>teamID</key>
+	<string>K6AJD8M75Q</string>
+	<!-- Keep the GitVersion build name/number from version.yml as-is. -->
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+	<key>uploadSymbols</key>
+	<true/>
+	<key>testFlightInternalTestingOnly</key>
+	<false/>
+</dict>
+</plist>
