@@ -159,7 +159,7 @@ class DashboardScreen extends ConsumerWidget {
             },
           ),
           const SizedBox(height: 24),
-          const _SectionLabel('Current programs'),
+          const _SectionLabel('Programs in progress'),
           const SizedBox(height: 8),
           instancesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
