@@ -49,7 +49,7 @@ final class FinishedProgramInstancesNotifierProvider
 }
 
 String _$finishedProgramInstancesNotifierHash() =>
-    r'070d8cc534adf6caaca3b333c853f0a101ccb232';
+    r'65a7cc62489b6d729ec2dcecb7898bbfd5309233';
 
 /// Every ended (completed or abandoned) program run for the current user,
 /// most recently ended first — backs the Program History screen. Mirror of

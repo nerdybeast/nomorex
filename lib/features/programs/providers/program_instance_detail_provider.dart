@@ -14,7 +14,7 @@ class ProgramInstanceDetailNotifier extends _$ProgramInstanceDetailNotifier {
     ref.watch(authStateProvider);
     final data = await _db
         .from('program_instances')
-        .select('*, programs(name)')
+        .select(kProgramInstanceSelect)
         .eq('id', instanceId)
         .single();
     return ProgramInstance.fromJson(data);

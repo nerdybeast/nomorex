@@ -20,7 +20,7 @@ class FinishedProgramInstancesNotifier extends _$FinishedProgramInstancesNotifie
 
     final data = await _db
         .from('program_instances')
-        .select('*, programs(name)')
+        .select(kProgramInstanceSelect)
         .eq('user_id', userId)
         .inFilter('status', ['completed', 'abandoned'])
         .order('completed_at', ascending: false, nullsFirst: false)

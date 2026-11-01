@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../models/program_instance.dart';
 import '../providers/finished_program_instances_provider.dart';
+import '../widgets/program_stats_chips.dart';
 
 /// Program runs the user has completed or abandoned, most recent first —
 /// the Programs-page counterpart of the Workout history screen.
@@ -77,6 +78,10 @@ class _HistoryEntryCard extends StatelessWidget {
                 style: subtitleStyle,
               ),
               Text('Started ${formatDate(instance.startedAt)}', style: subtitleStyle),
+              if (instance.stats case final stats?) ...[
+                const SizedBox(height: 8),
+                Wrap(spacing: 12, runSpacing: 4, children: programStatsChips(stats)),
+              ],
             ],
           ),
         ),

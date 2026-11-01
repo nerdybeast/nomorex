@@ -11,11 +11,15 @@ class ProgramInstanceCard extends StatelessWidget {
     super.key,
     required this.programName,
     required this.statusDisplay,
+    this.chips = const [],
     this.onTap,
   });
 
   final String programName;
   final String statusDisplay;
+
+  /// Optional facts shown under the status line (e.g. "2 of 8 weeks").
+  final List<Widget> chips;
   final VoidCallback? onTap;
 
   @override
@@ -36,6 +40,10 @@ class ProgramInstanceCard extends StatelessWidget {
                   statusDisplay,
                   style: theme.textTheme.bodySmall?.copyWith(color: palette.fg3),
                 ),
+                if (chips.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Wrap(spacing: 12, runSpacing: 4, children: chips),
+                ],
               ],
             ),
           ),

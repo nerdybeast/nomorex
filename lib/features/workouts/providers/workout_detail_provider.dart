@@ -4,6 +4,9 @@ import '../models/workout.dart';
 import '../utils/parsed_set.dart';
 import '../utils/workout_copier.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../programs/providers/finished_program_instances_provider.dart';
+import '../../programs/providers/program_instance_detail_provider.dart';
+import '../../programs/providers/program_instances_list_provider.dart';
 import 'finished_workouts_provider.dart';
 import 'in_progress_workouts_provider.dart';
 import 'workouts_provider.dart';
@@ -248,6 +251,14 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     ref.invalidate(workoutsProvider);
     ref.invalidate(inProgressWorkoutsProvider);
     ref.invalidate(finishedWorkoutsProvider);
+    // A finished program-day workout moves its run's "workouts / weeks
+    // completed" counts, which the dashboard, Programs list and Program
+    // history all render from these providers.
+    if (current.programInstanceId != null) {
+      ref.invalidate(currentProgramInstancesProvider);
+      ref.invalidate(finishedProgramInstancesProvider);
+      ref.invalidate(programInstanceDetailProvider(current.programInstanceId!));
+    }
     await _refresh();
   }
 

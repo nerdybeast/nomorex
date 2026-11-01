@@ -12,6 +12,19 @@ void main() {
       );
 
   group('ProgramInstanceCard', () {
+    testWidgets('renders the optional chips under the status line', (tester) async {
+      await pump(
+        tester,
+        const ProgramInstanceCard(
+          programName: 'Block',
+          statusDisplay: 'In progress',
+          chips: [Text('2 of 8 weeks'), Text('9 of 28 days')],
+        ),
+      );
+      expect(find.text('2 of 8 weeks'), findsOneWidget);
+      expect(find.text('9 of 28 days'), findsOneWidget);
+    });
+
     testWidgets('hides the chevron when onTap is not provided', (tester) async {
       await pump(
         tester,

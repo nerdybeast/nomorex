@@ -19,7 +19,7 @@ class CurrentProgramInstancesNotifier extends _$CurrentProgramInstancesNotifier 
 
     final data = await _db
         .from('program_instances')
-        .select('*, programs(name)')
+        .select(kProgramInstanceSelect)
         .eq('user_id', userId)
         .eq('status', 'active')
         .order('started_at');

@@ -17,7 +17,9 @@ import '../providers/program_instances_provider.dart';
 import '../providers/programs_provider.dart';
 import '../utils/program_day_summary.dart';
 import '../utils/program_progress.dart';
+import '../utils/program_stats.dart';
 import '../widgets/program_day_card.dart';
+import '../widgets/program_stats_chips.dart';
 import '../widgets/start_program_dialog.dart';
 
 /// Read-only rollup of an authored program (mirrors WorkoutDetailScreen's
@@ -156,7 +158,7 @@ class ProgramDetailScreen extends ConsumerWidget {
   }
 }
 
-/// Weeks, training days and created date with their icons — the same facts
+/// Weeks, days, workouts and created date with their icons — the same facts
 /// the Programs list shows under each program.
 class _ProgramFacts extends StatelessWidget {
   const _ProgramFacts({required this.program});
@@ -165,16 +167,11 @@ class _ProgramFacts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trainingDays = countTrainingDays(
-      program.weeks.map((w) => w.days.map((d) => d.isRestDay)),
-    );
     return Wrap(
       spacing: 12,
       runSpacing: 4,
       children: [
-        SummaryInfoChip(Icons.calendar_view_week_outlined, pluralize(program.weeks.length, 'week')),
-        if (trainingDays > 0)
-          SummaryInfoChip(Icons.fitness_center_outlined, pluralize(trainingDays, 'training day')),
+        ...programStatsChips(templateStats(program.weeks.map(StatsWeek.fromWeek).toList())),
         SummaryInfoChip(Icons.event_outlined, formatDate(program.createdAt)),
       ],
     );
