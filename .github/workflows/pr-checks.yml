@@ -7,8 +7,9 @@ on:
     # nearly everything that can't affect the web bundle. test/ and
     # integration_test/ are what `flutter test` and the e2e suite run,
     # scripts/ holds e2e.sh, supabase/ is what db-validate resets and lints,
-    # android/ is what build-android builds, and linux/ is the desktop target
-    # e2e compiles — none of them can be ignored. Only genuinely unused
+    # android/ is what build-android builds, ios/ is what build-ios builds,
+    # and linux/ is the desktop target e2e compiles — none of them can be
+    # ignored. Only genuinely unused
     # platform folders and prose are safe.
     #
     # If these checks are ever made required in branch protection, revisit
@@ -17,10 +18,10 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
-      - 'ios/**'
       - 'macos/**'
       - 'windows/**'
       - '.github/workflows/deploy.yml'
+      - '.github/workflows/deploy-ios.yml'
       - '.gitignore'
   workflow_dispatch:
 
@@ -149,6 +150,48 @@ jobs:
           flutter build apk --${{ matrix.mode }} \
             --build-name="${{ needs.version.outputs.build-name }}" \
             --build-number="${{ needs.version.outputs.build-number }}"
+
+  build-ios:
+    name: Build iOS (release, unsigned)
+    needs: version
+    # Free on a public repo. Proves the iOS target still compiles before
+    # merge, since deploy-ios.yml only runs after it.
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Ties this run's result to the exact version it was built/tested as.
+      - name: Record app version
+        run: |
+          echo "**App version:** \`${{ needs.version.outputs.semver }}\` (build ${{ needs.version.outputs.build-name }}+${{ needs.version.outputs.build-number }})" >> "$GITHUB_STEP_SUMMARY"
+
+      # Same Xcode selection as deploy-ios.yml, so the two can't drift apart.
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Pinned deliberately: `channel: stable` floats, and a Flutter
+          # release landing mid-PR has broken these checks on changes that
+          # touched nothing related. Bump this on purpose, not by surprise.
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Signing and upload happen only in deploy-ios.yml. This only needs to
+      # compile, so placeholder values are enough.
+      - name: Build iOS (release, no codesign)
+        run: |
+          flutter build ios --release --no-codesign \
+            --build-name="${{ needs.version.outputs.build-name }}" \
+            --build-number="${{ needs.version.outputs.build-number }}" \
+            --dart-define=SUPABASE_URL=https://placeholder.supabase.co \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
 
   db-validate:
     name: Validate DB migrations

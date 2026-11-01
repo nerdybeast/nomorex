@@ -154,38 +154,85 @@ For GitHub Actions (or any CI system), pass the values as secrets. Store `SUPABA
 
 > Note: Dart's `--dart-define` reads from the build command, not from OS environment variables. For CI, pass them explicitly via `--dart-define` flags or `--dart-define-from-file` pointed at a generated file.
 
-`.github/workflows/deploy.yml` is the only workflow that builds a real deployed
-environment (the GitHub Pages web app), so it's also the only one that passes
+`.github/workflows/deploy.yml` (the GitHub Pages web app) and
+`.github/workflows/deploy-ios.yml` (TestFlight) are the only workflows that
+build a real deployed app, so they're also the only ones that pass
 `SENTRY_DSN` — as a `SENTRY_DSN` repository secret holding the **Nomorex**
 (production) project's DSN. `pr-checks.yml` never deploys anywhere real, so it
 intentionally leaves `SENTRY_DSN` unset; an empty DSN just disables the Sentry
 SDK for that build, same as an unset Supabase secret leaves it unable to
 connect.
 
-## iOS signing and `flutter build ipa`
+## iOS: TestFlight deploys
 
-`flutter build ipa` defaults to `--export-method app-store`, which requires an
-"iOS Distribution" certificate and an App Store provisioning profile — both of
-which require an active **paid** Apple Developer Program membership ($99/yr).
-On a free/personal Apple team, that export always fails with errors like:
+`.github/workflows/deploy-ios.yml` builds a signed release IPA on every push to
+`main` (same idea as the web deploy, with its own `paths-ignore`) and uploads it
+to App Store Connect, where it shows up in TestFlight. Run it by hand from the
+Actions tab (`workflow_dispatch`) to retry or force a build. It runs on a
+GitHub-hosted `macos-26` runner, which is free because the repo is public.
 
-```
-error: exportArchive No signing certificate "iOS Distribution" found
-error: exportArchive Team "<name>" does not have permission to create "iOS App Store" provisioning profiles.
-```
+**Versioning.** It uses the same `version.yml` outputs as the web deploy:
+`CFBundleShortVersionString` is GitVersion's MajorMinorPatch and
+`CFBundleVersion` is the commit count. Many builds share one version (e.g.
+1.4.2 builds 312, 313, ...), which TestFlight accepts because the build number
+always goes up.
 
-This is expected on a free team, not a misconfiguration. Apple restricts free
-teams to **development** signing (install on devices registered with that
-Apple ID via Xcode). To produce an installable IPA without a paid membership:
+**Signing is cloud-managed.** No certificate or provisioning profile is stored
+anywhere. `xcodebuild archive`/`-exportArchive` run with
+`-allowProvisioningUpdates` and an App Store Connect API key, so Xcode uses the
+team's cloud-managed distribution certificate and creates/refreshes the App
+Store profile itself. `ios/ExportOptions.plist` sets `destination=upload`, so
+the export step also does the upload. `flutter build ipa` isn't used because it
+can't pass the API-key flags through to xcodebuild. Instead
+`flutter build ios --config-only` bakes the dart-defines and version into the
+Xcode config first.
 
-```bash
-flutter build ipa --export-method development
-```
+**Export compliance.** `Info.plist` declares `ITSAppUsesNonExemptEncryption =
+false` (the app only uses HTTPS/TLS, which is exempt), so App Store Connect
+doesn't ask the encryption question on every build.
 
-Moving to `--export-method ad-hoc` or the `app-store` default later requires
-enrolling in the paid Apple Developer Program — at that point,
-`DEVELOPMENT_TEAM` in `ios/Runner.xcodeproj/project.pbxproj` may also need to
-point at the paid team's ID if it differs from the free team currently used.
+### One-time Apple setup
+
+1. **Paid Apple Developer Program membership** for team `K6AJD8M75Q` (the
+   `DEVELOPMENT_TEAM` in `ios/Runner.xcodeproj/project.pbxproj`). App Store /
+   TestFlight distribution needs a paid team. On a free team, the export fails
+   with `No signing certificate "iOS Distribution" found` or `does not have
+   permission to create "iOS App Store" provisioning profiles`.
+2. **App ID**: in Certificates, Identifiers & Profiles, register the explicit
+   bundle ID `com.nomorex.app`.
+3. **App record**: in App Store Connect, go to Apps, then **+**, then New App
+   (iOS, bundle ID `com.nomorex.app`, any SKU).
+4. **API key**: in App Store Connect, go to Users and Access, then
+   Integrations, then App Store Connect API, then Team Keys. Create a key with
+   the **Admin** role (cloud-managed distribution certificates require it).
+   Download the `.p8` (it can only be downloaded once) and note the Key ID and
+   Issuer ID.
+5. **Repository secrets** (Settings > Secrets and variables > Actions):
+
+   | Secret | Value |
+   |---|---|
+   | `APP_STORE_CONNECT_KEY_ID` | Key ID |
+   | `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID |
+   | `APP_STORE_CONNECT_API_KEY_P8` | `base64 -i AuthKey_XXXX.p8 \| pbcopy` |
+
+   `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `SENTRY_DSN` are the same
+   secrets the web deploy uses. The workflow fails up front if any required one
+   is missing.
+6. **TestFlight**: after the first build finishes processing, create an
+   Internal Testing group, add testers, and enable automatic distribution so
+   later builds reach them without manual steps. External testing additionally
+   needs Beta App Review and test information.
+
+If a run fails during signing, check the `xcodebuild-logs` artifact. The usual
+causes are a lapsed membership, a non-Admin API key, or a missing App ID / app
+record.
+
+### Local builds
+
+`pr-checks.yml`'s `build-ios` job runs `flutter build ios --release
+--no-codesign` on every PR. Locally, the same command needs no Apple account.
+To install on your own device, use `flutter run` with a development
+certificate, or `flutter build ipa --export-method development`.
 
 ## A Note on the Publishable Key
 

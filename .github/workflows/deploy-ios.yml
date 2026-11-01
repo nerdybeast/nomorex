@@ -1,0 +1,183 @@
+name: Deploy iOS (TestFlight)
+
+on:
+  push:
+    branches: [main]
+    # Same idea as deploy.yml's list, but for the iOS app: skip pushes that
+    # can't change the built IPA. ios/** is deliberately *not* ignored here,
+    # while the other platforms' folders (and web/) are. workflow_dispatch
+    # stays available to force a run either way.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'test/**'
+      - 'integration_test/**'
+      - 'scripts/**'
+      # Migrations are deployed by the Supabase GitHub integration, not here.
+      - 'supabase/**'
+      - 'android/**'
+      - 'web/**'
+      - 'macos/**'
+      - 'linux/**'
+      - 'windows/**'
+      - '.github/workflows/pr-checks.yml'
+      - '.github/workflows/deploy.yml'
+      - '.gitignore'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never cancel an in-flight upload; queue the next one behind it instead.
+concurrency:
+  group: deploy-ios
+  cancel-in-progress: false
+
+jobs:
+  # Same version source as the web deploy, so a TestFlight build and the web
+  # app published from one commit carry the same number. build-number is the
+  # commit count, which only ever increases, as App Store Connect requires.
+  determine-version:
+    uses: ./.github/workflows/version.yml
+
+  testflight:
+    name: Build & upload to TestFlight
+    needs: determine-version
+    # Free on a public repo; a private repo would bill these minutes at the
+    # macOS multiplier.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      # The runner context isn't available in job-level env, so the paths
+      # are exported here for the later steps.
+      - name: Set build paths
+        run: |
+          echo "ASC_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+          echo "ARCHIVE_PATH=$RUNNER_TEMP/Runner.xcarchive" >> "$GITHUB_ENV"
+          echo "EXPORT_PATH=$RUNNER_TEMP/export" >> "$GITHUB_ENV"
+
+      - name: Record app version
+        run: |
+          echo "**App version:** \`${{ needs.determine-version.outputs.build-name }}\` (build ${{ needs.determine-version.outputs.build-number }})" >> "$GITHUB_STEP_SUMMARY"
+
+      # App Store Connect only accepts builds made with a current SDK.
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Pinned to match pr-checks.yml and deploy.yml. Bump all three together.
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # An unset secret expands to an empty string rather than failing the
+      # build, which would ship an app that silently cannot reach Supabase,
+      # or fail much later with an opaque signing error.
+      - name: Verify build secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+        run: |
+          missing=()
+          for name in SUPABASE_URL SUPABASE_PUBLISHABLE_KEY APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY_P8; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo "::error::Missing repository secrets: ${missing[*]}. Set them under Settings > Secrets and variables > Actions (see docs/build.md)."
+            exit 1
+          fi
+          case "$SUPABASE_URL" in
+            https://*) ;;
+            *) echo "::error::SUPABASE_URL must start with https:// (got a value of length ${#SUPABASE_URL})"; exit 1 ;;
+          esac
+
+      - name: Write App Store Connect API key
+        env:
+          APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+        run: |
+          echo "$APP_STORE_CONNECT_API_KEY_P8" | base64 --decode > "$ASC_KEY_PATH"
+          chmod 600 "$ASC_KEY_PATH"
+          grep -q "BEGIN PRIVATE KEY" "$ASC_KEY_PATH" || {
+            echo "::error::APP_STORE_CONNECT_API_KEY_P8 did not decode to a .p8 private key. Store it as: base64 -i AuthKey_XXXX.p8"
+            exit 1
+          }
+
+      # Bakes the dart-defines and version into ios/Flutter/Generated.xcconfig
+      # without building or signing. The archive below then runs the normal
+      # Flutter build phase with those values. `flutter build ipa` would be
+      # simpler, but it can't pass the API-key auth flags through to xcodebuild.
+      - name: Configure Flutter iOS build
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: |
+          flutter build ios --release --config-only \
+            --build-name="${{ needs.determine-version.outputs.build-name }}" \
+            --build-number="${{ needs.determine-version.outputs.build-number }}" \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
+            --dart-define=SENTRY_DSN="$SENTRY_DSN"
+
+      # -allowProvisioningUpdates plus the API key lets Xcode use the team's
+      # cloud-managed distribution certificate and create/refresh the App
+      # Store profile itself, so no .p12 or profile is stored in secrets.
+      - name: Archive
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$ARCHIVE_PATH" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
+            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
+            | tee "$RUNNER_TEMP/xcodebuild-archive.log"
+
+      # ios/ExportOptions.plist has destination=upload, so this step signs
+      # the IPA for App Store distribution and uploads it to App Store Connect.
+      - name: Export & upload to TestFlight
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath "$EXPORT_PATH" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
+            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
+            | tee "$RUNNER_TEMP/xcodebuild-export.log"
+          echo "Uploaded ${{ needs.determine-version.outputs.build-name }} (${{ needs.determine-version.outputs.build-number }}) to App Store Connect. It appears in TestFlight once Apple finishes processing." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload xcodebuild logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: xcodebuild-logs
+          path: |
+            ${{ runner.temp }}/xcodebuild-*.log
+            ${{ runner.temp }}/export/*.log
+          if-no-files-found: ignore
+
+      - name: Remove App Store Connect API key
+        if: always()
+        run: rm -f "$ASC_KEY_PATH"
