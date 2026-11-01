@@ -115,4 +115,85 @@ void main() {
     await tester.pump();
     expect(taps, 0);
   });
+
+  testWidgets('does not fire when scrolling a list of tappable rows', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      ListView(
+        children: [
+          for (var i = 0; i < 40; i++)
+            ListTile(title: Text('row $i'), onTap: () {}),
+        ],
+      ),
+    );
+    await tester.drag(find.text('row 3'), const Offset(0, -200));
+    await tester.pumpAndSettle();
+    expect(taps, 0);
+  });
+
+  testWidgets('drag past slop then release on a tappable stays silent', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      Center(
+        child: InkWell(
+          key: const Key('ink'),
+          onTap: () {},
+          child: const SizedBox(width: 100, height: 100),
+        ),
+      ),
+    );
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const Key('ink'))),
+    );
+    await gesture.moveBy(const Offset(0, 40));
+    await gesture.up();
+    await tester.pump();
+    expect(taps, 0);
+  });
+
+  testWidgets('small jitter within slop still fires once on release', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      Center(
+        child: InkWell(
+          key: const Key('ink'),
+          onTap: () {},
+          child: const SizedBox(width: 100, height: 100),
+        ),
+      ),
+    );
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const Key('ink'))),
+    );
+    await gesture.moveBy(const Offset(2, 2));
+    expect(taps, 0, reason: 'buzz waits for release');
+    await gesture.up();
+    await tester.pump();
+    expect(taps, 1);
+  });
+
+  testWidgets('cancelled touch on a tappable stays silent', (tester) async {
+    await pump(
+      tester,
+      Center(
+        child: InkWell(
+          key: const Key('ink'),
+          onTap: () {},
+          child: const SizedBox(width: 100, height: 100),
+        ),
+      ),
+    );
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const Key('ink'))),
+    );
+    await gesture.cancel();
+    await tester.pump();
+    expect(taps, 0);
+  });
 }
