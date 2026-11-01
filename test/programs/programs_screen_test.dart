@@ -167,6 +167,38 @@ void main() {
     expect(find.text('new-program-screen'), findsOneWidget);
   });
 
+  testWidgets('the history icon opens the program history route', (tester) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const ProgramsScreen()),
+        GoRoute(
+          path: AppConstants.routeProgramHistory,
+          builder: (_, _) => const Text('program-history-screen'),
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          programsProvider.overrideWith(() => _StubProgramsNotifier(const [])),
+          archivedProgramsProvider.overrideWith(
+            () => _RecordingArchivedProgramsNotifier(() {}),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Program history'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('program-history-screen'), findsOneWidget);
+  });
+
   testWidgets('the archived view shows its own empty-state card', (
     tester,
   ) async {

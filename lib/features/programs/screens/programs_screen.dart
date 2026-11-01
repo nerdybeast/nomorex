@@ -55,6 +55,11 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
                     },
             ),
             IconButton(
+              icon: const Icon(Icons.history),
+              tooltip: 'Program history',
+              onPressed: () => context.push(AppConstants.routeProgramHistory),
+            ),
+            IconButton(
               icon: const Icon(Icons.person_outline),
               tooltip: 'Profile',
               onPressed: () => context.push(AppConstants.routeProfile),

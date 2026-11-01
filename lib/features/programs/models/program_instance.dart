@@ -8,6 +8,7 @@ class ProgramInstance {
     required this.startedAt,
     required this.status,
     this.programName,
+    this.completedAt,
   });
 
   final String id;
@@ -16,6 +17,11 @@ class ProgramInstance {
   final String userId;
   final DateTime startedAt;
   final String status; // 'active' | 'completed' | 'abandoned'
+
+  /// When the run was completed or abandoned; null while active.
+  final DateTime? completedAt;
+
+  bool get isActive => status == 'active';
 
   factory ProgramInstance.fromJson(Map<String, dynamic> json) {
     final programMap = json['programs'] as Map<String, dynamic>?;
@@ -26,6 +32,9 @@ class ProgramInstance {
       userId: json['user_id'] as String,
       startedAt: DateTime.parse(json['started_at'] as String),
       status: json['status'] as String,
+      completedAt: json['completed_at'] == null
+          ? null
+          : DateTime.parse(json['completed_at'] as String),
     );
   }
 }
