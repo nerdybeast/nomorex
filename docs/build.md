@@ -193,39 +193,108 @@ doesn't ask the encryption question on every build.
 
 ### One-time Apple setup
 
+Already done for this repo (Nov 2026): the app record exists (App Store Connect
+Apple ID `6829556503`) and the three `APP_STORE_CONNECT_*` secrets are set.
+These steps are the reference for redoing it, e.g. on a new Apple account or
+after rotating the key.
+
 1. **Paid Apple Developer Program membership** for team `K6AJD8M75Q` (the
-   `DEVELOPMENT_TEAM` in `ios/Runner.xcodeproj/project.pbxproj`). App Store /
-   TestFlight distribution needs a paid team. On a free team, the export fails
-   with `No signing certificate "iOS Distribution" found` or `does not have
-   permission to create "iOS App Store" provisioning profiles`.
-2. **App ID**: in Certificates, Identifiers & Profiles, register the explicit
-   bundle ID `com.nomorex.app`.
-3. **App record**: in App Store Connect, go to Apps, then **+**, then New App
-   (iOS, bundle ID `com.nomorex.app`, any SKU).
-4. **API key**: in App Store Connect, go to Users and Access, then
-   Integrations, then App Store Connect API, then Team Keys. Create a key with
-   the **Admin** role (cloud-managed distribution certificates require it).
-   Download the `.p8` (it can only be downloaded once) and note the Key ID and
-   Issuer ID.
-5. **Repository secrets** (Settings > Secrets and variables > Actions):
+   `DEVELOPMENT_TEAM` in `ios/Runner.xcodeproj/project.pbxproj`). Check it at
+   <https://developer.apple.com/account>. It renews yearly. App Store /
+   TestFlight distribution needs a paid team. On a free or lapsed team, the
+   export fails with `No signing certificate "iOS Distribution" found` or
+   `does not have permission to create "iOS App Store" provisioning profiles`.
+
+2. **App ID.** At <https://developer.apple.com/account/resources/identifiers/list>,
+   click **+**, choose **App IDs**, then **App**, and register the explicit
+   bundle ID `com.nomorex.app`. No extra capabilities are needed. Automatic
+   signing can create it on the first CI run, but registering it up front
+   avoids a confusing signing failure.
+
+3. **App record.** At <https://appstoreconnect.apple.com/apps>, click **+**
+   and choose **New App**:
+   - Platform: iOS
+   - Name: must be unique across the whole App Store
+   - Primary language: your choice
+   - Bundle ID: `com.nomorex.app`
+   - SKU: any string, e.g. `nomorex`
+
+   The App Store Connect name is what the store shows. The name under the
+   icon on a device comes from `CFBundleDisplayName` in `ios/Runner/Info.plist`
+   (`NoMoreX`).
+
+4. **App Store Connect API key** (CI uses it to sign and upload).
+   - Open <https://appstoreconnect.apple.com/access/integrations/api>. To get
+     there by clicking: **Users and Access**, then the **Integrations** tab,
+     then **App Store Connect API** in the left sidebar.
+   - Choose the **Team Keys** tab, **not** Individual Keys. Cloud-managed
+     signing needs a team key.
+   - The first time, the page shows a **Request Access** button instead of a
+     keys list. Only the **Account Holder** can click it. Accept the terms and
+     the Team Keys page appears immediately.
+   - Click **Generate API Key** (or **+**). Name: anything, e.g.
+     `GitHub Actions`. Access: **Admin**. Lower roles can't create the
+     cloud-managed distribution certificate, and signing fails.
+   - Collect three values from that page:
+     - **Issuer ID**: the UUID shown above the keys table (it has a Copy link).
+     - **Key ID**: in the new key's row.
+     - **Private key**: the **Download** link in that row gives
+       `AuthKey_<KEYID>.p8`. **It can only be downloaded once.** Keep it in a
+       password manager or delete it after creating the secret. Never commit it.
+
+5. **Repository secrets.** In GitHub, open nerdybeast/nomorex, then
+   **Settings > Secrets and variables > Actions > New repository secret**:
 
    | Secret | Value |
    |---|---|
-   | `APP_STORE_CONNECT_KEY_ID` | Key ID |
    | `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID |
-   | `APP_STORE_CONNECT_API_KEY_P8` | `base64 -i AuthKey_XXXX.p8 \| pbcopy` |
+   | `APP_STORE_CONNECT_KEY_ID` | Key ID |
+   | `APP_STORE_CONNECT_API_KEY_P8` | base64 of the .p8 (see below) |
+
+   ```bash
+   base64 -i ~/Downloads/AuthKey_XXXXXXXXXX.p8 | pbcopy   # then paste as the secret value
+   gh secret list | grep APP_STORE                        # confirm all three exist
+   ```
 
    `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `SENTRY_DSN` are the same
-   secrets the web deploy uses. The workflow fails up front if any required one
-   is missing.
-6. **TestFlight**: after the first build finishes processing, create an
-   Internal Testing group, add testers, and enable automatic distribution so
-   later builds reach them without manual steps. External testing additionally
-   needs Beta App Review and test information.
+   secrets the web deploy uses. The workflow's first step fails with a clear
+   error if any required secret is missing, or if the .p8 secret doesn't decode
+   to a private key.
 
-If a run fails during signing, check the `xcodebuild-logs` artifact. The usual
-causes are a lapsed membership, a non-Admin API key, or a missing App ID / app
-record.
+6. **TestFlight testers.** After the first build finishes processing, open
+   the app in App Store Connect and go to the **TestFlight** tab. Create an
+   **Internal Testing** group, add yourself and any other testers (they must be
+   users on the App Store Connect team), and turn on **automatic
+   distribution** so every new build reaches them without manual steps.
+   Testers install through Apple's TestFlight app. External testers (anyone
+   outside the team) additionally need Beta App Review, test information and a
+   feedback email.
+
+### After a merge
+
+The **Deploy iOS (TestFlight)** run's export step uploads the build. It then
+appears under the app's TestFlight tab as *Processing* (usually 10–30 minutes)
+and then *Ready to Test*. There's no export-compliance prompt, because of the
+`ITSAppUsesNonExemptEncryption` key. Apple also emails the Account Holder when
+processing finishes or fails.
+
+### Troubleshooting and maintenance
+
+- **Signing or upload failures.** Download the run's `xcodebuild-logs`
+  artifact. The usual causes:
+  - a lapsed membership (step 1)
+  - an API key that isn't Admin, or is an Individual key (step 4)
+  - a missing App ID or app record (steps 2–3)
+- **"bundle version must be higher".** The build number is the commit count
+  from `version.yml`. It only repeats if a run is re-triggered for a commit
+  that already uploaded. Push a new commit instead.
+- **Rotating or revoking the key.** Revoke it on the same Team Keys page,
+  generate a new one (step 4) and replace the three secrets (step 5). Nothing
+  in the repo changes.
+- **Xcode/SDK requirements.** The workflow selects the runner's latest stable
+  Xcode (`maxim-lobanov/setup-xcode`). If Apple starts rejecting uploads for an
+  old SDK, bump `runs-on: macos-26` in both `deploy-ios.yml` and
+  `pr-checks.yml`'s `build-ios` job.
 
 ### Local builds
 
