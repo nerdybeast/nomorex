@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-64 -64 1152 1152" width="1152" height="1152">
+  <!-- Android 12+ splash icon, dark mode. -->
+  <defs><mask id="gap" maskUnits="userSpaceOnUse" x="-64" y="-64" width="1152" height="1152"><rect x="-64" y="-64" width="1152" height="1152" fill="#fff"/><g fill="#000"><rect x="250" y="476" width="524" height="72" rx="36" transform="rotate(-30 512 512)"/></g></mask></defs>
+  <g fill="#ededed" mask="url(#gap)">
+    <rect x="332" y="302" width="60" height="420" rx="30"/>
+    <rect x="432" y="302" width="60" height="420" rx="30"/>
+    <rect x="532" y="302" width="60" height="420" rx="30"/>
+    <rect x="632" y="302" width="60" height="420" rx="30"/>
+  </g>
+  <g fill="#c8470f"><rect x="262" y="482" width="500" height="60" rx="30" transform="rotate(-30 512 512)"/></g>
+</svg>

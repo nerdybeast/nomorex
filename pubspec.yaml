@@ -51,6 +51,7 @@ dev_dependencies:
   riverpod_lint: ^3.1.0
   sentry_dart_plugin: ^3.4.0
   flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -170,3 +171,21 @@ flutter_launcher_icons:
   macos:
     generate: true
     image_path: assets/icon/icon-macos.png
+
+# Launch/splash screen: the Tally mark centred on the app's own bg-0
+# (#FAFAFA light, #121212 dark) so there's no colour flash when Flutter's
+# first frame replaces it. Sources are assets/icon/splash-*.svg; render with
+# ./scripts/render-icons.sh, then `dart run flutter_native_splash:create`.
+flutter_native_splash:
+  color: "#FAFAFA"
+  color_dark: "#121212"
+  image: assets/icon/splash-light.png
+  image_dark: assets/icon/splash-dark.png
+  android_12:
+    color: "#FAFAFA"
+    color_dark: "#121212"
+    image: assets/icon/splash-android12-light.png
+    image_dark: assets/icon/splash-android12-dark.png
+  android: true
+  ios: true
+  web: true
