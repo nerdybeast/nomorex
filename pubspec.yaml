@@ -132,3 +132,11 @@ sentry:
   # No Sentry <-> GitHub repository integration is set up.
   commits: false
   symbols_path: build
+  # upload_sources sends the whole repo; skip what never runs in the deployed
+  # app. Never add build/**: the plugin also matches these against the
+  # absolute path of each built JS file, so it would skip debug ID injection
+  # for build/web and break web symbolication.
+  ignore_web_source_paths:
+    - test/**
+    - integration_test/**
+    - web/**
