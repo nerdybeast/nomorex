@@ -21,6 +21,10 @@ User? currentAuthUser(Ref ref) {
 /// Keeps Sentry's user context in sync with [currentAuthUserProvider] so
 /// error reports are attributed to whoever was signed in when they occurred.
 /// Watched once from [NomorexApp] to run for the lifetime of the app.
+///
+/// Sending the user's id and email makes Sentry's crash and diagnostic data
+/// "linked to the user"; ios/Runner/PrivacyInfo.xcprivacy declares that, so
+/// update it if this context changes.
 @Riverpod(keepAlive: true)
 void sentryUserSync(Ref ref) {
   ref.listen(currentAuthUserProvider, (previous, user) {

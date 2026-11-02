@@ -163,6 +163,42 @@ intentionally leaves `SENTRY_DSN` unset; an empty DSN just disables the Sentry
 SDK for that build, same as an unset Supabase secret leaves it unable to
 connect.
 
+### Sentry environments, releases and symbols
+
+Local development and deployed apps are kept apart in two ways:
+
+- **Different projects.** Local runs use the `nomorex-test` DSN from
+  `.env.local.json`. The deploy workflows use the `nomorex` (production) DSN.
+- **Different environments.** `lib/main.dart` reads `SENTRY_ENVIRONMENT`,
+  which defaults to `development`. Only `deploy.yml` and `deploy-ios.yml` pass
+  `production`. A local build that happens to use `.env.json` still reports as
+  `development`.
+
+The deploy workflows also pass `SENTRY_RELEASE` (`nomorex@<version>+<build>`)
+and `SENTRY_DIST` (`<build>`), from the same `version.yml` outputs as the app
+version. Web and iOS builds from one commit therefore share a release, and
+Sentry's platform tag tells them apart.
+
+To make stack traces readable, the deploy workflows run `sentry_dart_plugin`
+(configured under `sentry:` in `pubspec.yaml`):
+
+- `deploy.yml` builds with `--source-maps`, then uploads the web source maps
+  *before* publishing. The plugin injects debug IDs into the JS, so it has to
+  run first. The `.map` files are deleted afterwards so Pages doesn't serve
+  them.
+- `deploy-ios.yml` archives into `build/ios/archive` and uploads the dSYMs
+  (debug symbols) from there after the TestFlight upload. Apple still gets its
+  own copy through `uploadSymbols` in `ios/ExportOptions.plist`.
+
+**One-time setup:**
+1. In Sentry (organization `michael-penrod`), go to **Settings → Auth Tokens**
+   and create an organization token. It has the `org:ci` scope.
+2. Add it as the `SENTRY_AUTH_TOKEN` repository secret.
+
+Until that secret exists, both upload steps log a warning and skip, and
+deploys still succeed. To check after a deploy, look at the step logs, then at
+an event's release and stack trace in Sentry.
+
 ## iOS: TestFlight deploys
 
 `.github/workflows/deploy-ios.yml` builds a signed release IPA on every push to

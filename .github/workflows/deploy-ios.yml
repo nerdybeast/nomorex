@@ -54,7 +54,9 @@ jobs:
       - name: Set build paths
         run: |
           echo "ASC_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
-          echo "ARCHIVE_PATH=$RUNNER_TEMP/Runner.xcarchive" >> "$GITHUB_ENV"
+          # Under build/ios/archive (gitignored) because that's where
+          # sentry_dart_plugin looks for the dSYMs to upload.
+          echo "ARCHIVE_PATH=$GITHUB_WORKSPACE/build/ios/archive/Runner.xcarchive" >> "$GITHUB_ENV"
           echo "EXPORT_PATH=$RUNNER_TEMP/export" >> "$GITHUB_ENV"
 
       - name: Record app version
@@ -120,13 +122,18 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_RELEASE: nomorex@${{ needs.determine-version.outputs.build-name }}+${{ needs.determine-version.outputs.build-number }}
+          SENTRY_DIST: ${{ needs.determine-version.outputs.build-number }}
         run: |
           flutter build ios --release --config-only \
             --build-name="${{ needs.determine-version.outputs.build-name }}" \
             --build-number="${{ needs.determine-version.outputs.build-number }}" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
-            --dart-define=SENTRY_DSN="$SENTRY_DSN"
+            --dart-define=SENTRY_DSN="$SENTRY_DSN" \
+            --dart-define=SENTRY_ENVIRONMENT=production \
+            --dart-define=SENTRY_RELEASE="$SENTRY_RELEASE" \
+            --dart-define=SENTRY_DIST="$SENTRY_DIST"
 
       # -allowProvisioningUpdates plus the API key lets Xcode use the team's
       # cloud-managed distribution certificate and create/refresh the App
@@ -167,6 +174,21 @@ jobs:
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
             | tee "$RUNNER_TEMP/xcodebuild-export.log"
           echo "Uploaded ${{ needs.determine-version.outputs.build-name }} (${{ needs.determine-version.outputs.build-number }}) to App Store Connect. It appears in TestFlight once Apple finishes processing." >> "$GITHUB_STEP_SUMMARY"
+
+      # dSYMs make native iOS crashes readable in Sentry (Apple gets its own
+      # copy via uploadSymbols in ExportOptions.plist). The build has already
+      # shipped by now, so a missing token only warns.
+      - name: Upload debug symbols to Sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_RELEASE: nomorex@${{ needs.determine-version.outputs.build-name }}+${{ needs.determine-version.outputs.build-number }}
+          SENTRY_DIST: ${{ needs.determine-version.outputs.build-number }}
+        run: |
+          if [ -z "$SENTRY_AUTH_TOKEN" ]; then
+            echo "::warning::SENTRY_AUTH_TOKEN is not set; skipping the Sentry dSYM upload. Native iOS crashes in Sentry will be unsymbolicated."
+            exit 0
+          fi
+          dart run sentry_dart_plugin --sentry-define=upload_source_maps=false
 
       - name: Upload xcodebuild logs
         if: always()
