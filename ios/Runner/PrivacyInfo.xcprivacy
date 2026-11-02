@@ -6,9 +6,10 @@
   what NoMoreX itself collects, and must match the App Store Connect privacy
   labels. Update it whenever the app starts collecting a new kind of data.
 
-  Linked to the user: email + user id (Supabase auth), display name
-  (profiles.display_name, shown in Community), and fitness data (personal
-  bests, workouts, programs). Not linked: Sentry crash and diagnostic data.
+  All linked to the user: email + user id (Supabase auth), display name
+  (profiles.display_name, shown in Community), fitness data (personal bests,
+  workouts, programs), and Sentry crash and diagnostic data, which carry the
+  signed-in user's id and email (sentryUserSync in auth_provider.dart).
 -->
 <plist version="1.0">
 <dict>
@@ -72,7 +73,7 @@
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeCrashData</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
+			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
@@ -84,7 +85,7 @@
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeOtherDiagnosticData</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
+			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>

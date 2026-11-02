@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/constants/app_constants.dart';
@@ -60,6 +61,8 @@ class RouterNotifier extends ChangeNotifier {
 GoRouter router(Ref ref) {
   final notifier = RouterNotifier(ref);
   return GoRouter(
+    // Records screen changes as Sentry breadcrumbs.
+    observers: [SentryNavigatorObserver()],
     refreshListenable: notifier,
     redirect: notifier.redirect,
     initialLocation: AppConstants.routeLanding,

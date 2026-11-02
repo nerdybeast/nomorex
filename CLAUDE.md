@@ -51,7 +51,7 @@ The `SessionStart` hook sets up the CI toolchain and a local Supabase stack (see
 
 ## Configuration
 
-`lib/main.dart` reads `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` via `String.fromEnvironment()`. These are **compile-time** constants, not runtime env vars — OS environment variables have no effect; the values must arrive via `--dart-define` / `--dart-define-from-file`. Unset values default to empty strings with no error. `.env.json` (prod) and `.env.local.json` (local stack) are gitignored and created per machine. Android emulators reach a local stack at `10.0.2.2`, not `127.0.0.1`. Full details in `docs/build.md`.
+`lib/main.dart` reads `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` via `String.fromEnvironment()`. These are **compile-time** constants, not runtime env vars — OS environment variables have no effect; the values must arrive via `--dart-define` / `--dart-define-from-file`. Unset values default to empty strings with no error. `.env.json` (prod) and `.env.local.json` (local stack) are gitignored and created per machine. Android emulators reach a local stack at `10.0.2.2`, not `127.0.0.1`. `SENTRY_DSN` works the same way. So do `SENTRY_ENVIRONMENT` (defaults to `development`), `SENTRY_RELEASE` and `SENTRY_DIST`, which only the deploy workflows pass: that's what keeps deployed Sentry events (`production`) apart from local ones. Full details in `docs/build.md`.
 
 ## Architecture
 

@@ -6,20 +6,40 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  _registerFontLicenses();
-  await Supabase.initialize(
-    url: const String.fromEnvironment('SUPABASE_URL'),
-    publishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
-  );
+Future<void> main() async {
+  // Binding, Sentry and the app all start inside one zone. Calling
+  // WidgetsFlutterBinding.ensureInitialized() outside it, before
+  // SentryFlutter.init, causes a "Zone mismatch" on web.
+  Sentry.runZonedGuarded(() async {
+    SentryWidgetsFlutterBinding.ensureInitialized();
+    _registerFontLicenses();
 
-  await SentryFlutter.init(
-    (options) {
-      options.dsn = const String.fromEnvironment('SENTRY_DSN');
-    },
-    appRunner: () => runApp(const ProviderScope(child: NomorexApp())),
-  );
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = const String.fromEnvironment('SENTRY_DSN');
+        // Only the deploy workflows pass 'production'; local runs, PR builds
+        // and E2E stay 'development'.
+        options.environment =
+            const String.fromEnvironment('SENTRY_ENVIRONMENT', defaultValue: 'development');
+        // nomorex@<version>+<build>, matching the release the deploy
+        // workflows upload debug symbols and source maps under.
+        const release = String.fromEnvironment('SENTRY_RELEASE');
+        if (release.isNotEmpty) options.release = release;
+        const dist = String.fromEnvironment('SENTRY_DIST');
+        if (dist.isNotEmpty) options.dist = dist;
+      },
+      appRunner: () async {
+        // Inside the app runner so a failed Supabase init is reported.
+        await Supabase.initialize(
+          url: const String.fromEnvironment('SUPABASE_URL'),
+          publishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
+        );
+        runApp(const ProviderScope(child: NomorexApp()));
+      },
+    );
+  }, (error, stackTrace) {
+    // Already reported to Sentry by runZonedGuarded; nothing else to do.
+  });
 }
 
 /// The bundled fonts (see pubspec.yaml) are SIL OFL licensed; list their

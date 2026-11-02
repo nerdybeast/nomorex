@@ -49,6 +49,7 @@ dev_dependencies:
   riverpod_generator: ^4.0.0+1
   custom_lint: ^0.8.1
   riverpod_lint: ^3.1.0
+  sentry_dart_plugin: ^3.4.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -115,3 +116,19 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# sentry_dart_plugin: uploads iOS debug symbols (dSYMs) and web source maps so
+# Sentry can show readable stack traces. Run by the deploy workflows only, with
+# SENTRY_AUTH_TOKEN from a repository secret; SENTRY_RELEASE / SENTRY_DIST
+# come from the environment there, matching what the app reports. See
+# docs/build.md.
+sentry:
+  org: michael-penrod
+  project: nomorex
+  upload_debug_symbols: true
+  upload_source_maps: true
+  # Source context in Sentry; the repo is public anyway.
+  upload_sources: true
+  # No Sentry <-> GitHub repository integration is set up.
+  commits: false
+  symbols_path: build

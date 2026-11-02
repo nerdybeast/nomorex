@@ -88,19 +88,43 @@ jobs:
             *) echo "::error::SUPABASE_URL must start with https:// (got a value of length ${#SUPABASE_URL})"; exit 1 ;;
           esac
 
+      # --source-maps plus the SENTRY_* defines let Sentry show readable
+      # stack traces tagged with this release (see the upload step below).
       - name: Build web
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_RELEASE: nomorex@${{ needs.determine-version.outputs.build-name }}+${{ needs.determine-version.outputs.build-number }}
+          SENTRY_DIST: ${{ needs.determine-version.outputs.build-number }}
         run: |
-          flutter build web --release \
+          flutter build web --release --source-maps \
             --build-name="${{ needs.determine-version.outputs.build-name }}" \
             --build-number="${{ needs.determine-version.outputs.build-number }}" \
             --base-href="/${GITHUB_REPOSITORY#*/}/" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
-            --dart-define=SENTRY_DSN="$SENTRY_DSN"
+            --dart-define=SENTRY_DSN="$SENTRY_DSN" \
+            --dart-define=SENTRY_ENVIRONMENT=production \
+            --dart-define=SENTRY_RELEASE="$SENTRY_RELEASE" \
+            --dart-define=SENTRY_DIST="$SENTRY_DIST"
+
+      # Must run before the files are published: the plugin injects debug IDs
+      # into the built JS, then uploads the source maps. The maps are removed
+      # afterwards so they aren't served from Pages. Skipped (not failed) until
+      # the SENTRY_AUTH_TOKEN secret exists; see docs/build.md.
+      - name: Upload source maps to Sentry
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_RELEASE: nomorex@${{ needs.determine-version.outputs.build-name }}+${{ needs.determine-version.outputs.build-number }}
+          SENTRY_DIST: ${{ needs.determine-version.outputs.build-number }}
+        run: |
+          if [ -z "$SENTRY_AUTH_TOKEN" ]; then
+            echo "::warning::SENTRY_AUTH_TOKEN is not set; skipping the Sentry source map upload. Web errors in Sentry will show minified stack traces."
+          else
+            dart run sentry_dart_plugin --sentry-define=upload_debug_symbols=false
+          fi
+          find build/web -name '*.map' -delete
 
       - name: Setup Pages
         uses: actions/configure-pages@v6
