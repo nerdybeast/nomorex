@@ -50,6 +50,7 @@ dev_dependencies:
   custom_lint: ^0.8.1
   riverpod_lint: ^3.1.0
   sentry_dart_plugin: ^3.4.0
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -140,3 +141,32 @@ sentry:
     - test/**
     - integration_test/**
     - web/**
+
+# App icon (Option D "Tally" from the NoMoreX App Icon design canvas).
+# Sources are assets/icon/*.svg; render them with ./scripts/render-icons.sh,
+# then regenerate every platform with `dart run flutter_launcher_icons`.
+# Never hand-edit the generated PNGs under ios/ android/ macos/ windows/ web/.
+flutter_launcher_icons:
+  image_path: assets/icon/icon.png
+  android: true
+  min_sdk_android: 21
+  adaptive_icon_background: "#121212"
+  adaptive_icon_foreground: assets/icon/foreground.png
+  # The artwork already sits inside the adaptive safe zone at full size.
+  adaptive_icon_foreground_inset: 0
+  adaptive_icon_monochrome: assets/icon/monochrome.png
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#121212"
+  image_path_ios_dark_transparent: assets/icon/icon-dark.png
+  image_path_ios_tinted_grayscale: assets/icon/icon-tinted.png
+  web:
+    generate: true
+    background_color: "#121212"
+    theme_color: "#121212"
+  windows:
+    generate: true
+    icon_size: 256
+  macos:
+    generate: true
+    image_path: assets/icon/icon-macos.png

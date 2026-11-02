@@ -359,6 +359,43 @@ processing finishes or fails.
 To install on your own device, use `flutter run` with a development
 certificate, or `flutter build ipa --export-method development`.
 
+## App icon
+
+The icon is Option D ("Tally") from the NoMoreX App Icon design canvas: four
+tally marks struck through by the `#c8470f` accent on `#121212`. The sources are
+SVGs in `assets/icon/`; everything under `ios/`, `android/`, `macos/`,
+`windows/` and `web/icons/` is generated from them, so never edit those PNGs by
+hand.
+
+| Source | Becomes |
+| --- | --- |
+| `icon.svg` | iOS, web, Windows, legacy (pre-8.0) Android icons |
+| `foreground.svg` | Android adaptive icon foreground (background is `#121212`) |
+| `monochrome.svg` | Android 13+ themed icon (single colour; the gap around the slash is real transparency) |
+| `icon-dark.svg` / `icon-tinted.svg` | iOS 18 dark and tinted icons |
+| `icon-macos.svg` | macOS Dock icon (rounded square with the standard margin) |
+
+To change the icon:
+
+```bash
+# 1. Edit the SVG(s), then render them to 1024px PNGs (needs Node/npx)
+./scripts/render-icons.sh
+# 2. Regenerate every platform from the PNGs (config: `flutter_launcher_icons` in pubspec.yaml)
+dart run flutter_launcher_icons
+```
+
+After step 2, check `git diff ios/Runner.xcodeproj/project.pbxproj`.
+flutter_launcher_icons 0.14.4 rewrites
+`ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES` to
+`= AppIcon`; revert that hunk. It also leaves behind any iOS sizes it no longer
+generates (e.g. the old `@1x` files), so delete PNGs in `AppIcon.appiconset`
+that `Contents.json` no longer references.
+
+`web/favicon.svg` is hand-maintained, not generated. It's a tight crop of
+`icon.svg` so the tally still reads in a 16px browser tab, and `index.html`
+lists it ahead of the generated `favicon.png` fallback. Update it by hand if
+the artwork changes.
+
 ## A Note on the Publishable Key
 
 The Supabase publishable key (`sb_publishable_...`) is designed to be public — it is safe to ship inside an app binary. Security is enforced server-side via Row Level Security (RLS) policies on the database. Keeping it out of source control is good practice, but it is not a secret in the same way a secret API key (`sb_secret_...`) would be.
