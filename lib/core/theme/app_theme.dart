@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// The raw color values of the Sleek Orange design system (v3), one set per
 /// theme. Token names match the design system one to one; nothing outside
@@ -215,19 +214,17 @@ class NomorexTokens extends ThemeExtension<NomorexTokens> {
   /// Same shape again in danger red, for an irreversible action ("Discard").
   final ButtonStyle dangerButtonStyle;
 
-  /// The active theme's tokens. Falls back to a font-agnostic copy of the
-  /// stock tokens (matching the ambient brightness) when the theme doesn't
-  /// carry the extension — e.g. a bare `MaterialApp` in a widget test.
+  /// The active theme's tokens. Falls back to the stock tokens (matching the
+  /// ambient brightness) when the theme doesn't carry the extension — e.g. a
+  /// bare `MaterialApp` in a widget test.
   static NomorexTokens of(BuildContext context) {
     final theme = Theme.of(context);
     return theme.extension<NomorexTokens>() ??
         (theme.brightness == Brightness.dark ? _fallbackDark : _fallbackLight);
   }
 
-  static final _fallbackDark =
-      AppTheme._build(NomorexPalette.dark, googleFonts: false).extension<NomorexTokens>()!;
-  static final _fallbackLight =
-      AppTheme._build(NomorexPalette.light, googleFonts: false).extension<NomorexTokens>()!;
+  static final _fallbackDark = AppTheme._build(NomorexPalette.dark).extension<NomorexTokens>()!;
+  static final _fallbackLight = AppTheme._build(NomorexPalette.light).extension<NomorexTokens>()!;
 
   Color get info => palette.info;
   Color get fg2 => palette.fg2;
@@ -287,23 +284,12 @@ abstract final class AppTheme {
 
   static const _tabular = [FontFeature.tabularFigures()];
 
-  // Off only for NomorexTokens' fallback, so a widget test without the app
-  // theme never triggers a font fetch.
-  static bool _googleFonts = true;
-
+  // Both families are bundled assets declared in pubspec.yaml (assets/fonts/),
+  // so nothing is ever fetched at runtime.
   static TextStyle _inter(double size, double lineHeight, FontWeight weight,
       {double? letterSpacing, Color? color}) {
-    if (!_googleFonts) {
-      return TextStyle(
-        fontFamily: 'Inter',
-        fontSize: size,
-        height: lineHeight / size,
-        fontWeight: weight,
-        letterSpacing: letterSpacing ?? 0,
-        color: color,
-      );
-    }
-    return GoogleFonts.inter(
+    return TextStyle(
+      fontFamily: 'Inter',
       fontSize: size,
       height: lineHeight / size,
       fontWeight: weight,
@@ -313,18 +299,8 @@ abstract final class AppTheme {
   }
 
   static TextStyle _mono(double size, double lineHeight, {double? letterSpacing, Color? color}) {
-    if (!_googleFonts) {
-      return TextStyle(
-        fontFamily: 'monospace',
-        fontSize: size,
-        height: lineHeight / size,
-        fontWeight: FontWeight.w500,
-        letterSpacing: letterSpacing ?? 0,
-        color: color,
-        fontFeatures: _tabular,
-      );
-    }
-    return GoogleFonts.jetBrainsMono(
+    return TextStyle(
+      fontFamily: 'JetBrainsMono',
       fontSize: size,
       height: lineHeight / size,
       fontWeight: FontWeight.w500,
@@ -334,17 +310,7 @@ abstract final class AppTheme {
     );
   }
 
-  static ThemeData _build(NomorexPalette p, {bool googleFonts = true}) {
-    final previous = _googleFonts;
-    _googleFonts = googleFonts;
-    try {
-      return _buildTheme(p);
-    } finally {
-      _googleFonts = previous;
-    }
-  }
-
-  static ThemeData _buildTheme(NomorexPalette p) {
+  static ThemeData _build(NomorexPalette p) {
     final colorScheme = ColorScheme(
       brightness: p.brightness,
       primary: p.primary,
