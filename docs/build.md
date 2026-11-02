@@ -296,6 +296,26 @@ processing finishes or fails.
   old SDK, bump `runs-on: macos-26` in both `deploy-ios.yml` and
   `pr-checks.yml`'s `build-ios` job.
 
+### Project settings to keep
+
+- **Minimum iOS is pinned at 17.0** (`IPHONEOS_DEPLOYMENT_TARGET` in
+  `ios/Runner.xcodeproj/project.pbxproj`, on the project and both targets).
+  Don't set it back to `$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)`. That value
+  moves with the Xcode version, and CI always uses the latest stable Xcode, so
+  a runner update could silently drop users on older iOS versions. Lowering
+  the minimum later is safe; raising it strands users on their last installed
+  version. Flutter's own floor is iOS 15.0.
+- **iPhone is portrait-only; iPad supports all four orientations**
+  (`Info.plist`). iPad multitasking requires all four. iPad support
+  (`TARGETED_DEVICE_FAMILY = "1,2"`) can't be removed once the app is on the
+  App Store.
+- **`ios/Runner/PrivacyInfo.xcprivacy`** declares the data the app collects,
+  and must agree with the App Store Connect privacy labels. Update both when
+  the app starts collecting a new kind of data.
+- **The launch screen background** is the `LaunchBackground` color in
+  `Assets.xcassets`, which has light and dark variants matching the app's
+  scaffold background (`bg0`). Keep the two in sync if the theme changes.
+
 ### Local builds
 
 `pr-checks.yml`'s `build-ios` job runs `flutter build ios --release
