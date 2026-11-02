@@ -359,6 +359,55 @@ processing finishes or fails.
 To install on your own device, use `flutter run` with a development
 certificate, or `flutter build ipa --export-method development`.
 
+## App icon and splash screen
+
+The icon is Option D ("Tally") from the NoMoreX App Icon design canvas: four
+tally marks struck through by the `#c8470f` accent on `#121212`. The sources are
+SVGs in `assets/icon/`; everything under `ios/`, `android/`, `macos/`,
+`windows/` and `web/icons/` is generated from them, so never edit those PNGs by
+hand.
+
+| Source | Becomes |
+| --- | --- |
+| `icon.svg` | iOS, web, Windows, legacy (pre-8.0) Android icons |
+| `foreground.svg` | Android adaptive icon foreground (background is `#121212`) |
+| `monochrome.svg` | Android 13+ themed icon (single colour; the gap around the slash is real transparency) |
+| `icon-dark.svg` / `icon-tinted.svg` | iOS 18 dark and tinted icons |
+| `icon-macos.svg` | macOS Dock icon (rounded square with the standard margin) |
+| `splash-light.svg` / `splash-dark.svg` | Launch screen mark on iOS, Android (pre-12) and web; 480px = 4x density, ~120pt on screen |
+| `splash-android12-*.svg` | Android 12+ splash icon: 1152px canvas, artwork inside the 768px circle the system shows |
+
+To change the icon or splash:
+
+```bash
+# 1. Edit the SVG(s), then render them to PNG at their own size (needs Node/npx)
+./scripts/render-icons.sh
+# 2. Regenerate every platform from the PNGs (config: `flutter_launcher_icons` in pubspec.yaml)
+dart run flutter_launcher_icons
+# 3. Regenerate the launch/splash screens (config: `flutter_native_splash` in pubspec.yaml)
+dart run flutter_native_splash:create
+```
+
+After step 2, check `git diff ios/Runner.xcodeproj/project.pbxproj`.
+flutter_launcher_icons 0.14.4 rewrites
+`ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES` to
+`= AppIcon`; revert that hunk. It also leaves behind any iOS sizes it no longer
+generates (e.g. the old `@1x` files), so delete PNGs in `AppIcon.appiconset`
+that `Contents.json` no longer references.
+
+The splash is the Tally mark on the app's own `bg-0` (`#FAFAFA` light,
+`#121212` dark), so the hand-off to Flutter's first frame doesn't flash.
+After step 3, check `git diff ios/Runner/Info.plist`: flutter_native_splash
+2.4.8 re-indents the whole file to add `UIStatusBarHidden = false` (already the
+default), so revert it. Its other rewrites (`LaunchScreen.storyboard`, the
+splash `<style>`/`<picture>` in `web/index.html`) are its own and are
+expected to change on each run.
+
+`web/favicon.svg` is hand-maintained, not generated. It's a tight crop of
+`icon.svg` so the tally still reads in a 16px browser tab, and `index.html`
+lists it ahead of the generated `favicon.png` fallback. Update it by hand if
+the artwork changes.
+
 ## A Note on the Publishable Key
 
 The Supabase publishable key (`sb_publishable_...`) is designed to be public — it is safe to ship inside an app binary. Security is enforced server-side via Row Level Security (RLS) policies on the database. Keeping it out of source control is good practice, but it is not a secret in the same way a secret API key (`sb_secret_...`) would be.
