@@ -96,9 +96,9 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   SegmentedButton<String>(
                     segments: const [
+                      ButtonSegment(value: 'both', label: Text('Both')),
                       ButtonSegment(value: 'kg', label: Text('kg')),
                       ButtonSegment(value: 'lbs', label: Text('lbs')),
-                      ButtonSegment(value: 'both', label: Text('Both')),
                     ],
                     selected: {unit},
                     onSelectionChanged: profileAsync.isLoading
