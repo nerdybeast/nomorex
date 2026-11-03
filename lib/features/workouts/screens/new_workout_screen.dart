@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/info_panel.dart';
 import '../../../shared/widgets/toggle_card.dart';
 import '../providers/workouts_provider.dart';
 
@@ -121,63 +121,27 @@ class _NewWorkoutScreenState extends ConsumerState<NewWorkoutScreen> {
                           : const Text('Save'),
                     ),
                     const SizedBox(height: 24),
-                    const _NewWorkoutTips(key: Key('new_workout_tips')),
+                    const InfoPanel(
+                      key: Key('new_workout_tips'),
+                      title: 'NEED A NAME?',
+                      children: [
+                        Text(
+                          'Try something that describes the session, like '
+                          '"Push Day", "Lower Body A", "Heavy Squat Singles" '
+                          'or "Snatch Technique".',
+                        ),
+                        Text(
+                          "After you save, you'll be able to add exercises "
+                          'and program their sets and reps.',
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Static guidance under Save: a few naming ideas, plus a note that the
-/// exercises themselves are added on the next screen.
-class _NewWorkoutTips extends StatelessWidget {
-  const _NewWorkoutTips({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = NomorexTokens.of(context);
-    final palette = tokens.palette;
-    final bodyStyle =
-        Theme.of(context).textTheme.bodyMedium?.copyWith(color: palette.fg2);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: palette.bg1,
-        border: Border.all(color: palette.borderSubtle),
-        borderRadius: BorderRadius.circular(NomorexSizes.radiusLg),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('NEED A NAME?', style: tokens.eyebrow),
-          const SizedBox(height: 8),
-          Text(
-            'Try something that describes the session, like "Push Day", '
-            '"Lower Body A", "Heavy Squat Singles" or "Snatch Technique".',
-            style: bodyStyle,
-          ),
-          const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.info_outline, size: 18, color: palette.fg3),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "After you save, you'll be able to add exercises and "
-                  'program their sets and reps.',
-                  style: bodyStyle,
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
