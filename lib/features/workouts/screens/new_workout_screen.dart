@@ -127,12 +127,12 @@ class _NewWorkoutScreenState extends ConsumerState<NewWorkoutScreen> {
                       children: [
                         Text(
                           'Try something that describes the session, like '
-                          '"Push Day", "Lower Body A", "Heavy Squat Singles" '
-                          'or "Snatch Technique".',
+                          '"Push Day", "Heavy Squat Session", '
+                          'or "Max Out Friday".',
                         ),
                         Text(
-                          "After you save, you'll be able to add exercises "
-                          'and program their sets and reps.',
+                          "You'll be able to add exercises, "
+                          'program their sets and reps, after saving the workout!',
                         ),
                       ],
                     ),
