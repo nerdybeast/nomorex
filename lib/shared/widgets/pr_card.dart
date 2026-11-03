@@ -17,6 +17,9 @@ import 'list_group.dart';
 ///
 /// [allTimeBest] adds an "ALL-TIME BEST" pill under the date. Only PR history
 /// sets it; the caller decides which entry qualifies (see `allTimeBest()`).
+///
+/// [footer] renders full-width as the card's last line, below any notes.
+/// My PRs uses it for the lift's progression trend.
 class PrCard extends StatelessWidget {
   const PrCard({
     super.key,
@@ -28,6 +31,7 @@ class PrCard extends StatelessWidget {
     this.notesMaxLines,
     this.estimatedOneRepMaxDisplay,
     this.allTimeBest = false,
+    this.footer,
     this.onTap,
     this.onDelete,
   });
@@ -40,6 +44,7 @@ class PrCard extends StatelessWidget {
   final int? notesMaxLines;
   final String? estimatedOneRepMaxDisplay;
   final bool allTimeBest;
+  final Widget? footer;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
@@ -123,6 +128,10 @@ class PrCard extends StatelessWidget {
               overflow: notesMaxLines == null ? null : TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall?.copyWith(fontSize: 13, height: 18 / 13, color: palette.fg2),
             ),
+          ],
+          if (footer != null) ...[
+            const SizedBox(height: 10),
+            footer!,
           ],
         ],
       ),

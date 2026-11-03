@@ -15,6 +15,26 @@ void main() {
         ),
       );
 
+  testWidgets('renders the footer only when one is given', (tester) async {
+    await tester.pumpWidget(card());
+    expect(find.text('footer content'), findsNothing);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PrCard(
+            exerciseName: 'Back Squat',
+            weightDisplay: '100.0 kg',
+            reps: 5,
+            dateDisplay: 'Jan 1, 2026',
+            footer: Text('footer content'),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('footer content'), findsOneWidget);
+  });
+
   testWidgets('shows the all-time best pill only when flagged', (tester) async {
     await tester.pumpWidget(card());
     expect(find.byKey(const Key('pr_card_all_time_best')), findsNothing);

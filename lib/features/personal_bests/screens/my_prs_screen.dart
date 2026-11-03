@@ -8,6 +8,7 @@ import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/pr_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../utils/estimated_pr_label.dart';
+import '../widgets/pr_progression.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
@@ -134,6 +135,7 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
                             notesMaxLines: 2,
                             estimatedOneRepMaxDisplay:
                                 estimatedOneRepMaxLabel(entry.value.first, formula, unit),
+                            footer: PrProgression(entries: entry.value, formula: formula),
                             onTap: () =>
                                 context.push(AppConstants.routePrHistory(entry.value.first.exerciseId)),
                           ),
