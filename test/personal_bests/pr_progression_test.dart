@@ -15,7 +15,11 @@ PersonalBest _pr(double weightKg, int reps, DateTime date) => PersonalBest(
       updatedAt: date,
     );
 
-Future<void> _pump(WidgetTester tester, List<PersonalBest> entries) =>
+Future<void> _pump(
+  WidgetTester tester,
+  List<PersonalBest> entries, {
+  String unit = 'kg',
+}) =>
     tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -24,6 +28,7 @@ Future<void> _pump(WidgetTester tester, List<PersonalBest> entries) =>
             child: PrProgression(
               entries: entries,
               formula: OneRepMaxFormula.brzycki,
+              unitPreference: unit,
             ),
           ),
         ),
@@ -88,5 +93,36 @@ void main() {
 
     expect(find.byKey(_chart), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  for (final unit in ['kg', 'lbs', 'both']) {
+    testWidgets('paints the axes without error for the $unit preference',
+        (tester) async {
+      await _pump(tester, [
+        _pr(50, 1, DateTime(2022, 10, 19)),
+        _pr(55, 1, DateTime(2023, 5, 16)),
+        _pr(75, 1, DateTime(2024, 12, 5)),
+        _pr(60, 1, DateTime(2026, 11, 2)),
+      ], unit: unit);
+
+      expect(find.byKey(_chart), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('describes the trend in the preferred unit for screen readers',
+      (tester) async {
+    final handle = tester.ensureSemantics();
+    await _pump(tester, [
+      _pr(50, 1, DateTime(2026, 1, 1)),
+      _pr(55, 1, DateTime(2026, 2, 1)),
+      _pr(60, 1, DateTime(2026, 3, 1)),
+    ], unit: 'lbs');
+
+    expect(
+      find.bySemanticsLabel('Progression trend, 3 updates, from 110 lbs to 132 lbs'),
+      findsOneWidget,
+    );
+    handle.dispose();
   });
 }
