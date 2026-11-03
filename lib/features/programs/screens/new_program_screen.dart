@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../shared/widgets/info_panel.dart';
 import '../../../shared/widgets/toggle_card.dart';
 import '../providers/programs_provider.dart';
 
@@ -118,6 +119,22 @@ class _NewProgramScreenState extends ConsumerState<NewProgramScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Text('Save program'),
+                    ),
+                    const SizedBox(height: 24),
+                    const InfoPanel(
+                      key: Key('new_program_tips'),
+                      title: 'NEED A NAME?',
+                      children: [
+                        Text(
+                          'Try something that describes the training block, '
+                          'like "12-Week Strength Block", "Squat Cycle", '
+                          'or "Meet Prep".',
+                        ),
+                        Text(
+                          "You'll be able to add weeks, training days, and "
+                          'exercises after saving the program!',
+                        ),
+                      ],
                     ),
                   ],
                 ),
