@@ -10,6 +10,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/one_rep_max_formula.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../shared/widgets/info_panel.dart';
 import '../../../shared/widgets/number_stepper_field.dart';
 import '../../../shared/widgets/unit_toggle.dart';
 
@@ -268,6 +269,22 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                       child: _loading
                           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                           : const Text('Save personal best'),
+                    ),
+                    const SizedBox(height: 24),
+                    InfoPanel(
+                      key: const Key('add_pr_tips'),
+                      title: 'HOW PRS WORK',
+                      children: [
+                        Text(
+                          'Enter your current max for '
+                          '${_selectedExercise?.name ?? 'the selected exercise'}.',
+                        ),
+                        const Text(
+                          "We'll track your current best as well as your "
+                          'all-time best, and keep every update in between '
+                          'in your PR history.',
+                        ),
+                      ],
                     ),
                   ],
                 ),
