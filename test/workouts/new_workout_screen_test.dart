@@ -28,6 +28,37 @@ class _StubWorkoutsNotifier extends WorkoutsNotifier {
 }
 
 void main() {
+  testWidgets('shows example names and the add-exercises hint under Save',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          workoutsProvider.overrideWith(
+            () => _StubWorkoutsNotifier(({
+              required title,
+              notes,
+              required isPublic,
+            }) async => 'new-id'),
+          ),
+          nextWorkoutNameProvider.overrideWith((ref) async => 'Workout 3'),
+        ],
+        child: const MaterialApp(home: NewWorkoutScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final tips = find.byKey(const Key('new_workout_tips'));
+    expect(tips, findsOneWidget);
+    expect(
+      find.descendant(of: tips, matching: find.textContaining('Push Day')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: tips, matching: find.textContaining('add exercises')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('rendering the screen does not create a workout', (tester) async {
     var called = false;
 
