@@ -5,6 +5,7 @@ import 'package:nomorex/features/personal_bests/models/personal_best.dart';
 import 'package:nomorex/features/personal_bests/providers/personal_bests_provider.dart';
 import 'package:nomorex/features/personal_bests/screens/my_prs_screen.dart';
 import 'package:nomorex/shared/widgets/dashboard_empty_state_card.dart';
+import 'package:nomorex/shared/widgets/pr_card.dart';
 
 final _prs = [
   PersonalBest(
@@ -132,5 +133,47 @@ void main() {
     final noteFinder = find.text('Felt strong, belt only.');
     expect(noteFinder, findsOneWidget);
     expect(tester.widget<Text>(noteFinder).maxLines, 2);
+  });
+
+  testWidgets('shows a trend for lifts with three updates and a hint otherwise',
+      (tester) async {
+    PersonalBest pr(String id, String exerciseId, String name, double kg, DateTime date) =>
+        PersonalBest(
+          id: id,
+          userId: 'u1',
+          exerciseId: exerciseId,
+          exerciseName: name,
+          weightKg: kg,
+          reps: 1,
+          date: date,
+          updatedAt: date,
+        );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsNotifier([
+              pr('1', 'e1', 'Back Squat', 100, DateTime(2026, 1, 1)),
+              pr('2', 'e1', 'Back Squat', 105, DateTime(2026, 2, 1)),
+              pr('3', 'e1', 'Back Squat', 110, DateTime(2026, 3, 1)),
+              pr('4', 'e2', 'Deadlift', 140, DateTime(2026, 1, 1)),
+            ]),
+          ),
+        ],
+        child: const MaterialApp(home: MyPrsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    Finder inCard(String name, Key key) => find.descendant(
+          of: find.ancestor(of: find.text(name), matching: find.byType(PrCard)),
+          matching: find.byKey(key),
+        );
+
+    expect(inCard('Back Squat', const Key('pr_progression_chart')), findsOneWidget);
+    expect(inCard('Back Squat', const Key('pr_progression_hint')), findsNothing);
+    expect(inCard('Deadlift', const Key('pr_progression_hint')), findsOneWidget);
+    expect(inCard('Deadlift', const Key('pr_progression_chart')), findsNothing);
   });
 }

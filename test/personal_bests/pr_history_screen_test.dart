@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:nomorex/features/personal_bests/models/personal_best.dart';
 import 'package:nomorex/features/personal_bests/providers/personal_bests_provider.dart';
 import 'package:nomorex/features/personal_bests/screens/pr_history_screen.dart';
+import 'package:nomorex/features/profile/providers/profile_provider.dart';
+import 'package:nomorex/shared/widgets/pr_card.dart';
 
 class _StubPersonalBestsNotifier extends PersonalBestsNotifier {
   _StubPersonalBestsNotifier(this._prs);
@@ -334,5 +336,81 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(deletedId, '1');
+  });
+
+  group('all-time best', () {
+    PersonalBest pr(String id, double weightKg, int reps, DateTime date) =>
+        PersonalBest(
+          id: id,
+          userId: 'u1',
+          exerciseId: 'e1',
+          exerciseName: 'Back Squat',
+          weightKg: weightKg,
+          reps: reps,
+          date: date,
+          updatedAt: date,
+        );
+
+    Future<void> pumpHistory(WidgetTester tester, List<PersonalBest> prs) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier(prs)),
+            unitPreferenceProvider.overrideWithValue('kg'),
+          ],
+          child: const MaterialApp(home: PrHistoryScreen(exerciseId: 'e1')),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Finder badgeIn(String weight) => find.descendant(
+          of: find.ancestor(
+            of: find.descendant(
+              of: find.byType(ListView),
+              matching: find.text(weight),
+            ).last,
+            matching: find.byType(PrCard),
+          ),
+          matching: find.byKey(const Key('pr_card_all_time_best')),
+        );
+
+    testWidgets('summarizes and badges an older best separately from the latest entry',
+        (tester) async {
+      await pumpHistory(tester, [
+        pr('latest', 100, 1, DateTime(2026, 3, 1)),
+        pr('best', 120, 1, DateTime(2026, 1, 1)),
+      ]);
+
+      final current = find.byKey(const Key('pr_history_current_best'));
+      final allTime = find.byKey(const Key('pr_history_all_time_best'));
+      expect(find.descendant(of: current, matching: find.text('100 kg')), findsOneWidget);
+      expect(find.descendant(of: allTime, matching: find.text('120 kg')), findsOneWidget);
+
+      expect(find.byKey(const Key('pr_card_all_time_best')), findsOneWidget);
+      expect(badgeIn('120 kg'), findsOneWidget);
+      expect(badgeIn('100 kg'), findsNothing);
+    });
+
+    testWidgets('badges the latest entry when it is the best', (tester) async {
+      await pumpHistory(tester, [
+        pr('latest', 130, 1, DateTime(2026, 3, 1)),
+        pr('older', 120, 1, DateTime(2026, 1, 1)),
+      ]);
+
+      final allTime = find.byKey(const Key('pr_history_all_time_best'));
+      expect(find.descendant(of: allTime, matching: find.text('130 kg')), findsOneWidget);
+      expect(badgeIn('130 kg'), findsOneWidget);
+      expect(badgeIn('120 kg'), findsNothing);
+    });
+
+    testWidgets('omits the all-time column when no entry can be estimated',
+        (tester) async {
+      await pumpHistory(tester, [pr('high', 60, 15, DateTime(2026, 1, 1))]);
+
+      expect(find.byKey(const Key('pr_history_current_best')), findsOneWidget);
+      expect(find.byKey(const Key('pr_history_all_time_best')), findsNothing);
+      expect(find.byKey(const Key('pr_card_all_time_best')), findsNothing);
+    });
   });
 }

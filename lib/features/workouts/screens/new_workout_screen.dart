@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../shared/widgets/info_panel.dart';
 import '../../../shared/widgets/toggle_card.dart';
 import '../providers/workouts_provider.dart';
 
@@ -118,6 +119,22 @@ class _NewWorkoutScreenState extends ConsumerState<NewWorkoutScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Text('Save'),
+                    ),
+                    const SizedBox(height: 24),
+                    const InfoPanel(
+                      key: Key('new_workout_tips'),
+                      title: 'NEED A NAME?',
+                      children: [
+                        Text(
+                          'Try something that describes the session, like '
+                          '"Push Day", "Heavy Squat Session", '
+                          'or "Max Out Friday".',
+                        ),
+                        Text(
+                          "You'll be able to add exercises, "
+                          'program their sets and reps, after saving the workout!',
+                        ),
+                      ],
                     ),
                   ],
                 ),

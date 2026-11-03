@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/personal_best.dart';
+import '../utils/recent_prs.dart';
 import 'personal_bests_provider.dart';
 
 part 'my_prs_grouped_provider.g.dart';
@@ -15,7 +16,7 @@ Map<String, List<PersonalBest>> myPrsGrouped(Ref ref) {
   }
   // Sort each group by date descending
   for (final list in map.values) {
-    list.sort((a, b) => b.date.compareTo(a.date));
+    list.sort(compareByRecency);
   }
   // Return sorted by exercise name
   return Map.fromEntries(

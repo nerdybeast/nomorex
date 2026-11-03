@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/my_prs_grouped_provider.dart';
 import '../providers/personal_bests_provider.dart';
-import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/pr_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../utils/estimated_pr_label.dart';
+import '../widgets/pr_progression.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
@@ -116,29 +116,35 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
                     ),
                   );
                 }
-                // Rows in one bordered container rather than a card each.
+                // A separate card per lift rather than one ListGroup: each
+                // card carries a progression chart, and touching rows made
+                // the charts hard to tell apart.
                 return ListView(
                   padding: shellListPadding(context),
                   children: [
-                    ListGroup(
-                      children: [
-                        for (final entry in filtered.entries)
-                          // Each value list is sorted by date desc, so first =
-                          // most recent.
-                          PrCard(
-                            exerciseName: entry.key,
-                            weightDisplay: formatWeightForPreference(entry.value.first.weightKg, unit),
-                            reps: entry.value.first.reps,
-                            dateDisplay: formatDate(entry.value.first.date),
-                            notes: entry.value.first.notes,
-                            notesMaxLines: 2,
-                            estimatedOneRepMaxDisplay:
-                                estimatedOneRepMaxLabel(entry.value.first, formula, unit),
-                            onTap: () =>
-                                context.push(AppConstants.routePrHistory(entry.value.first.exerciseId)),
+                    for (final entry in filtered.entries)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        // Each value list is sorted by date desc, so first =
+                        // most recent.
+                        child: PrCard(
+                          exerciseName: entry.key,
+                          weightDisplay: formatWeightForPreference(entry.value.first.weightKg, unit),
+                          reps: entry.value.first.reps,
+                          dateDisplay: formatDate(entry.value.first.date),
+                          notes: entry.value.first.notes,
+                          notesMaxLines: 2,
+                          estimatedOneRepMaxDisplay:
+                              estimatedOneRepMaxLabel(entry.value.first, formula, unit),
+                          footer: PrProgression(
+                            entries: entry.value,
+                            formula: formula,
+                            unitPreference: unit,
                           ),
-                      ],
-                    ),
+                          onTap: () =>
+                              context.push(AppConstants.routePrHistory(entry.value.first.exerciseId)),
+                        ),
+                      ),
                   ],
                 );
               },

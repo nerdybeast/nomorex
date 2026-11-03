@@ -377,4 +377,47 @@ void main() {
       'Zercher Squat',
     );
   });
+
+  group('info panel', () {
+    testWidgets('refers to the selected exercise generically when none is picked',
+        (tester) async {
+      await tester.pumpWidget(_wrap('kg', (_) {}));
+      await tester.pumpAndSettle();
+
+      final tips = find.byKey(const Key('add_pr_tips'));
+      await tester.ensureVisible(tips);
+      expect(tips, findsOneWidget);
+      expect(
+        find.descendant(
+          of: tips,
+          matching: find.text('Enter your current max for the selected exercise.'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: tips, matching: find.textContaining('all-time best')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('names the exercise once one is selected', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            exercisesProvider.overrideWith(() => _StubExercisesNotifier([_backSquat, _deadlift])),
+          ],
+          child: const MaterialApp(home: AddPrScreen(exerciseId: 'e1')),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('add_pr_tips')),
+          matching: find.text('Enter your current max for Back Squat.'),
+        ),
+        findsOneWidget,
+      );
+    });
+  });
 }
