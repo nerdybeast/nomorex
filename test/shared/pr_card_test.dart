@@ -3,6 +3,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/shared/widgets/pr_card.dart';
 
 void main() {
+  Widget card({bool allTimeBest = false}) => MaterialApp(
+        home: Scaffold(
+          body: PrCard(
+            exerciseName: 'Back Squat',
+            weightDisplay: '100.0 kg',
+            reps: 5,
+            dateDisplay: 'Jan 1, 2026',
+            allTimeBest: allTimeBest,
+          ),
+        ),
+      );
+
+  testWidgets('shows the all-time best pill only when flagged', (tester) async {
+    await tester.pumpWidget(card());
+    expect(find.byKey(const Key('pr_card_all_time_best')), findsNothing);
+
+    await tester.pumpWidget(card(allTimeBest: true));
+    expect(find.byKey(const Key('pr_card_all_time_best')), findsOneWidget);
+    expect(find.text('ALL-TIME BEST'), findsOneWidget);
+  });
+
   testWidgets('hides the chevron when onTap is not provided', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

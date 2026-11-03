@@ -14,6 +14,9 @@ import 'list_group.dart';
 /// [estimatedOneRepMaxDisplay] (pre-formatted, e.g. "Est. 1RM 112.5 kg") is
 /// the 1RM inferred from a multi-rep entry. Pass null on singles, where the
 /// estimate is just the lifted weight again.
+///
+/// [allTimeBest] adds an "ALL-TIME BEST" pill under the date. Only PR history
+/// sets it; the caller decides which entry qualifies (see `allTimeBest()`).
 class PrCard extends StatelessWidget {
   const PrCard({
     super.key,
@@ -24,6 +27,7 @@ class PrCard extends StatelessWidget {
     this.notes,
     this.notesMaxLines,
     this.estimatedOneRepMaxDisplay,
+    this.allTimeBest = false,
     this.onTap,
     this.onDelete,
   });
@@ -35,6 +39,7 @@ class PrCard extends StatelessWidget {
   final String? notes;
   final int? notesMaxLines;
   final String? estimatedOneRepMaxDisplay;
+  final bool allTimeBest;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
@@ -62,6 +67,10 @@ class PrCard extends StatelessWidget {
                       dateDisplay,
                       style: theme.textTheme.bodySmall?.copyWith(color: palette.fg3),
                     ),
+                    if (allTimeBest) ...[
+                      const SizedBox(height: 6),
+                      const _AllTimeBestPill(key: Key('pr_card_all_time_best')),
+                    ],
                   ],
                 ),
               ),
@@ -115,6 +124,35 @@ class PrCard extends StatelessWidget {
               style: theme.textTheme.bodySmall?.copyWith(fontSize: 13, height: 18 / 13, color: palette.fg2),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Accent-colored sibling of `ArchivedPill`: a positive marker, so it takes
+/// the orange wash rather than a neutral outline.
+class _AllTimeBestPill extends StatelessWidget {
+  const _AllTimeBestPill({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = NomorexTokens.of(context);
+    final palette = tokens.palette;
+    return Container(
+      height: 18,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(
+        color: palette.primarySubtle,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'ALL-TIME BEST',
+            style: tokens.eyebrow.copyWith(height: 1, color: palette.primaryText),
+          ),
         ],
       ),
     );
