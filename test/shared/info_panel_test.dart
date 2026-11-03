@@ -27,7 +27,7 @@ void main() {
     expect(find.text('Second paragraph'), findsOneWidget);
   });
 
-  testWidgets('puts the title upper-left and the icon upper-right',
+  testWidgets('puts the icon upper-left with the title right after it',
       (tester) async {
     await pumpPanel(tester);
 
@@ -36,8 +36,9 @@ void main() {
     final icon = tester.getRect(find.byIcon(Icons.info_outline));
     final body = tester.getRect(find.text('First paragraph'));
 
+    expect(icon.left, lessThan(panel.center.dx));
+    expect(title.left, greaterThan(icon.right));
     expect(title.left, lessThan(panel.center.dx));
-    expect(icon.right, greaterThan(panel.center.dx));
     expect(icon.center.dy, closeTo(title.center.dy, 4));
     expect(body.top, greaterThan(icon.bottom));
   });

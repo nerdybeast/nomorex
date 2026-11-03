@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 
-/// A bordered panel of guidance text. An eyebrow [title] sits in the
-/// upper-left and an info icon in the upper-right.
+/// A bordered panel of guidance text. The header is an info icon in the
+/// upper-left followed by the eyebrow [title].
 ///
 /// [children] are stacked below the header and spaced apart. Plain `Text`
 /// children pick up the panel's body style (bodyMedium in `fg2`) through a
@@ -37,9 +37,9 @@ class InfoPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(title, style: tokens.eyebrow)),
-              const SizedBox(width: 8),
               Icon(Icons.info_outline, size: 18, color: palette.fg3),
+              const SizedBox(width: 8),
+              Expanded(child: Text(title, style: tokens.eyebrow)),
             ],
           ),
           DefaultTextStyle.merge(
