@@ -195,18 +195,27 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
 
   Future<void> startWorkout() async {
     await _db.rpc('start_workout_session', params: {'p_workout_id': workoutId});
-    ref.invalidate(inProgressWorkoutsProvider);
+    _invalidateStatusLists();
     await _refresh();
   }
 
   Future<void> pauseWorkout() async {
     await _db.rpc('pause_workout_session', params: {'p_workout_id': workoutId});
+    _invalidateStatusLists();
     await _refresh();
   }
 
   Future<void> resumeWorkout() async {
     await _db.rpc('resume_workout_session', params: {'p_workout_id': workoutId});
+    _invalidateStatusLists();
     await _refresh();
+  }
+
+  /// A session status change moves the label the dashboard's in-progress
+  /// card and the Workouts list both render from their own cached rows.
+  void _invalidateStatusLists() {
+    ref.invalidate(inProgressWorkoutsProvider);
+    ref.invalidate(workoutsProvider);
   }
 
   Future<void> finishWorkout({String? sessionNotes}) async {
@@ -264,7 +273,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
 
   Future<void> discardSession() async {
     await _db.rpc('discard_workout_session', params: {'p_workout_id': workoutId});
-    ref.invalidate(inProgressWorkoutsProvider);
+    _invalidateStatusLists();
     await _refresh();
   }
 
