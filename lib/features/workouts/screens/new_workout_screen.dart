@@ -138,14 +138,6 @@ class _NewWorkoutScreenState extends ConsumerState<NewWorkoutScreen> {
 class _NewWorkoutTips extends StatelessWidget {
   const _NewWorkoutTips({super.key});
 
-  static const _exampleNames = [
-    'Push Day',
-    'Lower Body A',
-    'Heavy Squat Singles',
-    'Snatch Technique',
-    'Full Body Conditioning',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final tokens = NomorexTokens.of(context);
@@ -165,11 +157,11 @@ class _NewWorkoutTips extends StatelessWidget {
         children: [
           Text('NEED A NAME?', style: tokens.eyebrow),
           const SizedBox(height: 8),
-          for (final name in _exampleNames)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text('•  $name', style: bodyStyle),
-            ),
+          Text(
+            'Try something that describes the session, like "Push Day", '
+            '"Lower Body A", "Heavy Squat Singles" or "Snatch Technique".',
+            style: bodyStyle,
+          ),
           const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
