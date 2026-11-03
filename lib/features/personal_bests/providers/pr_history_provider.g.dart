@@ -76,7 +76,7 @@ final class PrHistoryProvider
   }
 }
 
-String _$prHistoryHash() => r'229d7ceb0ef834812289ed92776655a4b834a3e2';
+String _$prHistoryHash() => r'5aaaf6dcd6b170c140ad16d2a896d32c2b738146';
 
 /// Every PR entry logged for one exercise, sorted by date descending.
 

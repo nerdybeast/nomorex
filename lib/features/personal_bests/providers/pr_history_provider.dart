@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/personal_best.dart';
+import '../utils/recent_prs.dart';
 import 'personal_bests_provider.dart';
 
 part 'pr_history_provider.g.dart';
@@ -9,6 +10,6 @@ part 'pr_history_provider.g.dart';
 List<PersonalBest> prHistory(Ref ref, String exerciseId) {
   final all = ref.watch(personalBestsProvider).asData?.value ?? [];
   final history = all.where((pr) => pr.exerciseId == exerciseId).toList()
-    ..sort((a, b) => b.date.compareTo(a.date));
+    ..sort(compareByRecency);
   return history;
 }

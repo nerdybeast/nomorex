@@ -16,6 +16,7 @@ import 'package:nomorex/features/workouts/models/workout.dart';
 import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
 import 'package:nomorex/features/workouts/providers/finished_workouts_provider.dart';
 import 'package:nomorex/features/workouts/providers/in_progress_workouts_provider.dart';
+import 'package:nomorex/features/profile/providers/profile_provider.dart';
 import 'package:nomorex/shared/widgets/pr_card.dart';
 
 class _StubPersonalBestsNotifier extends PersonalBestsNotifier {
@@ -857,4 +858,121 @@ void main() {
       });
     },
   );
+
+  testWidgets('a recent PR gets the all-time best chip only when it is the best',
+      (tester) async {
+    PersonalBest pr(String id, String exerciseId, String name, double kg, DateTime date) =>
+        PersonalBest(
+          id: id,
+          userId: 'u1',
+          exerciseId: exerciseId,
+          exerciseName: name,
+          weightKg: kg,
+          reps: 1,
+          date: date,
+          updatedAt: date,
+        );
+
+    // Newest first, as the provider orders them. Back Squat's latest entry is
+    // lighter than an older one; Deadlift's latest is its heaviest.
+    final prs = [
+      pr('bs-new', 'e1', 'Back Squat', 100, DateTime(2026, 8, 14)),
+      pr('dl-new', 'e2', 'Deadlift', 150, DateTime(2026, 8, 10)),
+      pr('bs-old', 'e1', 'Back Squat', 120, DateTime(2026, 1, 1)),
+      pr('dl-old', 'e2', 'Deadlift', 140, DateTime(2026, 1, 1)),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsWithPrsNotifier(prs),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    Finder chipIn(String name) => find.descendant(
+          of: find.ancestor(of: find.text(name), matching: find.byType(PrCard)),
+          matching: find.byKey(const Key('pr_card_all_time_best')),
+        );
+
+    await tester.dragUntilVisible(
+      find.text('Deadlift'),
+      find.byType(ListView),
+      const Offset(0, -300),
+    );
+    await tester.pumpAndSettle();
+
+    expect(chipIn('Deadlift'), findsOneWidget);
+    expect(chipIn('Back Squat'), findsNothing);
+  });
+
+  testWidgets('recent PRs follow the PR date, so back-filled history stays put',
+      (tester) async {
+    PersonalBest pr(String id, String exerciseId, String name, double kg,
+            DateTime date, DateTime savedAt) =>
+        PersonalBest(
+          id: id,
+          userId: 'u1',
+          exerciseId: exerciseId,
+          exerciseName: name,
+          weightKg: kg,
+          reps: 1,
+          date: date,
+          updatedAt: savedAt,
+        );
+
+    // Newest *saved* first, as the provider returns them: the 2022 Tall Clean
+    // was back-filled today.
+    final prs = [
+      pr('tc-old', 'e1', 'Tall Clean', 50, DateTime(2022, 10, 19), DateTime(2026, 11, 2)),
+      pr('ur', 'e2', 'Upright Row', 52.5, DateTime(2026, 8, 10), DateTime(2026, 8, 10)),
+      pr('tc-new', 'e1', 'Tall Clean', 60, DateTime(2026, 11, 1), DateTime(2026, 11, 1)),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          personalBestsProvider.overrideWith(
+            () => _StubPersonalBestsWithPrsNotifier(prs),
+          ),
+          currentProgramInstancesProvider.overrideWith(
+            () => _EmptyProgramInstancesNotifier(),
+          ),
+          inProgressWorkoutsProvider.overrideWith(
+            () => _EmptyInProgressWorkoutsNotifier(),
+          ),
+          finishedWorkoutsProvider.overrideWith(
+            () => _EmptyFinishedWorkoutsNotifier(),
+          ),
+          unitPreferenceProvider.overrideWithValue('kg'),
+        ],
+        child: const MaterialApp(home: DashboardScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.dragUntilVisible(
+      find.text('Upright Row'),
+      find.byType(ListView),
+      const Offset(0, -300),
+    );
+    await tester.pumpAndSettle();
+
+    // Tall Clean shows its Nov 2026 entry, not the back-filled 2022 one.
+    final cards = tester.widgetList<PrCard>(find.byType(PrCard)).toList();
+    expect(cards.map((c) => c.exerciseName), ['Tall Clean', 'Upright Row']);
+    expect(cards.first.weightDisplay, '60 kg');
+  });
 }

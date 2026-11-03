@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/pr_card.dart';
+import '../../personal_bests/utils/all_time_best.dart';
 import '../../personal_bests/utils/estimated_pr_label.dart';
+import '../../personal_bests/utils/recent_prs.dart';
 import '../../../shared/widgets/program_instance_card.dart';
 import '../../../shared/widgets/recent_workout_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
@@ -214,11 +216,9 @@ class DashboardScreen extends ConsumerWidget {
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
             data: (allPrs) {
-              final seen = <String>{};
-              final prs = allPrs
-                  .where((pr) => seen.add(pr.exerciseId))
-                  .take(5)
-                  .toList();
+              // Same "current entry" as My PRs: latest by PR date, so a
+              // back-filled old PR doesn't jump to the top.
+              final prs = latestPrPerExercise(allPrs).take(5).toList();
               if (prs.isEmpty) {
                 return DashboardEmptyStateCard(
                   ctaStyle: EmptyStateCtaStyle.link,
@@ -248,6 +248,17 @@ class DashboardScreen extends ConsumerWidget {
                           formula,
                           unit,
                         ),
+                        // The badge only marks the shown entry when it is
+                        // also the lift's all-time best (same rule as PR
+                        // history), so an older, heavier PR suppresses it.
+                        allTimeBest: allTimeBest(
+                              [
+                                for (final other in allPrs)
+                                  if (other.exerciseId == pr.exerciseId) other,
+                              ],
+                              formula,
+                            )?.id ==
+                            pr.id,
                         onTap: () => context.push(
                           AppConstants.routePrHistory(pr.exerciseId),
                         ),
