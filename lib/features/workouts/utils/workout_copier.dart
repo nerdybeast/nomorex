@@ -62,6 +62,7 @@ Map<String, dynamic> copiedSetRow(
       if (source.targetRepsMax != null) 'target_reps_max': source.targetRepsMax,
       'weight_mode': source.weightMode,
       'percentage': source.percentage,
+      'percentage_max': ?source.percentageMax,
       'absolute_weight_kg': source.absoluteWeightKg,
       'basis_exercise_id': source.basisExerciseId,
       'note': source.note,

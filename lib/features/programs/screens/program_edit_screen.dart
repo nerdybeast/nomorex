@@ -20,7 +20,7 @@ import '../../../core/utils/sequential_naming.dart';
 // callback speaks ParsedSet regardless of caller; convert 1:1 to this
 // feature's ParsedProgramSet before handing it to ProgramDetailNotifier.
 ParsedProgramSet _toParsedProgramSet(ParsedSet p) =>
-    ParsedProgramSet(p.targetReps, p.percentage, p.basisExerciseId, p.targetRepsMax);
+    ParsedProgramSet(p.targetReps, p.percentage, p.basisExerciseId, p.targetRepsMax, p.percentageMax);
 
 class ProgramEditScreen extends ConsumerWidget {
   const ProgramEditScreen({super.key, required this.programId});

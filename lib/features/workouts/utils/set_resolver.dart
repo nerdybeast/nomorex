@@ -43,3 +43,28 @@ double? resolveSetWeightKg({
   }
   return null;
 }
+
+/// A set's working weight as a range in kg: [low] always, [high] only when a
+/// percentage set prescribes a %1RM range ("67–72.5%"). Both ends resolve
+/// from the same 1RM. Null exactly when [resolveSetWeightKg] is, i.e. a
+/// percentage set with no 1RM to resolve against.
+({double low, double? high})? resolveSetWeightRangeKg({
+  required String weightMode,
+  double? percentage,
+  double? percentageMax,
+  double? absoluteWeightKg,
+  double? oneRepMaxKg,
+}) {
+  final low = resolveSetWeightKg(
+    weightMode: weightMode,
+    percentage: percentage,
+    absoluteWeightKg: absoluteWeightKg,
+    oneRepMaxKg: oneRepMaxKg,
+  );
+  if (low == null) return null;
+  final isRange = weightMode == 'percentage' &&
+      percentageMax != null &&
+      percentageMax != percentage &&
+      oneRepMaxKg != null;
+  return (low: low, high: isRange ? percentageMax / 100 * oneRepMaxKg : null);
+}

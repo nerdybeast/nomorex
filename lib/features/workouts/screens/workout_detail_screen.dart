@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/utils/percent_range.dart';
 import '../../../core/utils/rep_range.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
@@ -521,12 +522,14 @@ class _SetTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedKg = resolveSetWeightKg(
+    final resolved = resolveSetWeightRangeKg(
       weightMode: set.weightMode,
       percentage: set.percentage,
+      percentageMax: set.percentageMax,
       absoluteWeightKg: set.absoluteWeightKg,
       oneRepMaxKg: oneRepMax?.kg,
     );
+    final pct = formatPercentTarget(set.percentage, set.percentageMax);
 
     final basisSuffix =
         set.basisExerciseId != null ? ' of ${set.basisExerciseName ?? '1RM'}' : '';
@@ -537,12 +540,12 @@ class _SetTile extends StatelessWidget {
         ?.copyWith(color: colorScheme.onSurfaceVariant);
 
     final Widget subtitle;
-    if (set.weightMode == 'percentage' && resolvedKg == null) {
+    if (set.weightMode == 'percentage' && resolved == null) {
       subtitle = Text.rich(
         TextSpan(
           style: baseStyle,
           children: [
-            TextSpan(text: '${set.percentage?.toStringAsFixed(0)}%$basisSuffix — '),
+            TextSpan(text: '$pct$basisSuffix — '),
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
               child: SetPrLink(
@@ -556,8 +559,8 @@ class _SetTile extends StatelessWidget {
       );
     } else {
       final trailingText = set.weightMode == 'percentage'
-          ? '${set.percentage?.toStringAsFixed(0)}%$basisSuffix · ${formatResolvedWeight(resolvedKg!, unit, estimated: oneRepMax?.isEstimated ?? false)}'
-          : formatWeightForPreference(resolvedKg ?? 0, unit);
+          ? '$pct$basisSuffix · ${formatResolvedWeightRange(resolved!.low, resolved.high, unit, estimated: oneRepMax?.isEstimated ?? false)}'
+          : formatWeightForPreference(resolved?.low ?? 0, unit);
       subtitle = Text(trailingText);
     }
 

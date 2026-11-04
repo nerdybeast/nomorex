@@ -10,6 +10,7 @@ class EditableSetRow {
     this.targetReps,
     this.targetRepsMax,
     this.percentage,
+    this.percentageMax,
     this.absoluteWeightKg,
     this.basisExerciseId,
     this.basisExerciseName,
@@ -21,6 +22,8 @@ class EditableSetRow {
   final int? targetRepsMax;
   final String weightMode; // 'percentage' | 'absolute'
   final double? percentage;
+  /// Top of a %1RM range; null means a single percentage.
+  final double? percentageMax;
   final double? absoluteWeightKg;
   final String? basisExerciseId;
   final String? basisExerciseName;
