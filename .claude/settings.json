@@ -1,4 +1,12 @@
 {
+  "permissions": {
+    "deny": [
+      "Bash(supabase link*)",
+      "Bash(supabase db push*)",
+      "Bash(supabase * --linked*)",
+      "Bash(supabase * --db-url*)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {

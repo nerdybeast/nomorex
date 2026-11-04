@@ -133,6 +133,9 @@ install_supabase_cli() {
 prepull_images() {
   ensure_docker || return 1
   (cd "$REPO_ROOT" && supabase start) || { (cd "$REPO_ROOT" && supabase stop --no-backup) || true; return 1; }
+  # `supabase test db` runs pg_prove from its own image, pulled on first use;
+  # running the suite once caches it. The result doesn't matter here.
+  (cd "$REPO_ROOT" && supabase test db --local >/dev/null 2>&1) || true
   (cd "$REPO_ROOT" && supabase stop --no-backup) || return 1
   if [ "$STARTED_DOCKERD" = true ]; then
     $SUDO pkill -TERM dockerd || true

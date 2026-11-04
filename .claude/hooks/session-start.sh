@@ -72,17 +72,46 @@ fi
 
 # --- Local Supabase stack (per-session: processes don't survive the cache) ---
 
+# Polls until `supabase status` reports a healthy stack, up to ~2 minutes.
+wait_for_stack() {
+  local _
+  for _ in $(seq 1 60); do
+    supabase status >/dev/null 2>&1 && return 0
+    sleep 2
+  done
+  return 1
+}
+
+# True when the stack's containers already exist (a resumed VM: Docker brings
+# them back up by itself, but Postgres spends a few seconds in "starting").
+stack_containers_exist() {
+  [ -n "$(docker ps -aq --filter 'name=^supabase_db_' 2>/dev/null)" ]
+}
+
 STACK_UP=false
 if run_step "Docker setup" ensure_docker; then
-  # Already running after an idle-VM resume? Then there's nothing to start.
   if supabase status >/dev/null 2>&1; then
     STACK_UP=true
     note "Local Supabase stack already running"
+  # After a resume, `supabase start` on a still-booting database fails with
+  # "container is not ready: starting" even though nothing is wrong, so wait
+  # for it instead of starting over it.
+  elif stack_containers_exist && wait_for_stack; then
+    STACK_UP=true
+    note "Local Supabase stack running (resumed)"
   elif run_step "supabase start" supabase start; then
     STACK_UP=true
     note "Local Supabase stack running"
+  # A failed start can still leave the containers booting; give them the same
+  # grace period, then one more start attempt.
+  elif wait_for_stack || run_step "supabase start (retry)" supabase start; then
+    STACK_UP=true
+    note "Local Supabase stack running (after a slow start)"
+  elif [ -z "$(docker images -q 'public.ecr.aws/supabase/postgres' 2>/dev/null)" ] \
+    && [ -z "$(docker images -q 'supabase/postgres' 2>/dev/null)" ]; then
+    note "WARNING: 'supabase start' failed and the Supabase images are not on disk — likely image pulls blocked by the environment's network access level; see docs/build.md. E2E and migration proof NOT possible"
   else
-    note "WARNING: 'supabase start' failed (details above) — likely image pulls blocked by the environment's network access level; see docs/build.md. E2E and migration proof NOT possible"
+    note "WARNING: 'supabase start' failed with the images already on disk, so this is not a network problem — see the log above. E2E and migration proof NOT possible"
   fi
 else
   note "WARNING: Docker daemon unavailable (details above) — E2E and migration proof NOT possible in this session"
