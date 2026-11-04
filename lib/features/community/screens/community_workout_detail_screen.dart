@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/utils/rep_range.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/copy_errors.dart';
 import '../../../core/theme/app_theme.dart';
@@ -313,7 +314,7 @@ class _SetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reps = '${set.targetReps ?? '-'} reps';
+    final reps = formatTargetReps(set.targetReps, set.targetRepsMax);
 
     // Absolute sets are the same load for everyone, so they render plainly —
     // the accent color below is reserved for weights derived from the

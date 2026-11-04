@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
+import '../models/workout_set.dart';
 
 /// The copy-attribution columns to carry onto a new workout created *from*
 /// [source] (duplicate, repeat, the next instance after finishing), so a copy
@@ -40,17 +41,28 @@ Future<void> copyWorkoutContents(
     if (ex.sets.isEmpty) continue;
     await db.from('workout_sets').insert([
       for (final s in ex.sets)
-        {
-          'workout_exercise_id': newExId,
-          'user_id': userId,
-          'position': s.position,
-          'target_reps': s.targetReps,
-          'weight_mode': s.weightMode,
-          'percentage': s.percentage,
-          'absolute_weight_kg': s.absoluteWeightKg,
-          'basis_exercise_id': s.basisExerciseId,
-          'note': s.note,
-        },
+        copiedSetRow(s, workoutExerciseId: newExId, userId: userId),
     ]);
   }
 }
+
+/// The `workout_sets` insert for a copy of [source]: its prescription
+/// (targets, load, basis, note) only. Completed/actual fields are omitted so
+/// they fall back to their DB defaults on the new row.
+Map<String, dynamic> copiedSetRow(
+  WorkoutSet source, {
+  required String workoutExerciseId,
+  required String userId,
+}) =>
+    {
+      'workout_exercise_id': workoutExerciseId,
+      'user_id': userId,
+      'position': source.position,
+      'target_reps': source.targetReps,
+      if (source.targetRepsMax != null) 'target_reps_max': source.targetRepsMax,
+      'weight_mode': source.weightMode,
+      'percentage': source.percentage,
+      'absolute_weight_kg': source.absoluteWeightKg,
+      'basis_exercise_id': source.basisExerciseId,
+      'note': source.note,
+    };

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/rep_range.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../shared/models/editable_set_row.dart';
 import '../../../shared/widgets/number_stepper_field.dart';
@@ -37,7 +38,8 @@ class SetEditor extends ConsumerWidget {
   final String currentExerciseId;
   final String currentExerciseName;
   final void Function(List<ParsedSet>) onAddPercentageSets;
-  final void Function(int sets, int reps, double weightKg) onAddAbsoluteSets;
+  /// [repsMax] is the top of a rep range, or null for a single rep count.
+  final void Function(int sets, int reps, int? repsMax, double weightKg) onAddAbsoluteSets;
   final void Function(String setId) onDeleteSet;
   final void Function(List<String> orderedSetIds) onReorderSets;
 
@@ -47,6 +49,7 @@ class SetEditor extends ConsumerWidget {
   ) async {
     var sets = 1;
     var reps = 1;
+    int? repsMax;
     var percentage = 70.0;
     Exercise? basisExercise;
     final tokens = Theme.of(context).extension<NomorexTokens>();
@@ -96,17 +99,14 @@ class SetEditor extends ConsumerWidget {
                   incrementButtonStyle: tokens?.stepperIncrementStyle,
                 ),
                 const SizedBox(height: 12),
-                NumberStepperField(
-                  label: 'Reps',
-                  value: reps.toDouble(),
-                  min: 1,
-                  step: 1,
-                  decimals: 0,
-                  onChanged: (v) => setState(() => reps = v.round()),
-                  valueTextStyle: tokens?.stepperValue,
-                  valueDecoration: tokens?.stepperValueDecoration,
-                  decrementButtonStyle: tokens?.stepperDecrementStyle,
-                  incrementButtonStyle: tokens?.stepperIncrementStyle,
+                _RepTargetInput(
+                  reps: reps,
+                  repsMax: repsMax,
+                  tokens: tokens,
+                  onChanged: (r, max) => setState(() {
+                    reps = r;
+                    repsMax = max;
+                  }),
                 ),
                 const SizedBox(height: 12),
                 // One %1RM shared by the whole batch keeps the dialog a fixed
@@ -132,7 +132,7 @@ class SetEditor extends ConsumerWidget {
               onPressed: () {
                 onAddPercentageSets([
                   for (var i = 0; i < sets; i++)
-                    ParsedSet(reps, percentage, basisExercise?.id),
+                    ParsedSet(reps, percentage, basisExercise?.id, _rangeTop(reps, repsMax)),
                 ]);
                 Navigator.pop(ctx);
               },
@@ -147,6 +147,7 @@ class SetEditor extends ConsumerWidget {
   Future<void> _showAbsoluteSetDialog(BuildContext context) async {
     var sets = 1;
     var reps = 1;
+    int? repsMax;
     var weightDisplay = 0.0;
     var dialogUnit = unit == 'both' ? 'kg' : unit;
     final tokens = Theme.of(context).extension<NomorexTokens>();
@@ -172,17 +173,14 @@ class SetEditor extends ConsumerWidget {
                 incrementButtonStyle: tokens?.stepperIncrementStyle,
               ),
               const SizedBox(height: 12),
-              NumberStepperField(
-                label: 'Reps',
-                value: reps.toDouble(),
-                min: 1,
-                step: 1,
-                decimals: 0,
-                onChanged: (v) => setState(() => reps = v.round()),
-                valueTextStyle: tokens?.stepperValue,
-                valueDecoration: tokens?.stepperValueDecoration,
-                decrementButtonStyle: tokens?.stepperDecrementStyle,
-                incrementButtonStyle: tokens?.stepperIncrementStyle,
+              _RepTargetInput(
+                reps: reps,
+                repsMax: repsMax,
+                tokens: tokens,
+                onChanged: (r, max) => setState(() {
+                  reps = r;
+                  repsMax = max;
+                }),
               ),
               const SizedBox(height: 12),
               Row(
@@ -221,7 +219,7 @@ class SetEditor extends ConsumerWidget {
             FilledButton(
               onPressed: () {
                 final weightKg = dialogUnit == 'lbs' ? lbsToKg(weightDisplay) : weightDisplay;
-                onAddAbsoluteSets(sets, reps, weightKg);
+                onAddAbsoluteSets(sets, reps, _rangeTop(reps, repsMax), weightKg);
                 Navigator.pop(ctx);
               },
               child: const Text('Add'),
@@ -311,7 +309,7 @@ class _SetRow extends StatelessWidget {
             child: const Icon(Icons.drag_handle),
           ),
           const SizedBox(width: 8),
-          Text('${set.targetReps ?? '-'} reps'),
+          Text(formatTargetReps(set.targetReps, set.targetRepsMax)),
         ],
       ),
       title: Text(isPct ? '$valueLabel of $basisLabel' : valueLabel),
@@ -383,6 +381,79 @@ class _BasisOneRepMax extends ConsumerWidget {
         padding: const EdgeInsets.only(left: 12),
         child: label,
       ),
+    );
+  }
+}
+
+/// The range top to save: null unless it's actually above [reps], so a range
+/// the author narrowed back down to one number is stored as a single count.
+int? _rangeTop(int reps, int? repsMax) =>
+    (repsMax != null && repsMax > reps) ? repsMax : null;
+
+/// Reps stepper plus an optional "Rep range" switch that reveals a second
+/// stepper for the top of the range ("7 to 9"). With the switch off the
+/// dialog keeps its original height; [repsMax] is null exactly when it's off.
+class _RepTargetInput extends StatelessWidget {
+  const _RepTargetInput({
+    required this.reps,
+    required this.repsMax,
+    required this.tokens,
+    required this.onChanged,
+  });
+
+  final int reps;
+  final int? repsMax;
+  final NomorexTokens? tokens;
+  final void Function(int reps, int? repsMax) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final max = repsMax;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        NumberStepperField(
+          key: const Key('set_editor_reps'),
+          label: max == null ? 'Reps' : 'Min reps',
+          value: reps.toDouble(),
+          min: 1,
+          step: 1,
+          decimals: 0,
+          // Raising the bottom of a range past its top drags the top along,
+          // so the pair can never be saved inverted.
+          onChanged: (v) {
+            final r = v.round();
+            onChanged(r, max == null ? null : (max < r ? r : max));
+          },
+          valueTextStyle: tokens?.stepperValue,
+          valueDecoration: tokens?.stepperValueDecoration,
+          decrementButtonStyle: tokens?.stepperDecrementStyle,
+          incrementButtonStyle: tokens?.stepperIncrementStyle,
+        ),
+        SwitchListTile(
+          key: const Key('set_editor_rep_range_switch'),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: const Text('Rep range'),
+          value: max != null,
+          // Turning it on starts a typical two-rep spread ("7 to 9").
+          onChanged: (on) => onChanged(reps, on ? reps + 2 : null),
+        ),
+        if (max != null)
+          NumberStepperField(
+            key: const Key('set_editor_reps_max'),
+            label: 'Max reps',
+            value: max.toDouble(),
+            min: reps.toDouble(),
+            step: 1,
+            decimals: 0,
+            onChanged: (v) => onChanged(reps, v.round()),
+            valueTextStyle: tokens?.stepperValue,
+            valueDecoration: tokens?.stepperValueDecoration,
+            decrementButtonStyle: tokens?.stepperDecrementStyle,
+            incrementButtonStyle: tokens?.stepperIncrementStyle,
+          ),
+      ],
     );
   }
 }

@@ -237,6 +237,7 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
           'user_id': _userId,
           'position': pos++,
           'target_reps': p.targetReps,
+          if (p.targetRepsMax != null) 'target_reps_max': p.targetRepsMax,
           'weight_mode': 'percentage',
           'percentage': p.percentage,
           'basis_exercise_id': p.basisExerciseId,
@@ -249,6 +250,7 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
     String programExerciseId, {
     required int sets,
     required int reps,
+    int? repsMax,
     required double weightKg,
   }) async {
     if (sets <= 0) return;
@@ -267,6 +269,7 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
           'user_id': _userId,
           'position': pos++,
           'target_reps': reps,
+          'target_reps_max': ?repsMax,
           'weight_mode': 'absolute',
           'absolute_weight_kg': weightKg,
         },
