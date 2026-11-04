@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Proves a change the way CI does, in the same order: analyze, widget tests,
-# migrations (reset + lint), E2E, web build. Built for Claude Code on the web,
+# migrations (reset + lint + pgTAP tests), E2E, web build. Built for Claude Code on the web,
 # where the SessionStart hook has already installed the toolchain, but it runs
 # anywhere those tools exist.
 #
@@ -59,6 +59,9 @@ if [[ "$RUN_DB" == true ]]; then
   if need_docker; then
     stage "supabase db reset (local)" supabase db reset
     stage "supabase db lint" supabase db lint
+    # pgTAP tests under supabase/tests/. --local is the default; spelled out
+    # because --linked would run them against production.
+    stage "supabase test db (local)" supabase test db --local
   else
     skip "migrations" "Docker unavailable — NOT proven"
   fi

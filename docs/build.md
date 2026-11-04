@@ -76,8 +76,9 @@ to end from a phone. Provisioning is split in two:
   Supabase CLI at the versions pinned in `.github/workflows/pr-checks.yml` (read
   from there, so bump them in one place), the Linux desktop build deps and
   xvfb the E2E job uses, the Supabase Docker images, and Playwright's Chromium
-  (for `scripts/web-shot.mjs`, which signs in and can run a click-driven flow
-  from `scripts/web-flows/`; coordinate clicks work in headless Chromium). Installs run in parallel to fit the ~5 minute cache budget, it
+  (for `scripts/web-shot.mjs`, which signs in, turns on Flutter's accessibility
+  tree and can run a flow from `scripts/web-flows/` that clicks widgets by role
+  and name). Installs run in parallel to fit the ~5 minute cache budget, it
   always exits 0, and it writes per-stage results to
   `/var/lib/nomorex-cloud-setup.status`.
 - **`.claude/hooks/session-start.sh`** is the light, per-session half: `flutter
@@ -113,7 +114,7 @@ the session from starting; a green "Ran setup script" check therefore does not
 mean it worked, so read its output.
 
 Run `./scripts/verify.sh` to prove a change: analyze, widget tests, `db reset`
-+ `db lint`, E2E under xvfb, and a web build. `--no-e2e`, `--no-db` and
++ `db lint` + `test db` (pgTAP), E2E under xvfb, and a web build. `--no-e2e`, `--no-db` and
 `--no-web` skip stages. Anything it could not run is printed as `SKIP`, never
 as a pass.
 
@@ -125,7 +126,12 @@ artifacts), `github.com` (CLI download) and the Ubuntu mirrors. The one gap is
 Playwright's Chromium download, which comes from hosts outside that list, so
 screenshots need **Custom** (with "include default list" checked) plus the
 Playwright CDN hosts. If `supabase start` is blocked the hook prints a warning
-and carries on without the stack. A network access change reaches running
+and carries on without the stack. The warning only blames the network when the
+Supabase images are actually missing. On a resumed session, Docker restarts the
+old containers by itself and Postgres takes a few seconds to come up; the hook
+waits for that (up to about two minutes) instead of running `supabase start`
+over a database that's still booting, which used to fail with "container is not
+ready: starting". A network access change reaches running
 sessions within about a minute; no new session is needed. See
 [Network access](https://code.claude.com/docs/en/cloud-environments#access-levels).
 
@@ -447,7 +453,7 @@ Schema is managed as code under `supabase/migrations/`.
    ```
 
 4. `supabase db reset` — replays all migrations from scratch to verify.
-5. Commit and open a PR. CI runs `db reset` + `db lint`.
+5. Commit and open a PR. CI runs `db reset` + `db lint` + `test db`.
 
 ### Deployment
 

@@ -93,12 +93,21 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.remove, size: 20),
-            style: widget.decrementButtonStyle,
-            onPressed: widget.value - widget.step < widget.min
-                ? null
-                : () => _apply(widget.value - widget.step),
+          // Named for assistive tech (and for scripts/web-shot.mjs flows,
+          // which find buttons by role + name): an icon alone has no label.
+          // MergeSemantics folds the label into the button's own node rather
+          // than a separate unlabelled-button-in-a-labelled-group.
+          MergeSemantics(
+            child: Semantics(
+              label: 'Decrease ${widget.label}',
+              child: IconButton(
+                icon: const Icon(Icons.remove, size: 20),
+                style: widget.decrementButtonStyle,
+                onPressed: widget.value - widget.step < widget.min
+                    ? null
+                    : () => _apply(widget.value - widget.step),
+              ),
+            ),
           ),
           const SizedBox(width: 8),
           SizedBox(
@@ -114,10 +123,15 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
             ),
           ),
           const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.add, size: 20),
-            style: widget.incrementButtonStyle,
-            onPressed: () => _apply(widget.value + widget.step),
+          MergeSemantics(
+            child: Semantics(
+              label: 'Increase ${widget.label}',
+              child: IconButton(
+                icon: const Icon(Icons.add, size: 20),
+                style: widget.incrementButtonStyle,
+                onPressed: () => _apply(widget.value + widget.step),
+              ),
+            ),
           ),
         ],
       ),

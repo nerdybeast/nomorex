@@ -12,13 +12,23 @@
 // Signs in as the seeded a@a.com / 123456 user (the local Supabase stack must
 // be up and seeded), optionally runs a flow, then screenshots the route.
 //
-// Flutter paints to a canvas, so there are no DOM elements to select. Drive it
-// with page.mouse.click(x, y) + page.keyboard.type(...): in headless Chromium
-// that works for buttons, text fields, autocomplete options and steppers
-// (unlike claude-in-chrome). Screenshot first to read off the coordinates.
-// A flow is an ES module whose default export is `async (page, { base, shot })`
-// that runs after sign-in; `shot(name)` saves a screenshot next to out.png.
-// Navigate inside a flow with `page.goto(`${base}/#/route`)`.
+// Flutter paints to a canvas, but this script turns on Flutter's accessibility
+// tree, which mirrors the widgets as ARIA-labelled DOM nodes. Prefer driving a
+// flow through it with Playwright's role locators:
+//   await page.getByRole('button', { name: 'Add sets (%)' }).click();
+//   await page.getByRole('switch', { name: 'Rep range' }).click();
+//   await page.getByRole('button', { name: 'Increase Reps' }).click();
+// Names are the visible label, a widget's tooltip/semantics label, or for a
+// NumberStepperField's -/+ buttons "Decrease <label>" / "Increase <label>".
+// Coordinate clicks (page.mouse.click(x, y)) still work as a fallback, but they
+// drift with layout and taps on small targets are sometimes dropped.
+// The tree is switched on once after sign-in and survives in-app navigation
+// (page.goto to another #/route). Only a full reload drops it; call
+// `await enableSemantics()` again after one.
+// A flow is an ES module whose default export is
+// `async (page, { base, shot, enableSemantics })` that runs after sign-in;
+// `shot(name)` saves a screenshot next to out.png. Navigate inside a flow with
+// `page.goto(`${base}/#/route`)`.
 
 import { createServer } from 'node:http';
 import { execSync } from 'node:child_process';
@@ -66,6 +76,19 @@ const server = createServer(async (req, res) => {
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${server.address().port}`;
 
+// Flutter web keeps its accessibility tree off until a screen reader asks for
+// it, via an offscreen "Enable accessibility" placeholder. Clicking that turns
+// the tree on. Returns false if the app hasn't rendered the placeholder (yet).
+async function enableSemantics(page) {
+  const found = await page.evaluate(() => {
+    const placeholder = document.querySelector('flt-semantics-placeholder');
+    placeholder?.click();
+    return Boolean(placeholder);
+  });
+  if (found) await page.waitForTimeout(500);
+  return found;
+}
+
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 420, height: 900 } });
@@ -84,6 +107,9 @@ try {
   await page.keyboard.type('123456');
   await page.mouse.click(x, 262);
   await page.waitForTimeout(4_000);
+  if (!(await enableSemantics(page))) {
+    console.warn('web-shot: accessibility tree not enabled; role locators will not find anything');
+  }
 
   const shot = async (name) => {
     const file = join(dirname(resolve(out)), `${name}.png`);
@@ -92,7 +118,7 @@ try {
   };
   if (flowPath) {
     const flow = (await import(pathToFileURL(resolve(flowPath)))).default;
-    await flow(page, { base, shot });
+    await flow(page, { base, shot, enableSemantics: () => enableSemantics(page) });
   }
 
   await page.goto(`${base}/#${route}`);

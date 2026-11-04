@@ -220,6 +220,11 @@ jobs:
       - name: Lint database
         run: supabase db lint
 
+      # pgTAP tests under supabase/tests/, run as the seeded users against the
+      # stack reset above. Local only: never --linked.
+      - name: Database tests (pgTAP)
+        run: supabase test db --local
+
   e2e:
     name: E2E (integration_test)
     needs: version

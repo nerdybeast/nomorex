@@ -89,4 +89,24 @@ void main() {
     // 207.5 + 2.5 -> 210, back to a whole number.
     expect(find.text('210'), findsOneWidget);
   });
+
+  testWidgets('the -/+ buttons are named after the field for assistive tech', (tester) async {
+    final handle = tester.ensureSemantics();
+    double? changed;
+    await tester.pumpWidget(_wrap(NumberStepperField(
+      label: 'Reps',
+      value: 5,
+      min: 1,
+      step: 1,
+      decimals: 0,
+      onChanged: (v) => changed = v,
+    )));
+
+    expect(find.bySemanticsLabel('Decrease Reps'), findsOneWidget);
+    expect(find.bySemanticsLabel('Increase Reps'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Increase Reps'));
+    expect(changed, 6);
+    handle.dispose();
+  });
 }
