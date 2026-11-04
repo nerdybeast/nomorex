@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/rep_range.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../workouts/providers/one_rep_max_provider.dart';
@@ -162,7 +163,7 @@ class _SetLines extends StatelessWidget {
       oneRepMaxKg: oneRepMax?.kg,
     );
 
-    final repsLabel = '${set.targetReps ?? '-'} ${set.targetReps == 1 ? 'rep' : 'reps'}';
+    final repsLabel = formatTargetReps(set.targetReps, set.targetRepsMax);
 
     String firstLine;
     String? secondLine;

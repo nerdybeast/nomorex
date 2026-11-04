@@ -2994,3 +2994,24 @@ select ex.id, b.uid, s, 5,
        case when ex.e = 1 then null else 50 end,
        null, null
 from ex, b, generate_series(0, 3) as s;
+
+-- Rep ranges the transcribed programs above spell out in notes ("6-10 reps",
+-- on the set or on its exercise) move into target_reps / target_reps_max,
+-- and the text leaves the note. A set note wins over its exercise's note.
+with ranged as (
+  select ps.id,
+         (regexp_match(coalesce(ps.note, ''), '(\d+)-(\d+) reps')) as set_m,
+         (regexp_match(coalesce(pe.notes, ''), '(\d+)-(\d+) reps')) as ex_m
+  from public.program_sets ps
+  join public.program_exercises pe on pe.id = ps.program_exercise_id
+)
+update public.program_sets ps
+set target_reps = (coalesce(r.set_m, r.ex_m))[1]::int,
+    target_reps_max = (coalesce(r.set_m, r.ex_m))[2]::int,
+    note = nullif(regexp_replace(ps.note, ',?\s*\d+-\d+ reps', ''), '')
+from ranged r
+where r.id = ps.id and coalesce(r.set_m, r.ex_m) is not null;
+
+update public.program_exercises
+set notes = nullif(regexp_replace(notes, ',?\s*\d+-\d+ reps', ''), '')
+where notes ~ '\d+-\d+ reps';
