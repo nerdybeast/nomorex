@@ -11,6 +11,7 @@ class NumberStepperField extends StatefulWidget {
     required this.label,
     required this.value,
     required this.min,
+    this.max,
     required this.step,
     required this.decimals,
     required this.onChanged,
@@ -23,6 +24,8 @@ class NumberStepperField extends StatefulWidget {
   final String label;
   final double value;
   final double min;
+  /// Optional ceiling: + is disabled at it and typed values are clamped.
+  final double? max;
   final double step;
   final int decimals;
   final ValueChanged<double> onChanged;
@@ -77,7 +80,10 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
   void _commitTyped() => _apply(double.tryParse(_controller.text) ?? widget.value);
 
   void _apply(double next) {
-    final clamped = next < widget.min ? widget.min : next;
+    final ceiling = widget.max;
+    final clamped = next < widget.min
+        ? widget.min
+        : (ceiling != null && next > ceiling ? ceiling : next);
     widget.onChanged(double.parse(clamped.toStringAsFixed(widget.decimals)));
   }
 
@@ -129,7 +135,9 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
               child: IconButton(
                 icon: const Icon(Icons.add, size: 20),
                 style: widget.incrementButtonStyle,
-                onPressed: () => _apply(widget.value + widget.step),
+                onPressed: widget.max != null && widget.value + widget.step > widget.max!
+                    ? null
+                    : () => _apply(widget.value + widget.step),
               ),
             ),
           ),

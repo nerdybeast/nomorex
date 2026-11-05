@@ -11,6 +11,8 @@ class EditableSetRow {
     this.targetRepsMax,
     this.percentage,
     this.percentageMax,
+    this.rpeMin,
+    this.rpeMax,
     this.absoluteWeightKg,
     this.basisExerciseId,
     this.basisExerciseName,
@@ -24,6 +26,10 @@ class EditableSetRow {
   final double? percentage;
   /// Top of a %1RM range; null means a single percentage.
   final double? percentageMax;
+  /// Target effort (1–10); null means none prescribed.
+  final double? rpeMin;
+  /// Top of an RPE range; null means a single RPE ([rpeMin]).
+  final double? rpeMax;
   final double? absoluteWeightKg;
   final String? basisExerciseId;
   final String? basisExerciseName;

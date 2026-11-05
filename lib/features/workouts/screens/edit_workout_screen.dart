@@ -190,12 +190,8 @@ class EditWorkoutScreen extends ConsumerWidget {
                                   currentExerciseName: ex.exerciseName,
                                   onAddPercentageSets: (parsed) =>
                                       notifier.addPercentageSets(ex.id, parsed),
-                                  onAddAbsoluteSets: (sets, reps, repsMax, weightKg) =>
-                                      notifier.addAbsoluteSets(ex.id,
-                                          sets: sets,
-                                          reps: reps,
-                                          repsMax: repsMax,
-                                          weightKg: weightKg),
+                                  onAddAbsoluteSets: (batch) =>
+                                      notifier.addAbsoluteSets(ex.id, batch),
                                   onDeleteSet: notifier.deleteSet,
                                   onReorderSets: (orderedIds) =>
                                       notifier.reorderSets(ex.id, orderedIds),

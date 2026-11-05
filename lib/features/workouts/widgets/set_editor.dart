@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/percent_range.dart';
 import '../../../core/utils/rep_range.dart';
+import '../../../core/utils/rpe.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../shared/models/editable_set_row.dart';
 import '../../../shared/widgets/number_stepper_field.dart';
@@ -40,7 +41,7 @@ class SetEditor extends ConsumerWidget {
   final String currentExerciseName;
   final void Function(List<ParsedSet>) onAddPercentageSets;
   /// [repsMax] is the top of a rep range, or null for a single rep count.
-  final void Function(int sets, int reps, int? repsMax, double weightKg) onAddAbsoluteSets;
+  final void Function(AbsoluteSetBatch batch) onAddAbsoluteSets;
   final void Function(String setId) onDeleteSet;
   final void Function(List<String> orderedSetIds) onReorderSets;
 
@@ -53,6 +54,8 @@ class SetEditor extends ConsumerWidget {
     int? repsMax;
     var percentage = 70.0;
     double? percentageMax;
+    double? rpeMin;
+    double? rpeMax;
     Exercise? basisExercise;
     final tokens = Theme.of(context).extension<NomorexTokens>();
 
@@ -135,6 +138,16 @@ class SetEditor extends ConsumerWidget {
                     percentageMax = max;
                   }),
                 ),
+                const SizedBox(height: 12),
+                _RpeTargetInput(
+                  rpeMin: rpeMin,
+                  rpeMax: rpeMax,
+                  tokens: tokens,
+                  onChanged: (min, max) => setState(() {
+                    rpeMin = min;
+                    rpeMax = max;
+                  }),
+                ),
               ],
             ),
           ),
@@ -147,9 +160,11 @@ class SetEditor extends ConsumerWidget {
                     ParsedSet(
                       reps,
                       percentage,
-                      basisExercise?.id,
-                      _rangeTop(reps, repsMax),
-                      _rangeTop(percentage, percentageMax),
+                      basisExerciseId: basisExercise?.id,
+                      targetRepsMax: _rangeTop(reps, repsMax),
+                      percentageMax: _rangeTop(percentage, percentageMax),
+                      rpeMin: rpeMin,
+                      rpeMax: rpeMin == null ? null : _rangeTop(rpeMin!, rpeMax),
                     ),
                 ]);
                 Navigator.pop(ctx);
@@ -167,6 +182,8 @@ class SetEditor extends ConsumerWidget {
     var reps = 1;
     int? repsMax;
     var weightDisplay = 0.0;
+    double? rpeMin;
+    double? rpeMax;
     var dialogUnit = unit == 'both' ? 'kg' : unit;
     final tokens = Theme.of(context).extension<NomorexTokens>();
 
@@ -175,69 +192,88 @@ class SetEditor extends ConsumerWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
           title: const Text('Add sets (weight)'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              NumberStepperField(
-                label: 'Sets',
-                value: sets.toDouble(),
-                min: 1,
-                step: 1,
-                decimals: 0,
-                onChanged: (v) => setState(() => sets = v.round()),
-                valueTextStyle: tokens?.stepperValue,
-                valueDecoration: tokens?.stepperValueDecoration,
-                decrementButtonStyle: tokens?.stepperDecrementStyle,
-                incrementButtonStyle: tokens?.stepperIncrementStyle,
-              ),
-              const SizedBox(height: 12),
-              _repTargetInput(
-                reps: reps,
-                repsMax: repsMax,
-                tokens: tokens,
-                onChanged: (r, max) => setState(() {
-                  reps = r;
-                  repsMax = max;
-                }),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Expanded(child: Text('Unit')),
-                  UnitToggle(
-                    preference: unit,
-                    value: dialogUnit,
-                    onChanged: (newUnit) => setState(() {
-                      if (newUnit == dialogUnit) return;
-                      weightDisplay = newUnit == 'lbs'
-                          ? kgToLbs(weightDisplay)
-                          : lbsToKg(weightDisplay);
-                      dialogUnit = newUnit;
-                    }),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              NumberStepperField(
-                label: 'Weight ($dialogUnit)',
-                value: weightDisplay,
-                min: 0,
-                step: dialogUnit == 'lbs' ? 5.0 : 2.5,
-                decimals: 1,
-                onChanged: (v) => setState(() => weightDisplay = v),
-                valueTextStyle: tokens?.stepperValue,
-                valueDecoration: tokens?.stepperValueDecoration,
-                decrementButtonStyle: tokens?.stepperDecrementStyle,
-                incrementButtonStyle: tokens?.stepperIncrementStyle,
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                NumberStepperField(
+                  label: 'Sets',
+                  value: sets.toDouble(),
+                  min: 1,
+                  step: 1,
+                  decimals: 0,
+                  onChanged: (v) => setState(() => sets = v.round()),
+                  valueTextStyle: tokens?.stepperValue,
+                  valueDecoration: tokens?.stepperValueDecoration,
+                  decrementButtonStyle: tokens?.stepperDecrementStyle,
+                  incrementButtonStyle: tokens?.stepperIncrementStyle,
+                ),
+                const SizedBox(height: 12),
+                _repTargetInput(
+                  reps: reps,
+                  repsMax: repsMax,
+                  tokens: tokens,
+                  onChanged: (r, max) => setState(() {
+                    reps = r;
+                    repsMax = max;
+                  }),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Expanded(child: Text('Unit')),
+                    UnitToggle(
+                      preference: unit,
+                      value: dialogUnit,
+                      onChanged: (newUnit) => setState(() {
+                        if (newUnit == dialogUnit) return;
+                        weightDisplay = newUnit == 'lbs'
+                            ? kgToLbs(weightDisplay)
+                            : lbsToKg(weightDisplay);
+                        dialogUnit = newUnit;
+                      }),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                NumberStepperField(
+                  label: 'Weight ($dialogUnit)',
+                  value: weightDisplay,
+                  min: 0,
+                  step: dialogUnit == 'lbs' ? 5.0 : 2.5,
+                  decimals: 1,
+                  onChanged: (v) => setState(() => weightDisplay = v),
+                  valueTextStyle: tokens?.stepperValue,
+                  valueDecoration: tokens?.stepperValueDecoration,
+                  decrementButtonStyle: tokens?.stepperDecrementStyle,
+                  incrementButtonStyle: tokens?.stepperIncrementStyle,
+                ),
+                const SizedBox(height: 12),
+                _RpeTargetInput(
+                  rpeMin: rpeMin,
+                  rpeMax: rpeMax,
+                  tokens: tokens,
+                  onChanged: (min, max) => setState(() {
+                    rpeMin = min;
+                    rpeMax = max;
+                  }),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             FilledButton(
               onPressed: () {
                 final weightKg = dialogUnit == 'lbs' ? lbsToKg(weightDisplay) : weightDisplay;
-                onAddAbsoluteSets(sets, reps, _rangeTop(reps, repsMax), weightKg);
+                onAddAbsoluteSets(AbsoluteSetBatch(
+                  sets: sets,
+                  reps: reps,
+                  repsMax: _rangeTop(reps, repsMax),
+                  weightKg: weightKg,
+                  rpeMin: rpeMin,
+                  rpeMax: rpeMin == null ? null : _rangeTop(rpeMin!, rpeMax),
+                ));
                 Navigator.pop(ctx);
               },
               child: const Text('Add'),
@@ -330,7 +366,10 @@ class _SetRow extends StatelessWidget {
           Text(formatTargetReps(set.targetReps, set.targetRepsMax)),
         ],
       ),
-      title: Text(isPct ? '$valueLabel of $basisLabel' : valueLabel),
+      title: Text([
+        isPct ? '$valueLabel of $basisLabel' : valueLabel,
+        ?formatRpeTarget(set.rpeMin, set.rpeMax),
+      ].join(' · ')),
       trailing: IconButton(
         icon: const Icon(Icons.close),
         onPressed: onDelete,
@@ -420,6 +459,7 @@ class _RangeInput extends StatelessWidget {
     required this.maxLabel,
     required this.switchLabel,
     required this.floor,
+    this.ceiling,
     required this.step,
     required this.decimals,
     required this.spread,
@@ -438,6 +478,7 @@ class _RangeInput extends StatelessWidget {
   final String maxLabel;
   final String switchLabel;
   final double floor;
+  final double? ceiling;
   final double step;
   final int decimals;
   /// How far above [value] the top starts when the switch is turned on.
@@ -459,6 +500,7 @@ class _RangeInput extends StatelessWidget {
           label: top == null ? label : minLabel,
           value: value,
           min: floor,
+          max: ceiling,
           step: step,
           decimals: decimals,
           // Raising the bottom of a range past its top drags the top along,
@@ -475,7 +517,12 @@ class _RangeInput extends StatelessWidget {
           dense: true,
           title: Text(switchLabel),
           value: top != null,
-          onChanged: (on) => onChanged(value, on ? value + spread : null),
+          // The top starts [spread] above the bottom, never past [ceiling].
+          onChanged: (on) {
+            final c = ceiling;
+            final start = c != null && value + spread > c ? c : value + spread;
+            onChanged(value, on ? start : null);
+          },
         ),
         if (top != null)
           NumberStepperField(
@@ -483,6 +530,7 @@ class _RangeInput extends StatelessWidget {
             label: maxLabel,
             value: top,
             min: value,
+            max: ceiling,
             step: step,
             decimals: decimals,
             onChanged: (v) => onChanged(value, v),
@@ -521,3 +569,57 @@ Widget _repTargetInput({
       tokens: tokens,
       onChanged: (v, max) => onChanged(v.round(), max?.round()),
     );
+
+/// Optional target effort for a batch: a "Target RPE" switch that reveals an
+/// RPE stepper (1–10 in half steps, starting at 7) with its own range switch
+/// ("RPE 6–7"). [rpeMin] is null exactly when no RPE is prescribed.
+class _RpeTargetInput extends StatelessWidget {
+  const _RpeTargetInput({
+    required this.rpeMin,
+    required this.rpeMax,
+    required this.tokens,
+    required this.onChanged,
+  });
+
+  final double? rpeMin;
+  final double? rpeMax;
+  final NomorexTokens? tokens;
+  final void Function(double? rpeMin, double? rpeMax) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final min = rpeMin;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SwitchListTile(
+          key: const Key('set_editor_rpe_switch'),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          title: const Text('Target RPE'),
+          value: min != null,
+          onChanged: (on) => onChanged(on ? 7 : null, null),
+        ),
+        if (min != null)
+          _RangeInput(
+            value: min,
+            max: rpeMax,
+            label: 'RPE',
+            minLabel: 'Min RPE',
+            maxLabel: 'Max RPE',
+            switchLabel: 'RPE range',
+            floor: kRpeMin,
+            ceiling: kRpeMax,
+            step: kRpeStep,
+            decimals: 1,
+            spread: 1,
+            valueKey: const Key('set_editor_rpe'),
+            switchKey: const Key('set_editor_rpe_range_switch'),
+            maxKey: const Key('set_editor_rpe_max'),
+            tokens: tokens,
+            onChanged: onChanged,
+          ),
+      ],
+    );
+  }
+}

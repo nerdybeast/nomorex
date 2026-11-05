@@ -66,6 +66,8 @@ Program _program() => Program(
                   targetRepsMax: 9,
                   percentage: 67,
                   percentageMax: 72.5,
+                  rpeMin: 6,
+                  rpeMax: 7,
                 ),
               ],
             ),
@@ -139,7 +141,7 @@ void main() {
   testWidgets('a %1RM range shows the range and resolves both ends from the 1RM', (tester) async {
     await _pump(tester, oneRepMaxes: const {'owner-e1': OneRepMax.estimated(200)});
 
-    expect(find.textContaining('7–9 reps · 67–72.5% of 1RM'), findsOneWidget);
+    expect(find.textContaining('7–9 reps · 67–72.5% of 1RM · RPE 6–7'), findsOneWidget);
     expect(find.textContaining('200 kg est. 1RM ≈ 134–145 kg'), findsOneWidget);
   });
 }
