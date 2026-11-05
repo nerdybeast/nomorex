@@ -10,11 +10,14 @@ class WorkoutSet {
     this.targetRepsMax,
     this.percentage,
     this.percentageMax,
+    this.rpeMin,
+    this.rpeMax,
     this.absoluteWeightKg,
     this.note,
     this.completed = false,
     this.actualWeightKg,
     this.actualReps,
+    this.actualRpe,
     this.basisExerciseId,
     this.basisExerciseName,
   });
@@ -29,11 +32,17 @@ class WorkoutSet {
   final double? percentage;
   /// Top of a %1RM range; null means a single percentage.
   final double? percentageMax;
+  /// Target effort (1–10); null means none prescribed.
+  final double? rpeMin;
+  /// Top of an RPE range; null means a single RPE ([rpeMin]).
+  final double? rpeMax;
   final double? absoluteWeightKg;
   final String? note;
   final bool completed;
   final double? actualWeightKg;
   final int? actualReps;
+  /// The effort the lifter logged for this set; null until they log one.
+  final double? actualRpe;
   final String? basisExerciseId;
   final String? basisExerciseName;
 
@@ -48,11 +57,14 @@ class WorkoutSet {
       targetRepsMax: json['target_reps_max'] as int?,
       percentage: (json['percentage'] as num?)?.toDouble(),
       percentageMax: (json['percentage_max'] as num?)?.toDouble(),
+      rpeMin: (json['rpe_min'] as num?)?.toDouble(),
+      rpeMax: (json['rpe_max'] as num?)?.toDouble(),
       absoluteWeightKg: (json['absolute_weight_kg'] as num?)?.toDouble(),
       note: json['note'] as String?,
       completed: (json['completed'] as bool?) ?? false,
       actualWeightKg: (json['actual_weight_kg'] as num?)?.toDouble(),
       actualReps: json['actual_reps'] as int?,
+      actualRpe: (json['actual_rpe'] as num?)?.toDouble(),
       basisExerciseId: json['basis_exercise_id'] as String?,
       basisExerciseName: basisExerciseMap?['name'] as String?,
     );
@@ -65,6 +77,8 @@ class WorkoutSet {
         weightMode: weightMode,
         percentage: percentage,
         percentageMax: percentageMax,
+        rpeMin: rpeMin,
+        rpeMax: rpeMax,
         absoluteWeightKg: absoluteWeightKg,
         basisExerciseId: basisExerciseId,
         basisExerciseName: basisExerciseName,

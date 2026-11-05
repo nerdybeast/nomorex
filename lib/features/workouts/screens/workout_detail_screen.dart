@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shared/widgets/number_stepper_field.dart';
+import '../../../core/utils/rpe.dart';
 import '../../../core/utils/percent_range.dart';
 import '../../../core/utils/rep_range.dart';
 import '../../../core/constants/app_constants.dart';
@@ -123,6 +125,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 unit: unit,
                 interactive: workout.status == 'in_progress' || workout.status == 'paused',
                 onToggle: (setId, value) => notifier.setCompleted(setId, value),
+                onLogRpe: (setId, rpe) => notifier.logRpe(setId, rpe),
               ),
             if (workout.status == 'in_progress' || workout.status == 'paused') ...[
               const SizedBox(height: 16),
@@ -423,6 +426,7 @@ class _ExerciseCard extends StatelessWidget {
     required this.unit,
     required this.interactive,
     required this.onToggle,
+    required this.onLogRpe,
   });
 
   final WorkoutExercise exercise;
@@ -431,6 +435,9 @@ class _ExerciseCard extends StatelessWidget {
   final String unit;
   final bool interactive;
   final void Function(String setId, bool value)? onToggle;
+  /// Logs (or with null, clears) the lifter's RPE for a set. Only offered
+  /// while [interactive]; a finished session shows its logged RPE read-only.
+  final void Function(String setId, double? rpe)? onLogRpe;
 
   @override
   Widget build(BuildContext context) {
@@ -493,6 +500,7 @@ class _ExerciseCard extends StatelessWidget {
       unit: unit,
       interactive: interactive,
       onToggle: onToggle,
+      onLogRpe: onLogRpe,
     );
   }
 }
@@ -506,6 +514,7 @@ class _SetTile extends StatelessWidget {
     required this.unit,
     required this.interactive,
     required this.onToggle,
+    required this.onLogRpe,
   });
 
   final WorkoutSet set;
@@ -519,6 +528,9 @@ class _SetTile extends StatelessWidget {
   final String unit;
   final bool interactive;
   final void Function(String setId, bool value)? onToggle;
+  /// Logs (or with null, clears) the lifter's RPE for a set. Only offered
+  /// while [interactive]; a finished session shows its logged RPE read-only.
+  final void Function(String setId, double? rpe)? onLogRpe;
 
   @override
   Widget build(BuildContext context) {
@@ -530,6 +542,8 @@ class _SetTile extends StatelessWidget {
       oneRepMaxKg: oneRepMax?.kg,
     );
     final pct = formatPercentTarget(set.percentage, set.percentageMax);
+    final rpeTarget = formatRpeTarget(set.rpeMin, set.rpeMax);
+    final rpeSuffix = rpeTarget == null ? '' : ' · $rpeTarget';
 
     final basisSuffix =
         set.basisExerciseId != null ? ' of ${set.basisExerciseName ?? '1RM'}' : '';
@@ -554,6 +568,7 @@ class _SetTile extends StatelessWidget {
                 style: baseStyle,
               ),
             ),
+            if (rpeTarget != null) TextSpan(text: rpeSuffix),
           ],
         ),
       );
@@ -561,12 +576,12 @@ class _SetTile extends StatelessWidget {
       final trailingText = set.weightMode == 'percentage'
           ? '$pct$basisSuffix · ${formatResolvedWeightRange(resolved!.low, resolved.high, unit, estimated: oneRepMax?.isEstimated ?? false)}'
           : formatWeightForPreference(resolved?.low ?? 0, unit);
-      subtitle = Text(trailingText);
+      subtitle = Text('$trailingText$rpeSuffix');
     }
 
     // The whole row toggles the set. A completed set's reps drop to fg-2 but
     // the weight stays readable — no strikethrough.
-    return CheckboxListTile(
+    final tile = CheckboxListTile(
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12),
       controlAffinity: ListTileControlAffinity.leading,
@@ -580,7 +595,94 @@ class _SetTile extends StatelessWidget {
       ),
       subtitle: subtitle,
     );
+    final rpe = _ActualRpe(set: set, interactive: interactive, onLog: onLogRpe);
+    if (!rpe.isVisible) return tile;
+    // Beside the tile, not its `secondary`: a ListTile merges its children
+    // into one semantics node, so a button inside it is announced as part of
+    // the checkbox and can't be activated on its own by assistive tech.
+    return Row(
+      children: [
+        Expanded(child: tile),
+        Padding(padding: const EdgeInsets.only(right: 8), child: rpe),
+      ],
+    );
   }
+}
+
+/// The effort logged for a set. While the session is live it's a button
+/// ("Log RPE", or "RPE 8" once logged) that opens [showRpeDialog]; afterwards
+/// it's plain text, and absent when nothing was logged. Never pre-filled from
+/// the set's target: an unlogged set stays unlogged.
+class _ActualRpe extends StatelessWidget {
+  const _ActualRpe({required this.set, required this.interactive, required this.onLog});
+
+  final WorkoutSet set;
+  final bool interactive;
+  final void Function(String setId, double? rpe)? onLog;
+
+  bool get _canLog => interactive && onLog != null;
+
+  /// False when there's nothing to show: not loggable and nothing logged.
+  bool get isVisible => _canLog || set.actualRpe != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final logged = set.actualRpe;
+    final label = logged == null ? 'Log RPE' : 'RPE ${formatRpe(logged)}';
+    if (!_canLog) return Text(label, key: Key('set_actual_rpe_${set.id}'));
+    return TextButton(
+      key: Key('set_actual_rpe_${set.id}'),
+      onPressed: () async {
+        // Start the stepper somewhere sensible, but save nothing until Save.
+        final result = await showRpeDialog(
+          context,
+          logged: logged,
+          start: logged ?? set.rpeMin ?? 7,
+        );
+        if (result != null) onLog!(set.id, result.rpe);
+      },
+      child: Text(label),
+    );
+  }
+}
+
+/// Asks for a set's RPE. Returns null on Cancel, `(rpe: null)` on Clear (only
+/// offered when [logged] is set), and `(rpe: value)` on Save.
+Future<({double? rpe})?> showRpeDialog(
+  BuildContext context, {
+  required double? logged,
+  required double start,
+}) {
+  var value = start;
+  final tokens = Theme.of(context).extension<NomorexTokens>();
+  return showDialog<({double? rpe})>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) => AlertDialog(
+        title: const Text('Log RPE'),
+        content: NumberStepperField(
+          key: const Key('log_rpe_value'),
+          label: 'RPE',
+          value: value,
+          min: kRpeMin,
+          max: kRpeMax,
+          step: kRpeStep,
+          decimals: 1,
+          onChanged: (v) => setState(() => value = v),
+          valueTextStyle: tokens?.stepperValue,
+          valueDecoration: tokens?.stepperValueDecoration,
+          decrementButtonStyle: tokens?.stepperDecrementStyle,
+          incrementButtonStyle: tokens?.stepperIncrementStyle,
+        ),
+        actions: [
+          if (logged != null)
+            TextButton(onPressed: () => Navigator.pop(ctx, (rpe: null)), child: const Text('Clear')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, (rpe: value)), child: const Text('Save')),
+        ],
+      ),
+    ),
+  );
 }
 
 /// Date, exercise count and last edit with their icons — the same facts the

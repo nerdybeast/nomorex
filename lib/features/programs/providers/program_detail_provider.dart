@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/program.dart';
 import '../utils/parsed_program_set.dart';
+import '../../workouts/utils/parsed_set.dart' show AbsoluteSetBatch;
 import '../../auth/providers/auth_provider.dart';
 import 'programs_provider.dart';
 
@@ -242,19 +243,15 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
           'percentage': p.percentage,
           'percentage_max': ?p.percentageMax,
           'basis_exercise_id': p.basisExerciseId,
+          'rpe_min': ?p.rpeMin,
+          'rpe_max': ?p.rpeMax,
         },
     ]);
     await _refresh();
   }
 
-  Future<void> addAbsoluteSets(
-    String programExerciseId, {
-    required int sets,
-    required int reps,
-    int? repsMax,
-    required double weightKg,
-  }) async {
-    if (sets <= 0) return;
+  Future<void> addAbsoluteSets(String programExerciseId, AbsoluteSetBatch batch) async {
+    if (batch.sets <= 0) return;
     final current = await future;
     final ex = current.weeks
         .expand((w) => w.days)
@@ -264,15 +261,17 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
         ? 0
         : ex.sets.map((s) => s.position).reduce((a, b) => a > b ? a : b) + 1;
     await _db.from('program_sets').insert([
-      for (var i = 0; i < sets; i++)
+      for (var i = 0; i < batch.sets; i++)
         {
           'program_exercise_id': programExerciseId,
           'user_id': _userId,
           'position': pos++,
-          'target_reps': reps,
-          'target_reps_max': ?repsMax,
+          'target_reps': batch.reps,
+          'target_reps_max': ?batch.repsMax,
           'weight_mode': 'absolute',
-          'absolute_weight_kg': weightKg,
+          'absolute_weight_kg': batch.weightKg,
+          'rpe_min': ?batch.rpeMin,
+          'rpe_max': ?batch.rpeMax,
         },
     ]);
     await _refresh();

@@ -29,7 +29,7 @@ Widget _wrap(Widget child) => ProviderScope(
 SetEditor _editor({
   List<EditableSetRow> sets = const [],
   void Function(List<ParsedSet>)? onPct,
-  void Function(int, int, int?, double)? onAbs,
+  void Function(AbsoluteSetBatch)? onAbs,
 }) =>
     SetEditor(
       sets: sets,
@@ -37,7 +37,7 @@ SetEditor _editor({
       currentExerciseId: 'e1',
       currentExerciseName: 'Back Squat',
       onAddPercentageSets: onPct ?? (_) {},
-      onAddAbsoluteSets: onAbs ?? (_, _, _, _) {},
+      onAddAbsoluteSets: onAbs ?? (_) {},
       onDeleteSet: (_) {},
       onReorderSets: (_) {},
     );
@@ -215,7 +215,7 @@ void main() {
 
     testWidgets('Add sets (weight) passes the range top, and null with the range off', (tester) async {
       final calls = <int?>[];
-      await tester.pumpWidget(_wrap(_editor(onAbs: (_, _, max, _) => calls.add(max))));
+      await tester.pumpWidget(_wrap(_editor(onAbs: (b) => calls.add(b.repsMax))));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add sets (weight)'));

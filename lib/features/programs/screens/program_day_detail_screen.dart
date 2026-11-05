@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/rpe.dart';
 import '../../../core/utils/percent_range.dart';
 import '../../../core/utils/rep_range.dart';
 import '../../../core/utils/weight_converter.dart';
@@ -166,6 +167,7 @@ class _SetLines extends StatelessWidget {
     );
 
     final repsLabel = formatTargetReps(set.targetReps, set.targetRepsMax);
+    final rpeTarget = formatRpeTarget(set.rpeMin, set.rpeMax);
 
     String firstLine;
     String? secondLine;
@@ -183,6 +185,8 @@ class _SetLines extends StatelessWidget {
     } else {
       firstLine = '$repsLabel · ${formatWeightForPreference(set.absoluteWeightKg ?? 0, unit)}';
     }
+
+    if (rpeTarget != null) firstLine = '$firstLine · $rpeTarget';
 
     return Padding(
       padding: const EdgeInsets.only(top: 4),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/utils/rpe.dart';
 import '../../../core/utils/percent_range.dart';
 import '../../../core/utils/rep_range.dart';
 import '../../../core/constants/app_constants.dart';
@@ -316,6 +317,8 @@ class _SetRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reps = formatTargetReps(set.targetReps, set.targetRepsMax);
+    final rpeTarget = formatRpeTarget(set.rpeMin, set.rpeMax);
+    final rpeSuffix = rpeTarget == null ? '' : ' · $rpeTarget';
 
     // Absolute sets are the same load for everyone, so they render plainly —
     // the accent color below is reserved for weights derived from the
@@ -323,7 +326,7 @@ class _SetRow extends StatelessWidget {
     if (set.weightMode != 'percentage') {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Text('$reps · ${formatWeightForPreference(set.absoluteWeightKg ?? 0, unit)}'),
+        child: Text('$reps · ${formatWeightForPreference(set.absoluteWeightKg ?? 0, unit)}$rpeSuffix'),
       );
     }
 
@@ -374,6 +377,7 @@ class _SetRow extends StatelessWidget {
                   style: baseStyle,
                 ),
               ),
+            if (rpeTarget != null) TextSpan(text: rpeSuffix),
           ],
         ),
       ),

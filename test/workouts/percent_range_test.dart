@@ -38,7 +38,7 @@ SetEditor _editor({
       currentExerciseId: 'e1',
       currentExerciseName: 'Back Squat',
       onAddPercentageSets: onPct ?? (_) {},
-      onAddAbsoluteSets: (_, _, _, _) {},
+      onAddAbsoluteSets: (_) {},
       onDeleteSet: (_) {},
       onReorderSets: (_) {},
     );

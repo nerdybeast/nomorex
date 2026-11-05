@@ -120,34 +120,32 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
           'percentage': p.percentage,
           'percentage_max': ?p.percentageMax,
           'basis_exercise_id': p.basisExerciseId,
+          'rpe_min': ?p.rpeMin,
+          'rpe_max': ?p.rpeMax,
         },
     ]);
     await _refresh();
   }
 
-  Future<void> addAbsoluteSets(
-      String workoutExerciseId, {
-      required int sets,
-      required int reps,
-      int? repsMax,
-      required double weightKg,
-      }) async {
-    if (sets <= 0) return;
+  Future<void> addAbsoluteSets(String workoutExerciseId, AbsoluteSetBatch batch) async {
+    if (batch.sets <= 0) return;
     final current = await future;
     final ex = current.exercises.firstWhere((e) => e.id == workoutExerciseId);
     var pos = ex.sets.isEmpty
         ? 0
         : ex.sets.map((s) => s.position).reduce((a, b) => a > b ? a : b) + 1;
     await _db.from('workout_sets').insert([
-      for (var i = 0; i < sets; i++)
+      for (var i = 0; i < batch.sets; i++)
         {
           'workout_exercise_id': workoutExerciseId,
           'user_id': _userId,
           'position': pos++,
-          'target_reps': reps,
-          'target_reps_max': ?repsMax,
+          'target_reps': batch.reps,
+          'target_reps_max': ?batch.repsMax,
           'weight_mode': 'absolute',
-          'absolute_weight_kg': weightKg,
+          'absolute_weight_kg': batch.weightKg,
+          'rpe_min': ?batch.rpeMin,
+          'rpe_max': ?batch.rpeMax,
         },
     ]);
     await _refresh();
@@ -173,6 +171,13 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
       'actual_weight_kg': weightKg,
       'actual_reps': reps,
     }).eq('id', setId);
+    await _refresh();
+  }
+
+  /// Records (or with null, clears) the effort the lifter reports for a set.
+  /// Logging-only: never copied when the workout is duplicated or shared.
+  Future<void> logRpe(String setId, double? rpe) async {
+    await _db.from('workout_sets').update({'actual_rpe': rpe}).eq('id', setId);
     await _refresh();
   }
 
