@@ -225,6 +225,39 @@ void main() {
     expect(colorOfSpan(tester, '80 kg'), accent);
   });
 
+  testWidgets('a %1RM range resolves both ends from the viewer\'s 1RM, accented and marked est.',
+      (tester) async {
+    await pumpCommunityDetail(
+      tester,
+      workout: _publicWorkout(extraExercises: const [
+        WorkoutExercise(
+          id: 'we2',
+          workoutId: 'w1',
+          exerciseId: 'e1',
+          exerciseName: 'Back Squat',
+          position: 1,
+          sets: [
+            WorkoutSet(
+              id: 's2',
+              workoutExerciseId: 'we2',
+              position: 0,
+              weightMode: 'percentage',
+              targetReps: 7,
+              targetRepsMax: 9,
+              percentage: 67,
+              percentageMax: 72.5,
+            ),
+          ],
+        ),
+      ]),
+      oneRepMaxes: const {'e1': OneRepMax.estimated(200)},
+    );
+
+    expect(find.textContaining('7–9 reps · 67–72.5% 1RM · 134–145 kg (est.)'), findsOneWidget);
+    final accent = AppTheme.dark().extension<NomorexTokens>()!.info;
+    expect(colorOfSpan(tester, '134–145 kg (est.)'), accent);
+  });
+
   testWidgets('a percentage set with no 1RM for the viewer shows a "set PR" link',
       (tester) async {
     await pumpCommunityDetail(tester, workout: _publicWorkout());

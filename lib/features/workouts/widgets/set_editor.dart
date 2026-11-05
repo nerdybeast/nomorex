@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/percent_range.dart';
 import '../../../core/utils/rep_range.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../shared/models/editable_set_row.dart';
@@ -51,6 +52,7 @@ class SetEditor extends ConsumerWidget {
     var reps = 1;
     int? repsMax;
     var percentage = 70.0;
+    double? percentageMax;
     Exercise? basisExercise;
     final tokens = Theme.of(context).extension<NomorexTokens>();
 
@@ -99,7 +101,7 @@ class SetEditor extends ConsumerWidget {
                   incrementButtonStyle: tokens?.stepperIncrementStyle,
                 ),
                 const SizedBox(height: 12),
-                _RepTargetInput(
+                _repTargetInput(
                   reps: reps,
                   repsMax: repsMax,
                   tokens: tokens,
@@ -109,19 +111,29 @@ class SetEditor extends ConsumerWidget {
                   }),
                 ),
                 const SizedBox(height: 12),
-                // One %1RM shared by the whole batch keeps the dialog a fixed
-                // height; wave-loading is another batch at the next percentage.
-                NumberStepperField(
-                  label: '%1RM',
+                // One %1RM (or range) shared by the whole batch keeps the
+                // dialog a fixed height; wave-loading is another batch at the
+                // next percentage. One decimal so half-percent prescriptions
+                // like 72.5% can be typed; the +/- step stays 5.
+                _RangeInput(
                   value: percentage,
-                  min: 0,
+                  max: percentageMax,
+                  label: '%1RM',
+                  minLabel: 'Min %1RM',
+                  maxLabel: 'Max %1RM',
+                  switchLabel: '%1RM range',
+                  floor: 0,
                   step: 5,
-                  decimals: 0,
-                  onChanged: (v) => setState(() => percentage = v),
-                  valueTextStyle: tokens?.stepperValue,
-                  valueDecoration: tokens?.stepperValueDecoration,
-                  decrementButtonStyle: tokens?.stepperDecrementStyle,
-                  incrementButtonStyle: tokens?.stepperIncrementStyle,
+                  decimals: 1,
+                  spread: 5,
+                  valueKey: const Key('set_editor_pct'),
+                  switchKey: const Key('set_editor_pct_range_switch'),
+                  maxKey: const Key('set_editor_pct_max'),
+                  tokens: tokens,
+                  onChanged: (v, max) => setState(() {
+                    percentage = v;
+                    percentageMax = max;
+                  }),
                 ),
               ],
             ),
@@ -132,7 +144,13 @@ class SetEditor extends ConsumerWidget {
               onPressed: () {
                 onAddPercentageSets([
                   for (var i = 0; i < sets; i++)
-                    ParsedSet(reps, percentage, basisExercise?.id, _rangeTop(reps, repsMax)),
+                    ParsedSet(
+                      reps,
+                      percentage,
+                      basisExercise?.id,
+                      _rangeTop(reps, repsMax),
+                      _rangeTop(percentage, percentageMax),
+                    ),
                 ]);
                 Navigator.pop(ctx);
               },
@@ -173,7 +191,7 @@ class SetEditor extends ConsumerWidget {
                 incrementButtonStyle: tokens?.stepperIncrementStyle,
               ),
               const SizedBox(height: 12),
-              _RepTargetInput(
+              _repTargetInput(
                 reps: reps,
                 repsMax: repsMax,
                 tokens: tokens,
@@ -292,7 +310,7 @@ class _SetRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPct = set.weightMode == 'percentage';
     final valueLabel = isPct
-        ? '${set.percentage?.toStringAsFixed(0) ?? '?'}%'
+        ? formatPercentTarget(set.percentage, set.percentageMax)
         : (set.absoluteWeightKg != null
             ? formatWeightForPreference(set.absoluteWeightKg!, unit)
             : (unit == 'both' ? '? lbs / ? kg' : '? $unit'));
@@ -385,69 +403,89 @@ class _BasisOneRepMax extends ConsumerWidget {
   }
 }
 
-/// The range top to save: null unless it's actually above [reps], so a range
-/// the author narrowed back down to one number is stored as a single count.
-int? _rangeTop(int reps, int? repsMax) =>
-    (repsMax != null && repsMax > reps) ? repsMax : null;
+/// The range top to save: null unless it's actually above [low], so a range
+/// the author narrowed back down to one number is stored as a single value.
+T? _rangeTop<T extends num>(T low, T? high) =>
+    (high != null && high > low) ? high : null;
 
-/// Reps stepper plus an optional "Rep range" switch that reveals a second
-/// stepper for the top of the range ("7 to 9"). With the switch off the
-/// dialog keeps its original height; [repsMax] is null exactly when it's off.
-class _RepTargetInput extends StatelessWidget {
-  const _RepTargetInput({
-    required this.reps,
-    required this.repsMax,
+/// A stepper plus an optional range switch that reveals a second stepper for
+/// the top of the range ("7 to 9" reps, "67–72.5%"). With the switch off the
+/// dialog keeps its original height; [max] is null exactly when it's off.
+class _RangeInput extends StatelessWidget {
+  const _RangeInput({
+    required this.value,
+    required this.max,
+    required this.label,
+    required this.minLabel,
+    required this.maxLabel,
+    required this.switchLabel,
+    required this.floor,
+    required this.step,
+    required this.decimals,
+    required this.spread,
+    required this.valueKey,
+    required this.switchKey,
+    required this.maxKey,
     required this.tokens,
     required this.onChanged,
   });
 
-  final int reps;
-  final int? repsMax;
+  final double value;
+  final double? max;
+  /// Stepper labels: [label] alone, [minLabel] / [maxLabel] as a range.
+  final String label;
+  final String minLabel;
+  final String maxLabel;
+  final String switchLabel;
+  final double floor;
+  final double step;
+  final int decimals;
+  /// How far above [value] the top starts when the switch is turned on.
+  final double spread;
+  final Key valueKey;
+  final Key switchKey;
+  final Key maxKey;
   final NomorexTokens? tokens;
-  final void Function(int reps, int? repsMax) onChanged;
+  final void Function(double value, double? max) onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final max = repsMax;
+    final top = max;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         NumberStepperField(
-          key: const Key('set_editor_reps'),
-          label: max == null ? 'Reps' : 'Min reps',
-          value: reps.toDouble(),
-          min: 1,
-          step: 1,
-          decimals: 0,
+          key: valueKey,
+          label: top == null ? label : minLabel,
+          value: value,
+          min: floor,
+          step: step,
+          decimals: decimals,
           // Raising the bottom of a range past its top drags the top along,
           // so the pair can never be saved inverted.
-          onChanged: (v) {
-            final r = v.round();
-            onChanged(r, max == null ? null : (max < r ? r : max));
-          },
+          onChanged: (v) => onChanged(v, top == null ? null : (top < v ? v : top)),
           valueTextStyle: tokens?.stepperValue,
           valueDecoration: tokens?.stepperValueDecoration,
           decrementButtonStyle: tokens?.stepperDecrementStyle,
           incrementButtonStyle: tokens?.stepperIncrementStyle,
         ),
         SwitchListTile(
-          key: const Key('set_editor_rep_range_switch'),
+          key: switchKey,
           contentPadding: EdgeInsets.zero,
           dense: true,
-          title: const Text('Rep range'),
-          value: max != null,
-          // Turning it on starts a typical two-rep spread ("7 to 9").
-          onChanged: (on) => onChanged(reps, on ? reps + 2 : null),
+          title: Text(switchLabel),
+          value: top != null,
+          onChanged: (on) => onChanged(value, on ? value + spread : null),
         ),
-        if (max != null)
+        if (top != null)
           NumberStepperField(
-            key: const Key('set_editor_reps_max'),
-            label: 'Max reps',
-            value: max.toDouble(),
-            min: reps.toDouble(),
-            step: 1,
-            decimals: 0,
-            onChanged: (v) => onChanged(reps, v.round()),
+            key: maxKey,
+            label: maxLabel,
+            value: top,
+            min: value,
+            step: step,
+            decimals: decimals,
+            onChanged: (v) => onChanged(value, v),
             valueTextStyle: tokens?.stepperValue,
             valueDecoration: tokens?.stepperValueDecoration,
             decrementButtonStyle: tokens?.stepperDecrementStyle,
@@ -457,3 +495,29 @@ class _RepTargetInput extends StatelessWidget {
     );
   }
 }
+
+/// [_RangeInput] for a rep target: whole numbers from 1, starting a typical
+/// two-rep spread ("7 to 9").
+Widget _repTargetInput({
+  required int reps,
+  required int? repsMax,
+  required NomorexTokens? tokens,
+  required void Function(int reps, int? repsMax) onChanged,
+}) =>
+    _RangeInput(
+      value: reps.toDouble(),
+      max: repsMax?.toDouble(),
+      label: 'Reps',
+      minLabel: 'Min reps',
+      maxLabel: 'Max reps',
+      switchLabel: 'Rep range',
+      floor: 1,
+      step: 1,
+      decimals: 0,
+      spread: 2,
+      valueKey: const Key('set_editor_reps'),
+      switchKey: const Key('set_editor_rep_range_switch'),
+      maxKey: const Key('set_editor_reps_max'),
+      tokens: tokens,
+      onChanged: (v, max) => onChanged(v.round(), max?.round()),
+    );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/utils/percent_range.dart';
 import '../../../core/utils/rep_range.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/copy_errors.dart';
@@ -334,9 +335,10 @@ class _SetRow extends StatelessWidget {
       byExerciseId: oneRepMaxes,
       byExerciseName: oneRepMaxesByName,
     );
-    final resolvedKg = resolveSetWeightKg(
+    final resolved = resolveSetWeightRangeKg(
       weightMode: set.weightMode,
       percentage: set.percentage,
+      percentageMax: set.percentageMax,
       absoluteWeightKg: set.absoluteWeightKg,
       oneRepMaxKg: oneRepMax?.kg,
     );
@@ -345,7 +347,7 @@ class _SetRow extends StatelessWidget {
     // against a different lift — otherwise the resolved weight beside it looks
     // wrong for the exercise it's filed under.
     final basisLabel = set.basisExerciseId != null ? 'of $basisName' : '1RM';
-    final target = '$reps · ${set.percentage?.toStringAsFixed(0)}% $basisLabel · ';
+    final target = '$reps · ${formatPercentTarget(set.percentage, set.percentageMax)} $basisLabel · ';
 
     final baseStyle = DefaultTextStyle.of(context).style;
     final accent = Theme.of(context).extension<NomorexTokens>()?.info;
@@ -357,9 +359,9 @@ class _SetRow extends StatelessWidget {
           style: baseStyle,
           children: [
             TextSpan(text: target),
-            if (resolvedKg != null)
+            if (resolved != null)
               TextSpan(
-                text: formatResolvedWeight(resolvedKg, unit,
+                text: formatResolvedWeightRange(resolved.low, resolved.high, unit,
                     estimated: oneRepMax?.isEstimated ?? false),
                 style: baseStyle.copyWith(color: accent),
               )

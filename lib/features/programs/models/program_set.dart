@@ -12,6 +12,7 @@ class ProgramSet {
     this.targetReps,
     this.targetRepsMax,
     this.percentage,
+    this.percentageMax,
     this.absoluteWeightKg,
     this.note,
     this.basisExerciseId,
@@ -26,6 +27,8 @@ class ProgramSet {
   /// Top of a rep range; null means a single rep count ([targetReps]).
   final int? targetRepsMax;
   final double? percentage;
+  /// Top of a %1RM range; null means a single percentage.
+  final double? percentageMax;
   final double? absoluteWeightKg;
   final String? note;
   final String? basisExerciseId;
@@ -41,6 +44,7 @@ class ProgramSet {
       targetReps: json['target_reps'] as int?,
       targetRepsMax: json['target_reps_max'] as int?,
       percentage: (json['percentage'] as num?)?.toDouble(),
+      percentageMax: (json['percentage_max'] as num?)?.toDouble(),
       absoluteWeightKg: (json['absolute_weight_kg'] as num?)?.toDouble(),
       note: json['note'] as String?,
       basisExerciseId: json['basis_exercise_id'] as String?,
@@ -54,6 +58,7 @@ class ProgramSet {
         targetRepsMax: targetRepsMax,
         weightMode: weightMode,
         percentage: percentage,
+        percentageMax: percentageMax,
         absoluteWeightKg: absoluteWeightKg,
         basisExerciseId: basisExerciseId,
         basisExerciseName: basisExerciseName,

@@ -118,6 +118,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
           if (p.targetRepsMax != null) 'target_reps_max': p.targetRepsMax,
           'weight_mode': 'percentage',
           'percentage': p.percentage,
+          'percentage_max': ?p.percentageMax,
           'basis_exercise_id': p.basisExerciseId,
         },
     ]);

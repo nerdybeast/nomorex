@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/percent_range.dart';
 import '../../../core/utils/rep_range.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -156,9 +157,10 @@ class _SetLines extends StatelessWidget {
       byExerciseId: oneRepMaxes,
       byExerciseName: oneRepMaxesByName,
     );
-    final resolvedKg = resolveSetWeightKg(
+    final resolved = resolveSetWeightRangeKg(
       weightMode: set.weightMode,
       percentage: set.percentage,
+      percentageMax: set.percentageMax,
       absoluteWeightKg: set.absoluteWeightKg,
       oneRepMaxKg: oneRepMax?.kg,
     );
@@ -169,14 +171,14 @@ class _SetLines extends StatelessWidget {
     String? secondLine;
     if (set.weightMode == 'percentage') {
       final basisLabel = set.basisExerciseId != null ? (set.basisExerciseName ?? '1RM') : '1RM';
-      firstLine = '$repsLabel · ${set.percentage?.toStringAsFixed(0) ?? '?'}% of $basisLabel';
-      if (oneRepMax != null && resolvedKg != null) {
+      firstLine = '$repsLabel · ${formatPercentTarget(set.percentage, set.percentageMax)} of $basisLabel';
+      if (oneRepMax != null && resolved != null) {
         // "PR" would be a lie for an estimate — the user never lifted that
         // single, it was inferred from a multi-rep best.
         final basis = oneRepMax.isEstimated
             ? '${formatWeightForPreference(oneRepMax.kg, unit)} est. 1RM'
             : '${formatWeightForPreference(oneRepMax.kg, unit)} PR';
-        secondLine = '$basis ≈ ${formatWeightForPreference(resolvedKg, unit)}';
+        secondLine = '$basis ≈ ${formatWeightRangeForPreference(resolved.low, resolved.high, unit)}';
       }
     } else {
       firstLine = '$repsLabel · ${formatWeightForPreference(set.absoluteWeightKg ?? 0, unit)}';

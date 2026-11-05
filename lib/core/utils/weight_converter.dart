@@ -46,3 +46,32 @@ String formatResolvedWeight(
   final formatted = formatWeightForPreference(weightKg, preference);
   return estimated ? '$formatted (est.)' : formatted;
 }
+
+/// Formats a weight range stored in kg ("100–107.5 kg", "220–237 lbs /
+/// 100–107.5 kg"), or a single weight when [highKg] is null. When both ends
+/// round to the same displayed number, it shows that number once.
+String formatWeightRangeForPreference(double lowKg, double? highKg, String preference) {
+  if (highKg == null) return formatWeightForPreference(lowKg, preference);
+  String span(String a, String b) => a == b ? a : '$a–$b';
+  if (preference == 'both') {
+    final lbs = span('${kgToLbs(lowKg).round()}', '${kgToLbs(highKg).round()}');
+    final kg = span(_trimTrailingZeros(lowKg.toStringAsFixed(1)),
+        _trimTrailingZeros(highKg.toStringAsFixed(1)));
+    return '$lbs lbs / $kg kg';
+  }
+  String one(double kg) => _trimTrailingZeros(
+      (preference == 'lbs' ? kgToLbs(kg) : kg).toStringAsFixed(1));
+  return '${span(one(lowKg), one(highKg))} $preference';
+}
+
+/// [formatResolvedWeight] for a range: the ` (est.)` marker applies to the
+/// whole range, since both ends come from the same 1RM.
+String formatResolvedWeightRange(
+  double lowKg,
+  double? highKg,
+  String preference, {
+  required bool estimated,
+}) {
+  final formatted = formatWeightRangeForPreference(lowKg, highKg, preference);
+  return estimated ? '$formatted (est.)' : formatted;
+}
