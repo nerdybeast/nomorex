@@ -220,10 +220,14 @@ GitHub-hosted `macos-26` runner, which is free because the repo is public.
 always goes up.
 
 **Signing is cloud-managed.** No certificate or provisioning profile is stored
-anywhere. `xcodebuild archive`/`-exportArchive` run with
-`-allowProvisioningUpdates` and an App Store Connect API key, so Xcode uses the
-team's cloud-managed distribution certificate and creates/refreshes the App
-Store profile itself. `ios/ExportOptions.plist` sets `destination=upload`, so
+anywhere. `xcodebuild archive` builds an **unsigned** archive
+(`CODE_SIGNING_ALLOWED=NO`), and `xcodebuild -exportArchive` runs with
+`-allowProvisioningUpdates` and an App Store Connect API key, so Xcode signs
+with the team's cloud-managed distribution certificate and creates/refreshes
+the App Store profile itself. Keep the archive unsigned: signing it uses the
+Release config's development identity, whose private key must live in the
+local keychain, so every fresh runner would create a new Apple Development
+certificate until the account hits Apple's certificate limit. `ios/ExportOptions.plist` sets `destination=upload`, so
 the export step also does the upload. `flutter build ipa` isn't used because it
 can't pass the API-key flags through to xcodebuild. Instead
 `flutter build ios --config-only` bakes the dart-defines and version into the
@@ -327,6 +331,12 @@ processing finishes or fails.
   - a lapsed membership (step 1)
   - an API key that isn't Admin, or is an Individual key (step 4)
   - a missing App ID or app record (steps 2–3)
+  - "Your account has reached the maximum number of certificates": something
+    signed with a development identity on a runner again (see "Signing is
+    cloud-managed" above). Revoke the extra **Apple Development**
+    certificates at
+    <https://developer.apple.com/account/resources/certificates/list>
+    (revoking development certs doesn't affect App Store builds)
 - **"bundle version must be higher".** The build number is the commit count
   from `version.yml`. It only repeats if a run is re-triggered for a commit
   that already uploaded. Push a new commit instead.
