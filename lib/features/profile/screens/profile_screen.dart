@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/one_rep_max_formula.dart';
 import '../../../core/utils/owner_name.dart';
+import '../../ai/providers/ai_smoke_test_provider.dart';
+import '../../ai/utils/genkit_call.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 
@@ -138,12 +141,83 @@ class ProfileScreen extends ConsumerWidget {
                       style: TextStyle(color: colorScheme.error),
                     ),
                   ],
+                  // Debug builds only: a diagnostic for the Genkit edge
+                  // function, not a user feature.
+                  if (kDebugMode) ...[
+                    const SizedBox(height: 24),
+                    Text('DEVELOPER', style: NomorexTokens.of(context).eyebrow),
+                    const SizedBox(height: 8),
+                    const _AiSmokeTestSection(),
+                  ],
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Debug-only "Test AI connection": runs the `smokeTest` Genkit flow, which
+/// exercises the user's session, an RLS-scoped database read and a Claude
+/// call. The button sits beside its description in a `Row` rather than in a
+/// tile's `trailing`, so it stays its own semantics node (tappable by role
+/// locators and screen readers).
+class _AiSmokeTestSection extends ConsumerWidget {
+  const _AiSmokeTestSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(aiSmokeTestProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Checks the AI backend: your session, database access and the Claude model.',
+                style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton(
+              key: const Key('profile_ai_smoke_test_button'),
+              // Theme buttons are full-width by default; size this one to its
+              // label so it fits beside the description.
+              style: NomorexTokens.of(context).secondaryButtonStyle.copyWith(
+                minimumSize: const WidgetStatePropertyAll(Size(0, NomorexSizes.controlHeight)),
+              ),
+              onPressed: state.isLoading ? null : () => ref.read(aiSmokeTestProvider.notifier).run(),
+              child: state.isLoading
+                  ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Test AI connection'),
+            ),
+          ],
+        ),
+        switch (state) {
+          AsyncData(:final value?) => Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '${value.message}\n${value.exerciseCount} exercises visible to you.',
+                key: const Key('profile_ai_smoke_test_result'),
+              ),
+            ),
+          AsyncError(:final error) => Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                error is GenkitFlowException ? error.message : 'AI test failed: $error',
+                key: const Key('profile_ai_smoke_test_error'),
+                style: TextStyle(color: colorScheme.error),
+              ),
+            ),
+          _ => const SizedBox.shrink(),
+        },
+      ],
     );
   }
 }

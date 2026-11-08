@@ -225,6 +225,28 @@ jobs:
       - name: Database tests (pgTAP)
         run: supabase test db --local
 
+  # Genkit edge function (supabase/functions/ai). Unit tests use a fake model
+  # and a fake Supabase client: no network, no API key, no local stack.
+  functions:
+    name: Edge functions (Deno)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: supabase/functions/ai
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: denoland/setup-deno@v2
+        with:
+          # Matches the Deno the Supabase edge runtime ships (2.1.x, printed
+          # by `supabase functions serve`), so CI type-checks against what
+          # actually runs. Bump together with the runtime.
+          deno-version: 2.1.4
+
+      # fmt --check, lint, type-check the entry points, run the tests.
+      - name: Check & test
+        run: deno task check
+
   e2e:
     name: E2E (integration_test)
     needs: version

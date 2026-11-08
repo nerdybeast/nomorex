@@ -1,0 +1,17 @@
+{
+  "imports": {
+    "genkit": "npm:genkit@1.44.0",
+    "genkit/": "npm:/genkit@1.44.0/",
+    "@genkit-ai/anthropic": "npm:@genkit-ai/anthropic@0.7.0",
+    "@genkit-ai/fetch": "npm:@genkit-ai/fetch@0.7.0",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.119.0"
+  },
+  "lock": false,
+  "fmt": {
+    "singleQuote": true,
+    "lineWidth": 110
+  },
+  "tasks": {
+    "check": "deno fmt --check && deno lint && deno check index.ts dev.ts && deno test --allow-env --allow-read"
+  }
+}

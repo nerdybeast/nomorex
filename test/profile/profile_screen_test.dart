@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomorex/features/ai/models/smoke_test_result.dart';
+import 'package:nomorex/features/ai/providers/ai_smoke_test_provider.dart';
+import 'package:nomorex/features/ai/utils/genkit_call.dart';
 import 'package:nomorex/features/auth/providers/auth_provider.dart';
 import 'package:nomorex/features/profile/models/profile.dart';
 import 'package:nomorex/core/utils/one_rep_max_formula.dart';
@@ -76,6 +79,19 @@ class _TestProfileNotifier extends ProfileNotifier {
   }
 }
 
+/// Stands in for the network call behind "Test AI connection".
+class _FakeAiSmokeTestNotifier extends AiSmokeTestNotifier {
+  _FakeAiSmokeTestNotifier(this._callFlow);
+  final Future<SmokeTestResult> Function() _callFlow;
+  int calls = 0;
+
+  @override
+  Future<SmokeTestResult> callFlow() {
+    calls++;
+    return _callFlow();
+  }
+}
+
 Widget _wrap(
   Profile profile, {
   void Function(String)? onSetUnitPreference,
@@ -83,9 +99,11 @@ Widget _wrap(
   void Function(OneRepMaxFormula)? onSetOneRepMaxFormula,
   User user = _testUser,
   VoidCallback? onSignOut,
+  _FakeAiSmokeTestNotifier? aiSmokeTest,
 }) =>
     ProviderScope(
       overrides: [
+        if (aiSmokeTest != null) aiSmokeTestProvider.overrideWith(() => aiSmokeTest),
         currentAuthUserProvider.overrideWithValue(user),
         profileProvider.overrideWith(
           () => _TestProfileNotifier(
@@ -336,5 +354,64 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(captured, OneRepMaxFormula.epley);
+  });
+
+  group('Test AI connection (debug builds)', () {
+    const profile = Profile(id: 'u1', unitPreference: 'kg', oneRepMaxFormula: OneRepMaxFormula.brzycki);
+    final button = find.byKey(const Key('profile_ai_smoke_test_button'));
+
+    testWidgets('is shown in debug builds, idle until tapped', (tester) async {
+      final fake = _FakeAiSmokeTestNotifier(
+        () async => const SmokeTestResult(uid: 'u1', exerciseCount: 1, message: 'unused'),
+      );
+      await tester.pumpWidget(_wrap(profile, aiSmokeTest: fake));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(button);
+      expect(find.text('Test AI connection'), findsOneWidget);
+      expect(find.byKey(const Key('profile_ai_smoke_test_result')), findsNothing);
+      expect(fake.calls, 0);
+    });
+
+    testWidgets('tapping runs the flow and shows the reply and exercise count', (tester) async {
+      final fake = _FakeAiSmokeTestNotifier(
+        () async => const SmokeTestResult(uid: 'u1', exerciseCount: 42, message: 'You are connected!'),
+      );
+      await tester.pumpWidget(_wrap(profile, aiSmokeTest: fake));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+
+      expect(fake.calls, 1);
+      final result = tester.widget<Text>(find.byKey(const Key('profile_ai_smoke_test_result')));
+      expect(result.data, contains('You are connected!'));
+      expect(result.data, contains('42 exercises visible to you.'));
+    });
+
+    testWidgets('a failure shows the function\'s user-facing message', (tester) async {
+      final fake = _FakeAiSmokeTestNotifier(
+        () async => throw const GenkitFlowException(
+          'UNAVAILABLE',
+          'The AI service is unavailable right now. Try again in a moment.',
+          httpStatus: 503,
+        ),
+      );
+      await tester.pumpWidget(_wrap(profile, aiSmokeTest: fake));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('The AI service is unavailable right now. Try again in a moment.'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('profile_ai_smoke_test_result')), findsNothing);
+    });
   });
 }

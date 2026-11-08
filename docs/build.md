@@ -505,6 +505,80 @@ longer runs `supabase db push`.
 The two run independently, so a schema change and the app build that depends on
 it are not ordered. Ship additive migrations ahead of the code that needs them.
 
+## AI backend (Genkit edge function)
+
+AI features run in one Supabase Edge Function, `supabase/functions/ai`, built
+with Genkit JS and the Anthropic plugin. The Anthropic API key lives only there,
+as a function secret. It never ships in the app.
+
+### Secrets
+
+| Where      | How                                                                                     |
+| ---------- | --------------------------------------------------------------------------------------- |
+| Local      | `supabase/functions/.env` containing `ANTHROPIC_API_KEY=sk-ant-...` (gitignored by `.env`) |
+| Production | `supabase secrets set ANTHROPIC_API_KEY=sk-ant-... --project-ref <ref>`, or Dashboard → Edge Functions → Secrets |
+
+`SUPABASE_URL` and `SUPABASE_ANON_KEY` are injected by the edge runtime; don't
+set them. The function deliberately never uses the service-role/secret key.
+
+How a key problem shows up in the app's "Test AI connection":
+
+- **Key missing:** the Anthropic plugin throws at startup, so the worker fails to
+  boot. The gateway answers `503 BOOT_ERROR`, which the app shows as "The AI
+  request failed (HTTP 503)".
+- **Key wrong, or the account is out of credit:** the function boots, and every
+  flow that calls the model returns `503 UNAVAILABLE` ("The AI service is
+  unavailable right now…").
+
+Either way the real error is in the function logs: `supabase functions serve`
+output locally (or `docker logs supabase_edge_runtime_nomorex`), Dashboard →
+Edge Functions → Logs in production.
+
+The worker also fails to boot with `BOOT_ERROR` if a `deno.lock` turns up in
+`supabase/functions/ai`. `deno.json` sets `"lock": false` so local `deno`
+runs don't write one; delete any that appears.
+
+### Running locally
+
+```bash
+supabase start
+supabase functions serve ai          # http://127.0.0.1:54321/functions/v1/ai/<flow>
+flutter run -d chrome --dart-define-from-file=.env.local.json
+```
+
+In a debug build, Profile → Developer → **Test AI connection** runs the
+`smokeTest` flow. It checks your session, an RLS-scoped database read and a
+Claude call in one go. Or use curl with a real session:
+
+```bash
+TOKEN=$(curl -s "http://127.0.0.1:54321/auth/v1/token?grant_type=password" \
+  -H "apikey: <publishable key>" -H 'Content-Type: application/json' \
+  -d '{"email":"a@a.com","password":"123456"}' | jq -r .access_token)
+curl -X POST http://127.0.0.1:54321/functions/v1/ai/smokeTest \
+  -H "apikey: <publishable key>" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"data":{}}'
+```
+
+Genkit traces: run the same handler under the Genkit CLI with
+`supabase/functions/ai/dev.ts`. Instructions are in that file. Its `.env` also
+needs `SUPABASE_URL`/`SUPABASE_ANON_KEY` for the local stack, because plain
+`deno run` doesn't inject them.
+
+### Checks
+
+`deno task check` in `supabase/functions/ai` runs fmt, lint, type-check and the
+unit tests (fake model, fake Supabase client: no network, no key). CI runs it in
+the `functions` job; `scripts/verify.sh` runs it too, through Docker if Deno
+isn't installed. Deno is pinned to 2.1.4 to match the edge runtime.
+
+### Deployment
+
+The Supabase GitHub integration deploys the function on merge to `main`, the
+same run that applies migrations. It ships Edge Functions **declared in
+`supabase/config.toml`**, which is why `[functions.ai]` is there. Set the
+production secret before the first deploy. Deploy the function ahead of any app
+build that calls a new flow, the same rule as additive migrations.
+
 ## E2E tests
 
 The `integration_test/` suite boots the real app against the local Supabase
