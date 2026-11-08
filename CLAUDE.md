@@ -44,6 +44,13 @@ supabase test db --local        # pgTAP tests in supabase/tests/database/
 supabase status                 # prints local URL + publishable key for .env.local.json
 ```
 
+AI edge function (Genkit; details in "AI / Genkit" below and `docs/build.md`):
+
+```bash
+supabase functions serve ai                         # local; needs supabase/functions/.env with ANTHROPIC_API_KEY
+(cd supabase/functions/ai && deno task check)       # fmt + lint + type-check + unit tests, as CI runs it
+```
+
 **Never run `supabase db reset` (or any `--linked` variant of it) against the production/linked project.** It drops and recreates the database, which deletes real user data. `db reset` defaults to `--local` and that's the only form that should ever run in this repo or in CI. If asked to reset the linked/remote project, always stop and ask for explicit confirmation first, and be clear that it is a destructive action that can delete user data.
 
 ## Cloud sessions (Claude Code on the web)
@@ -56,7 +63,7 @@ The `SessionStart` hook sets up the CI toolchain and a local Supabase stack (see
 
 ## Architecture
 
-**Feature-first layout.** `lib/features/<feature>/{models,providers,screens,widgets,utils}`, with `lib/core/` (constants, theme, unit conversion, date formatting) and `lib/shared/widgets/` for cross-feature pieces. Features: `auth`, `community`, `dashboard`, `exercises`, `personal_bests`, `profile`, `shell`, `workouts`, `programs`.
+**Feature-first layout.** `lib/features/<feature>/{models,providers,screens,widgets,utils}`, with `lib/core/` (constants, theme, unit conversion, date formatting) and `lib/shared/widgets/` for cross-feature pieces. Features: `ai`, `auth`, `community`, `dashboard`, `exercises`, `personal_bests`, `profile`, `shell`, `workouts`, `programs`.
 
 **No repository/service layer.** Riverpod notifiers talk to `Supabase.instance.client` directly, and mutations end with `ref.invalidateSelf(); await future;` so callers can `await` a completed refetch. Follow that shape rather than introducing a data-access abstraction.
 
@@ -75,6 +82,16 @@ The `SessionStart` hook sets up the CI toolchain and a local Supabase stack (see
 **Responsive shell.** `AppShell` renders a `BottomAppBar` + centered FAB below 600px and a `NavigationRail` above it (`isMobile()` in `lib/shared/widgets/responsive_layout.dart`). Because the shell always renders its own FAB, **any FAB on a screen inside the shell must set an explicit `heroTag`** — the default sentinel collides during route transitions and can crash the framework. `test/workouts/fab_hero_tag_test.dart` and `test/programs/fab_hero_tag_test.dart` guard this. There are 5 shell tabs (Home, Programs, Workouts, My PRs, Community) — a 5th tab means updating both `AppShell`'s mobile icon `Row` and desktop `NavigationRail` destinations by hand, since there's no loop over a route config.
 
 **Programs are authoring-time templates; Workouts stay the only runtime/logged entity — but a program run is tracked.** A `Program` is a reusable template (`programs -> program_weeks -> program_days -> program_exercises -> program_sets`, mirroring the `workouts -> workout_exercises -> workout_sets` shape one level deeper, minus logging fields). "Starting" a program calls the `start_program` RPC, which inserts a `program_instances` row and bulk-materializes the template into ordinary `workouts`/`workout_exercises`/`workout_sets` rows stamped with `program_instance_id`/`program_day_id` (see Database below) — logging itself is still just a normal workout through the existing screens. On top of that, the instance is surfaced back to the user: the dashboard's "Current Programs" section and `ProgramInstanceDetailScreen` (`lib/features/programs/screens/`) read active `program_instances` to show upcoming/in-progress status and highlight today's day (`isProgramDayToday` in `utils/program_progress.dart`), and `WorkoutsNotifier`'s query excludes any workout with a non-null `program_instance_id` so materialized workouts don't flood the general Workouts list — they're reachable only through the instance screen, whose day cards push straight to the real `WorkoutDetailScreen`. `SetEditor` (`lib/features/workouts/widgets/set_editor.dart`) is shared between editing a workout and authoring a program via the `EditableSetRow` DTO (`lib/shared/models/editable_set_row.dart`); `WorkoutSet.toEditableRow()` / `ProgramSet.toEditableRow()` map into it.
+
+**AI / Genkit: one edge function, `supabase/functions/ai`, Genkit JS + `@genkit-ai/anthropic`, served through `@genkit-ai/fetch`.** The Anthropic key is a function secret and never ships in the app. TypeScript rather than Genkit Dart because Supabase Edge Functions only run Deno. Each flow is `flows/<name>.ts` exporting `define<Name>(ai, model)`, registered in `flows/mod.ts`, and served at `POST /functions/v1/ai/<flowName>` with body `{"data": …}`. The client calls it with `callGenkitFlow()` (`lib/features/ai/utils/genkit_call.dart`), which goes through `functions.invoke` (session JWT attached automatically) and turns every failure into a `GenkitFlowException`. Rules that fail quietly if broken:
+- **Data access goes only through the caller's RLS-scoped client.** `supabaseAuth` (`auth.ts`) verifies the JWT and puts `{auth: {uid}, supabase}` on the flow context. Every flow starts with `requireUserContext(context)`, and every flow in `mod.ts` is wrapped with `withActionOptions(…, {contextProvider: auth})`. **Never create a service-role/secret-key client there.** It would bypass RLS, and a prompt-injection bug would become a cross-user data leak.
+- **Wrap every `ai.generate` in `callModel()` (`genkit.ts`).** Without it, a bad Anthropic key surfaces as `UNAUTHENTICATED`/401 with the provider's raw error. The app can't tell that apart from an expired session, and the message leaks upstream details. `callModel` logs the real error server-side and returns `UNAVAILABLE`, so 401 only ever means the user's session.
+- **Don't rely on Zod `.default()` in flow input.** The HTTP handler doesn't apply schema defaults: `{"data":{}}` arrives with the field `undefined`.
+- Import `retry` from `genkit/model/middleware`. `genkit/middleware` has types but isn't in the package's `exports`, so the worker fails to boot. Cap `maxDelayMs` so retries can't outlast the function's wall-clock limit.
+- Pick models by tier (`MODELS` / `modelFor()` in `genkit.ts`), not raw IDs. The plugin resolves IDs it doesn't know by name, so a newer model needs no plugin bump.
+- Context providers run only on the HTTP path. A flow started from the Genkit Dev UI's Run button has no user and fails `UNAUTHENTICATED` by design. Get traces by driving `dev.ts` over HTTP under `genkit start`.
+- `[functions.ai]` in `supabase/config.toml` is what deploys the function (the GitHub integration ships functions declared there) and keeps `verify_jwt` on. Deno is pinned to 2.1.4 in `pr-checks.yml` and `verify.sh` to match the edge runtime, so bump them together.
+- Tests: `deno test` with a fake model (`ai.defineModel`) and a fake Supabase client, no network. Flutter tests override the notifier's `callFlow()`. The debug-only Profile → "Test AI connection" button (`AiSmokeTestNotifier`, `smokeTest` flow) is the end-to-end check. `functions.invoke` doesn't consume SSE, so a streaming flow would need `package:genkit/client.dart`'s `defineRemoteAction` instead. **No per-user rate limit or spend cap exists yet; add one before shipping a user-facing AI feature.**
 
 ## Domain rules
 

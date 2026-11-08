@@ -385,6 +385,16 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Genkit flows (supabase/functions/ai). Only called from the app via
+# `functions.invoke` with the user's session JWT, so the platform JWT check stays
+# on; auth.ts verifies the token again and builds the RLS-scoped client.
+#
+# This block is also what deploys the function: the Supabase GitHub
+# integration's "Deploy to production" ships Edge Functions *declared here*
+# (alongside migrations) on merge to main. Don't remove it.
+[functions.ai]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327
