@@ -27,6 +27,9 @@ Future<void> main() async {
         if (release.isNotEmpty) options.release = release;
         const dist = String.fromEnvironment('SENTRY_DIST');
         if (dist.isNotEmpty) options.dist = dist;
+        // Opt-in since sentry_flutter 10; keeps the iOS/macOS capture of
+        // failed native HTTP requests that v9 enabled by default.
+        options.captureNativeFailedRequests = true;
       },
       appRunner: () async {
         // Inside the app runner so a failed Supabase init is reported.
