@@ -88,9 +88,11 @@ jobs:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+          IOS_DEV_CERT_P12: ${{ secrets.IOS_DEV_CERT_P12 }}
+          IOS_DEV_CERT_PASSWORD: ${{ secrets.IOS_DEV_CERT_PASSWORD }}
         run: |
           missing=()
-          for name in SUPABASE_URL SUPABASE_PUBLISHABLE_KEY APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY_P8; do
+          for name in SUPABASE_URL SUPABASE_PUBLISHABLE_KEY APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY_P8 IOS_DEV_CERT_P12 IOS_DEV_CERT_PASSWORD; do
             [ -n "${!name}" ] || missing+=("$name")
           done
           if [ ${#missing[@]} -ne 0 ]; then
@@ -135,14 +137,50 @@ jobs:
             --dart-define=SENTRY_RELEASE="$SENTRY_RELEASE" \
             --dart-define=SENTRY_DIST="$SENTRY_DIST"
 
-      # The archive is built unsigned on purpose; the export step below does
-      # all the signing. Release signs with "iPhone Developer", and a
-      # development certificate isn't cloud-managed: its private key has to
-      # be in the local keychain. Every fresh runner has an empty keychain,
-      # so a signed archive made Xcode mint a brand-new Apple Development
+      # The archive must be signed (an unsigned one fails export: Xcode
+      # replaces the static Sentry.framework binary with a stub that only
+      # the archive's CodeSign step signs properly). Release signs with an
+      # Apple Development identity, which isn't cloud-managed: its private
+      # key has to be in the local keychain. A fresh runner's keychain is
+      # empty, so without this step Xcode minted a brand-new development
       # certificate on every run until the account hit Apple's cap ("Your
-      # account has reached the maximum number of certificates").
-      - name: Archive (unsigned)
+      # account has reached the maximum number of certificates"). Importing
+      # one long-lived certificate from secrets makes every run reuse it.
+      - name: Install development signing certificate
+        env:
+          IOS_DEV_CERT_P12: ${{ secrets.IOS_DEV_CERT_P12 }}
+          IOS_DEV_CERT_PASSWORD: ${{ secrets.IOS_DEV_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
+          CERT_PATH="$RUNNER_TEMP/dev-cert.p12"
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+
+          echo "$IOS_DEV_CERT_P12" | base64 --decode > "$CERT_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$IOS_DEV_CERT_PASSWORD" -f pkcs12 -A -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" > /dev/null
+          # Put it on the search list so Xcode's automatic signing finds it.
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+          rm -f "$CERT_PATH"
+
+          # If the identity didn't import, Xcode would quietly create a new
+          # certificate again, so stop here instead.
+          identities="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH")"
+          echo "$identities"
+          grep -q "Apple Development" <<< "$identities" || {
+            echo "::error::IOS_DEV_CERT_P12 didn't import as an Apple Development signing identity (certificate + private key). See docs/build.md."
+            exit 1
+          }
+
+      # -allowProvisioningUpdates plus the API key lets Xcode fetch/refresh
+      # the development profile for the certificate imported above.
+      - name: Archive
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: |
           set -o pipefail
           xcodebuild archive \
@@ -151,8 +189,18 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$ARCHIVE_PATH" \
-            CODE_SIGNING_ALLOWED=NO \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
+            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
             | tee "$RUNNER_TEMP/xcodebuild-archive.log"
+          # Certificates Xcode creates through the API key are named
+          # "Created via API". Seeing one means the imported certificate
+          # wasn't used (expired or revoked?) and a new one was just minted.
+          if grep -q 'Signing Identity:.*Created via API' "$RUNNER_TEMP/xcodebuild-archive.log"; then
+            echo "::error::Xcode created a new development certificate instead of using IOS_DEV_CERT_P12. Revoke the new 'Created via API' certificate and check the secret (docs/build.md)."
+            exit 1
+          fi
 
       # ios/ExportOptions.plist has destination=upload, so this step signs
       # the IPA for App Store distribution and uploads it to App Store Connect.
@@ -202,6 +250,10 @@ jobs:
             ${{ runner.temp }}/export/*.log
           if-no-files-found: ignore
 
-      - name: Remove App Store Connect API key
+      - name: Remove App Store Connect API key and signing keychain
         if: always()
-        run: rm -f "$ASC_KEY_PATH"
+        run: |
+          rm -f "$ASC_KEY_PATH"
+          if [ -n "${KEYCHAIN_PATH:-}" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+          fi
