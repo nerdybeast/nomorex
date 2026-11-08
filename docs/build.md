@@ -219,15 +219,26 @@ GitHub-hosted `macos-26` runner, which is free because the repo is public.
 1.4.2 builds 312, 313, ...), which TestFlight accepts because the build number
 always goes up.
 
-**Signing is cloud-managed.** No certificate or provisioning profile is stored
-anywhere. `xcodebuild archive` builds an **unsigned** archive
-(`CODE_SIGNING_ALLOWED=NO`), and `xcodebuild -exportArchive` runs with
-`-allowProvisioningUpdates` and an App Store Connect API key, so Xcode signs
-with the team's cloud-managed distribution certificate and creates/refreshes
-the App Store profile itself. Keep the archive unsigned: signing it uses the
-Release config's development identity, whose private key must live in the
-local keychain, so every fresh runner would create a new Apple Development
-certificate until the account hits Apple's certificate limit. `ios/ExportOptions.plist` sets `destination=upload`, so
+**Signing uses two certificates.** Both `xcodebuild archive` and
+`xcodebuild -exportArchive` run with `-allowProvisioningUpdates` and an App
+Store Connect API key, so Xcode creates/refreshes provisioning profiles itself
+and no profile is stored.
+
+- **Archive** signs with one long-lived **Apple Development** certificate,
+  imported from the `IOS_DEV_CERT_P12` secret into a temporary keychain.
+  Development certificates aren't cloud-managed (the private key must be in
+  the local keychain), so without it Xcode creates a new "Created via API"
+  certificate on every fresh runner until the account hits Apple's
+  certificate limit. The archive step fails if that ever happens again.
+- **Export** re-signs with the team's **cloud-managed distribution
+  certificate** (its private key stays at Apple, nothing stored).
+
+Don't make the archive unsigned (`CODE_SIGNING_ALLOWED=NO`) to avoid the
+development certificate. That was tried: Sentry ships a static framework,
+Xcode embeds it as a generated stub binary that only the archive's CodeSign
+step signs, and export then fails with "Invalid Signature … Sentry.framework".
+
+`ios/ExportOptions.plist` sets `destination=upload`, so
 the export step also does the upload. `flutter build ipa` isn't used because it
 can't pass the API-key flags through to xcodebuild. Instead
 `flutter build ios --config-only` bakes the dart-defines and version into the
@@ -296,11 +307,28 @@ after rotating the key.
    | `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID |
    | `APP_STORE_CONNECT_KEY_ID` | Key ID |
    | `APP_STORE_CONNECT_API_KEY_P8` | base64 of the .p8 (see below) |
+   | `IOS_DEV_CERT_P12` | base64 of an Apple Development certificate + private key, as .p12 (see below) |
+   | `IOS_DEV_CERT_PASSWORD` | the password set when exporting that .p12 |
 
    ```bash
    base64 -i ~/Downloads/AuthKey_XXXXXXXXXX.p8 | pbcopy   # then paste as the secret value
    gh secret list | grep APP_STORE                        # confirm all three exist
    ```
+
+   For the .p12: in **Keychain Access**, open **My Certificates**, find
+   **Apple Development: <name> (<team>)**, expand it to check it has a private
+   key, right-click the certificate and **Export** as `.p12` with a password.
+   Then:
+
+   ```bash
+   base64 -i ~/Downloads/dev-cert.p12 | gh secret set IOS_DEV_CERT_P12
+   gh secret set IOS_DEV_CERT_PASSWORD   # prompts for the password
+   rm ~/Downloads/dev-cert.p12
+   ```
+
+   Development certificates expire after a year. When it does, the archive
+   step fails (instead of quietly creating a new certificate). Export a fresh
+   one and replace both secrets.
 
    `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `SENTRY_DSN` are the same
    secrets the web deploy uses. The workflow's first step fails with a clear
@@ -331,10 +359,12 @@ processing finishes or fails.
   - a lapsed membership (step 1)
   - an API key that isn't Admin, or is an Individual key (step 4)
   - a missing App ID or app record (steps 2–3)
-  - "Your account has reached the maximum number of certificates": something
-    signed with a development identity on a runner again (see "Signing is
-    cloud-managed" above). Revoke the extra **Apple Development**
-    certificates at
+  - "Your account has reached the maximum number of certificates", or the
+    archive step's "Xcode created a new development certificate" error: the
+    `IOS_DEV_CERT_P12` certificate wasn't usable (expired, revoked or
+    missing its private key) so Xcode minted new ones (see "Signing uses two
+    certificates" above). Replace the secret, then revoke the extra
+    "Created via API" **Apple Development** certificates at
     <https://developer.apple.com/account/resources/certificates/list>
     (revoking development certs doesn't affect App Store builds)
 - **"bundle version must be higher".** The build number is the commit count
