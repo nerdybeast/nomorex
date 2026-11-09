@@ -122,6 +122,7 @@ A lifter is told once, before anything is uploaded, that their files are process
 - **Illegible content**: readable parts are shown and unclear values are flagged. The app does not invent values it could not read.
 - **Too large**: files over the count, size or page limits are refused before upload with a message stating the limit, and do not count.
 - **Unsupported or unreadable files**: wrong formats, corrupt files and password-protected PDFs get a specific message and do not count.
+- **Disguised files**: a file whose contents don't match an accepted type, such as a program renamed to look like a photo, is deleted before any AI processing and the import fails with a clear message. Uploaded files are never opened, run or shown back to the user by the app.
 - **Processing runs out of time**: the import fails with a suggestion to submit fewer pages, and does not count.
 - **Processing dies unexpectedly**: an import that has been processing longer than is possible is shown as failed rather than processing forever, and does not count.
 - **Double submission of Accept**, including from two devices: exactly one workout or program is created.
@@ -145,6 +146,7 @@ A lifter is told once, before anything is uploaded, that their files are process
 - **FR-001**: Users MUST be able to start an import by taking a photo, choosing one or more images, or choosing one PDF.
 - **FR-002**: An import MUST contain either a capped number of images or exactly one PDF, never a mix.
 - **FR-003**: System MUST refuse files over the image-count, file-size or page limits before upload and state the limit. Limits MUST be set so an accepted submission can finish within the available processing time.
+- **FR-003a**: Only JPEG, PNG, WebP and PDF files MAY be processed. The server MUST confirm each file's type from its actual contents, regardless of its name or declared type, before any AI processing. A file that fails this check MUST be deleted and the import failed with a clear message. The import MUST NOT count against the user's limits, but MUST count toward the limit on uncounted failures. Photos taken in other formats, such as HEIC, MUST be converted to an accepted format on the device before upload.
 - **FR-004**: System MUST show the one-time AI-processing notice before a user's first upload, name the provider, and record the acceptance. No file may be uploaded without it.
 
 **Processing**
