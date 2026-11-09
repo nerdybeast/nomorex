@@ -2,6 +2,7 @@ import { withActionOptions } from '@genkit-ai/fetch';
 import { type Ai, modelFor } from '../genkit.ts';
 import { supabaseAuth } from '../auth.ts';
 import { defineSmokeTest } from './smoke_test.ts';
+import { defineStartAiImport } from './start_ai_import.ts';
 
 /**
  * Every flow this function serves, each wrapped with the Supabase auth context
@@ -16,5 +17,6 @@ export function defineFlows(ai: Ai) {
   const auth = supabaseAuth();
   return [
     withActionOptions(defineSmokeTest(ai, modelFor('fast')), { contextProvider: auth }),
+    withActionOptions(defineStartAiImport(ai, modelFor('standard')), { contextProvider: auth }),
   ];
 }
