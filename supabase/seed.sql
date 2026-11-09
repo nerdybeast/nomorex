@@ -3015,3 +3015,7 @@ where r.id = ps.id and coalesce(r.set_m, r.ex_m) is not null;
 update public.program_exercises
 set notes = nullif(regexp_replace(notes, ',?\s*\d+-\d+ reps', ''), '')
 where notes ~ '\d+-\d+ reps';
+
+-- AI imports ship switched off in production until launch (#88). Local and CI
+-- stacks run with them on.
+update public.ai_import_limits set enabled = true;
