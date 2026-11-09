@@ -385,15 +385,10 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
-# Genkit flows (supabase/functions/ai). Only called from the app via
-# `functions.invoke` with the user's session JWT, so the platform JWT check stays
-# on; auth.ts verifies the token again and builds the RLS-scoped client.
-#
-# This block is also what deploys the function: the Supabase GitHub
-# integration's "Deploy to production" ships Edge Functions *declared here*
-# (alongside migrations) on merge to main. Don't remove it.
-[functions.ai]
-verify_jwt = true
+# Don't declare [functions.ai] here. The Supabase GitHub integration deploys any
+# function declared in this file, and it can't bundle one this large, so the
+# deploy fails with a 413. .github/workflows/deploy-functions.yml deploys it
+# instead, with JWT verification on by default.
 
 [analytics]
 enabled = true
