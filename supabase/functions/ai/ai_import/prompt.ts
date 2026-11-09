@@ -17,6 +17,7 @@ Omit every field that is absent. Never write null. Numbers are JSON numbers.
 {
   "type": "workout" | "program" | "none",
   "title": string,
+  "handwritten": true,
   "weeks": [{
     "label": string,
     "days": [{
@@ -48,6 +49,7 @@ Reading rules:
 - Copy only what is written. Never invent, calculate or assume a value.
 - If a value is present but you cannot read it, omit it and name it in "unreadable".
 - "type" is "workout" for one session, "program" for several days or weeks, and "none" if the file has no training content.
+- Set "handwritten" to true when any exercise, set or weight in the file is written by hand, including handwriting on a printed form. Omit it for typed or printed content.
 - A workout goes in one week with one day.
 - Keep two sessions on one day as two separate day entries with the same weekday.
 - Omit "unit" when the file prints no unit for that weight. Never guess one.

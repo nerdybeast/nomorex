@@ -67,6 +67,8 @@ export interface ImportResult {
   weeks: ImportWeek[];
   unstructured: UnstructuredItem[];
   flags: {
+    /** Written by hand, so the review tells the user to check every weight. */
+    handwritten: boolean;
     /** An absolute weight has no printed unit, so Accept needs a kg/lb choice. */
     needsUnit: boolean;
     uncertainExercises: boolean;
@@ -423,6 +425,7 @@ export function normalizeResult(
       weeks,
       unstructured,
       flags: {
+        handwritten: raw.handwritten === true,
         needsUnit: allSets.some((s) => s.weight !== undefined && !s.unit),
         uncertainExercises: allExercises.some((e) => e.match === null || e.match.confidence === 'low') ||
           allSets.some((s) => s.basisExercise && s.basisExercise.match === null),

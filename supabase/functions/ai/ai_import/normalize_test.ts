@@ -128,6 +128,13 @@ Deno.test('keeps values the model flagged as unreadable', () => {
   assertEquals(set, { sets: 3, percent: 70, unreadable: ['reps'] });
 });
 
+Deno.test('flags a handwritten file only when the model says it is', () => {
+  const body = workout([{ sets: 3, reps: 5, percent: 80 }]);
+  assertEquals(ok({ ...body, handwritten: true }).flags.handwritten, true);
+  assertEquals(ok(body).flags.handwritten, false);
+  assertEquals(ok({ ...body, handwritten: 'maybe' }).flags.handwritten, false);
+});
+
 Deno.test('a name already in the catalog is an exact match, ignoring case and spaces', () => {
   const r = ok(workout([{ sets: 1, reps: 1, percent: 90 }], { name: '  back squat ', match: 'Front Squat' }));
   assertEquals(firstExercise(r).match, { exerciseId: 'squat', name: 'Back Squat', confidence: 'exact' });
