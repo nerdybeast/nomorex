@@ -138,7 +138,8 @@ function setup(options: Options = {}) {
         wallClock = () => {};
       };
     },
-    deadlineMs: options.deadlineMs ?? 5000,
+    // Well past the retry backoff, so only the deadline test can time out.
+    deadlineMs: options.deadlineMs ?? 60_000,
   };
 
   const flow = defineStartAiImport(ai, model, runtime);
