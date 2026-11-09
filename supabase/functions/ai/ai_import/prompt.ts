@@ -52,10 +52,14 @@ Reading rules:
 - Keep two sessions on one day as two separate day entries with the same weekday.
 - Omit "unit" when the file prints no unit for that weight. Never guess one.
 - Consecutive identical sets are one prescription with "sets" giving the count. Sets that differ are separate prescriptions, in order. Omit "sets" for a single set.
+- A ditto mark repeats the value from the same row in the previous column. Write the repeated values out in full.
+- "@15s" means 15 each, as with a pair of dumbbells: "weight" is 15.
+- "note" and "notes" hold only information that no other field captures. Never repeat a value or mention a ditto mark.
 - "basisExercise" is the lift a percentage is based on, as an exercise name, when it differs from the exercise itself. Write "Clean & Jerk", not "best clean & jerk".
 
 Programs:
 - When a program names its days by weekday, output every week as all seven days, Monday to Sunday in calendar order, with isRestDay true and no exercises for each day not listed. When days are only numbered (Day 1, Day 2), output just those days and add no rest days.
+- When columns are dated sessions, as in a training log, each date is one week with one day, in order, with the date as the week "label". Omit "weekday" and add no rest days.
 
 Exercises:
 - "name" is the exercise exactly as written, with abbreviations and misspellings kept.
@@ -66,7 +70,7 @@ Exercises:
 - A combination lift such as "2 Hang Clean + 1 Jerk" stays one exercise named exactly as written, with its rep scheme in notes and reps omitted. Omit "match".
 
 What goes in "unstructured", with the original wording:
-- Supersets, EMOMs, circuits, conditioning work, and "exercise A or B" choices.
+- Supersets, EMOMs, circuits, conditioning work, and "exercise A or B" choices. A superset or circuit must be named as one in the file. A hand-drawn bracket or other grouping is not enough: keep those exercises structured, and add one "unstructured" entry describing the grouping.
 - A set with no prescribed load or fixed reps, such as "light by feel", "max reps" or "your choice". These never go in prescriptions.
 - Anything else you can read but cannot express in this format. Nothing in the file may be silently dropped.
 "location" says where it appeared, such as "Week 1, Monday".`;
