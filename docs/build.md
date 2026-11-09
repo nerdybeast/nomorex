@@ -500,7 +500,8 @@ Schema is managed as code under `supabase/migrations/`.
 Migrations are applied to production by the **Supabase GitHub integration**,
 which watches `supabase/` and deploys on push to `main`. The `Deploy` workflow
 in `.github/workflows/deploy.yml` only builds and publishes the web app; it no
-longer runs `supabase db push`.
+longer runs `supabase db push`. The integration doesn't deploy the AI edge
+function; see "AI backend" below.
 
 The two run independently, so a schema change and the app build that depends on
 it are not ordered. Ship additive migrations ahead of the code that needs them.
@@ -573,11 +574,25 @@ isn't installed. Deno is pinned to 2.1.4 to match the edge runtime.
 
 ### Deployment
 
-The Supabase GitHub integration deploys the function on merge to `main`, the
-same run that applies migrations. It ships Edge Functions **declared in
-`supabase/config.toml`**, which is why `[functions.ai]` is there. Set the
-production secret before the first deploy. Deploy the function ahead of any app
-build that calls a new flow, the same rule as additive migrations.
+`.github/workflows/deploy-functions.yml` deploys the function on any push to
+`main` that changes `supabase/functions/ai/**`. It can also be run by hand from
+the Actions tab. After deploying, it confirms that a request with no session gets
+a 401. Deploy the function ahead of any app build that calls a new flow, the same
+rule as additive migrations.
+
+**Don't declare `[functions.ai]` in `supabase/config.toml`.** The Supabase GitHub
+integration deploys any function declared there, bundling it on Supabase's
+servers, where the limit is 5 MB. It fails with `413 request entity too large`.
+The CLI bundles locally with Docker, where the limit is 20 MB. The function is
+about 18.7 MB, nearly all of it Genkit and its dependencies, so check the size
+before adding npm dependencies. New flows barely change it.
+
+Setup, once per project:
+
+1. Set the production `ANTHROPIC_API_KEY` (see Secrets above).
+2. Create a Supabase access token (Dashboard → Account → Access Tokens) and add
+   it as the `SUPABASE_ACCESS_TOKEN` repository secret. A scoped token needs
+   `edge_functions_write`, `edge_functions_read` and `projects_read`.
 
 ## E2E tests
 

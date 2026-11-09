@@ -22,6 +22,7 @@ on:
       - 'windows/**'
       - '.github/workflows/pr-checks.yml'
       - '.github/workflows/deploy.yml'
+      - '.github/workflows/deploy-functions.yml'
       - '.gitignore'
   workflow_dispatch:
 
