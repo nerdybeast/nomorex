@@ -315,10 +315,12 @@ select throws_like($$ select public.ai_import_start(gen_random_uuid()) $$,
 
 reset role;
 delete from public.ai_import_jobs where user_id = (select owner_id from t);
+-- Backdated by seconds, with a short limit to match: the job has to be dead yet
+-- still fall on today's UTC date for the failure cap below to count it.
 update public.ai_import_limits set daily_limit = 2, monthly_limit = 100,
-  uncounted_failure_daily_limit = 3;
+  uncounted_failure_daily_limit = 3, max_job_seconds = 1;
 insert into public.ai_import_jobs (id, user_id, import_id, started_at)
-select '10000000-0000-4000-8000-000000000002'::uuid, owner_id, gen_random_uuid(), now() - interval '1 hour'
+select '10000000-0000-4000-8000-000000000002'::uuid, owner_id, gen_random_uuid(), now() - interval '2 seconds'
 from t;
 
 select pg_temp.act_as((select owner_id from t));
