@@ -213,17 +213,34 @@ jobs:
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        # One retry, and only when Apple's API timed out. Run 24 failed with
+        # "The request timed out" followed by "No profiles for
+        # 'com.nomorex.app' were found": the cloud-managed profile fetch never
+        # completed, and the next run succeeded unchanged. Any other failure
+        # (signing, a rejected build) fails at once, since a retry can't fix
+        # it. Each attempt keeps its own log for the artifact below.
         run: |
           set -o pipefail
-          xcodebuild -exportArchive \
-            -archivePath "$ARCHIVE_PATH" \
-            -exportOptionsPlist ios/ExportOptions.plist \
-            -exportPath "$EXPORT_PATH" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$ASC_KEY_PATH" \
-            -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
-            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
-            | tee "$RUNNER_TEMP/xcodebuild-export.log"
+          for attempt in 1 2; do
+            log="$RUNNER_TEMP/xcodebuild-export-$attempt.log"
+            rm -rf "$EXPORT_PATH"
+            if xcodebuild -exportArchive \
+                -archivePath "$ARCHIVE_PATH" \
+                -exportOptionsPlist ios/ExportOptions.plist \
+                -exportPath "$EXPORT_PATH" \
+                -allowProvisioningUpdates \
+                -authenticationKeyPath "$ASC_KEY_PATH" \
+                -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
+                -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
+                | tee "$log"; then
+              break
+            fi
+            if [ "$attempt" -eq 2 ] || ! grep -q "The request timed out" "$log"; then
+              exit 1
+            fi
+            echo "::warning::Export timed out talking to Apple; retrying once in 60s."
+            sleep 60
+          done
           echo "Uploaded ${{ needs.determine-version.outputs.build-name }} (${{ needs.determine-version.outputs.build-number }}) to App Store Connect. It appears in TestFlight once Apple finishes processing." >> "$GITHUB_STEP_SUMMARY"
 
       # dSYMs make native iOS crashes readable in Sentry (Apple gets its own
