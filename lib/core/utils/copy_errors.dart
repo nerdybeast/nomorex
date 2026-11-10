@@ -4,6 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// subtitle on copies.
 const String kCopyNotShareableMessage = "Copies of other people's content can't be shared.";
 
+/// The Public switch's subtitle on an imported workout or program. It may not
+/// be someone else's content, so the copy wording would be wrong.
+const String kImportNotShareableMessage = "Imported workouts and programs can't be shared.";
+
 /// User-facing message for a failed `copy_workout` / `copy_program` call or a
 /// rejected visibility change on a copy.
 ///

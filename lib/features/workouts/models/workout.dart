@@ -21,6 +21,7 @@ class Workout {
     this.sessionNotes,
     this.ownerDisplayName,
     this.isCopy = false,
+    this.isImported = false,
     this.copiedFromUserId,
     this.copiedFromDisplayName,
     this.copiedFromWorkoutId,
@@ -64,6 +65,10 @@ class Workout {
   /// can never be made public — both enforced in the database. Render the
   /// attribution through `copyAttributionLabel()` in core/utils/copy_attribution.dart.
   final bool isCopy;
+
+  /// Created by AI import. Only chooses the badge and wording; [isCopy] is what
+  /// keeps it private.
+  final bool isImported;
   final String? copiedFromUserId;
 
   /// The author's display name, snapshotted when the copy was made.
@@ -109,6 +114,7 @@ class Workout {
       sessionNotes: json['session_notes'] as String?,
       ownerDisplayName: (json['profiles'] as Map<String, dynamic>?)?['display_name'] as String?,
       isCopy: (json['is_copy'] as bool?) ?? false,
+      isImported: (json['is_imported'] as bool?) ?? false,
       copiedFromUserId: json['copied_from_user_id'] as String?,
       copiedFromDisplayName: json['copied_from_display_name'] as String?,
       copiedFromWorkoutId: json['copied_from_workout_id'] as String?,

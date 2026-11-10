@@ -88,6 +88,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 alignment: Alignment.centerLeft,
                 child: CopiedFromBadge(
                   isCopy: true,
+                  isImported: workout.isImported,
                   copiedFromUserId: workout.copiedFromUserId,
                   copiedFromDisplayName: workout.copiedFromDisplayName,
                   copiedFromSourceId: workout.copiedFromSourceId,

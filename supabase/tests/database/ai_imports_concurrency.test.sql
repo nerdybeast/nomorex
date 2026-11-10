@@ -1,4 +1,4 @@
--- Two real connections race to start an import (#81). A single test
+-- Two real connections race to start an import (#81) and to accept one (#83). A single test
 -- transaction can't overlap with itself, so this uses dblink, which means its
 -- rows really commit. It clears them at both ends, and relies on seed.sql
 -- having switched imports on.
@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 create extension if not exists dblink with schema extensions;
-select plan(5);
+select plan(9);
 
 create temp table t on commit drop as
 select (select id from auth.users where email = 'b@b.com') as user_id;
@@ -71,6 +71,48 @@ select is(
   (select count(*)::int from public.ai_import_jobs
    where user_id = (select user_id from t) and status = 'processing'),
   1, 'exactly one job is running');
+
+-- Two accepts of one job, which must create exactly one workout.
+create function pg_temp.accept_sql() returns text language sql as $$
+  select $q$ select (public.ai_import_accept(
+    '30000000-0000-4000-8000-000000000001'::uuid,
+    '{"title": "Concurrent accept", "weeks": [{"days": [{"isRestDay": false, "exercises": []}]}]}'::jsonb,
+    '2026-11-09'::date) ->> 'workout_id')::uuid $q$;
+$$;
+
+select dblink_exec('setup', format(
+  $q$ insert into public.ai_import_jobs (id, user_id, import_id, status, detected_type)
+      values ('30000000-0000-4000-8000-000000000001', %L, gen_random_uuid(), 'ready', 'workout') $q$,
+  (select user_id from t)));
+
+select dblink_exec('first', 'begin');
+select * from dblink('first', pg_temp.act_as_sql((select user_id from t))) as r(a text, b text);
+create temp table first_accept on commit drop as
+select id from dblink('first', pg_temp.accept_sql()) as r(id uuid);
+select isnt((select id from first_accept), null, 'the first accept creates a workout');
+
+select dblink_exec('second', 'begin');
+select * from dblink('second', pg_temp.act_as_sql((select user_id from t))) as r(a text, b text);
+select dblink_send_query('second', pg_temp.accept_sql());
+select pg_sleep(0.3);
+select is(dblink_is_busy('second'), 1, 'the second accept waits for the first');
+
+select dblink_exec('first', 'commit');
+
+select is(
+  (select id from dblink_get_result('second') as r(id uuid)),
+  (select id from first_accept), 'the second accept gets the workout the first created');
+select * from dblink_get_result('second', false) as r(id uuid);
+select dblink_exec('second', 'commit');
+
+select is(
+  (select count(*)::int from public.workouts
+   where user_id = (select user_id from t) and title = 'Concurrent accept'),
+  1, 'exactly one workout exists');
+
+select dblink_exec('setup', format(
+  $q$ delete from public.workouts where user_id = %L and title = 'Concurrent accept' $q$,
+  (select user_id from t)));
 
 select pg_temp.clear();
 select dblink_disconnect('setup');

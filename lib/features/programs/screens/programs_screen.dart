@@ -218,6 +218,7 @@ class _ProgramTile extends ConsumerWidget {
       badge: program.isCopy
           ? CopiedFromBadge(
               isCopy: true,
+              isImported: program.isImported,
               copiedFromUserId: program.copiedFromUserId,
               copiedFromDisplayName: program.copiedFromDisplayName,
               copiedFromSourceId: program.copiedFromProgramId,

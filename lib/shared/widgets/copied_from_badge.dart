@@ -2,20 +2,22 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/copy_attribution.dart';
 
-/// "Copied from …" pill for a workout or program the user saved from
-/// Community (or derived from such a copy). Renders nothing for content the
+/// "Copied from …" or "Imported" pill for a workout or program the user saved
+/// from Community or imported from a file (or derived from either). Renders nothing for content the
 /// user created themselves, so it can be dropped unconditionally into any
 /// card or header.
 class CopiedFromBadge extends StatelessWidget {
   const CopiedFromBadge({
     super.key = const Key('copied_from_badge'),
     required this.isCopy,
+    this.isImported = false,
     this.copiedFromUserId,
     this.copiedFromDisplayName,
     this.copiedFromSourceId,
   });
 
   final bool isCopy;
+  final bool isImported;
   final String? copiedFromUserId;
   final String? copiedFromDisplayName;
   final String? copiedFromSourceId;
@@ -24,6 +26,7 @@ class CopiedFromBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = copyAttributionLabel(
       isCopy: isCopy,
+      isImported: isImported,
       copiedFromUserId: copiedFromUserId,
       copiedFromDisplayName: copiedFromDisplayName,
       copiedFromSourceId: copiedFromSourceId,

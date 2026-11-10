@@ -151,6 +151,7 @@ class ProgramEditScreen extends ConsumerWidget {
                   alignment: Alignment.centerLeft,
                   child: CopiedFromBadge(
               isCopy: true,
+              isImported: program.isImported,
               copiedFromUserId: program.copiedFromUserId,
               copiedFromDisplayName: program.copiedFromDisplayName,
               copiedFromSourceId: program.copiedFromProgramId,
@@ -176,7 +177,9 @@ class ProgramEditScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               ToggleCard(
                 title: 'Public',
-                subtitle: program.isCopy
+                subtitle: program.isImported
+                    ? kImportNotShareableMessage
+                    : program.isCopy
                     ? kCopyNotShareableMessage
                     : 'Other users can view this program',
                 value: program.isPublic,

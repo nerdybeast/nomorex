@@ -93,6 +93,7 @@ class ProgramDetailScreen extends ConsumerWidget {
                 alignment: Alignment.centerLeft,
                 child: CopiedFromBadge(
               isCopy: true,
+              isImported: program.isImported,
               copiedFromUserId: program.copiedFromUserId,
               copiedFromDisplayName: program.copiedFromDisplayName,
               copiedFromSourceId: program.copiedFromProgramId,

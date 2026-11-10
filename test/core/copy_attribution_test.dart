@@ -15,6 +15,23 @@ void main() {
     );
   });
 
+  test('labels an import, which has no author to credit', () {
+    expect(copyAttributionLabel(isCopy: true, isImported: true), kImportedLabel);
+  });
+
+  test('an import never falls back to the copied-from wording', () {
+    expect(
+      copyAttributionLabel(
+        isCopy: true,
+        isImported: true,
+        copiedFromUserId: 'u1',
+        copiedFromDisplayName: 'BeastModeB',
+        copiedFromSourceId: 'w1',
+      ),
+      'Imported',
+    );
+  });
+
   test('names the original author', () {
     expect(
       copyAttributionLabel(

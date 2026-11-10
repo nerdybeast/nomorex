@@ -5,12 +5,13 @@ import '../models/workout_set.dart';
 
 /// The copy-attribution columns to carry onto a new workout created *from*
 /// [source] (duplicate, repeat, the next instance after finishing), so a copy
-/// of another user's workout stays a copy — credited and unshareable — however
-/// it's reused. Empty for the user's own workouts.
+/// of another user's workout, or an import, stays one — labelled and unshareable
+/// — however it's reused. Empty for the user's own workouts.
 Map<String, dynamic> copyAttributionColumns(Workout source) {
   if (!source.isCopy) return const {};
   return {
     'is_copy': true,
+    'is_imported': source.isImported,
     'copied_from_user_id': source.copiedFromUserId,
     'copied_from_display_name': source.copiedFromDisplayName,
     'copied_from_workout_id': source.copiedFromWorkoutId,

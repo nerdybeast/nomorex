@@ -125,7 +125,9 @@ class EditWorkoutScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     ToggleCard(
                       title: 'Public',
-                      subtitle: workout.isCopy
+                      subtitle: workout.isImported
+                          ? kImportNotShareableMessage
+                          : workout.isCopy
                           ? kCopyNotShareableMessage
                           : 'Other users can view this workout',
                       value: workout.isPublic,

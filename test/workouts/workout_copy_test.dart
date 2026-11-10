@@ -15,6 +15,7 @@ import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
 import 'package:nomorex/features/workouts/screens/edit_workout_screen.dart';
 import 'package:nomorex/features/workouts/screens/workout_detail_screen.dart';
 import 'package:nomorex/features/workouts/screens/workouts_screen.dart';
+import 'package:nomorex/features/workouts/utils/workout_copier.dart';
 import 'package:nomorex/shared/models/one_rep_max.dart';
 
 class _StubWorkoutsNotifier extends WorkoutsNotifier {
@@ -46,7 +47,7 @@ class _StubExercisesNotifier extends ExercisesNotifier {
 
 /// A saved copy of BeastModeB's workout: one Front Squat set programmed off
 /// *their* Back Squat ('their-bs' — an id the viewer doesn't own).
-Workout _copiedWorkout({bool isCopy = true}) => Workout(
+Workout _copiedWorkout({bool isCopy = true, bool isImported = false}) => Workout(
       id: 'w1',
       userId: 'viewer',
       title: 'Accessory Grinder',
@@ -54,9 +55,10 @@ Workout _copiedWorkout({bool isCopy = true}) => Workout(
       updatedAt: DateTime(2026, 10, 12),
       workoutGroupId: 'g1',
       isCopy: isCopy,
-      copiedFromUserId: isCopy ? 'author' : null,
-      copiedFromDisplayName: isCopy ? 'BeastModeB' : null,
-      copiedFromWorkoutId: isCopy ? 'w0' : null,
+      isImported: isImported,
+      copiedFromUserId: isCopy && !isImported ? 'author' : null,
+      copiedFromDisplayName: isCopy && !isImported ? 'BeastModeB' : null,
+      copiedFromWorkoutId: isCopy && !isImported ? 'w0' : null,
       exercises: const [
         WorkoutExercise(
           id: 'we1',
@@ -102,6 +104,58 @@ Future<void> _pumpDetail(
 }
 
 void main() {
+  test('a workout derived from an import stays marked imported', () {
+    final columns = copyAttributionColumns(_copiedWorkout(isImported: true));
+
+    expect(columns['is_copy'], isTrue);
+    expect(columns['is_imported'], isTrue);
+    expect(columns['copied_from_user_id'], isNull);
+  });
+
+  test('a workout derived from a Community copy is not marked imported', () {
+    expect(copyAttributionColumns(_copiedWorkout())['is_imported'], isFalse);
+  });
+
+  test('a workout the user created derives no attribution', () {
+    expect(copyAttributionColumns(_copiedWorkout(isCopy: false)), isEmpty);
+  });
+
+  testWidgets('an imported workout is badged Imported on its list card', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          workoutsProvider.overrideWith(
+            () => _StubWorkoutsNotifier([_copiedWorkout(isImported: true)]),
+          ),
+        ],
+        child: const MaterialApp(home: WorkoutsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Imported'), findsOneWidget);
+  });
+
+  testWidgets('the Public switch on an import is disabled and says why', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          workoutDetailProvider('w1').overrideWith(
+            () => _StubWorkoutDetailNotifier(_copiedWorkout(isImported: true)),
+          ),
+          exercisesProvider.overrideWith(() => _StubExercisesNotifier()),
+          unitPreferenceProvider.overrideWithValue('kg'),
+        ],
+        child: const MaterialApp(home: EditWorkoutScreen(workoutId: 'w1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<Switch>(find.byType(Switch)).onChanged, isNull);
+    expect(find.text(kImportNotShareableMessage), findsOneWidget);
+    expect(find.text(kCopyNotShareableMessage), findsNothing);
+  });
+
   testWidgets('a copied workout is badged on its Workouts list card', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
