@@ -11,10 +11,10 @@ class AppConstants {
   static const String routeLanding = '/';
   static const String routeLogin = '/login';
   static const String routeProfile = '/profile';
-  // AI import: choose and upload files. Linked only from Profile in debug
-  // builds until launch (#88).
+  // AI import: choose and upload files. Linked from the Workouts and Programs
+  // app bars (AiImportButton).
   static const String routeAiImport = '/ai-import';
-  // Review one finished import job. The screen itself is #86.
+  // Review one finished import job.
   static String routeAiImportReview(String jobId) => '/ai-import/review/$jobId';
   static const String routeShell = '/shell';
   static const String routeHome = '/shell/home';

@@ -6,11 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:nomorex/features/ai/models/ai_import_limits.dart';
+import 'package:nomorex/features/ai/providers/ai_import_gate_provider.dart';
 import 'package:nomorex/features/ai/providers/ai_import_intake_provider.dart';
 import 'package:nomorex/features/ai/screens/ai_import_screen.dart';
 import 'package:nomorex/features/ai/utils/import_file_check.dart';
 import 'package:nomorex/features/ai/utils/import_file_picker.dart';
 import 'package:nomorex/features/auth/providers/auth_provider.dart';
+
+import 'ai_import_job_fakes.dart';
 
 const _limits = AiImportLimits(maxImages: 8, maxPdfPages: 10, maxImageBytes: 7000000, maxPdfBytes: 20000000);
 
@@ -60,6 +63,7 @@ Future<_StubIntake> _pump(WidgetTester tester, ImportIntakeState initial, {bool 
         aiImportLimitsProvider.overrideWith((ref) async => _limits),
         importFilePickerProvider.overrideWithValue(_FakePicker(canTakePhoto: canTakePhoto)),
         aiImportIntakeProvider.overrideWith(() => intake),
+        aiImportGateProvider.overrideWith(() => FakeGate(const AiImportCheck(allowed: true))),
       ],
       child: const MaterialApp(home: AiImportScreen()),
     ),

@@ -14,6 +14,7 @@ import '../models/workout.dart';
 import '../providers/workouts_provider.dart';
 import '../utils/can_archive_workout.dart';
 import '../utils/confirm_delete_workout_permanently.dart';
+import '../../ai/widgets/ai_import_button.dart';
 
 class WorkoutsScreen extends ConsumerStatefulWidget {
   const WorkoutsScreen({super.key});
@@ -53,6 +54,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                       ref.read(archivedWorkoutsProvider.notifier).refresh();
                     },
             ),
+            const AiImportButton(),
             IconButton(
               icon: const Icon(Icons.history),
               tooltip: 'Workout history',
