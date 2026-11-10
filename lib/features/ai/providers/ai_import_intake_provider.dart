@@ -413,13 +413,19 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
 
   Future<void> removeFiles(List<String> paths) => Supabase.instance.client.storage.from(kAiImportBucket).remove(paths);
 
-  Future<String> startImport(String importId, {String? requestedType}) async {
-    final result = await callGenkitFlow(Supabase.instance.client.functions, 'startAiImport', {
-      'importId': importId,
-      'requestedType': ?requestedType,
-    });
-    return (result as Map)['jobId'] as String;
-  }
+  Future<String> startImport(String importId, {String? requestedType}) =>
+      callStartAiImport(importId, requestedType: requestedType);
+}
+
+/// Starts the AI run over files already uploaded for [importId] and returns
+/// its job ID. Runs it again when the import has a ready or failed job, which
+/// is how a re-run as the other type works. Throws [GenkitFlowException].
+Future<String> callStartAiImport(String importId, {String? requestedType}) async {
+  final result = await callGenkitFlow(Supabase.instance.client.functions, 'startAiImport', {
+    'importId': importId,
+    'requestedType': ?requestedType,
+  });
+  return (result as Map)['jobId'] as String;
 }
 
 /// A file's name in quotes for a message, or "that file" when the platform
