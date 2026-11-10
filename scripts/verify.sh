@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Proves a change the way CI does, in the same order: analyze, widget tests,
+# Proves a change the way CI does, in the same order: generated files, analyze, widget tests,
 # migrations (reset + lint + pgTAP tests), E2E, web build. Built for Claude Code on the web,
 # where the SessionStart hook has already installed the toolchain, but it runs
 # anywhere those tools exist.
@@ -52,6 +52,7 @@ skip() { results+=("SKIP  $1 ($2)"); }
 
 need_docker() { docker info >/dev/null 2>&1; }
 
+stage "generated files up to date" ./scripts/check-generated.sh
 stage "flutter analyze" flutter analyze
 stage "flutter test" flutter test
 
