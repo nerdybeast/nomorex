@@ -268,7 +268,7 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
           'position': pos++,
           'target_reps': batch.reps,
           'target_reps_max': ?batch.repsMax,
-          'weight_mode': 'absolute',
+          'weight_mode': batch.weightKg == null ? 'open' : 'absolute',
           'absolute_weight_kg': batch.weightKg,
           'rpe_min': ?batch.rpeMin,
           'rpe_max': ?batch.rpeMax,

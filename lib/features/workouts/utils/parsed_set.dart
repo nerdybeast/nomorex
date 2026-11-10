@@ -26,7 +26,8 @@ class ParsedSet {
 
 /// One "Add sets (weight)" batch, before `addAbsoluteSets` writes it as
 /// [sets] identical rows. [weightKg] is already converted from the dialog's
-/// display unit.
+/// display unit, and is null for an open-load batch (`weight_mode = 'open'`:
+/// no prescribed load, the lifter picks it).
 class AbsoluteSetBatch {
   const AbsoluteSetBatch({
     required this.sets,
@@ -39,7 +40,7 @@ class AbsoluteSetBatch {
   final int sets;
   final int reps;
   final int? repsMax;
-  final double weightKg;
+  final double? weightKg;
   final double? rpeMin;
   final double? rpeMax;
 }

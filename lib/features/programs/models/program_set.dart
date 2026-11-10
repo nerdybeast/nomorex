@@ -24,7 +24,7 @@ class ProgramSet {
   final String id;
   final String programExerciseId;
   final int position;
-  final String weightMode; // 'percentage' | 'absolute'
+  final String weightMode; // 'percentage' | 'absolute' | 'open' (no set load)
   final int? targetReps;
   /// Top of a rep range; null means a single rep count ([targetReps]).
   final int? targetRepsMax;

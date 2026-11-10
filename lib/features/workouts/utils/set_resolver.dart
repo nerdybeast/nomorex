@@ -25,11 +25,21 @@ OneRepMax? lookupOneRepMax({
       byExerciseName[basisExerciseName.toLowerCase()];
 }
 
+/// Shown in place of a load for an open-load set.
+const kOpenLoadLabel = 'choose load';
+
+/// Whether a set prescribes no load (`weight_mode = 'open'`), leaving the
+/// weight to the lifter.
+bool isOpenLoad(String weightMode) => weightMode == 'open';
+
 /// Resolves a set's working weight in kg.
 ///
 /// - `absolute` mode returns [absoluteWeightKg] (the user typed a fixed load).
 /// - `percentage` mode returns `percentage/100 * oneRepMaxKg`, or `null` when
 ///   the user has no recorded 1-rep max for the lift.
+/// - `open` mode always returns `null`: no load is prescribed, the lifter
+///   picks it. Check [isOpenLoad] first so that null isn't mistaken for a
+///   missing 1RM (no "Add PR" shortcut, nothing to resolve).
 double? resolveSetWeightKg({
   required String weightMode,
   double? percentage,

@@ -186,6 +186,8 @@ class _SetLines extends StatelessWidget {
             : '${formatWeightForPreference(oneRepMax.kg, unit)} PR';
         secondLine = '$basis ≈ ${formatWeightRangeForPreference(resolved.low, resolved.high, unit)}';
       }
+    } else if (isOpenLoad(set.weightMode)) {
+      firstLine = '$repsLabel · $kOpenLoadLabel';
     } else {
       firstLine = '$repsLabel · ${formatWeightForPreference(set.absoluteWeightKg ?? 0, unit)}';
     }

@@ -142,7 +142,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
           'position': pos++,
           'target_reps': batch.reps,
           'target_reps_max': ?batch.repsMax,
-          'weight_mode': 'absolute',
+          'weight_mode': batch.weightKg == null ? 'open' : 'absolute',
           'absolute_weight_kg': batch.weightKg,
           'rpe_min': ?batch.rpeMin,
           'rpe_max': ?batch.rpeMax,
@@ -171,6 +171,14 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
       'actual_weight_kg': weightKg,
       'actual_reps': reps,
     }).eq('id', setId);
+    await _refresh();
+  }
+
+  /// Records (or with null, clears) the weight the lifter actually used. Only
+  /// offered for open-load sets, where there's no prescribed load to go by.
+  /// Logging-only, like [logRpe].
+  Future<void> logWeight(String setId, double? weightKg) async {
+    await _db.from('workout_sets').update({'actual_weight_kg': weightKg}).eq('id', setId);
     await _refresh();
   }
 

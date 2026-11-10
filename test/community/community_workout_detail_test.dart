@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomorex/shared/widgets/set_pr_link.dart';
 import 'package:nomorex/shared/models/one_rep_max.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nomorex/core/theme/app_theme.dart';
@@ -410,6 +411,39 @@ void main() {
     await pumpCommunityDetail(tester, workout: workout, unit: 'both');
 
     expect(find.text('10 reps · 110 lbs / 50 kg'), findsOneWidget);
+  });
+
+  testWidgets('an open-load set reads "choose load" with no PR link and no accent', (tester) async {
+    final workout = _publicWorkout(
+      extraExercises: const [
+        WorkoutExercise(
+          id: 'we2',
+          workoutId: 'w1',
+          exerciseId: 'e5',
+          exerciseName: 'Pull-Up',
+          position: 1,
+          sets: [
+            WorkoutSet(
+              id: 's2',
+              workoutExerciseId: 'we2',
+              position: 0,
+              weightMode: 'open',
+              targetReps: 7,
+              targetRepsMax: 9,
+              rpeMin: 6,
+              rpeMax: 7,
+            ),
+          ],
+        ),
+      ],
+    );
+
+    // The viewer has no 1RM for anything: only the percentage set may offer
+    // the PR shortcut, never the open one.
+    await pumpCommunityDetail(tester, workout: workout);
+
+    expect(find.text('7–9 reps · choose load · RPE 6–7'), findsOneWidget);
+    expect(find.byType(SetPrLink), findsOneWidget);
   });
 
   testWidgets('the resolved weight respects the viewer\'s unit preference', (tester) async {
