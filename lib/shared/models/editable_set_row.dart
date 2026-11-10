@@ -22,7 +22,7 @@ class EditableSetRow {
   final int? targetReps;
   /// Top of a rep range; null means a single rep count ([targetReps]).
   final int? targetRepsMax;
-  final String weightMode; // 'percentage' | 'absolute'
+  final String weightMode; // 'percentage' | 'absolute' | 'open' (no set load)
   final double? percentage;
   /// Top of a %1RM range; null means a single percentage.
   final double? percentageMax;

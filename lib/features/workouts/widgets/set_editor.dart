@@ -182,6 +182,7 @@ class SetEditor extends ConsumerWidget {
     var reps = 1;
     int? repsMax;
     var weightDisplay = 0.0;
+    var openLoad = false;
     double? rpeMin;
     double? rpeMax;
     var dialogUnit = unit == 'both' ? 'kg' : unit;
@@ -218,36 +219,50 @@ class SetEditor extends ConsumerWidget {
                     repsMax = max;
                   }),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Expanded(child: Text('Unit')),
-                    UnitToggle(
-                      preference: unit,
-                      value: dialogUnit,
-                      onChanged: (newUnit) => setState(() {
-                        if (newUnit == dialogUnit) return;
-                        weightDisplay = newUnit == 'lbs'
-                            ? kgToLbs(weightDisplay)
-                            : lbsToKg(weightDisplay);
-                        dialogUnit = newUnit;
-                      }),
-                    ),
-                  ],
+                // "Vert Pull 3x7-9, %1RM NA": no prescribed load, the lifter
+                // picks it on the day. Hides the weight rather than saving
+                // a misleading 0 kg.
+                SwitchListTile(
+                  key: const Key('set_editor_open_load_switch'),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: const Text('No set load'),
+                  subtitle: const Text('The lifter picks the weight'),
+                  value: openLoad,
+                  onChanged: (on) => setState(() => openLoad = on),
                 ),
-                const SizedBox(height: 12),
-                NumberStepperField(
-                  label: 'Weight ($dialogUnit)',
-                  value: weightDisplay,
-                  min: 0,
-                  step: dialogUnit == 'lbs' ? 5.0 : 2.5,
-                  decimals: 1,
-                  onChanged: (v) => setState(() => weightDisplay = v),
-                  valueTextStyle: tokens?.stepperValue,
-                  valueDecoration: tokens?.stepperValueDecoration,
-                  decrementButtonStyle: tokens?.stepperDecrementStyle,
-                  incrementButtonStyle: tokens?.stepperIncrementStyle,
-                ),
+                if (!openLoad) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Expanded(child: Text('Unit')),
+                      UnitToggle(
+                        preference: unit,
+                        value: dialogUnit,
+                        onChanged: (newUnit) => setState(() {
+                          if (newUnit == dialogUnit) return;
+                          weightDisplay = newUnit == 'lbs'
+                              ? kgToLbs(weightDisplay)
+                              : lbsToKg(weightDisplay);
+                          dialogUnit = newUnit;
+                        }),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  NumberStepperField(
+                    label: 'Weight ($dialogUnit)',
+                    value: weightDisplay,
+                    min: 0,
+                    step: dialogUnit == 'lbs' ? 5.0 : 2.5,
+                    decimals: 1,
+                    onChanged: (v) => setState(() => weightDisplay = v),
+                    valueTextStyle: tokens?.stepperValue,
+                    valueDecoration: tokens?.stepperValueDecoration,
+                    decrementButtonStyle: tokens?.stepperDecrementStyle,
+                    incrementButtonStyle: tokens?.stepperIncrementStyle,
+                  ),
+                ],
                 const SizedBox(height: 12),
                 _RpeTargetInput(
                   rpeMin: rpeMin,
@@ -265,7 +280,9 @@ class SetEditor extends ConsumerWidget {
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             FilledButton(
               onPressed: () {
-                final weightKg = dialogUnit == 'lbs' ? lbsToKg(weightDisplay) : weightDisplay;
+                final weightKg = openLoad
+                    ? null
+                    : (dialogUnit == 'lbs' ? lbsToKg(weightDisplay) : weightDisplay);
                 onAddAbsoluteSets(AbsoluteSetBatch(
                   sets: sets,
                   reps: reps,
@@ -347,9 +364,11 @@ class _SetRow extends StatelessWidget {
     final isPct = set.weightMode == 'percentage';
     final valueLabel = isPct
         ? formatPercentTarget(set.percentage, set.percentageMax)
-        : (set.absoluteWeightKg != null
-            ? formatWeightForPreference(set.absoluteWeightKg!, unit)
-            : (unit == 'both' ? '? lbs / ? kg' : '? $unit'));
+        : isOpenLoad(set.weightMode)
+            ? 'Choose load'
+            : (set.absoluteWeightKg != null
+                ? formatWeightForPreference(set.absoluteWeightKg!, unit)
+                : (unit == 'both' ? '? lbs / ? kg' : '? $unit'));
     final basisLabel = set.basisExerciseId != null
         ? (set.basisExerciseName ?? '1RM')
         : '1RM';

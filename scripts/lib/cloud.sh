@@ -16,7 +16,8 @@ read_pins() {
   local workflow="$1/.github/workflows/pr-checks.yml"
   FLUTTER_VERSION="$(grep -m1 'flutter-version:' "$workflow" | awk '{print $2}')"
   SUPABASE_VERSION="$(grep -m1 -E '^[[:space:]]+version: [0-9]+\.[0-9]+\.[0-9]+$' "$workflow" | awk '{print $2}')"
-  if [ -z "$FLUTTER_VERSION" ] || [ -z "$SUPABASE_VERSION" ]; then
+  DENO_VERSION="$(grep -m1 'deno-version:' "$workflow" | awk '{print $2}')"
+  if [ -z "$FLUTTER_VERSION" ] || [ -z "$SUPABASE_VERSION" ] || [ -z "$DENO_VERSION" ]; then
     echo "could not read version pins from $workflow" >&2
     return 1
   fi
@@ -37,6 +38,35 @@ run_step() {
     echo "!!! full log: $log"
   fi
   return "$rc"
+}
+
+# Deno for the edge functions' `deno task check`, at CI's pin (which matches
+# the edge runtime). Without it verify.sh falls back to the denoland/deno
+# Docker image, and Docker Hub rate-limits anonymous pulls (429), which leaves
+# both function checks unproven. A single binary from the GitHub release.
+deno_present() {
+  command -v deno >/dev/null 2>&1 \
+    && [ "$(deno --version 2>/dev/null | awk 'NR==1 {print $2}')" = "$DENO_VERSION" ]
+}
+install_deno() {
+  deno_present && return 0
+  local target
+  case "$(uname -m)" in
+    x86_64) target=x86_64-unknown-linux-gnu ;;
+    aarch64|arm64) target=aarch64-unknown-linux-gnu ;;
+    *) echo "unsupported arch $(uname -m)" >&2; return 1 ;;
+  esac
+  local tmp; tmp="$(mktemp -d)"
+  curl -fsSL -o "$tmp/deno.zip" \
+    "https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-${target}.zip" || { rm -rf "$tmp"; return 1; }
+  if command -v unzip >/dev/null 2>&1; then
+    unzip -q "$tmp/deno.zip" -d "$tmp" || { rm -rf "$tmp"; return 1; }
+  else
+    python3 -m zipfile -e "$tmp/deno.zip" "$tmp" || { rm -rf "$tmp"; return 1; }
+  fi
+  $SUDO install -m 0755 "$tmp/deno" /usr/local/bin/deno
+  rm -rf "$tmp"
+  deno_present
 }
 
 # Docker is pre-installed in cloud sessions but the daemon isn't running.

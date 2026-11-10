@@ -72,9 +72,9 @@ emulators reach the host at `10.0.2.2`, not `127.0.0.1`.
 Cloud sessions run the same local stack CI does, so a change can be proven end
 to end from a phone. Provisioning is split in two:
 
-- **`scripts/cloud-setup.sh`** is the heavy, slow-changing half: Flutter and the
-  Supabase CLI at the versions pinned in `.github/workflows/pr-checks.yml` (read
-  from there, so bump them in one place), the Linux desktop build deps and
+- **`scripts/cloud-setup.sh`** is the heavy, slow-changing half: Flutter, the
+  Supabase CLI and Deno at the versions pinned in `.github/workflows/pr-checks.yml`
+  (read from there, so bump them in one place), the Linux desktop build deps and
   xvfb the E2E job uses, the Supabase Docker images, and Playwright's Chromium
   (for `scripts/web-shot.mjs`, which signs in, turns on Flutter's accessibility
   tree and can run a flow from `scripts/web-flows/` that clicks widgets by role
@@ -86,7 +86,9 @@ to end from a phone. Provisioning is split in two:
   environment snapshot), and write `.env.local.json` for that stack (never
   overwritten if present; `SENTRY_DSN` stays unset, which disables Sentry). If
   the toolchain isn't on disk it runs `cloud-setup.sh` itself, so it works
-  with no setup script configured, only slower.
+  with no setup script configured, only slower. It also installs Deno on its
+  own when that's the only thing missing (a snapshot from before Deno was
+  added), which takes a few seconds.
 
 **One-time setup:** in claude.ai/code, open the environment, select **Setup
 script**, paste the stub below once, and save. It is stored on the environment,
@@ -570,7 +572,9 @@ needs `SUPABASE_URL`/`SUPABASE_ANON_KEY` for the local stack, because plain
 `deno task check` in `supabase/functions/ai` runs fmt, lint, type-check and the
 unit tests (fake model, fake Supabase client: no network, no key). CI runs it in
 the `functions` job; `scripts/verify.sh` runs it too, through Docker if Deno
-isn't installed. Deno is pinned to 2.1.4 to match the edge runtime.
+isn't installed. Cloud sessions install Deno (see "Claude Code on the web"), so
+they don't depend on pulling the `denoland/deno` image, which Docker Hub
+rate-limits. Deno is pinned to 2.1.4 to match the edge runtime.
 
 ### Deployment
 

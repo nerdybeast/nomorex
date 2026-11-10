@@ -56,6 +56,16 @@ if [ ! -x "$FLUTTER_DIR/bin/flutter" ]; then
   echo "session-start: Flutter is not installed; see output above" >&2
   exit 1
 fi
+
+# Deno came after the first cached setups, which don't rerun on their own, so
+# fill it in here when it's missing. One binary; not fatal.
+if deno_present; then
+  :
+elif run_step "Deno install" install_deno; then
+  note "Deno $DENO_VERSION installed"
+else
+  note "WARNING: Deno install failed — verify.sh falls back to Docker for the edge function checks"
+fi
 export PATH="$PATH:$FLUTTER_DIR/bin"
 persist_env "export PATH=\"\$PATH:$FLUTTER_DIR/bin\""
 

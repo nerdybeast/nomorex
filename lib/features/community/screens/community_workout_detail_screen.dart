@@ -324,9 +324,12 @@ class _SetRow extends StatelessWidget {
     // the accent color below is reserved for weights derived from the
     // viewer's own 1RM, which is what makes this a personalized preview.
     if (set.weightMode != 'percentage') {
+      final load = isOpenLoad(set.weightMode)
+          ? kOpenLoadLabel
+          : formatWeightForPreference(set.absoluteWeightKg ?? 0, unit);
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Text('$reps · ${formatWeightForPreference(set.absoluteWeightKg ?? 0, unit)}$rpeSuffix'),
+        child: Text('$reps · $load$rpeSuffix'),
       );
     }
 

@@ -127,6 +127,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 interactive: workout.status == 'in_progress' || workout.status == 'paused',
                 onToggle: (setId, value) => notifier.setCompleted(setId, value),
                 onLogRpe: (setId, rpe) => notifier.logRpe(setId, rpe),
+                onLogWeight: (setId, kg) => notifier.logWeight(setId, kg),
               ),
             if (workout.status == 'in_progress' || workout.status == 'paused') ...[
               const SizedBox(height: 16),
@@ -428,6 +429,7 @@ class _ExerciseCard extends StatelessWidget {
     required this.interactive,
     required this.onToggle,
     required this.onLogRpe,
+    required this.onLogWeight,
   });
 
   final WorkoutExercise exercise;
@@ -439,6 +441,9 @@ class _ExerciseCard extends StatelessWidget {
   /// Logs (or with null, clears) the lifter's RPE for a set. Only offered
   /// while [interactive]; a finished session shows its logged RPE read-only.
   final void Function(String setId, double? rpe)? onLogRpe;
+  /// Logs (or with null, clears) the weight used on an open-load set, the
+  /// only kind with no prescribed load to go by. Same rules as [onLogRpe].
+  final void Function(String setId, double? weightKg)? onLogWeight;
 
   @override
   Widget build(BuildContext context) {
@@ -502,6 +507,7 @@ class _ExerciseCard extends StatelessWidget {
       interactive: interactive,
       onToggle: onToggle,
       onLogRpe: onLogRpe,
+      onLogWeight: onLogWeight,
     );
   }
 }
@@ -516,6 +522,7 @@ class _SetTile extends StatelessWidget {
     required this.interactive,
     required this.onToggle,
     required this.onLogRpe,
+    required this.onLogWeight,
   });
 
   final WorkoutSet set;
@@ -532,6 +539,9 @@ class _SetTile extends StatelessWidget {
   /// Logs (or with null, clears) the lifter's RPE for a set. Only offered
   /// while [interactive]; a finished session shows its logged RPE read-only.
   final void Function(String setId, double? rpe)? onLogRpe;
+  /// Logs (or with null, clears) the weight used on an open-load set, the
+  /// only kind with no prescribed load to go by. Same rules as [onLogRpe].
+  final void Function(String setId, double? weightKg)? onLogWeight;
 
   @override
   Widget build(BuildContext context) {
@@ -555,7 +565,10 @@ class _SetTile extends StatelessWidget {
         ?.copyWith(color: colorScheme.onSurfaceVariant);
 
     final Widget subtitle;
-    if (set.weightMode == 'percentage' && resolved == null) {
+    if (isOpenLoad(set.weightMode)) {
+      // No load to resolve, so no "Add PR" shortcut either.
+      subtitle = Text('$kOpenLoadLabel$rpeSuffix');
+    } else if (set.weightMode == 'percentage' && resolved == null) {
       subtitle = Text.rich(
         TextSpan(
           style: baseStyle,
@@ -597,14 +610,22 @@ class _SetTile extends StatelessWidget {
       subtitle: subtitle,
     );
     final rpe = _ActualRpe(set: set, interactive: interactive, onLog: onLogRpe);
-    if (!rpe.isVisible) return tile;
+    final weight = _ActualWeight(
+      set: set,
+      unit: unit,
+      interactive: interactive,
+      onLog: onLogWeight,
+    );
+    if (!rpe.isVisible && !weight.isVisible) return tile;
     // Beside the tile, not its `secondary`: a ListTile merges its children
     // into one semantics node, so a button inside it is announced as part of
     // the checkbox and can't be activated on its own by assistive tech.
     return Row(
       children: [
         Expanded(child: tile),
-        Padding(padding: const EdgeInsets.only(right: 8), child: rpe),
+        if (weight.isVisible) weight,
+        if (rpe.isVisible)
+          Padding(padding: const EdgeInsets.only(right: 8), child: rpe),
       ],
     );
   }
@@ -645,6 +666,96 @@ class _ActualRpe extends StatelessWidget {
       child: Text(label),
     );
   }
+}
+
+/// The weight used on an open-load set. Like [_ActualRpe]: a button ("Log
+/// weight", or the logged weight) while the session is live, plain text
+/// afterwards, absent when nothing was logged. Other sets have a prescribed
+/// load, so they never show it.
+class _ActualWeight extends StatelessWidget {
+  const _ActualWeight({
+    required this.set,
+    required this.unit,
+    required this.interactive,
+    required this.onLog,
+  });
+
+  final WorkoutSet set;
+  final String unit;
+  final bool interactive;
+  final void Function(String setId, double? weightKg)? onLog;
+
+  bool get _canLog => interactive && onLog != null;
+
+  bool get isVisible =>
+      isOpenLoad(set.weightMode) && (_canLog || set.actualWeightKg != null);
+
+  @override
+  Widget build(BuildContext context) {
+    final logged = set.actualWeightKg;
+    final label =
+        logged == null ? 'Log weight' : formatWeightForPreference(logged, unit);
+    if (!_canLog) return Text(label, key: Key('set_actual_weight_${set.id}'));
+    return TextButton(
+      key: Key('set_actual_weight_${set.id}'),
+      onPressed: () async {
+        final result = await showWeightDialog(context, loggedKg: logged, unit: unit);
+        if (result != null) onLog!(set.id, result.weightKg);
+      },
+      child: Text(label),
+    );
+  }
+}
+
+/// Asks for the weight used on a set, in the user's unit (kg when they show
+/// both). Returns null on Cancel, `(weightKg: null)` on Clear (only offered
+/// when [loggedKg] is set), and `(weightKg: value)` on Save.
+Future<({double? weightKg})?> showWeightDialog(
+  BuildContext context, {
+  required double? loggedKg,
+  required String unit,
+}) {
+  final dialogUnit = unit == 'lbs' ? 'lbs' : 'kg';
+  var value = loggedKg == null
+      ? 0.0
+      : (dialogUnit == 'lbs' ? kgToLbs(loggedKg) : loggedKg);
+  final tokens = Theme.of(context).extension<NomorexTokens>();
+  return showDialog<({double? weightKg})>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) => AlertDialog(
+        title: const Text('Log weight'),
+        content: NumberStepperField(
+          key: const Key('log_weight_value'),
+          label: 'Weight ($dialogUnit)',
+          value: value,
+          min: 0,
+          step: dialogUnit == 'lbs' ? 5.0 : 2.5,
+          decimals: 1,
+          onChanged: (v) => setState(() => value = v),
+          valueTextStyle: tokens?.stepperValue,
+          valueDecoration: tokens?.stepperValueDecoration,
+          decrementButtonStyle: tokens?.stepperDecrementStyle,
+          incrementButtonStyle: tokens?.stepperIncrementStyle,
+        ),
+        actions: [
+          if (loggedKg != null)
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, (weightKg: null)),
+              child: const Text('Clear'),
+            ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(
+              ctx,
+              (weightKg: dialogUnit == 'lbs' ? lbsToKg(value) : value),
+            ),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// Asks for a set's RPE. Returns null on Cancel, `(rpe: null)` on Clear (only

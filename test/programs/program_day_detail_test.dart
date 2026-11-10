@@ -70,6 +70,14 @@ Program _program() => Program(
                   rpeMin: 6,
                   rpeMax: 7,
                 ),
+                // Open load (#66): no prescribed weight, the lifter picks it.
+                ProgramSet(
+                  id: 'ps3',
+                  programExerciseId: 'pe1',
+                  position: 2,
+                  weightMode: 'open',
+                  targetReps: 10,
+                ),
               ],
             ),
           ],
@@ -150,5 +158,12 @@ void main() {
 
     expect(find.textContaining('7–9 reps · 67–72.5% of 1RM · RPE 6–7'), findsOneWidget);
     expect(find.textContaining('200 kg est. 1RM ≈ 134–145 kg'), findsOneWidget);
+  });
+
+  testWidgets('an open-load set says "choose load" even when the viewer has a 1RM', (tester) async {
+    await _pump(tester, oneRepMaxes: const {'owner-e1': OneRepMax.measured(100)});
+
+    expect(find.text('10 reps · choose load'), findsOneWidget);
+    expect(find.text('10 reps · 0 kg'), findsNothing);
   });
 }
