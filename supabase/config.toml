@@ -390,6 +390,14 @@ deno_version = 2
 # deploy fails with a 413. .github/workflows/deploy-functions.yml deploys it
 # instead, with JWT verification on by default.
 
+# Deployed by the GitHub integration from this declaration. JWT verification is
+# off because its only caller, .github/workflows/ai-import-cleanup.yml, sends
+# the AI_IMPORT_CLEANUP_SECRET function secret, not a user's session; the
+# function checks that secret itself and refuses everything else.
+[functions.ai-import-cleanup]
+enabled = true
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

@@ -1,0 +1,49 @@
+name: AI import cleanup
+
+# Runs the daily AI import cleanup (#87) by calling the ai-import-cleanup edge
+# function, which deletes the uploaded files of finished, abandoned and
+# orphaned imports and fails imports stuck past the longest possible run.
+#
+# The function is deployed by the Supabase GitHub integration (it's declared in
+# supabase/config.toml) and refuses any caller without the shared secret:
+#   - GitHub: repository secret AI_IMPORT_CLEANUP_SECRET
+#   - Supabase: function secret AI_IMPORT_CLEANUP_SECRET (same value, 32+ chars)
+# Until both are set, the function answers 503 and this run fails.
+on:
+  schedule:
+    # Daily at 09:17 UTC. Scheduled runs use the default branch.
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ai-import-cleanup
+  cancel-in-progress: false
+
+env:
+  PROJECT_REF: tlojfeebipuobfhiknps
+
+jobs:
+  cleanup:
+    name: Run cleanup
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Call ai-import-cleanup
+        env:
+          SECRET: ${{ secrets.AI_IMPORT_CLEANUP_SECRET }}
+        run: |
+          if [ -z "$SECRET" ]; then
+            echo "::error::The AI_IMPORT_CLEANUP_SECRET repository secret is not set."
+            exit 1
+          fi
+          status=$(curl -sS -o response.json -w '%{http_code}' -X POST \
+            --max-time 300 \
+            -H "Authorization: Bearer $SECRET" \
+            "https://$PROJECT_REF.supabase.co/functions/v1/ai-import-cleanup")
+          echo "HTTP $status"
+          cat response.json; echo
+          # 500 with a report means some folders couldn't be emptied; the next
+          # run retries them. Failing makes it visible either way.
+          test "$status" = "200"
