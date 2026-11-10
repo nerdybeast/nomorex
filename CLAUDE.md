@@ -57,6 +57,15 @@ supabase functions serve ai                         # local; needs supabase/func
 
 The `SessionStart` hook sets up the CI toolchain and a local Supabase stack (see `docs/build.md`). Before calling a change done, run `./scripts/verify.sh` and report its summary as is. If a stage shows `SKIP`/`WARNING` (e.g. Docker unavailable), say that stage is unproven rather than implying it passed.
 
+## Improving the development setup
+
+Cloud or local, when something about the setup slows the work down or leaves a check unproven, suggest the fix: a missing tool, a flaky or slow step, a manual workaround you had to repeat. Examples are a tool `verify.sh` had to fall back for, or a script future sessions will need. Say what you'd change and why, and offer to add it to the current branch. Development improvements are welcome in feature work, as their own `chore:`/`ci:`/`docs:` commit so the feature commit stays reviewable. Don't make the change without asking, and mention it in the PR description.
+
+Where a fix goes:
+- **Cloud provisioning** lives in the repo, not in the environment's settings: `scripts/cloud-setup.sh` for slow installs (cached with the environment), `.claude/hooks/session-start.sh` for per-session steps and for filling in anything older cached setups lack, and `scripts/lib/cloud.sh` for shared helpers. Read tool versions from `pr-checks.yml` with `read_pins` rather than adding another pin. Change the environment itself (network hosts, variables) only when the repo can't do it.
+- **Local development:** `scripts/` and `docs/build.md`. Prefer a script over a written-out sequence of commands.
+- **Checks:** `scripts/verify.sh`, and `pr-checks.yml` when CI should run it too.
+
 ## Configuration
 
 `lib/main.dart` reads `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` via `String.fromEnvironment()`. These are **compile-time** constants, not runtime env vars — OS environment variables have no effect; the values must arrive via `--dart-define` / `--dart-define-from-file`. Unset values default to empty strings with no error. `.env.json` (prod) and `.env.local.json` (local stack) are gitignored and created per machine. Android emulators reach a local stack at `10.0.2.2`, not `127.0.0.1`. `SENTRY_DSN` works the same way. So do `SENTRY_ENVIRONMENT` (defaults to `development`), `SENTRY_RELEASE` and `SENTRY_DIST`, which only the deploy workflows pass: that's what keeps deployed Sentry events (`production`) apart from local ones. Full details in `docs/build.md`.
