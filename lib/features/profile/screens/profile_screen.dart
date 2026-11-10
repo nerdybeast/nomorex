@@ -2,8 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/one_rep_max_formula.dart';
@@ -150,15 +148,6 @@ class ProfileScreen extends ConsumerWidget {
                     Text('DEVELOPER', style: NomorexTokens.of(context).eyebrow),
                     const SizedBox(height: 8),
                     const _AiSmokeTestSection(),
-                    const SizedBox(height: 12),
-                    // Until launch (#88) this is the only way into an import.
-                    FilledButton.icon(
-                      key: const Key('profile_ai_import_button'),
-                      style: NomorexTokens.of(context).secondaryButtonStyle,
-                      onPressed: () => context.push(AppConstants.routeAiImport),
-                      icon: const Icon(Icons.upload_file_outlined),
-                      label: const Text('Import from file'),
-                    ),
                   ],
                 ],
               ),

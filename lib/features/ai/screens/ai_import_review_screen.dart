@@ -21,8 +21,7 @@ import '../utils/import_messages.dart';
 /// read, with the few fixes a save needs (title, exercise matches, the unit of
 /// unlabelled weights), then Accept, Discard, or a re-run as the other type.
 ///
-/// Until launch (#88) it's reached only from the Home card and the import
-/// alert, which only appear in builds where imports are switched on.
+/// Reached from the Home card and the import alert.
 class AiImportReviewScreen extends ConsumerWidget {
   const AiImportReviewScreen({super.key, required this.jobId});
 

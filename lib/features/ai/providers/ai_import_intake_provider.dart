@@ -30,7 +30,7 @@ Future<AiImportLimits> aiImportLimits(Ref ref) async {
   ref.watch(currentAuthUserProvider);
   final row = await Supabase.instance.client
       .from('ai_import_limits')
-      .select('max_images, max_pdf_pages, max_image_bytes, max_pdf_bytes, max_job_seconds')
+      .select('enabled, max_images, max_pdf_pages, max_image_bytes, max_pdf_bytes, max_job_seconds')
       .single();
   return AiImportLimits.fromJson(row);
 }

@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../models/ai_import_limits.dart';
+import '../providers/ai_import_gate_provider.dart';
 import '../providers/ai_import_intake_provider.dart';
 import '../utils/import_file_check.dart';
+import '../utils/import_messages.dart';
 
 /// Choose the photos, images or PDF for an AI import, upload them and start
-/// the import.
+/// the import. Reached from the Workouts and Programs app bars
+/// ([AiImportButton]).
 ///
-/// Debug builds reach it from Profile until launch (#88), which adds the
-/// one-time notice and the real entry points. Until then an upload needs an
-/// `ai_import_consents` row for the user, or the bucket policy refuses it.
+/// It checks first ([aiImportGateProvider]): before the first import it shows
+/// the notice naming Anthropic, and when the user can't import right now it
+/// says why instead of offering files to choose. Declining the notice uploads
+/// nothing, and the upload policy refuses files from a user who hasn't
+/// accepted it.
 class AiImportScreen extends ConsumerWidget {
   const AiImportScreen({super.key});
 
@@ -20,6 +27,7 @@ class AiImportScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(aiImportIntakeProvider);
     final limitsAsync = ref.watch(aiImportLimitsProvider);
+    final gateAsync = ref.watch(aiImportGateProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Import from file')),
@@ -29,18 +37,28 @@ class AiImportScreen extends ConsumerWidget {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 520),
-              child: switch (limitsAsync) {
-                AsyncData(:final value) =>
-                  state.phase == ImportIntakePhase.started
-                      ? _Started(jobId: state.jobId)
-                      : _Intake(state: state, limits: value),
-                AsyncError() => Text(
-                  "Couldn't load the import limits. Check your connection and try again.",
-                  key: const Key('ai_import_limits_error'),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-                _ => const Center(child: CircularProgressIndicator()),
-              },
+              child: state.phase == ImportIntakePhase.started
+                  ? _Started(jobId: state.jobId)
+                  : switch ((gateAsync, limitsAsync)) {
+                      // Once the intake is under way, a re-check (which could
+                      // now see this user's own running import) can't take it
+                      // away.
+                      (_, AsyncData(value: final limits)) when state.phase != ImportIntakePhase.selecting ||
+                          state.pages.isNotEmpty => _Intake(state: state, limits: limits),
+                      (AsyncData(value: final check), AsyncData(value: final limits)) when check.allowed => _Intake(
+                        state: state,
+                        limits: limits,
+                      ),
+                      (AsyncData(value: final check), _) when check.reason == 'consent_required' => const _Notice(),
+                      (AsyncData(value: final check), _) when !check.allowed => _Refused(check: check),
+                      (AsyncError(), _) || (_, AsyncError()) => _LoadError(
+                        onRetry: () {
+                          ref.invalidate(aiImportGateProvider);
+                          ref.invalidate(aiImportLimitsProvider);
+                        },
+                      ),
+                      _ => const Center(child: CircularProgressIndicator()),
+                    },
             ),
           ),
         ),
@@ -264,6 +282,143 @@ class _Started extends ConsumerWidget {
           onPressed: () => ref.read(aiImportIntakeProvider.notifier).reset(),
           child: const Text('Import something else'),
         ),
+      ],
+    );
+  }
+}
+
+/// The one-time notice before a user's first upload. Accepting records it in
+/// `ai_import_consents`; "Not now" leaves without uploading anything.
+class _Notice extends ConsumerStatefulWidget {
+  const _Notice();
+
+  @override
+  ConsumerState<_Notice> createState() => _NoticeState();
+}
+
+class _NoticeState extends ConsumerState<_Notice> {
+  bool _saving = false;
+  String? _error;
+
+  Future<void> _accept() async {
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await ref.read(aiImportGateProvider.notifier).acceptNotice();
+    } catch (e) {
+      debugPrint('[ai_import] recording the notice failed: $e');
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = "Couldn't save your answer. Check your connection and try again.";
+        });
+      }
+    }
+  }
+
+  void _decline() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppConstants.routeHome);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = NomorexTokens.of(context);
+    return Column(
+      key: const Key('ai_import_notice'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Before your first import', style: theme.textTheme.titleLarge),
+        const SizedBox(height: 12),
+        const Text(
+          'Imports are read by Claude, an AI model made by Anthropic. The photos or PDF you upload are '
+          'sent to Anthropic, which reads them to find the workout or program in them.',
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Your files are deleted from NoMoreX once you save or discard the import, or after 7 days if you do '
+          'neither.',
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          "Only upload what you're happy to share: leave out people's faces and personal details such as "
+          'names, addresses or medical notes.',
+        ),
+        const SizedBox(height: 12),
+        const Text("AI can misread things, so you'll check everything it read before anything is saved."),
+        if (_error case final error?) ...[
+          const SizedBox(height: 16),
+          Text(error, key: const Key('ai_import_notice_error'), style: TextStyle(color: theme.colorScheme.error)),
+        ],
+        const SizedBox(height: 24),
+        FilledButton(
+          key: const Key('ai_import_notice_accept'),
+          onPressed: _saving ? null : _accept,
+          child: const Text('Accept and continue'),
+        ),
+        const SizedBox(height: 8),
+        FilledButton(
+          key: const Key('ai_import_notice_decline'),
+          style: tokens.secondaryButtonStyle,
+          onPressed: _saving ? null : _decline,
+          child: const Text('Not now'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Why the user can't import right now: switched off, an import already
+/// running, or a cap reached (which one, and when it resets).
+class _Refused extends StatelessWidget {
+  const _Refused({required this.check});
+
+  final AiImportCheck check;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final running = check.reason == 'active_import';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(importCheckMessage(check), key: const Key('ai_import_refused'), style: theme.textTheme.bodyLarge),
+        if (running) ...[
+          const SizedBox(height: 16),
+          FilledButton(
+            key: const Key('ai_import_refused_home'),
+            onPressed: () => context.go(AppConstants.routeHome),
+            child: const Text('See it on Home'),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _LoadError extends StatelessWidget {
+  const _LoadError({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          "Couldn't check whether you can import right now. Check your connection and try again.",
+          key: const Key('ai_import_limits_error'),
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
+        const SizedBox(height: 16),
+        FilledButton(onPressed: onRetry, child: const Text('Try again')),
       ],
     );
   }

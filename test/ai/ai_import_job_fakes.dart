@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:nomorex/features/ai/models/ai_import_job.dart';
 import 'package:nomorex/features/ai/models/ai_import_limits.dart';
+import 'package:nomorex/features/ai/providers/ai_import_gate_provider.dart';
 import 'package:nomorex/features/ai/providers/ai_import_intake_provider.dart';
 import 'package:nomorex/features/ai/providers/ai_import_jobs_provider.dart';
 import 'package:nomorex/features/auth/providers/auth_provider.dart';
@@ -109,10 +110,39 @@ final testUserProvider = NotifierProvider<TestUser, User?>(() => TestUser(testUs
 
 /// Overrides for a signed-in user (switchable through [testUserProvider])
 /// with no network.
-List<Override> jobOverrides(FakeJobServer server, FakeSubscriber subscriber, {User? user}) => [
+List<Override> jobOverrides(
+  FakeJobServer server,
+  FakeSubscriber subscriber, {
+  User? user,
+  AiImportLimits limits = testLimits,
+}) => [
   testUserProvider.overrideWith(() => TestUser(user ?? testUser('u1'))),
   currentAuthUserProvider.overrideWith((ref) => ref.watch(testUserProvider)),
   aiImportJobsProvider.overrideWith(() => FakeJobsNotifier(server)),
   aiImportJobSubscriberProvider.overrideWithValue(subscriber.fn),
-  aiImportLimitsProvider.overrideWith((ref) async => testLimits),
+  aiImportLimitsProvider.overrideWith((ref) async => limits),
 ];
+
+/// The import screen's up-front check, answering [check] until the notice is
+/// accepted (which records it and then allows the import).
+class FakeGate extends AiImportGateNotifier {
+  FakeGate(this.check, {this.consentError});
+
+  AiImportCheck check;
+  final Object? consentError;
+  int consents = 0;
+
+  /// Answers without looking up the user, so screens tested signed out work.
+  @override
+  Future<AiImportCheck> build() => fetchCheck();
+
+  @override
+  Future<AiImportCheck> fetchCheck() async => check;
+
+  @override
+  Future<void> recordConsent(String userId) async {
+    if (consentError case final e?) throw e;
+    consents++;
+    check = const AiImportCheck(allowed: true);
+  }
+}

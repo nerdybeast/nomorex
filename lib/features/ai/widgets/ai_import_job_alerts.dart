@@ -13,8 +13,8 @@ import '../utils/import_alert_tracker.dart';
 ///
 /// - Keeps [aiImportJobWatchProvider] alive, which subscribes to Realtime
 ///   while a job is processing.
-/// - Re-reads the jobs when the app resumes, since nothing reaches a
-///   backgrounded app.
+/// - Re-reads the jobs and limits when the app resumes, since nothing reaches
+///   a backgrounded app.
 /// - Shows one floating snackbar per job that becomes ready or failed.
 ///   Floating, so it sits above the shell's FAB and bottom bar rather than
 ///   pushing them.
@@ -38,7 +38,13 @@ class _AiImportJobAlertsState extends ConsumerState<AiImportJobAlerts> {
   @override
   void initState() {
     super.initState();
-    _lifecycle = AppLifecycleListener(onResume: () => ref.invalidate(aiImportJobsProvider));
+    _lifecycle = AppLifecycleListener(
+      onResume: () {
+        ref.invalidate(aiImportJobsProvider);
+        // Picks up the off switch, which shows or hides the entry points.
+        ref.invalidate(aiImportLimitsProvider);
+      },
+    );
   }
 
   @override
