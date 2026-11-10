@@ -40,6 +40,7 @@ Program _program() => Program(
           programWeekId: 'wk1',
           dayNumber: 1,
           title: 'Day 1',
+          notes: 'EMOM 10 min after the main lift',
           position: 0,
           exercises: [
             ProgramExercise(
@@ -102,6 +103,12 @@ Future<void> _pump(
 }
 
 void main() {
+  testWidgets('shows the day notes', (tester) async {
+    await _pump(tester);
+
+    expect(find.text('EMOM 10 min after the main lift'), findsOneWidget);
+  });
+
   testWidgets(
     'resolves a percentage set against the viewer 1RM matched by id',
     (tester) async {

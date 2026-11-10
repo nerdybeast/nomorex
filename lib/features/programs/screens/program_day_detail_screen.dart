@@ -57,6 +57,10 @@ class ProgramDayDetailScreen extends ConsumerWidget {
                           ?.copyWith(color: colorScheme.onSurfaceVariant, letterSpacing: 1),
                     ),
                     const SizedBox(height: 12),
+                    if (day.notes != null && day.notes!.isNotEmpty) ...[
+                      Text(day.notes!),
+                      const SizedBox(height: 12),
+                    ],
                     if (day.isRestDay)
                       const Text('Rest day')
                     else if (day.exercises.isEmpty)

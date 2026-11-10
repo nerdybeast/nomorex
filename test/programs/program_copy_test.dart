@@ -62,16 +62,17 @@ class _StubExercisesNotifier extends ExercisesNotifier {
   Future<List<Exercise>> build() async => const [];
 }
 
-Program _copiedProgram({bool isCopy = true}) => Program(
+Program _copiedProgram({bool isCopy = true, bool isImported = false}) => Program(
       id: 'p1',
       userId: 'viewer',
       name: "B's Block",
       createdAt: DateTime(2026, 10, 12),
       updatedAt: DateTime(2026, 10, 12),
       isCopy: isCopy,
-      copiedFromUserId: isCopy ? 'author' : null,
-      copiedFromDisplayName: isCopy ? 'BeastModeB' : null,
-      copiedFromProgramId: isCopy ? 'p0' : null,
+      isImported: isImported,
+      copiedFromUserId: isCopy && !isImported ? 'author' : null,
+      copiedFromDisplayName: isCopy && !isImported ? 'BeastModeB' : null,
+      copiedFromProgramId: isCopy && !isImported ? 'p0' : null,
     );
 
 List<Override> _detailOverrides(Program program, {void Function(bool)? onUpdateVisibility}) => [
@@ -84,6 +85,22 @@ List<Override> _detailOverrides(Program program, {void Function(bool)? onUpdateV
     ];
 
 void main() {
+  testWidgets('editing an import: badged Imported, Public disabled with its own reason',
+      (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: _detailOverrides(_copiedProgram(isImported: true)),
+        child: const MaterialApp(home: ProgramEditScreen(programId: 'p1')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Imported'), findsOneWidget);
+    expect(tester.widget<Switch>(find.byType(Switch)).onChanged, isNull);
+    expect(find.text(kImportNotShareableMessage), findsOneWidget);
+    expect(find.text(kCopyNotShareableMessage), findsNothing);
+  });
+
   testWidgets('a copied program is badged on its Programs list card', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

@@ -173,6 +173,7 @@ class _WorkoutTile extends ConsumerWidget {
       badge: w.isCopy
           ? CopiedFromBadge(
               isCopy: true,
+              isImported: w.isImported,
               copiedFromUserId: w.copiedFromUserId,
               copiedFromDisplayName: w.copiedFromDisplayName,
               copiedFromSourceId: w.copiedFromSourceId,

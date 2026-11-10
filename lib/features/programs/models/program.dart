@@ -17,6 +17,7 @@ class Program {
     this.weeks = const [],
     this.ownerDisplayName,
     this.isCopy = false,
+    this.isImported = false,
     this.copiedFromUserId,
     this.copiedFromDisplayName,
     this.copiedFromProgramId,
@@ -41,6 +42,9 @@ class Program {
   /// A saved copy of another user's public program. Permanent and never
   /// public; see `Workout.isCopy`.
   final bool isCopy;
+
+  /// Created by AI import; see `Workout.isImported`.
+  final bool isImported;
   final String? copiedFromUserId;
 
   /// The author's display name, snapshotted when the copy was made.
@@ -68,6 +72,7 @@ class Program {
       weeks: weeks,
       ownerDisplayName: (json['profiles'] as Map<String, dynamic>?)?['display_name'] as String?,
       isCopy: (json['is_copy'] as bool?) ?? false,
+      isImported: (json['is_imported'] as bool?) ?? false,
       copiedFromUserId: json['copied_from_user_id'] as String?,
       copiedFromDisplayName: json['copied_from_display_name'] as String?,
       copiedFromProgramId: json['copied_from_program_id'] as String?,
