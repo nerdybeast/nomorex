@@ -61,6 +61,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # *.g.dart files are committed; this fails the PR if one is stale.
+      # Fix: dart run build_runner build --delete-conflicting-outputs, commit.
+      - name: Check generated files are up to date
+        run: ./scripts/check-generated.sh
+
       - name: Analyze
         run: flutter analyze
 

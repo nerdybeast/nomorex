@@ -38,6 +38,9 @@ dependencies:
   intl: any
   sentry_flutter: ^10.3.0
   haptic_feedback: ^0.6.5
+  image_picker: ^1.2.4
+  file_selector: ^1.1.0
+  image: ^4.12.0
 
 dev_dependencies:
   flutter_test:
