@@ -11,6 +11,9 @@ class AppConstants {
   static const String routeLanding = '/';
   static const String routeLogin = '/login';
   static const String routeProfile = '/profile';
+  // AI import: choose and upload files. Linked only from Profile in debug
+  // builds until launch (#88).
+  static const String routeAiImport = '/ai-import';
   static const String routeShell = '/shell';
   static const String routeHome = '/shell/home';
   static const String routePrs = '/shell/prs';

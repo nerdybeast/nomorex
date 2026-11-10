@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
+import 'features/ai/screens/ai_import_screen.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/screens/landing_screen.dart';
 import 'features/auth/screens/login_screen.dart';
@@ -113,6 +114,10 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: AppConstants.routeProfile,
         builder: (_, _) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: AppConstants.routeAiImport,
+        builder: (_, _) => const AiImportScreen(),
       ),
       GoRoute(
         path: AppConstants.routeAddPr,
