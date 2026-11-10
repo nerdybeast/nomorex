@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -33,11 +35,27 @@ class AiImportJobsNotifier extends _$AiImportJobsNotifier {
     await future;
   }
 
-  /// Dismisses a ready or failed import. Its files are removed by the sweep.
-  Future<void> discard(String jobId) async {
+  /// Dismisses a ready or failed import and deletes its uploaded files.
+  /// [importId] defaults to the listed job's.
+  Future<void> discard(String jobId, {String? importId}) async {
+    importId ??= state.value?.where((j) => j.id == jobId).firstOrNull?.importId;
     await discardJob(jobId);
+    if (importId != null) await removeImportFiles(importId);
     ref.invalidateSelf();
     await future;
+  }
+
+  /// Deletes an accepted or discarded import's uploaded files, under the
+  /// user's session. Never throws: whatever is left, the daily cleanup
+  /// (`ai-import-cleanup`) deletes on its next run.
+  Future<void> removeImportFiles(String importId) async {
+    final userId = ref.read(currentAuthUserProvider)?.id;
+    if (userId == null) return;
+    try {
+      await deleteImportFiles('$userId/$importId');
+    } catch (e) {
+      debugPrint('[ai_import] removing files failed, left for the cleanup: $e');
+    }
   }
 
   // Network calls, split out so tests can override them.
@@ -55,6 +73,13 @@ class AiImportJobsNotifier extends _$AiImportJobsNotifier {
 
   Future<void> discardJob(String jobId) =>
       Supabase.instance.client.rpc('ai_import_discard', params: {'p_job_id': jobId});
+
+  Future<void> deleteImportFiles(String folder) async {
+    final storage = Supabase.instance.client.storage.from('ai-imports');
+    final files = await storage.list(path: folder);
+    if (files.isEmpty) return;
+    await storage.remove([for (final f in files) '$folder/${f.name}']);
+  }
 }
 
 /// Subscribes to changes to [userId]'s import jobs, calling [onChange] for

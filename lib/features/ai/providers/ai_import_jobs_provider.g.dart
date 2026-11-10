@@ -61,7 +61,7 @@ final class AiImportJobsNotifierProvider
 }
 
 String _$aiImportJobsNotifierHash() =>
-    r'1793002ed67ba40a4a9ed006243c596c7b73530e';
+    r'6477a2c866cfda5c20d17626d8faad90ed497ae3';
 
 /// The signed-in user's open imports: processing, ready to review, or failed
 /// and not yet dismissed. Newest first.

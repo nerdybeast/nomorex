@@ -171,6 +171,15 @@ void main() {
       expect(exercises[1]['sets'][0]['weightKg'], 45.359);
       expect(exercises[2]['sets'][0]['weightKg'], 102.058);
       expect(find.text('Workout w-new'), findsOneWidget, reason: 'opens the new workout');
+      expect(jobs.filesRemoved, ['u1/import-j1'], reason: 'the uploads are deleted once saved');
+    });
+
+    testWidgets('a file deletion that fails doesn\'t fail the save', (tester) async {
+      await pump(tester, readyReview(programResult()));
+      jobs.removeError = Exception('storage down');
+      await tapKey(tester, 'ai_import_review_accept');
+      expect(server.accepted, hasLength(1));
+      expect(find.text('Program p-new'), findsOneWidget, reason: 'the daily cleanup deletes them instead');
     });
 
     testWidgets('a failed save keeps the review and can be retried', (tester) async {
@@ -316,6 +325,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(jobs.discarded, ['j1']);
+      expect(jobs.filesRemoved, ['u1/import-j1']);
       expect(server.accepted, isEmpty);
       expect(find.text('Home screen'), findsOneWidget);
     });

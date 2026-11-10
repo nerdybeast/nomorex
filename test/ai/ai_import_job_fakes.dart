@@ -47,6 +47,8 @@ class FakeJobServer {
   final Map<String, List<AiImportJob>> jobs = {};
   final List<String> fetchedFor = [];
   final List<String> discarded = [];
+  final List<String> filesRemoved = [];
+  Object? removeError;
 
   int get fetches => fetchedFor.length;
 }
@@ -59,6 +61,12 @@ class FakeJobsNotifier extends AiImportJobsNotifier {
   Future<List<AiImportJob>> fetchJobs(String userId) async {
     server.fetchedFor.add(userId);
     return List.of(server.jobs[userId] ?? const []);
+  }
+
+  @override
+  Future<void> deleteImportFiles(String folder) async {
+    if (server.removeError case final e?) throw e;
+    server.filesRemoved.add(folder);
   }
 
   @override

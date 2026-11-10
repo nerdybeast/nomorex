@@ -1,0 +1,13 @@
+{
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.119.0"
+  },
+  "lock": false,
+  "fmt": {
+    "singleQuote": true,
+    "lineWidth": 110
+  },
+  "tasks": {
+    "check": "deno fmt --check && deno lint && deno check index.ts && deno test --allow-env"
+  }
+}
