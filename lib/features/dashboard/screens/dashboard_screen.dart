@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../ai/providers/ai_import_jobs_provider.dart';
+import '../../ai/widgets/ai_import_jobs_section.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/pr_card.dart';
@@ -89,6 +91,7 @@ class DashboardScreen extends ConsumerWidget {
                         .refresh();
                     ref.read(personalBestsProvider.notifier).refresh();
                     ref.read(finishedWorkoutsProvider.notifier).refresh();
+                    ref.invalidate(aiImportJobsProvider);
                   },
           ),
           IconButton(
@@ -105,6 +108,8 @@ class DashboardScreen extends ConsumerWidget {
             const _DashboardWelcomeBanner(),
             const SizedBox(height: 24),
           ],
+          // Empty unless the user has an import running, ready or failed.
+          const AiImportJobsSection(),
           const _SectionLabel('Workouts in progress'),
           const SizedBox(height: 8),
           inProgressWorkoutsAsync.when(

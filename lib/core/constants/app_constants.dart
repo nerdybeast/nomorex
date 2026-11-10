@@ -14,6 +14,8 @@ class AppConstants {
   // AI import: choose and upload files. Linked only from Profile in debug
   // builds until launch (#88).
   static const String routeAiImport = '/ai-import';
+  // Review one finished import job. The screen itself is #86.
+  static String routeAiImportReview(String jobId) => '/ai-import/review/$jobId';
   static const String routeShell = '/shell';
   static const String routeHome = '/shell/home';
   static const String routePrs = '/shell/prs';

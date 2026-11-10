@@ -12,6 +12,7 @@ import '../utils/import_file_check.dart';
 import '../utils/import_file_picker.dart';
 import '../utils/import_image_prep.dart';
 import '../utils/import_messages.dart';
+import 'ai_import_jobs_provider.dart';
 
 part 'ai_import_intake_provider.g.dart';
 
@@ -29,7 +30,7 @@ Future<AiImportLimits> aiImportLimits(Ref ref) async {
   ref.watch(currentAuthUserProvider);
   final row = await Supabase.instance.client
       .from('ai_import_limits')
-      .select('max_images, max_pdf_pages, max_image_bytes, max_pdf_bytes')
+      .select('max_images, max_pdf_pages, max_image_bytes, max_pdf_bytes, max_job_seconds')
       .single();
   return AiImportLimits.fromJson(row);
 }
@@ -363,6 +364,8 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
     try {
       final jobId = await startImport(importId, requestedType: requestedType);
       state = ImportIntakeState(phase: ImportIntakePhase.started, jobId: jobId);
+      // Home and the Realtime watcher pick the new job up from here.
+      ref.invalidate(aiImportJobsProvider);
     } on GenkitFlowException catch (e) {
       // NETWORK and UNKNOWN mean the outcome is unknown: the import may be
       // running and reading these files, so they're left for the cleanup

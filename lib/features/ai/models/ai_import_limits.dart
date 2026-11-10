@@ -7,6 +7,7 @@ class AiImportLimits {
     required this.maxPdfPages,
     required this.maxImageBytes,
     required this.maxPdfBytes,
+    this.maxJobSeconds = 180,
   });
 
   factory AiImportLimits.fromJson(Map<String, dynamic> json) => AiImportLimits(
@@ -14,12 +15,17 @@ class AiImportLimits {
     maxPdfPages: (json['max_pdf_pages'] as num).toInt(),
     maxImageBytes: (json['max_image_bytes'] as num).toInt(),
     maxPdfBytes: (json['max_pdf_bytes'] as num).toInt(),
+    maxJobSeconds: (json['max_job_seconds'] as num?)?.toInt() ?? 180,
   );
 
   final int maxImages;
   final int maxPdfPages;
   final int maxImageBytes;
   final int maxPdfBytes;
+
+  /// How long a job can possibly run. A job still processing after this is
+  /// dead (the worker was killed), even before the cleanup sweep marks it.
+  final int maxJobSeconds;
 }
 
 /// The result of `ai_import_check()`: whether this user may start an import
