@@ -2,7 +2,7 @@
 #
 # Provisions a Claude Code cloud VM so a session can prove a change the way CI
 # does (analyze, tests, migrations, E2E, web build). Heavy, slow-changing work
-# only: toolchains, system packages, Supabase images, headless Chromium.
+# only: toolchains, system packages, Supabase images, headless Chromium, Deno.
 #
 # Meant to be the environment's *setup script* (claude.ai/code -> environment
 # -> Setup script), whose result Anthropic snapshots and reuses, so new sessions
@@ -158,12 +158,23 @@ chain_supabase() {
   fi
 }
 
+# --- Chain D: Deno (edge function checks) -------------------------------------
+
+chain_deno() {
+  if run_step "Deno install" install_deno; then
+    record 6-deno ok "Deno $DENO_VERSION installed (edge function checks run without Docker)"
+  else
+    record 6-deno WARNING "Deno install failed — verify.sh falls back to the Docker image, which Docker Hub may rate-limit"
+  fi
+}
+
 # --- Run ----------------------------------------------------------------------
 
 chain_flutter & pid_a=$!
 chain_apt_playwright & pid_b=$!
 chain_supabase & pid_c=$!
-wait "$pid_a" "$pid_b" "$pid_c"
+chain_deno & pid_d=$!
+wait "$pid_a" "$pid_b" "$pid_c" "$pid_d"
 
 $SUDO mkdir -p "$(dirname "$STATUS_FILE")"
 {
