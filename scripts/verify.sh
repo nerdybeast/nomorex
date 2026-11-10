@@ -81,21 +81,23 @@ else
   skip "E2E" "--no-e2e"
 fi
 
-# Genkit edge function: fmt, lint, type-check, unit tests (deno task check).
+# Edge functions: fmt, lint, type-check, unit tests (deno task check).
 # Same Deno version as CI and the edge runtime. Falls back to the pinned Docker
 # image when Deno isn't installed.
 DENO_VERSION="2.1.4"
 deno_check_docker() {
-  docker run --rm -v "$PWD/supabase/functions/ai:/app" -w /app \
+  docker run --rm -v "$PWD/supabase/functions/$1:/app" -w /app \
     "denoland/deno:$DENO_VERSION" deno task check
 }
-if command -v deno >/dev/null 2>&1; then
-  stage "edge functions (deno task check)" bash -c 'cd supabase/functions/ai && deno task check'
-elif need_docker; then
-  stage "edge functions (deno task check, docker)" deno_check_docker
-else
-  skip "edge functions" "neither Deno nor Docker available — NOT proven"
-fi
+for fn in ai ai-import-cleanup; do
+  if command -v deno >/dev/null 2>&1; then
+    stage "edge function $fn (deno task check)" bash -c "cd supabase/functions/$fn && deno task check"
+  elif need_docker; then
+    stage "edge function $fn (deno task check, docker)" deno_check_docker "$fn"
+  else
+    skip "edge function $fn" "neither Deno nor Docker available — NOT proven"
+  fi
+done
 
 if [[ "$RUN_WEB" == true ]]; then
   if [[ -f "$ENV_FILE" ]]; then

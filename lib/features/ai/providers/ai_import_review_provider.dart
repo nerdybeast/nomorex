@@ -77,6 +77,10 @@ class AiImportReviewNotifier extends _$AiImportReviewNotifier {
   Future<AcceptedImport> accept(Map<String, dynamic> reviewed) async {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final saved = await acceptImport(jobId, reviewed, today);
+    // Saved, so the uploaded files aren't needed again.
+    if (state.value?.importId case final importId?) {
+      await ref.read(aiImportJobsProvider.notifier).removeImportFiles(importId);
+    }
     // Accept can create custom exercises as well as the item itself.
     ref.invalidate(workoutsProvider);
     ref.invalidate(programsProvider);
@@ -93,7 +97,8 @@ class AiImportReviewNotifier extends _$AiImportReviewNotifier {
     return newJobId;
   }
 
-  Future<void> discard() => ref.read(aiImportJobsProvider.notifier).discard(jobId);
+  Future<void> discard() =>
+      ref.read(aiImportJobsProvider.notifier).discard(jobId, importId: state.value?.importId);
 
   // Network calls, split out so tests can override them.
 

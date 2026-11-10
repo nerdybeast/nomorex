@@ -71,6 +71,7 @@ void main() {
       await tester.pump();
 
       expect(server.discarded, ['a']);
+      expect(server.filesRemoved, ['u1/import-a'], reason: 'its uploads are deleted');
       expect(find.text('Import failed'), findsNothing);
       expect(find.text('Workout ready to review'), findsOneWidget);
     });

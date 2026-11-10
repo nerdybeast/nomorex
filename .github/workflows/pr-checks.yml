@@ -230,14 +230,18 @@ jobs:
       - name: Database tests (pgTAP)
         run: supabase test db --local
 
-  # Genkit edge function (supabase/functions/ai). Unit tests use a fake model
-  # and a fake Supabase client: no network, no API key, no local stack.
+  # Edge functions: `ai` (Genkit) and `ai-import-cleanup`. Unit tests use fakes
+  # for the model and Supabase: no network, no API key, no local stack.
   functions:
-    name: Edge functions (Deno)
+    name: Edge functions (Deno, ${{ matrix.function }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        function: [ai, ai-import-cleanup]
     defaults:
       run:
-        working-directory: supabase/functions/ai
+        working-directory: supabase/functions/${{ matrix.function }}
     steps:
       - uses: actions/checkout@v7
 
