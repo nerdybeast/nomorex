@@ -72,20 +72,30 @@ install_deno() {
 # Docker is pre-installed in cloud sessions but the daemon isn't running.
 # Sets STARTED_DOCKERD=true when this call is what started it.
 STARTED_DOCKERD=false
+
+# remove_stale_pidfile <pidfile> <process name> — deletes the pidfile unless
+# its PID is a live process called <process name>.
+remove_stale_pidfile() {
+  local file="$1" name="$2" pid
+  pid="$(cat "$file" 2>/dev/null || true)"
+  if [ -n "$pid" ] && [ "$(cat "/proc/$pid/comm" 2>/dev/null)" != "$name" ]; then
+    echo "removing stale $file (PID $pid is not $name)"
+    $SUDO rm -f "$file"
+  fi
+}
+
 ensure_docker() {
   if ! command -v docker >/dev/null 2>&1; then
     $SUDO env DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300 install -y docker.io
   fi
   if docker info >/dev/null 2>&1; then return 0; fi
-  # A resumed VM keeps the previous dockerd's pidfile. If that PID now belongs
-  # to some other process, dockerd refuses to start ("process with PID N is
-  # still running"). Only a pidfile naming a live dockerd is real.
-  local pid
-  pid="$(cat /var/run/docker.pid 2>/dev/null || true)"
-  if [ -n "$pid" ] && [ "$(cat "/proc/$pid/comm" 2>/dev/null)" != "dockerd" ]; then
-    echo "removing stale /var/run/docker.pid (PID $pid is not dockerd)"
-    $SUDO rm -f /var/run/docker.pid
-  fi
+  # A resumed VM keeps the previous daemons' pidfiles. If a PID now belongs to
+  # some other process, dockerd refuses to start ("process with PID N is still
+  # running"), or, for containerd's, assumes its managed containerd is up and
+  # times out waiting for it ("timeout waiting for containerd to start"). Only
+  # a pidfile naming a live process of the right name is real.
+  remove_stale_pidfile /var/run/docker.pid dockerd
+  remove_stale_pidfile /var/run/docker/containerd/containerd.pid containerd
   $SUDO sh -c 'nohup dockerd >/var/log/dockerd.log 2>&1 &'
   STARTED_DOCKERD=true
   for _ in $(seq 1 30); do
