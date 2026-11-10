@@ -8,6 +8,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'features/ai/screens/ai_import_screen.dart';
+import 'features/ai/screens/ai_import_review_screen.dart';
+import 'features/ai/widgets/ai_import_job_alerts.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/screens/landing_screen.dart';
 import 'features/auth/screens/login_screen.dart';
@@ -120,6 +122,10 @@ GoRouter router(Ref ref) {
         builder: (_, _) => const AiImportScreen(),
       ),
       GoRoute(
+        path: '/ai-import/review/:jobId',
+        builder: (_, state) => AiImportReviewScreen(jobId: state.pathParameters['jobId']!),
+      ),
+      GoRoute(
         path: AppConstants.routeAddPr,
         builder: (_, state) => AddPrScreen(
           exerciseId: state.uri.queryParameters['exerciseId'],
@@ -218,8 +224,10 @@ class NomorexApp extends ConsumerWidget {
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
       routerConfig: router,
-      builder: (context, child) =>
-          HapticTapScope(child: KeyboardDismissScope(child: child!)),
+      builder: (context, child) => AiImportJobAlerts(
+        navigate: (location) => router.push(location),
+        child: HapticTapScope(child: KeyboardDismissScope(child: child!)),
+      ),
     );
   }
 }
