@@ -100,8 +100,9 @@ String _$currentAuthUserHash() => r'5dd8395a9974f11d001b55a8cd64af89b3bff9ce';
 /// Watched once from [NomorexApp] to run for the lifetime of the app.
 ///
 /// Sending the user's id and email makes Sentry's crash and diagnostic data
-/// "linked to the user"; ios/Runner/PrivacyInfo.xcprivacy declares that, so
-/// update it if this context changes.
+/// "linked to the user"; ios/Runner/PrivacyInfo.xcprivacy and the privacy
+/// policy (web/privacy.html) both say so, so update them if this context
+/// changes.
 
 @ProviderFor(sentryUserSync)
 final sentryUserSyncProvider = SentryUserSyncProvider._();
@@ -111,8 +112,9 @@ final sentryUserSyncProvider = SentryUserSyncProvider._();
 /// Watched once from [NomorexApp] to run for the lifetime of the app.
 ///
 /// Sending the user's id and email makes Sentry's crash and diagnostic data
-/// "linked to the user"; ios/Runner/PrivacyInfo.xcprivacy declares that, so
-/// update it if this context changes.
+/// "linked to the user"; ios/Runner/PrivacyInfo.xcprivacy and the privacy
+/// policy (web/privacy.html) both say so, so update them if this context
+/// changes.
 
 final class SentryUserSyncProvider extends $FunctionalProvider<void, void, void>
     with $Provider<void> {
@@ -121,8 +123,9 @@ final class SentryUserSyncProvider extends $FunctionalProvider<void, void, void>
   /// Watched once from [NomorexApp] to run for the lifetime of the app.
   ///
   /// Sending the user's id and email makes Sentry's crash and diagnostic data
-  /// "linked to the user"; ios/Runner/PrivacyInfo.xcprivacy declares that, so
-  /// update it if this context changes.
+  /// "linked to the user"; ios/Runner/PrivacyInfo.xcprivacy and the privacy
+  /// policy (web/privacy.html) both say so, so update them if this context
+  /// changes.
   SentryUserSyncProvider._()
     : super(
         from: null,

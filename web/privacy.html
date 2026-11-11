@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NoMoreX Privacy Policy</title>
+  <meta name="description" content="What NoMoreX collects, why, who it's shared with, and how to delete it.">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <!--
+    Served as-is by GitHub Pages: everything in web/ is copied into the web
+    build, so this lives at https://nerdybeast.github.io/nomorex/privacy.html.
+    The app links here from Profile (AppConstants.privacyPolicyUrl), and the
+    same URL goes in App Store Connect and Play Console.
+
+    Keep it in step with what the app actually collects:
+    ios/Runner/PrivacyInfo.xcprivacy, the Sentry user context
+    (sentryUserSync in lib/features/auth/providers/auth_provider.dart), the
+    AI import notice (lib/features/ai/screens/ai_import_screen.dart), and the
+    App Store / Play data-disclosure answers.
+  -->
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1d1b20;
+      --muted: #5c5862;
+      --accent: #d9480f;
+      --rule: #e6e1e8;
+      --todo-bg: #fff3bf;
+      --todo-fg: #5c3c00;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141218;
+        --fg: #e6e1e8;
+        --muted: #aca6b2;
+        --accent: #ff8a4c;
+        --rule: #322f37;
+        --todo-bg: #4a3a00;
+        --todo-fg: #ffe8a3;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+    h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 4px; }
+    h2 { font-size: 1.2rem; margin: 36px 0 8px; padding-top: 16px; border-top: 1px solid var(--rule); }
+    h3 { font-size: 1rem; margin: 20px 0 4px; }
+    p, ul { margin: 0 0 12px; }
+    ul { padding-left: 1.25rem; }
+    li { margin-bottom: 6px; }
+    a { color: var(--accent); }
+    .meta { color: var(--muted); margin-bottom: 24px; }
+    .todo {
+      background: var(--todo-bg);
+      color: var(--todo-fg);
+      padding: 0 4px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+    nav ol { padding-left: 1.25rem; columns: 2; column-gap: 32px; }
+    @media (max-width: 560px) { nav ol { columns: 1; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>NoMoreX Privacy Policy</h1>
+  <p class="meta">Last updated: November 11, 2026</p>
+
+  <p>
+    NoMoreX is a strength-training log. You record personal bests, build workouts and programs, and log your
+    training sessions. This policy explains what information the NoMoreX app collects, why, who it's shared with,
+    how long it's kept, and how to have it deleted. It covers the iOS and Android apps and the web app.
+  </p>
+  <p>
+    NoMoreX is made and run by Michael Penrod, an independent developer ("we", "us"). Questions about this policy or your
+    information go to <a href="mailto:therealnerdybeast@gmail.com">therealnerdybeast@gmail.com</a>.
+  </p>
+
+  <nav aria-label="Contents">
+    <ol>
+      <li><a href="#collect">What we collect</a></li>
+      <li><a href="#use">How we use it</a></li>
+      <li><a href="#public">What other people can see</a></li>
+      <li><a href="#ai-import">AI import</a></li>
+      <li><a href="#providers">Service providers</a></li>
+      <li><a href="#retention">How long we keep it</a></li>
+      <li><a href="#delete-account">Deleting your account</a></li>
+      <li><a href="#rights">Your rights</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#children">Children</a></li>
+      <li><a href="#changes">Changes to this policy</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="collect">1. What we collect</h2>
+
+  <h3>Account information</h3>
+  <ul>
+    <li><strong>Email address</strong>, used to sign in and to identify your account.</li>
+    <li><strong>Password</strong>. Our authentication provider stores only a one-way hash of it; we never see it.</li>
+    <li><strong>User ID</strong>, a random identifier created with your account.</li>
+  </ul>
+
+  <h3>Profile</h3>
+  <ul>
+    <li><strong>Display name</strong>, if you set one. It's optional.</li>
+    <li><strong>Preferences</strong>: your weight unit (kg, lbs or both) and the formula used to estimate your
+      one-rep max.</li>
+  </ul>
+
+  <h3>Training data</h3>
+  <ul>
+    <li>Personal bests: the lift, weight, reps and date.</li>
+    <li>Workouts and programs you create or save, including their exercises, sets, notes and any custom exercises
+      you add.</li>
+    <li>What you log during a session: which sets you completed, the weight you used and the effort (RPE) you
+      record, and when the session started and finished.</li>
+  </ul>
+
+  <h3>Crash and diagnostic data</h3>
+  <p>
+    When the app crashes or hits an error, it sends a report to our crash-reporting provider (Sentry). A report
+    includes what went wrong and where in the app, the app version, and your device model and operating system
+    version. It's linked to your account by your user ID and email address so we can follow up on problems you
+    run into.
+  </p>
+
+  <h3>Files you upload for AI import</h3>
+  <p>
+    Only if you use AI import: the photos or PDF you choose, and what was read from them. See
+    <a href="#ai-import">AI import</a>.
+  </p>
+
+  <h3>What we don't collect</h3>
+  <p>
+    NoMoreX has no advertising and doesn't track you across other companies' apps or websites. We don't collect your
+    contacts, your precise location, or health data from Apple Health or Google Health Connect. Photos you import
+    have their location data removed on your device before they're uploaded.
+  </p>
+
+  <h2 id="use">2. How we use it</h2>
+  <ul>
+    <li>To run the app: keep your account, store your training history, and work out weights from your personal
+      bests.</li>
+    <li>To show what you choose to publish to other users (see <a href="#public">below</a>).</li>
+    <li>To find and fix crashes and errors.</li>
+    <li>To run AI import when you ask for it, and to enforce its usage limits.</li>
+  </ul>
+  <p>
+    We don't sell your information, share it for advertising, or use it to build an advertising profile.
+  </p>
+
+  <h2 id="public">3. What other people can see</h2>
+  <p>
+    Everything you create is private unless you make it public. When you make a workout or program public, other
+    NoMoreX users can see it in Community, along with your display name (or a generic label if you haven't set one).
+    Your email address is never shown to other users.
+  </p>
+  <p>
+    Other users can save a copy of a public workout or program to their own account. A copy belongs to them: it
+    stays in their account, with your display name as it was when they copied it, even if you later make the
+    original private or delete it.
+  </p>
+
+  <h2 id="ai-import">4. AI import</h2>
+  <p>
+    AI import reads a workout or program from photos or a PDF you choose. It's optional, and the app asks you to
+    accept a notice before your first import.
+  </p>
+  <ul>
+    <li>Your files are uploaded to our storage and sent to Anthropic, whose AI model, Claude, reads them to find
+      the workout or program. Anthropic processes them on our behalf under its commercial terms, which don't allow
+      it to train its models on them. Anthropic deletes what we send it, and what its model returns, within 30
+      days. It can keep them longer only where the law requires, or for up to 2 years if its automated safety
+      systems flag them as breaking its usage policy.</li>
+    <li>You review what was read before anything is saved to your account.</li>
+    <li>Your uploaded files are deleted from NoMoreX once you save or discard the import, or after 7 days if you do
+      neither. What was read is deleted after 7 days if you haven't saved it.</li>
+    <li>We keep a small record of each import (when it ran, whether it succeeded, and how much processing it used)
+      to enforce usage limits and manage costs. It doesn't include your files or what was read from them.</li>
+    <li>Please don't upload photos of other people or personal details such as names, addresses or medical
+      notes.</li>
+  </ul>
+
+  <h2 id="providers">5. Service providers</h2>
+  <p>
+    We use these companies to run NoMoreX. They process information only to provide their service to us.
+  </p>
+  <ul>
+    <li><strong>Supabase</strong>: database, sign-in, file storage and server functions. Your account and training
+      data are stored here, in the United States (Northern Virginia).</li>
+    <li><strong>Sentry</strong>: crash and error reports.</li>
+    <li><strong>Anthropic</strong>: reads the files you upload for AI import, and only when you use it.</li>
+    <li><strong>GitHub</strong>: hosts the web app and this page.</li>
+    <li><strong>Apple and Google</strong>: distribute the apps through the App Store and Google Play under their own
+      privacy policies.</li>
+  </ul>
+  <p>
+    If you use NoMoreX from outside the United States, your information is transferred to and stored in the
+    United States.
+  </p>
+  <p>
+    Like any online service, these providers receive your device's IP address when the app connects to them, as
+    part of handling the connection.
+  </p>
+  <p>
+    We may also disclose information if the law requires it, or to protect the safety of our users or the
+    security of the service.
+  </p>
+
+  <h2 id="retention">6. How long we keep it</h2>
+  <ul>
+    <li><strong>Account, profile and training data</strong>: until you delete it in the app or delete your
+      account.</li>
+    <li><strong>AI import files and results</strong>: as described in <a href="#ai-import">AI import</a>.</li>
+    <li><strong>Crash reports</strong>: up to 30 days, then deleted by
+      Sentry.</li>
+  </ul>
+
+  <h2 id="delete-account">7. Deleting your account</h2>
+  <p>
+    To delete your NoMoreX account and its data, email <a href="mailto:therealnerdybeast@gmail.com">therealnerdybeast@gmail.com</a> from the address
+    you sign in with and ask for your account to be deleted. We'll confirm the request and delete your account
+    within 30 days.
+  </p>
+  <p>Deleting your account removes:</p>
+  <ul>
+    <li>your account, email address and profile;</li>
+    <li>your personal bests, workouts, programs, logged sessions and custom exercises;</li>
+    <li>any AI import files and results.</li>
+  </ul>
+  <p>
+    Copies other users saved of things you published belong to them and aren't removed (see
+    <a href="#public">What other people can see</a>). Crash reports expire on their own schedule (see
+    <a href="#retention">How long we keep it</a>).
+  </p>
+  <p>
+    Without deleting your account, you can delete personal bests and workouts in the app at any time. Programs can
+    be archived in the app; deleting your account removes them.
+  </p>
+
+  <h2 id="rights">8. Your rights</h2>
+  <p>
+    Depending on where you live, you may have the right to access the information we hold about you, correct it,
+    delete it, get a copy of it, or object to how it's used. To make a request, email
+    <a href="mailto:therealnerdybeast@gmail.com">therealnerdybeast@gmail.com</a>. We'll respond within the time the law allows. You can also complain
+    to your local data protection authority.
+  </p>
+
+  <h2 id="security">9. Security</h2>
+  <p>
+    Information travels between the app and our servers over encrypted connections. Each user's data is
+    separated at the database level, so one account can't read another's private data. No system is perfectly
+    secure, but we work to protect your information and fix problems quickly.
+  </p>
+
+  <h2 id="children">10. Children</h2>
+  <p>
+    NoMoreX isn't directed at children under 13, and we
+    don't knowingly collect their information. If you believe a child has created an account, contact us and
+    we'll delete it.
+  </p>
+
+  <h2 id="changes">11. Changes to this policy</h2>
+  <p>
+    If we change this policy, we'll update the date at the top. If a change affects how your information is used,
+    we'll also tell you in the app before it takes effect.
+  </p>
+
+  <h2 id="contact">12. Contact</h2>
+  <p>
+    Michael Penrod<br>
+    <a href="mailto:therealnerdybeast@gmail.com">therealnerdybeast@gmail.com</a>
+  </p>
+</main>
+</body>
+</html>

@@ -8,6 +8,11 @@ class AppConstants {
   static const double kWorkoutTimerMaxWidth = 400.0;
 
   // Route paths
+  /// The public privacy policy: web/privacy.html, published with the web app
+  /// on GitHub Pages. The same URL is entered in App Store Connect and Play
+  /// Console, so don't move it without updating both.
+  static const String privacyPolicyUrl = 'https://nerdybeast.github.io/nomorex/privacy.html';
+
   static const String routeLanding = '/';
   static const String routeLogin = '/login';
   static const String routeProfile = '/profile';
