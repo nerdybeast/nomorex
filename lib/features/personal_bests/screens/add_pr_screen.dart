@@ -265,7 +265,11 @@ class _AddPrScreenState extends ConsumerState<AddPrScreen> {
                     const SizedBox(height: 24),
                     FilledButton(
                       key: const Key('add_pr_submit'),
-                      onPressed: (_loading || _selectedExercise == null) ? null : _submit,
+                      // The database refuses a 0 kg PR (personal_bests_weight_kg_check),
+                      // so don't offer to save one.
+                      onPressed: (_loading || _selectedExercise == null || _weight <= 0)
+                          ? null
+                          : _submit,
                       child: _loading
                           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                           : const Text('Save personal best'),

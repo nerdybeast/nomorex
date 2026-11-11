@@ -125,7 +125,10 @@ class SetEditor extends ConsumerWidget {
                   minLabel: 'Min %1RM',
                   maxLabel: 'Max %1RM',
                   switchLabel: '%1RM range',
-                  floor: 0,
+                  // The database accepts above 0 and up to 200% (#36), the
+                  // same bounds an AI import accepts.
+                  floor: kMinSetPercentage,
+                  ceiling: kMaxSetPercentage,
                   step: 5,
                   decimals: 1,
                   spread: 5,

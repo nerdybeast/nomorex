@@ -179,6 +179,23 @@ void main() {
     expect(captured, 100);
   });
 
+  testWidgets('a 0 weight cannot be saved, since the database refuses it (#36)',
+      (tester) async {
+    var saved = false;
+    await tester.pumpWidget(_wrap('kg', (_) => saved = true));
+    await tester.pumpAndSettle();
+    await _selectExercise(tester);
+
+    final submit = find.byKey(const Key('add_pr_submit'));
+    await tester.ensureVisible(submit);
+    await tester.pumpAndSettle();
+    expect(tester.widget<FilledButton>(submit).onPressed, isNull);
+
+    await _enterLift(tester, weight: '60', reps: 1);
+    expect(tester.widget<FilledButton>(submit).onPressed, isNotNull);
+    expect(saved, isFalse);
+  });
+
   testWidgets('exerciseId pre-fills the matching exercise in the picker', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

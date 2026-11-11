@@ -235,6 +235,29 @@ void main() {
       expect(added!.single.percentageMax, isNull);
     });
 
+    testWidgets('typed percentages are held to the bounds the database accepts (#36)',
+        (tester) async {
+      List<ParsedSet>? added;
+      await tester.pumpWidget(_wrap(_editor(onPct: (p) => added = p)));
+      await tester.pumpAndSettle();
+      await _openPctDialogWithRange(tester);
+
+      await tester.enterText(_field('set_editor_pct'), '0');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(_stepperText(tester, 'set_editor_pct'), '0.5');
+
+      await tester.enterText(_field('set_editor_pct_max'), '900');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(_stepperText(tester, 'set_editor_pct_max'), '200');
+
+      await tester.tap(find.text('Add'));
+      await tester.pumpAndSettle();
+      expect(added!.single.percentage, kMinSetPercentage);
+      expect(added!.single.percentageMax, kMaxSetPercentage);
+    });
+
     testWidgets('set rows label ranges and half percents', (tester) async {
       await tester.pumpWidget(_wrap(_editor(sets: const [
         EditableSetRow(id: 'a', weightMode: 'percentage', targetReps: 7, percentage: 67, percentageMax: 72.5),
