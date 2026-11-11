@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/core/constants/app_constants.dart';
 import 'package:nomorex/core/utils/external_link.dart';
+import 'package:nomorex/features/admin/models/app_roles.dart';
+import 'package:nomorex/features/admin/providers/current_roles_provider.dart';
 import 'package:nomorex/features/ai/models/smoke_test_result.dart';
 import 'package:nomorex/features/ai/providers/ai_smoke_test_provider.dart';
 import 'package:nomorex/features/ai/utils/genkit_call.dart';
@@ -103,9 +105,11 @@ Widget _wrap(
   VoidCallback? onSignOut,
   _FakeAiSmokeTestNotifier? aiSmokeTest,
   Future<bool> Function(Uri)? openLink,
+  Set<String> roles = const {},
 }) =>
     ProviderScope(
       overrides: [
+        currentUserRolesProvider.overrideWith((ref) async => roles),
         if (openLink != null) externalLinkOpenerProvider.overrideWithValue(openLink),
         if (aiSmokeTest != null) aiSmokeTestProvider.overrideWith(() => aiSmokeTest),
         currentAuthUserProvider.overrideWithValue(user),
@@ -123,6 +127,24 @@ Widget _wrap(
     );
 
 void main() {
+  group('admin entry point', () {
+    const profile = Profile(id: 'u1', unitPreference: 'both', oneRepMaxFormula: OneRepMaxFormula.brzycki);
+
+    testWidgets('is hidden from users who are not admins', (tester) async {
+      await tester.pumpWidget(_wrap(profile));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('profile_admin_button')), findsNothing);
+      expect(find.text('ADMIN'), findsNothing);
+    });
+
+    testWidgets('is shown to admins', (tester) async {
+      await tester.pumpWidget(_wrap(profile, roles: const {AppRoles.admin}));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('profile_admin_button')));
+      expect(find.byKey(const Key('profile_admin_button')), findsOneWidget);
+    });
+  });
+
   testWidgets('shows the user id, email, and member-since date', (tester) async {
     await tester.pumpWidget(_wrap(const Profile(
         id: 'u1',

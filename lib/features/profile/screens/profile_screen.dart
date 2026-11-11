@@ -2,12 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/external_link.dart';
 import '../../../core/utils/one_rep_max_formula.dart';
 import '../../../core/utils/owner_name.dart';
+import '../../admin/providers/current_roles_provider.dart';
 import '../../ai/providers/ai_smoke_test_provider.dart';
 import '../../ai/utils/genkit_call.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -55,6 +57,7 @@ class ProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(profileProvider);
     final unit = ref.watch(unitPreferenceProvider);
     final formula = ref.watch(oneRepMaxFormulaProvider);
+    final isAdmin = ref.watch(isAdminProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final memberSince = user != null && user.createdAt.isNotEmpty
         ? formatDate(DateTime.parse(user.createdAt))
@@ -144,6 +147,18 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ],
                   const SizedBox(height: 28),
+                  if (isAdmin) ...[
+                    Text('ADMIN', style: NomorexTokens.of(context).eyebrow),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      key: const Key('profile_admin_button'),
+                      style: NomorexTokens.of(context).secondaryButtonStyle,
+                      icon: const Icon(Icons.admin_panel_settings_outlined),
+                      label: const Text('Admin'),
+                      onPressed: () => context.push(AppConstants.routeAdmin),
+                    ),
+                    const SizedBox(height: 28),
+                  ],
                   Text('ABOUT', style: NomorexTokens.of(context).eyebrow),
                   const SizedBox(height: 4),
                   const _PrivacyPolicyLink(),
