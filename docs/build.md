@@ -78,7 +78,8 @@ to end from a phone. Provisioning is split in two:
   xvfb the E2E job uses, the Supabase Docker images, and Playwright's Chromium
   (for `scripts/web-shot.mjs`, which signs in, turns on Flutter's accessibility
   tree and can run a flow from `scripts/web-flows/` that clicks widgets by role
-  and name). Installs run in parallel to fit the ~5 minute cache budget, it
+  and name). It also prebuilds the Dart MCP server (see "Dart MCP server for
+  Claude Code" below). Installs run in parallel to fit the ~5 minute cache budget, it
   always exits 0, and it writes per-stage results to
   `/var/lib/nomorex-cloud-setup.status`.
 - **`.claude/hooks/session-start.sh`** is the light, per-session half: `flutter
@@ -88,7 +89,8 @@ to end from a phone. Provisioning is split in two:
   the toolchain isn't on disk it runs `cloud-setup.sh` itself, so it works
   with no setup script configured, only slower. It also installs Deno on its
   own when that's the only thing missing (a snapshot from before Deno was
-  added), which takes a few seconds.
+  added), which takes a few seconds, and builds the Dart MCP server in the
+  background when a snapshot from before that was added lacks it.
 
 **One-time setup:** in claude.ai/code, open the environment, select **Setup
 script**, paste the stub below once, and save. It is stored on the environment,
@@ -151,7 +153,8 @@ flutter run \
 ### Dart MCP server for Claude Code
 
 `.mcp.json` gives Claude Code the Dart and Flutter MCP server (`dart mcp-server`,
-which ships with the Dart SDK, so there's nothing to install). It adds:
+part of the Dart SDK's tooling, so there's nothing to add to `pubspec.yaml`). It
+adds:
 
 - `lsp` and `analyze_files`: find references and definitions, and run the analyzer
   on specific files.
@@ -172,6 +175,28 @@ in cloud sessions Flutter is only added to `PATH` for Bash commands.
 To check it by hand, `./scripts/dart-mcp.sh` should wait silently for MCP messages
 on stdin. Anything it prints to stdout corrupts the protocol, so the script's own
 messages go to stderr.
+
+**The first launch on a machine is slow.** The server isn't a prebuilt snapshot in
+the SDK: the first `dart mcp-server` downloads the `dart_mcp_server` package from
+pub.dev and AOT-compiles it into
+`${XDG_STATE_HOME:-~/.local/state}/Dart/install/app-bundles/dart_mcp_server`. That
+takes about 10s on an idle machine and more at session start, which is longer than
+Claude Code's 30s MCP connect timeout allows, so a cold cloud container used to
+report `dart (CONNECT_TIMEOUT)`. After that it starts in well under a second.
+
+- **Cloud:** `cloud-setup.sh` prebuilds it into the environment snapshot
+  (`build_dart_mcp` in `scripts/lib/cloud.sh`; the setup summary shows a
+  `Dart MCP server` line). A snapshot made before that change lacks it. The
+  SessionStart hook then builds it in the background, but it runs at the same time
+  as Claude Code's first connect, so that session still times out: run `/mcp` and
+  reconnect `dart` about a minute later. Rebuilding the environment cache (see
+  "One-time setup" above) fixes it for good.
+- **Locally:** the first launch builds it once per SDK. If that times out, run
+  `./scripts/dart-mcp.sh </dev/null` once to build it, then reconnect with `/mcp`.
+- **Diagnosing a timeout:** Claude Code logs each connection attempt to
+  `~/.cache/claude-cli-nodejs/<project>/mcp-logs-dart/`. The server's stderr there
+  (the "running flutter as root" banner is harmless) and a missing
+  `app-bundles/dart_mcp_server` directory point at the cold build.
 
 ## CI / CD
 

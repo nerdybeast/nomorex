@@ -116,3 +116,24 @@ toolchain_present() {
     && command -v xvfb-run >/dev/null 2>&1 \
     && command -v docker >/dev/null 2>&1
 }
+
+# The Dart MCP server (.mcp.json -> scripts/dart-mcp.sh -> `dart mcp-server`)
+# isn't a prebuilt SDK snapshot: on first use the SDK downloads the
+# dart_mcp_server package from pub.dev and AOT-compiles it into
+# $XDG_STATE_HOME/Dart/install/app-bundles. Cold, that took longer than Claude
+# Code's 30s MCP connect timeout while the SessionStart hook competed for CPU,
+# so the server never connected. Built ahead of time it starts in well under
+# a second. The bundle is per user (it follows $HOME), so build it as the user
+# the session runs as.
+dart_mcp_bundle_dir() {
+  echo "${XDG_STATE_HOME:-$HOME/.local/state}/Dart/install/app-bundles/dart_mcp_server"
+}
+dart_mcp_present() {
+  compgen -G "$(dart_mcp_bundle_dir)/*/*/bundle/bin/dart_mcp_server" >/dev/null
+}
+# With stdin closed the server builds itself, then exits cleanly without
+# serving anything. Idempotent: with the bundle in place this takes ~0.3s.
+build_dart_mcp() {
+  timeout 300 "$FLUTTER_DIR/bin/dart" mcp-server --force-roots-fallback </dev/null >/dev/null || return 1
+  dart_mcp_present
+}

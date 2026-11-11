@@ -70,6 +70,15 @@ chain_flutter() {
     record 1-flutter ok "Flutter $FLUTTER_VERSION installed and precached"
   else
     record 1-flutter WARNING "Flutter install failed — nothing can be analyzed or tested"
+    record 7-dart-mcp WARNING "Dart MCP server not built (no Flutter)"
+    return
+  fi
+  # Prebuild the Dart MCP server into the cached environment so it connects
+  # inside Claude Code's 30s timeout (see build_dart_mcp in lib/cloud.sh).
+  if run_step "Dart MCP server build" build_dart_mcp; then
+    record 7-dart-mcp ok "Dart MCP server prebuilt (connects at session start)"
+  else
+    record 7-dart-mcp WARNING "Dart MCP server build failed — it will build on first launch and likely time out; reconnect with /mcp"
   fi
 }
 
