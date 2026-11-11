@@ -67,6 +67,19 @@ else
   note "WARNING: Deno install failed — verify.sh falls back to Docker for the edge function checks"
 fi
 export PATH="$PATH:$FLUTTER_DIR/bin"
+
+# The Dart MCP server came after the first cached setups too. Claude Code
+# launches MCP servers alongside this hook, so building it here can't rescue
+# this session's first connect, but it makes `/mcp` -> reconnect instant
+# instead of timing out again. Backgrounded so the session isn't held up.
+if dart_mcp_present; then
+  :
+else
+  MCP_LOG="$LOG_DIR/dart_mcp_build.log"
+  nohup bash -c "source '$CLAUDE_PROJECT_DIR/scripts/lib/cloud.sh' && build_dart_mcp" \
+    >"$MCP_LOG" 2>&1 </dev/null &
+  note "Dart MCP server not prebuilt (setup cache predates it); building in the background — if 'dart' failed to connect, reconnect it with /mcp in about a minute (log: $MCP_LOG)"
+fi
 persist_env "export PATH=\"\$PATH:$FLUTTER_DIR/bin\""
 
 # pubspec.lock can move between sessions, so this stays per-session. With a
