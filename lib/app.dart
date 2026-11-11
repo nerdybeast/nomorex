@@ -10,6 +10,10 @@ import 'core/theme/app_theme.dart';
 import 'features/ai/screens/ai_import_screen.dart';
 import 'features/ai/screens/ai_import_review_screen.dart';
 import 'features/ai/widgets/ai_import_job_alerts.dart';
+import 'features/admin/providers/current_roles_provider.dart';
+import 'features/admin/screens/admin_ai_imports_screen.dart';
+import 'features/admin/screens/admin_screen.dart';
+import 'features/admin/utils/admin_route_guard.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/screens/landing_screen.dart';
 import 'features/auth/screens/login_screen.dart';
@@ -43,6 +47,9 @@ part 'app.g.dart';
 class RouterNotifier extends ChangeNotifier {
   RouterNotifier(this._ref) {
     _ref.listen(authStateProvider, (_, _) => notifyListeners());
+    // Re-runs the /admin redirect when roles change, so someone whose admin
+    // role is removed is moved off the admin screens.
+    _ref.listen(currentUserRolesProvider, (_, _) => notifyListeners());
   }
 
   final Ref _ref;
@@ -116,6 +123,19 @@ GoRouter router(Ref ref) {
       GoRoute(
         path: AppConstants.routeProfile,
         builder: (_, _) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: AppConstants.routeAdmin,
+        // Runs for the child routes too. The server checks the role again on
+        // every admin call; this only keeps non-admins off the screens.
+        redirect: (_, _) => adminRouteRedirect(() => ref.read(currentUserRolesProvider.future)),
+        builder: (_, _) => const AdminScreen(),
+        routes: [
+          GoRoute(
+            path: 'ai-imports',
+            builder: (_, _) => const AdminAiImportsScreen(),
+          ),
+        ],
       ),
       GoRoute(
         path: AppConstants.routeAiImport,
