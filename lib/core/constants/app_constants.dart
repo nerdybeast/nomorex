@@ -19,7 +19,9 @@ class AppConstants {
   // Admin hub and its sections, reached from Profile. Admins only: the route
   // redirects everyone else (adminRouteRedirect).
   static const String routeAdmin = '/admin';
+  static const String routeAdminUsers = '/admin/users';
   static const String routeAdminAiImports = '/admin/ai-imports';
+  static const String routeAdminAuditLog = '/admin/audit-log';
   // AI import: choose and upload files. Linked from the Workouts and Programs
   // app bars (AiImportButton).
   static const String routeAiImport = '/ai-import';
