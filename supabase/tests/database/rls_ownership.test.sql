@@ -11,7 +11,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(61);
+select plan(64);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser: a complete private tree for each user.
@@ -255,6 +255,17 @@ select is(
 select throws_ok(
   $$ insert into public.exercises (name, is_predefined, user_id) values ('forged predefined', true, null) $$,
   '42501', null, 'b cannot add a predefined exercise');
+
+-- Roles (20261111214805_add_admin_roles.sql): a@a.com is the seeded admin.
+-- Role rows are written only by the admin_* functions (admin.test.sql).
+select is((select count(*)::int from public.user_roles where user_id = (select a from u)), 0,
+  'b cannot see a''s role');
+select throws_ok(
+  $$ insert into public.user_roles (user_id, role) select b, 'admin' from u $$,
+  '42501', null, 'b cannot give themselves a role');
+select throws_ok(
+  $$ delete from public.user_roles where user_id = (select a from u) $$,
+  '42501', null, 'b cannot remove a''s role');
 
 -- ---------------------------------------------------------------------------
 -- Attaching b's own rows to a's parents.

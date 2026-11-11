@@ -139,6 +139,11 @@ select gen_random_uuid(), id, id::text, jsonb_build_object('sub', id::text, 'ema
 from auth.users
 where email in ('a@a.com', 'b@b.com', 'c@c.com');
 
+-- a@a.com is the local admin; b@b.com and c@c.com are ordinary users.
+-- Production's first admin is created by hand (docs/build.md, "Admins").
+insert into public.user_roles (user_id, role)
+select id, 'admin' from auth.users where email = 'a@a.com';
+
 -- =========================================================================
 -- Program seed data: 4 real-world ZT programs transcribed from docs/research/*.md
 -- as the acceptance test that the programs schema captures real programming.

@@ -558,6 +558,26 @@ function; see "AI backend" below.
 The two run independently, so a schema change and the app build that depends on
 it are not ordered. Ship additive migrations ahead of the code that needs them.
 
+### Admins
+
+Roles are rows in `public.user_roles`. They can only be changed by an existing
+admin, through the `admin_grant_role` / `admin_revoke_role` functions, and every
+change is written to `public.admin_audit_log`. Locally, `seed.sql` makes
+`a@a.com` an admin.
+
+A new project has no admin, so create the first one by hand, once, in the
+Supabase dashboard's SQL editor (the migration must have landed first):
+
+```sql
+insert into public.user_roles (user_id, role)
+select id, 'admin' from auth.users where email = '<your email>';
+```
+
+Check it with
+`select u.email, r.role from public.user_roles r join auth.users u on u.id = r.user_id;`.
+Every admin after that is added from the app. No email belongs in a migration
+or in `seed.sql`, because the repo is public.
+
 ## AI backend (Genkit edge function)
 
 AI features run in one Supabase Edge Function, `supabase/functions/ai`, built

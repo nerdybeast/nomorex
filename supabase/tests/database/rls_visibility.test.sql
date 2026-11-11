@@ -9,7 +9,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(30);
+select plan(32);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser with fixed ids.
@@ -192,6 +192,10 @@ select is((select count(*)::int from public.exercises), 0,
   'anon cannot see any exercise, predefined included');
 select is((select count(*)::int from public.profiles), 0,
   'anon cannot see any profile');
+select throws_ok($$ select count(*) from public.user_roles $$, '42501', null,
+  'anon cannot read anyone''s roles');
+select throws_ok($$ select count(*) from public.admin_audit_log $$, '42501', null,
+  'anon cannot read the admin audit log');
 select throws_ok(
   $$ insert into public.workouts (user_id, title, date) select a, 'anon forged', current_date from u $$,
   '42501', null, 'anon cannot insert a workout');
