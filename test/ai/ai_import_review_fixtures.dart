@@ -9,8 +9,9 @@ Map<String, dynamic> match(String id, String name, [String confidence = 'exact']
 
 /// A handwritten workout with one of everything the review handles: a
 /// percentage with a basis lift, a weight with no unit, a printed lb weight,
-/// an unmatched name used twice, a low-confidence guess, an unreadable value
-/// and content that couldn't be structured.
+/// an open set with no prescribed load, an unmatched name used twice, a
+/// low-confidence guess, an unreadable value and content that couldn't be
+/// structured.
 Map<String, dynamic> workoutResult() => {
   'schemaVersion': 1,
   'type': 'workout',
@@ -40,6 +41,7 @@ Map<String, dynamic> workoutResult() => {
               'match': match('ex-rdl', 'Romanian Deadlift'),
               'sets': [
                 {'sets': 3, 'reps': 8, 'weight': 100},
+                {'sets': 2, 'reps': 10, 'openLoad': true, 'note': 'light by feel'},
               ],
             },
             {

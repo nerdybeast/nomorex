@@ -132,6 +132,8 @@ void main() {
       expect(find.textContaining('3 × 3 @ 70–72.5% of 2 Hang Clean + 1 Jerk'), findsOneWidget);
       expect(find.textContaining('4 × 6 @ 225 lbs · RPE 7–8'), findsOneWidget);
       expect(find.textContaining('100 (unit?)'), findsOneWidget);
+      expect(find.textContaining('2 × 10 · choose load'), findsOneWidget);
+      expect(find.text('light by feel'), findsOneWidget);
       expect(find.text('Best guess: Bench Press. Check it.'), findsWidgets);
     });
 

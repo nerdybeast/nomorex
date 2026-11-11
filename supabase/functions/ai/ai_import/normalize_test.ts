@@ -73,13 +73,39 @@ Deno.test('a range narrowed to one number is a single value, as the database sto
   });
 });
 
-Deno.test('a set with no load is kept as flagged content, not dropped', () => {
-  const r = ok(workout([{ sets: 3, reps: 8, repsMax: 10, rpeMin: 8 }]));
+Deno.test('a set with no load is an open set, keeping its reps, RPE and wording', () => {
+  const r = ok(workout([{ sets: 3, reps: 8, repsMax: 10, rpeMin: 8, note: 'light by feel' }]));
+  assertEquals(firstExercise(r).sets, [
+    { sets: 3, reps: 8, repsMax: 10, rpeMin: 8, openLoad: true, note: 'light by feel' },
+  ]);
+  assertEquals(r.unstructured, []);
+  assertEquals(r.flags.unstructuredContent, false);
+  assertEquals(r.flags.needsUnit, false);
+});
+
+Deno.test('"max reps" with no load is an open set with the wording as its note', () => {
+  const r = ok(workout([{ sets: 3, note: 'max reps' }]));
+  assertEquals(firstSet(r), { sets: 3, openLoad: true, note: 'max reps' });
+  assertEquals(r.unstructured, []);
+});
+
+Deno.test('a set with no load, reps or wording is kept as flagged content, not dropped', () => {
+  const r = ok(workout([{ sets: 3 }]));
   assertEquals(firstExercise(r).sets, []);
-  assertEquals(r.unstructured.length, 1);
-  assertEquals(r.unstructured[0].originalText, '3 x 8-10 RPE 8');
+  assertEquals(r.unstructured[0].originalText, '3 sets');
   assertEquals(r.unstructured[0].location?.endsWith('Back Squat'), true);
-  assertEquals(r.flags.unstructuredContent, true);
+});
+
+Deno.test('a load marked unreadable is never an open set', () => {
+  const r = ok(workout([{ sets: 3, reps: 5, unreadable: ['load'] }]));
+  assertEquals(firstExercise(r).sets, []);
+  assertEquals(r.unstructured[0].originalText, '3 x 5 (load could not be read)');
+});
+
+Deno.test('an open set has no basis lift', () => {
+  const r = ok(workout([{ sets: 3, reps: 8, basisExercise: 'Clean & Jerk' }]));
+  assertEquals(firstSet(r), { sets: 3, reps: 8, openLoad: true });
+  assertEquals(r.flags.uncertainExercises, false);
 });
 
 Deno.test('an unreadable load goes to flagged content', () => {

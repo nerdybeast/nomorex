@@ -12,6 +12,7 @@ import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
+import '../../workouts/utils/set_resolver.dart';
 import '../models/ai_import_result.dart';
 import '../providers/ai_import_review_provider.dart';
 import '../utils/genkit_call.dart';
@@ -679,6 +680,8 @@ class _SetLine extends StatelessWidget {
       spans
         ..add(const TextSpan(text: ' @ '))
         ..add(TextSpan(text: '${_num(set.weight!)}$shownUnit', style: tokens.weight));
+    } else if (set.openLoad) {
+      spans.add(const TextSpan(text: ' · $kOpenLoadLabel'));
     } else if (unread.contains('load')) {
       spans.add(const TextSpan(text: ' @ $_empty'));
     }

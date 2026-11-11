@@ -28,6 +28,12 @@ export interface ImportSet {
   percentMax?: number;
   weight?: number;
   unit?: 'kg' | 'lb';
+  /**
+   * No load is prescribed: the lifter picks the weight on the day, as for
+   * "3x8 light by feel" or bodyweight work. Explicit, so the accept step
+   * never mistakes an absolute load that lost its weight for one of these.
+   */
+  openLoad?: true;
   rpeMin?: number;
   rpeMax?: number;
   basisExercise?: { name: string; match: ExerciseMatch | null };
@@ -194,20 +200,24 @@ function normalizeSet(raw: Raw, location: string, ctx: Context): ImportSet | nul
   const inRange = (n: number | undefined, min: number, max: number) =>
     n !== undefined && n >= min && n <= max;
 
-  // Load decides whether this can be a set at all: the database has no shape
-  // for a set without one until #66 ships.
   const percentValue = parseValue(raw.percent);
   const percentMaxValue = parseValue(raw.percentMax);
   const percent = inRange(percentValue.low, 0.5, 200) ? percentValue.low : undefined;
   const weightValue = parseValue(raw.weight).low;
   const weight = inRange(weightValue, 0.25, 2000) ? weightValue : undefined;
   if (percent === undefined && weight === undefined) {
+    // A load that was printed but couldn't be read must not become "choose
+    // load": the user would lose the prescription without noticing. A set
+    // with no load at all is an open set, as long as it prescribes something
+    // (reps, or wording such as "max reps" in its note).
     const unreadableLoad = unreadable.has('load') || isPresent(raw.percent) || isPresent(raw.weight);
-    ctx.unstructured.push({
-      location,
-      originalText: `${describeSet(raw)}${unreadableLoad ? ' (load could not be read)' : ''}`,
-    });
-    return null;
+    if (unreadableLoad || (!isPresent(raw.reps) && !keepNote)) {
+      ctx.unstructured.push({
+        location,
+        originalText: `${describeSet(raw)}${unreadableLoad ? ' (load could not be read)' : ''}`,
+      });
+      return null;
+    }
   }
 
   const set: ImportSet = { sets: 1 };
@@ -243,10 +253,12 @@ function normalizeSet(raw: Raw, location: string, ctx: Context): ImportSet | nul
     }
     // A percentage scales to the lifter, so it wins, but the printed load stays visible.
     if (weight !== undefined) notes.push(`Printed load: ${weight}${normalizeUnit(raw.unit) ?? ''}`);
-  } else {
+  } else if (weight !== undefined) {
     set.weight = weight;
     const unit = normalizeUnit(raw.unit);
     if (unit) set.unit = unit;
+  } else {
+    set.openLoad = true;
   }
 
   const validRpe = (n: number | undefined) => inRange(n, 1, 10) && Number.isInteger(n! * 2);

@@ -18,6 +18,16 @@ void main() {
       expect(combo.unreadable, ['reps']);
     });
 
+    test('reads an open set, which needs no unit', () {
+      final rdl = AiImportResult.fromJson(workoutResult()).exercises.elementAt(1);
+      final open = rdl.sets.last;
+      expect(open.openLoad, isTrue);
+      expect((open.sets, open.reps, open.weight, open.percent), (2, 10, null, null));
+      expect(open.note, 'light by feel');
+      expect(open.needsUnit, isFalse);
+      expect(rdl.sets.first.openLoad, isFalse);
+    });
+
     test('needs a unit only for an absolute weight printed without one', () {
       expect(AiImportResult.fromJson(workoutResult()).needsUnit, isTrue);
       expect(AiImportResult.fromJson(programResult()).needsUnit, isFalse, reason: 'all percentages');
@@ -59,6 +69,12 @@ void main() {
 
     test('refuses an unlabelled weight with no unit chosen', () {
       expect(() => buildReviewedPayload(workoutResult(), title: 'x', fixes: const {}), throwsStateError);
+    });
+
+    test('passes an open set through with its marker and no load', () {
+      final out = buildReviewedPayload(workoutResult(), title: 'x', fixes: const {}, unit: 'kg');
+      final open = exerciseNamed(out, 'Romanian Deadlift')['sets'][1] as Map;
+      expect(open, {'sets': 2, 'reps': 10, 'openLoad': true, 'note': 'light by feel'});
     });
 
     test('leaves percentage sets alone', () {

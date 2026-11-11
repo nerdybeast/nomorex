@@ -5,7 +5,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(51);
+select plan(53);
 
 create temp table t on commit drop as
 select (select id from auth.users where email = 'a@a.com') as owner,
@@ -31,6 +31,7 @@ select pg_temp.new_job('10000000-0000-4000-8000-000000000004', 'workout', 'proce
 select pg_temp.new_job('10000000-0000-4000-8000-000000000005', 'program', 'ready', 'workout');
 select pg_temp.new_job('10000000-0000-4000-8000-000000000006', 'workout');
 select pg_temp.new_job('10000000-0000-4000-8000-000000000007', 'workout');
+select pg_temp.new_job('10000000-0000-4000-8000-000000000008', 'program');
 
 -- A custom exercise belonging to another user, which must never be linked.
 insert into public.exercises (id, name, is_predefined, user_id)
@@ -323,6 +324,58 @@ select is(
    join public.ai_import_jobs j on j.accepted_workout_id = w2.id
    where j.id = '10000000-0000-4000-8000-000000000005'::uuid),
   'Imported workout', 'a missing title gets a default');
+
+-- ---------------------------------------------------------------------------
+-- Open sets (#109): no load prescribed, the lifter picks it on the day
+-- ---------------------------------------------------------------------------
+
+create temp table open_workout on commit drop as
+select ((public.ai_import_accept(
+  '10000000-0000-4000-8000-000000000007'::uuid,
+  $json${"title": "Pgtap open sets", "weeks": [{"days": [{"isRestDay": false, "exercises": [
+    {"name": "Bench Press", "match": null, "sets": [
+      {"sets": 2, "reps": 8, "repsMax": 10, "rpeMin": 7, "openLoad": true, "note": "light by feel"},
+      {"sets": 1, "openLoad": true, "note": "max reps"}
+    ]}
+  ]}]}]}$json$::jsonb,
+  current_date
+)) ->> 'workout_id')::uuid as id;
+grant select on open_workout to authenticated;
+
+select results_eq(
+  $$ select ws.position, ws.target_reps, ws.target_reps_max, ws.weight_mode, ws.percentage,
+            ws.absolute_weight_kg, ws.rpe_min, ws.note
+     from public.workout_sets ws
+     join public.workout_exercises we on we.id = ws.workout_exercise_id
+     where we.workout_id = (select id from open_workout)
+     order by ws.position $$,
+  $$ values (0, 8, 10, 'open'::text, null::numeric, null::numeric, 7.0::numeric, 'light by feel'::text),
+            (1, 8, 10, 'open', null, null, 7.0, 'light by feel'),
+            (2, null, null, 'open', null, null, null, 'max reps') $$,
+  'a set marked openLoad is saved as an open set with no load, keeping reps, RPE and its note');
+
+create temp table open_program on commit drop as
+select ((public.ai_import_accept(
+  '10000000-0000-4000-8000-000000000008'::uuid,
+  $json${"title": "Pgtap open program", "weeks": [{"days": [{"isRestDay": false, "exercises": [
+    {"name": "Bench Press", "match": null, "sets": [{"sets": 3, "reps": 5, "openLoad": true}]}
+  ]}]}]}$json$::jsonb,
+  current_date
+)) ->> 'program_id')::uuid as id;
+grant select on open_program to authenticated;
+
+select results_eq(
+  $$ select ps.weight_mode, ps.target_reps, ps.percentage, ps.absolute_weight_kg
+     from public.program_sets ps
+     join public.program_exercises pe on pe.id = ps.program_exercise_id
+     join public.program_days pd on pd.id = pe.program_day_id
+     join public.program_weeks pw on pw.id = pd.program_week_id
+     where pw.program_id = (select id from open_program)
+     order by ps.position $$,
+  $$ values ('open'::text, 5, null::numeric, null::numeric),
+            ('open', 5, null, null),
+            ('open', 5, null, null) $$,
+  'a program import saves open sets too');
 
 -- ---------------------------------------------------------------------------
 -- Refusals, and rolling back
