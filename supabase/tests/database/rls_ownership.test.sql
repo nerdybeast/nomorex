@@ -11,7 +11,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(52);
+select plan(61);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser: a complete private tree for each user.
@@ -257,16 +257,15 @@ select throws_ok(
   '42501', null, 'b cannot add a predefined exercise');
 
 -- ---------------------------------------------------------------------------
--- Known hole: child rows only check user_id, not who owns the parent.
+-- Attaching b's own rows to a's parents.
 --
--- Every child INSERT/UPDATE policy is `auth.uid() = user_id`, so b can attach
--- a row stamped with b's own user_id to a's workout or program. On a public
--- workout every viewer sees it, a can't delete it, and copy_workout copies it.
--- These are TODO until the policies also check the parent; delete the todo()
--- line once fixed and they become ordinary tests.
+-- Child policies check only user_id, so b used to be able to stamp a row with
+-- b's own id and hang it off a's workout or program (on a public workout
+-- every viewer saw it, and a couldn't delete it). The check_parent_owner
+-- triggers now refuse a row whose parent has a different owner
+-- (20261111022449_child_rows_require_owned_parent.sql).
 -- ---------------------------------------------------------------------------
 
-select todo('Child policies don''t yet check that the parent belongs to the caller', 7);
 select throws_ok(
   $$ insert into public.workout_exercises (workout_id, user_id, exercise_id, position)
      select pg_temp.fx('a', 'workout'), b, predefined, 9 from u $$,
@@ -295,6 +294,42 @@ select throws_ok(
   $$ update public.workout_exercises set workout_id = pg_temp.fx('a', 'workout')
      where id = pg_temp.fx('b', 'workout_exercise') $$,
   '42501', null, 'b cannot move b''s workout exercise into a''s workout');
+
+select throws_ok(
+  $$ update public.program_sets set program_exercise_id = pg_temp.fx('a', 'program_exercise')
+     where id = pg_temp.fx('b', 'program_set') $$,
+  '42501', null, 'b cannot move b''s program set into a''s program');
+select throws_ok(
+  $$ insert into public.program_days (program_id, program_week_id, user_id, day_number, title, position)
+     select pg_temp.fx('b', 'program'), pg_temp.fx('a', 'week'), b, 9, 'mixed', 9 from u $$,
+  '42501', null, 'b cannot hang a day of b''s program off a''s week');
+select throws_ok(
+  $$ insert into public.program_instances (program_id, user_id) select pg_temp.fx('a', 'program'), b from u $$,
+  '42501', null, 'b cannot start a run of a''s program by inserting it directly');
+select throws_ok(
+  $$ insert into public.workouts (user_id, title, date, program_instance_id)
+     select b, 'linked', current_date, pg_temp.fx('a', 'instance') from u $$,
+  '42501', null, 'b cannot link a workout to a''s program run');
+select throws_ok(
+  $$ update public.workouts set program_day_id = pg_temp.fx('a', 'day') where id = pg_temp.fx('b', 'workout') $$,
+  '42501', null, 'b cannot link b''s workout to a day of a''s program');
+
+-- b's own trees still work end to end through the tightened policies.
+select lives_ok(
+  $$ insert into public.workout_sets (workout_exercise_id, user_id, position, target_reps, weight_mode, absolute_weight_kg)
+     select pg_temp.fx('b', 'workout_exercise'), b, 9, 5, 'absolute', 80 from u $$,
+  'b can still add a set to b''s own workout');
+select lives_ok(
+  $$ insert into public.program_days (program_id, program_week_id, user_id, day_number, title, position)
+     select pg_temp.fx('b', 'program'), pg_temp.fx('b', 'week'), b, 2, 'Day 2', 9 from u $$,
+  'b can still add a day to b''s own program');
+select lives_ok(
+  $$ insert into public.workouts (user_id, title, date, program_instance_id, program_day_id)
+     select b, 'linked', current_date, pg_temp.fx('b', 'instance'), pg_temp.fx('b', 'day') from u $$,
+  'b can still link a workout to b''s own program run and day');
+select lives_ok(
+  $$ select public.start_program(pg_temp.fx('b', 'program'), current_date) $$,
+  'start_program still materializes b''s own program');
 
 select * from finish();
 rollback;
