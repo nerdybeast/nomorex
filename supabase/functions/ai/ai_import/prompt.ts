@@ -58,6 +58,7 @@ Reading rules:
 - A ditto mark repeats the value from the same row in the previous column. Write the repeated values out in full.
 - "@15s" means 15 each, as with a pair of dumbbells: "weight" is 15.
 - "note" and "notes" hold only information that no other field captures. Never repeat a value or mention a ditto mark.
+- A set with no prescribed load, such as "3x8 light by feel", "%1RM: NA", "your choice of weight", bodyweight work or "3 sets of max reps", is still a prescription: omit "percent" and "weight", and put the wording about load or reps ("light by feel", "max reps") in "note". Never use this for a load that is written but you cannot read: name that in "unreadable".
 - "basisExercise" is the lift a percentage is based on, as an exercise name, when it differs from the exercise itself. Write "Clean & Jerk", not "best clean & jerk".
 
 Programs:
@@ -74,7 +75,6 @@ Exercises:
 
 What goes in "unstructured", with the original wording:
 - Supersets, EMOMs, circuits, conditioning work, and "exercise A or B" choices. A superset or circuit must be named as one in the file. A hand-drawn bracket or other grouping is not enough: keep those exercises structured, and add one "unstructured" entry describing the grouping.
-- A set with no prescribed load or fixed reps, such as "light by feel", "max reps" or "your choice". These never go in prescriptions.
 - Anything else you can read but cannot express in this format. Nothing in the file may be silently dropped.
 "location" says where it appeared, such as "Week 1, Monday" or "Page 2".`;
 

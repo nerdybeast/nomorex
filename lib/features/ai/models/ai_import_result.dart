@@ -139,8 +139,8 @@ class ImportMatch {
   final String confidence;
 }
 
-/// One prescription line. [sets] identical sets of [reps] at a percentage or
-/// an absolute weight.
+/// One prescription line. [sets] identical sets of [reps] at a percentage,
+/// an absolute weight, or no prescribed load ([openLoad]).
 class ImportSet {
   const ImportSet({
     required this.sets,
@@ -150,6 +150,7 @@ class ImportSet {
     this.percentMax,
     this.weight,
     this.unit,
+    this.openLoad = false,
     this.rpeMin,
     this.rpeMax,
     this.basisName,
@@ -172,6 +173,7 @@ class ImportSet {
         'lb' => 'lb',
         _ => null,
       },
+      openLoad: json['openLoad'] == true,
       rpeMin: (json['rpeMin'] as num?)?.toDouble(),
       rpeMax: (json['rpeMax'] as num?)?.toDouble(),
       basisName: basis is Map ? _text(basis['name']) : null,
@@ -192,6 +194,10 @@ class ImportSet {
 
   /// `kg` or `lb` when printed beside the weight.
   final String? unit;
+
+  /// No load is prescribed, so the lifter picks the weight on the day, as for
+  /// "3x8 light by feel". Saved as an open set (`weight_mode = 'open'`).
+  final bool openLoad;
   final double? rpeMin;
   final double? rpeMax;
 
