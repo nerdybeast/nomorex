@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../core/utils/external_link.dart';
 import '../../../core/utils/one_rep_max_formula.dart';
 import '../../../core/utils/owner_name.dart';
 import '../../ai/providers/ai_smoke_test_provider.dart';
@@ -141,6 +143,10 @@ class ProfileScreen extends ConsumerWidget {
                       style: TextStyle(color: colorScheme.error),
                     ),
                   ],
+                  const SizedBox(height: 28),
+                  Text('ABOUT', style: NomorexTokens.of(context).eyebrow),
+                  const SizedBox(height: 4),
+                  const _PrivacyPolicyLink(),
                   // Debug builds only: a diagnostic for the Genkit edge
                   // function, not a user feature.
                   if (kDebugMode) ...[
@@ -154,6 +160,39 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Opens the public privacy policy (web/privacy.html) in the browser. Apple
+/// and Google both require it to be reachable from inside the app as well as
+/// from the store listing.
+class _PrivacyPolicyLink extends ConsumerWidget {
+  const _PrivacyPolicyLink();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        key: const Key('profile_privacy_policy'),
+        style: TextButton.styleFrom(padding: EdgeInsets.zero),
+        icon: const Icon(Icons.open_in_new, size: 18),
+        label: const Text('Privacy policy'),
+        onPressed: () async {
+          final messenger = ScaffoldMessenger.of(context);
+          final opened = await ref.read(externalLinkOpenerProvider)(
+            Uri.parse(AppConstants.privacyPolicyUrl),
+          );
+          if (!opened) {
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text("Couldn't open the privacy policy. It's at ${AppConstants.privacyPolicyUrl}"),
+              ),
+            );
+          }
+        },
       ),
     );
   }

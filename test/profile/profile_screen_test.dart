@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomorex/core/constants/app_constants.dart';
+import 'package:nomorex/core/utils/external_link.dart';
 import 'package:nomorex/features/ai/models/smoke_test_result.dart';
 import 'package:nomorex/features/ai/providers/ai_smoke_test_provider.dart';
 import 'package:nomorex/features/ai/utils/genkit_call.dart';
@@ -100,9 +102,11 @@ Widget _wrap(
   User user = _testUser,
   VoidCallback? onSignOut,
   _FakeAiSmokeTestNotifier? aiSmokeTest,
+  Future<bool> Function(Uri)? openLink,
 }) =>
     ProviderScope(
       overrides: [
+        if (openLink != null) externalLinkOpenerProvider.overrideWithValue(openLink),
         if (aiSmokeTest != null) aiSmokeTestProvider.overrideWith(() => aiSmokeTest),
         currentAuthUserProvider.overrideWithValue(user),
         profileProvider.overrideWith(
@@ -412,6 +416,52 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const Key('profile_ai_smoke_test_result')), findsNothing);
+    });
+  });
+
+  group('privacy policy link', () {
+    const profile = Profile(id: 'u1', unitPreference: 'kg', oneRepMaxFormula: OneRepMaxFormula.brzycki);
+
+    testWidgets('opens the published policy', (tester) async {
+      final opened = <Uri>[];
+      await tester.pumpWidget(_wrap(profile, openLink: (uri) async {
+        opened.add(uri);
+        return true;
+      }));
+      await tester.pumpAndSettle();
+
+      final link = find.byKey(const Key('profile_privacy_policy'));
+      await tester.ensureVisible(link);
+      await tester.pumpAndSettle();
+      await tester.tap(link);
+      await tester.pumpAndSettle();
+
+      expect(opened, [Uri.parse(AppConstants.privacyPolicyUrl)]);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('gives the address when nothing can open it', (tester) async {
+      await tester.pumpWidget(_wrap(profile, openLink: (_) async => false));
+      await tester.pumpAndSettle();
+
+      final link = find.byKey(const Key('profile_privacy_policy'));
+      await tester.ensureVisible(link);
+      await tester.pumpAndSettle();
+      await tester.tap(link);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining(AppConstants.privacyPolicyUrl), findsOneWidget);
+    });
+
+    testWidgets('is a button with a name, for screen readers and role locators', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_wrap(profile, openLink: (_) async => true));
+      await tester.pumpAndSettle();
+
+      final node = tester.getSemantics(find.byKey(const Key('profile_privacy_policy')));
+      expect(node.label, contains('Privacy policy'));
+      expect(node.flagsCollection.isButton, isTrue);
+      handle.dispose();
     });
   });
 }
