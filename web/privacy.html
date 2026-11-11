@@ -176,8 +176,9 @@
   <ul>
     <li>Your files are uploaded to our storage and sent to Anthropic, whose AI model, Claude, reads them to find
       the workout or program. Anthropic processes them on our behalf under its commercial terms, which don't allow
-      it to train its models on them.
-      <span class="todo">[CONFIRM ANTHROPIC'S RETENTION PERIOD FOR API INPUTS AND OUTPUTS]</span></li>
+      it to train its models on them. Anthropic deletes what we send it, and what its model returns, within 30
+      days. It can keep them longer only where the law requires, or for up to 2 years if its automated safety
+      systems flag them as breaking its usage policy.</li>
     <li>You review what was read before anything is saved to your account.</li>
     <li>Your uploaded files are deleted from NoMoreX once you save or discard the import, or after 7 days if you do
       neither. What was read is deleted after 7 days if you haven't saved it.</li>
@@ -193,13 +194,17 @@
   </p>
   <ul>
     <li><strong>Supabase</strong>: database, sign-in, file storage and server functions. Your account and training
-      data are stored here, in <span class="todo">[SUPABASE PROJECT REGION]</span>.</li>
+      data are stored here, in the United States (Northern Virginia).</li>
     <li><strong>Sentry</strong>: crash and error reports.</li>
     <li><strong>Anthropic</strong>: reads the files you upload for AI import, and only when you use it.</li>
     <li><strong>GitHub</strong>: hosts the web app and this page.</li>
     <li><strong>Apple and Google</strong>: distribute the apps through the App Store and Google Play under their own
       privacy policies.</li>
   </ul>
+  <p>
+    If you use NoMoreX from outside the United States, your information is transferred to and stored in the
+    United States.
+  </p>
   <p>
     Like any online service, these providers receive your device's IP address when the app connects to them, as
     part of handling the connection.
