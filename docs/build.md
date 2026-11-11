@@ -148,6 +148,31 @@ flutter run \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_<your-publishable-key>
 ```
 
+### Dart MCP server for Claude Code
+
+`.mcp.json` gives Claude Code the Dart and Flutter MCP server (`dart mcp-server`,
+which ships with the Dart SDK, so there's nothing to install). It adds:
+
+- `lsp` and `analyze_files`: find references and definitions, and run the analyzer
+  on specific files.
+- `pub` and `pub_dev_search`: manage and look up packages.
+- `hot_reload`, `widget_inspector` and `get_runtime_errors`: work with a running
+  debug app.
+
+It starts through `scripts/dart-mcp.sh`, which finds `dart` on `PATH`, in
+`$FLUTTER_ROOT` or in `/opt/flutter`. An MCP server's `PATH` isn't guaranteed, and
+in cloud sessions Flutter is only added to `PATH` for Bash commands.
+
+- **Cloud sessions** load the repo's `.mcp.json` servers without asking.
+- **Locally**, `enabledMcpjsonServers` in `.claude/settings.json` approves it once
+  you've trusted the folder. Until then Claude Code asks the first time. Turn it off
+  for yourself with `"disabledMcpjsonServers": ["dart"]` in
+  `.claude/settings.local.json`.
+
+To check it by hand, `./scripts/dart-mcp.sh` should wait silently for MCP messages
+on stdin. Anything it prints to stdout corrupts the protocol, so the script's own
+messages go to stderr.
+
 ## CI / CD
 
 For GitHub Actions (or any CI system), pass the values as secrets. Store `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` as repository secrets in GitHub, then reference them in the workflow:
