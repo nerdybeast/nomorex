@@ -74,6 +74,19 @@ class JobFailure extends Error {
 class DeadlineExceeded extends Error {}
 
 type MediaPart = { media: { url: string; contentType: string } };
+type PromptPart = MediaPart | { text: string };
+
+/**
+ * The files as prompt parts, with a "Page N:" label before each image when
+ * there are several, as Anthropic's vision guide recommends. The label makes
+ * the page order explicit rather than implied by position, which matters when
+ * a week continues onto the next page. A PDF is one document with its own
+ * pages, and is always the only file, so it's never labelled.
+ */
+export function labelPages(media: MediaPart[]): PromptPart[] {
+  if (media.length < 2) return media;
+  return media.flatMap((part, i) => [{ text: `Page ${i + 1}:` }, part]);
+}
 
 const naturalOrder = new Intl.Collator('en', { numeric: true });
 
@@ -201,7 +214,7 @@ async function runJob({ jobId, importId, requestedType, uid, supabase, ai, model
       ai.generate({
         model,
         system: SYSTEM_PROMPT,
-        prompt: [...media, { text: buildUserPrompt(catalog.map((e) => e.name), requestedType) }],
+        prompt: [...labelPages(media), { text: buildUserPrompt(catalog.map((e) => e.name), requestedType) }],
         config: { maxOutputTokens: MAX_OUTPUT_TOKENS },
         abortSignal: controller.signal,
         // Capped so retries can't outlast the deadline.

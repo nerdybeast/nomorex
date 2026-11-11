@@ -46,6 +46,7 @@ Omit every field that is absent. Never write null. Numbers are JSON numbers.
 }
 
 Reading rules:
+- When there are several images, each is labelled "Page N:" and they are in page order. Content can continue from one page onto the next.
 - Copy only what is written. Never invent, calculate or assume a value.
 - If a value is present but you cannot read it, omit it and name it in "unreadable".
 - "type" is "workout" for one session, "program" for several days or weeks, and "none" if the file has no training content.
@@ -75,7 +76,7 @@ What goes in "unstructured", with the original wording:
 - Supersets, EMOMs, circuits, conditioning work, and "exercise A or B" choices. A superset or circuit must be named as one in the file. A hand-drawn bracket or other grouping is not enough: keep those exercises structured, and add one "unstructured" entry describing the grouping.
 - A set with no prescribed load or fixed reps, such as "light by feel", "max reps" or "your choice". These never go in prescriptions.
 - Anything else you can read but cannot express in this format. Nothing in the file may be silently dropped.
-"location" says where it appeared, such as "Week 1, Monday".`;
+"location" says where it appeared, such as "Week 1, Monday" or "Page 2".`;
 
 /** The per-request text that accompanies the files. */
 export function buildUserPrompt(catalog: string[], requestedType?: ImportType): string {

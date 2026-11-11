@@ -108,7 +108,8 @@ function setup(options: Options = {}) {
   } as unknown as SupabaseClient;
 
   const ai = genkit({});
-  const modelCalls: { system: string; media: string[]; text: string; tools: number }[] = [];
+  const modelCalls: { system: string; media: string[]; text: string; userParts: string[]; tools: number }[] =
+    [];
   const model = ai.defineModel({ name: 'test/fake' }, async (req) => {
     const parts = req.messages.flatMap((m) => m.content);
     modelCalls.push({
@@ -118,6 +119,10 @@ function setup(options: Options = {}) {
       media: parts.flatMap((p) => p.media?.url ?? []),
       text: req.messages.filter((m) => m.role === 'user').flatMap((m) => m.content.map((c) => c.text ?? ''))
         .join(''),
+      // The user message in order: each text part as written, each file as "<media>".
+      userParts: req.messages.filter((m) => m.role === 'user').flatMap((m) =>
+        m.content.map((c) => c.media ? '<media>' : c.text ?? '')
+      ),
       tools: req.tools?.length ?? 0,
     });
     const text = await (options.reply ?? (() => Promise.resolve(GOOD_REPLY)))();
@@ -207,6 +212,43 @@ Deno.test('keeps pages in natural order', async () => {
   });
   await t.run();
   assertEquals(t.downloads, [`${FOLDER}/page1.jpg`, `${FOLDER}/page2.jpg`, `${FOLDER}/page10.jpg`]);
+});
+
+Deno.test('labels each page before its image when there are several, in natural order', async () => {
+  const page = (n: number) => new Uint8Array([...JPEG, n]);
+  const t = setup({
+    files: [
+      { name: 'page10.jpg', bytes: page(10) },
+      { name: 'page2.jpg', bytes: page(2) },
+      { name: 'page1.jpg', bytes: page(1) },
+    ],
+  });
+  await t.run();
+  const [call] = t.modelCalls;
+  assertEquals(call.userParts.slice(0, 6), [
+    'Page 1:',
+    '<media>',
+    'Page 2:',
+    '<media>',
+    'Page 3:',
+    '<media>',
+  ]);
+  // The instruction and catalog follow the files.
+  assertEquals(call.userParts.length, 7);
+  assertEquals(call.userParts[6].includes('Exercise catalog'), true);
+  // Each label sits before the file with that page number.
+  const dataUrl = (bytes: Uint8Array) => `data:image/jpeg;base64,${btoa(String.fromCharCode(...bytes))}`;
+  assertEquals(call.media, [dataUrl(page(1)), dataUrl(page(2)), dataUrl(page(10))]);
+});
+
+Deno.test('a single image and a PDF are sent without a page label', async () => {
+  for (const file of [{ name: 'page.jpg', bytes: JPEG }, { name: 'program.pdf', bytes: PDF }]) {
+    const t = setup({ files: [file] });
+    await t.run();
+    assertEquals(t.modelCalls[0].userParts[0], '<media>');
+    assertEquals(t.modelCalls[0].userParts.length, 2);
+    assertEquals(t.modelCalls[0].text.includes('Page 1:'), false);
+  }
 });
 
 Deno.test('a re-run tells the model the requested type', async () => {
