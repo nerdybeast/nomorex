@@ -12,6 +12,8 @@ import 'features/ai/screens/ai_import_review_screen.dart';
 import 'features/ai/widgets/ai_import_job_alerts.dart';
 import 'features/admin/providers/current_roles_provider.dart';
 import 'features/admin/screens/admin_ai_imports_screen.dart';
+import 'features/admin/screens/admin_audit_log_screen.dart';
+import 'features/admin/screens/admin_users_screen.dart';
 import 'features/admin/screens/admin_screen.dart';
 import 'features/admin/utils/admin_route_guard.dart';
 import 'features/auth/providers/auth_provider.dart';
@@ -132,8 +134,16 @@ GoRouter router(Ref ref) {
         builder: (_, _) => const AdminScreen(),
         routes: [
           GoRoute(
+            path: 'users',
+            builder: (_, _) => const AdminUsersScreen(),
+          ),
+          GoRoute(
             path: 'ai-imports',
             builder: (_, _) => const AdminAiImportsScreen(),
+          ),
+          GoRoute(
+            path: 'audit-log',
+            builder: (_, _) => const AdminAuditLogScreen(),
           ),
         ],
       ),

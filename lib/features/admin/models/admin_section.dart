@@ -24,9 +24,21 @@ class AdminSection {
 
 const kAdminSections = [
   AdminSection(
+    title: 'Users',
+    subtitle: 'See every account and manage their roles',
+    icon: Icons.group_outlined,
+    route: AppConstants.routeAdminUsers,
+  ),
+  AdminSection(
     title: 'AI imports',
     subtitle: 'Turn importing from photos and PDFs on or off for everyone',
     icon: Icons.document_scanner_outlined,
     route: AppConstants.routeAdminAiImports,
+  ),
+  AdminSection(
+    title: 'Audit log',
+    subtitle: 'Every change made from the Admin area',
+    icon: Icons.history,
+    route: AppConstants.routeAdminAuditLog,
   ),
 ];
