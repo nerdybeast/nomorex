@@ -168,10 +168,10 @@ void main() {
       await tester.pumpAndSettle();
       await _openPctDialogWithRange(tester);
 
-      expect(find.text('Min %1RM'), findsOneWidget);
+      expect(find.bySemanticsLabel('Increase Min %1RM'), findsOneWidget);
       expect(_stepperText(tester, 'set_editor_pct_max'), '75');
 
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
       expect(added!.single.percentage, 70);
       expect(added!.single.percentageMax, 75);
@@ -190,7 +190,7 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
       expect(added!.single.percentage, 67);
       expect(added!.single.percentageMax, 72.5);
@@ -206,7 +206,7 @@ void main() {
       await _tapIn(tester, 'set_editor_pct', Icons.add, times: 2); // 80 > 75
       expect(_stepperText(tester, 'set_editor_pct_max'), '80');
 
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
       expect(added!.single.percentage, 80);
       expect(added!.single.percentageMax, isNull);
@@ -229,7 +229,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(_stepperText(tester, 'set_editor_pct_max'), '200');
 
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
       expect(added!.single.percentage, kMinSetPercentage);
       expect(added!.single.percentageMax, kMaxSetPercentage);

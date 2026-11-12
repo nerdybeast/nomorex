@@ -229,7 +229,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('set_editor_rpe')), findsNothing);
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
       expect(added!.single.rpeMin, isNull);
       expect(added!.single.rpeMax, isNull);
@@ -249,7 +249,7 @@ void main() {
       await _tapKey(tester, 'set_editor_rpe_range_switch');
       expect(_stepperText(tester, 'set_editor_rpe_max'), '7.5');
 
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
       expect(added!.single.rpeMin, 6.5);
       expect(added!.single.rpeMax, 7.5);
@@ -264,7 +264,7 @@ void main() {
 
       await _tapKey(tester, 'set_editor_rpe_switch');
       await _tapIn(tester, 'set_editor_rpe', Icons.add, times: 2); // 8
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
       expect(batch!.rpeMin, 8);
       expect(batch!.rpeMax, isNull);
@@ -282,7 +282,7 @@ void main() {
       await _tapKey(tester, 'set_editor_rpe_range_switch');
       expect(_stepperText(tester, 'set_editor_rpe_max'), '10');
 
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
       expect(added!.single.rpeMin, 9.5);
       expect(added!.single.rpeMax, 10);

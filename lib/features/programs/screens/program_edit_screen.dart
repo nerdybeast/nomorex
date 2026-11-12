@@ -5,12 +5,14 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/copy_errors.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
-import '../../exercises/providers/exercises_provider.dart';
-import '../../exercises/widgets/exercise_picker.dart';
+import '../../exercises/widgets/exercise_picker_sheet.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../../shared/widgets/toggle_card.dart';
 import '../../workouts/utils/parsed_set.dart';
+import '../../workouts/widgets/exercise_editor_card.dart';
 import '../../workouts/widgets/set_editor.dart';
+import '../models/program.dart';
+import '../models/program_exercise.dart';
 import '../models/program_day.dart';
 import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
@@ -32,53 +34,44 @@ ParsedProgramSet _toParsedProgramSet(ParsedSet p) =>
       rpeMax: p.rpeMax,
     );
 
-class ProgramEditScreen extends ConsumerWidget {
+class ProgramEditScreen extends ConsumerStatefulWidget {
   const ProgramEditScreen({super.key, required this.programId});
   final String programId;
 
-  Future<void> _addExercise(BuildContext context, WidgetRef ref, String dayId) async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add exercise'),
-        content: SizedBox(
-          width: 320,
-          child: Consumer(
-            builder: (context, ref, _) {
-              final exercisesAsync = ref.watch(exercisesProvider);
-              return exercisesAsync.when(
-                loading: () => const SizedBox(
-                  height: 72,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (e, _) => SizedBox(
-                  height: 72,
-                  child: Center(child: Text('Could not load exercises: $e')),
-                ),
-                data: (exercises) => ExercisePicker(
-                  exercises: exercises,
-                  selected: null,
-                  onSelected: (ex) async {
-                    Navigator.pop(ctx);
-                    await ref
-                        .read(programDetailProvider(programId).notifier)
-                        .addExercise(dayId, ex.id);
-                  },
-                  onAddCustom: (name) async {
-                    final newEx =
-                        await ref.read(exercisesProvider.notifier).addCustomExercise(name);
-                    if (ctx.mounted) Navigator.pop(ctx);
-                    await ref
-                        .read(programDetailProvider(programId).notifier)
-                        .addExercise(dayId, newEx.id);
-                  },
-                ),
-              );
-            },
-          ),
-        ),
-      ),
+  @override
+  ConsumerState<ProgramEditScreen> createState() => _ProgramEditScreenState();
+}
+
+class _ProgramEditScreenState extends ConsumerState<ProgramEditScreen>
+    with JustAddedExerciseHighlight {
+  final _scroll = ScrollController();
+
+  String get programId => widget.programId;
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Opens the exercise picker for [dayId]. A pick saves straight away; once
+  /// the sheet closes, the new card is scrolled to and edged in orange.
+  Future<void> _addExercise(String dayId) async {
+    final provider = programDetailProvider(programId);
+    List<ProgramExercise> dayExercises(Program p) =>
+        p.weeks.expand((w) => w.days).firstWhere((d) => d.id == dayId).exercises;
+    final before = dayExercises(await ref.read(provider.future));
+    if (!mounted) return;
+    final beforeIds = {for (final e in before) e.id};
+    final added = await showExercisePickerSheet(
+      context,
+      addedExerciseIds: {for (final e in before) e.exerciseId},
+      onPick: (exercise) => ref.read(provider.notifier).addExercise(dayId, exercise.id),
     );
+    if (added == null || !mounted) return;
+    final after = dayExercises(await ref.read(provider.future));
+    final newRow = after.where((e) => !beforeIds.contains(e.id) && e.exerciseId == added.id).lastOrNull;
+    if (newRow != null) highlightAddedExercise(newRow.id);
   }
 
   Future<void> _addDay(BuildContext context, WidgetRef ref, ProgramWeek week) async {
@@ -125,7 +118,7 @@ class ProgramEditScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final detail = ref.watch(programDetailProvider(programId));
     final unit = ref.watch(unitPreferenceProvider);
     final colorScheme = Theme.of(context).colorScheme;
@@ -146,6 +139,7 @@ class ProgramEditScreen extends ConsumerWidget {
         data: (program) {
           final notifier = ref.read(programDetailProvider(programId).notifier);
           return ListView(
+            controller: _scroll,
             padding: contentPadding(context),
             children: [
               if (program.isCopy) ...[
@@ -202,7 +196,9 @@ class ProgramEditScreen extends ConsumerWidget {
                     week: week,
                     unit: unit,
                     onAddDay: (week) => _addDay(context, ref, week),
-                    onAddExercise: (dayId) => _addExercise(context, ref, dayId),
+                    onAddExercise: _addExercise,
+                    highlightedExerciseId: highlightedExerciseId,
+                    highlightKey: highlightKey,
                   ),
               const SizedBox(height: 8),
               FilledButton.icon(
@@ -229,6 +225,8 @@ class _WeekCard extends ConsumerWidget {
     required this.unit,
     required this.onAddDay,
     required this.onAddExercise,
+    required this.highlightedExerciseId,
+    required this.highlightKey,
   });
 
   final String programId;
@@ -236,6 +234,8 @@ class _WeekCard extends ConsumerWidget {
   final String unit;
   final void Function(ProgramWeek week) onAddDay;
   final void Function(String dayId) onAddExercise;
+  final String? highlightedExerciseId;
+  final GlobalKey highlightKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -280,6 +280,8 @@ class _WeekCard extends ConsumerWidget {
               day: day,
               unit: unit,
               onAddExercise: onAddExercise,
+              highlightedExerciseId: highlightedExerciseId,
+              highlightKey: highlightKey,
             ),
           // Delete lives in the expanded body rather than the header's
           // `trailing`: the header is a ListTile, which would merge the
@@ -311,12 +313,16 @@ class _DayCard extends ConsumerWidget {
     required this.day,
     required this.unit,
     required this.onAddExercise,
+    required this.highlightedExerciseId,
+    required this.highlightKey,
   });
 
   final String programId;
   final ProgramDay day;
   final String unit;
   final void Function(String dayId) onAddExercise;
+  final String? highlightedExerciseId;
+  final GlobalKey highlightKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -340,59 +346,38 @@ class _DayCard extends ConsumerWidget {
                   return Padding(
                     key: ValueKey(ex.id),
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                ReorderableDragStartListener(
-                                  index: i,
-                                  child: const Padding(
-                                    padding: EdgeInsets.only(right: 8),
-                                    child: Icon(Icons.drag_handle),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(ex.exerciseName,
-                                      style: Theme.of(context).textTheme.titleMedium),
-                                ),
-                                IconButton(
-                                  tooltip: 'Delete exercise',
-                                  icon: const Icon(Icons.delete_outline),
-                                  onPressed: () => notifier.removeExercise(ex.id),
-                                ),
-                              ],
-                            ),
-                            _AutoSaveField(
-                              key: ValueKey(ex.id),
-                              initialValue: ex.notes,
-                              labelText: 'Notes (e.g. build to a heavy triple)',
-                              onChanged: (v) => notifier.updateExerciseNotes(ex.id, v),
-                            ),
-                            const SizedBox(height: 8),
-                            SetEditor(
-                              sets: ex.sets.map((s) => s.toEditableRow()).toList(),
-                              unit: unit,
-                              currentExerciseId: ex.exerciseId,
-                              currentExerciseName: ex.exerciseName,
-                              onAddPercentageSets: (parsed) => notifier.addPercentageSets(
-                                ex.id,
-                                [
-                                  for (final p in parsed)
-                                    _toParsedProgramSet(p),
-                                ],
-                              ),
-                              onAddAbsoluteSets: (batch) => notifier.addAbsoluteSets(ex.id, batch),
-                              onDeleteSet: notifier.deleteSet,
-                              onReorderSets: (orderedIds) =>
-                                  notifier.reorderSets(ex.id, orderedIds),
-                            ),
-                          ],
+                    child: ExerciseEditorCard(
+                      key: ex.id == highlightedExerciseId ? highlightKey : null,
+                      index: i,
+                      name: ex.exerciseName,
+                      highlighted: ex.id == highlightedExerciseId,
+                      onDelete: () => notifier.removeExercise(ex.id),
+                      children: [
+                        _AutoSaveField(
+                          key: ValueKey(ex.id),
+                          initialValue: ex.notes,
+                          labelText: 'Notes (e.g. build to a heavy triple)',
+                          onChanged: (v) => notifier.updateExerciseNotes(ex.id, v),
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        SetEditor(
+                          sets: ex.sets.map((s) => s.toEditableRow()).toList(),
+                          unit: unit,
+                          currentExerciseId: ex.exerciseId,
+                          currentExerciseName: ex.exerciseName,
+                          onAddPercentageSets: (parsed) => notifier.addPercentageSets(
+                            ex.id,
+                            [
+                              for (final p in parsed)
+                                _toParsedProgramSet(p),
+                            ],
+                          ),
+                          onAddAbsoluteSets: (batch) => notifier.addAbsoluteSets(ex.id, batch),
+                          onDeleteSet: notifier.deleteSet,
+                          onReorderSets: (orderedIds) =>
+                              notifier.reorderSets(ex.id, orderedIds),
+                        ),
+                      ],
                     ),
                   );
                 },
