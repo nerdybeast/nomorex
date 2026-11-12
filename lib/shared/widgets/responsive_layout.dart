@@ -28,17 +28,23 @@ const double kShellRailWidth = 81;
 /// centered, never less than 16px. Applied as scroll-view padding rather than
 /// a ConstrainedBox, so the scroll view (wheel, scrollbar, drag) still spans
 /// the whole window. [inShell] accounts for the rail beside a shell tab.
-double contentInset(BuildContext context, {bool inShell = false}) {
+double contentInset(BuildContext context, {bool inShell = false, double maxWidth = kContentMaxWidth}) {
   final width = MediaQuery.sizeOf(context).width;
   if (width < AppConstants.kMobileBreakpoint) return 16;
   final body = width - (inShell ? kShellRailWidth : 0);
-  return math.max(16, (body - kContentMaxWidth) / 2);
+  return math.max(16, (body - maxWidth) / 2);
 }
 
 /// Padding for a list or detail screen's scroll view: [contentInset] on the
 /// sides, [top]/[bottom] as given.
-EdgeInsets contentPadding(BuildContext context, {double top = 16, double bottom = 16, bool inShell = false}) {
-  final inset = contentInset(context, inShell: inShell);
+EdgeInsets contentPadding(
+  BuildContext context, {
+  double top = 16,
+  double bottom = 16,
+  bool inShell = false,
+  double maxWidth = kContentMaxWidth,
+}) {
+  final inset = contentInset(context, inShell: inShell, maxWidth: maxWidth);
   return EdgeInsets.fromLTRB(inset, top, inset, bottom);
 }
 

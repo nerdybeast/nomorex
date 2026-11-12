@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-12T21:39:15+00:00",
+  "generatedAt": "2026-11-12T22:02:56+00:00",
   "title": "Design System: NoMoreX",
   "extensions": {
     "colorMeta": {
@@ -777,7 +777,7 @@
     "donts": [
       "**Don't** put a second orange fill on a screen; use the secondary button.",
       "**Don't** use `colorScheme.secondary` expecting a second color: it's orange.",
-      "**Don't** use `info` blue for a button or fill, or `primary-subtle` as a card background.",
+      "**Don't** use `info` blue for a button or fill, or `primary-subtle` as a whole-card background (a header band or a row tint is fine).",
       "**Don't** add a shadow to anything in the page flow, or use gradients, glows, glassmorphism or gym-themed textures.",
       "**Don't** fetch fonts at runtime (`google_fonts`); Inter and JetBrains Mono are bundled.",
       "**Don't** pack controls tighter on desktop to fit more; wider screens get more room, not more density.",

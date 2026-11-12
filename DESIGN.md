@@ -290,7 +290,7 @@ Near-neutral grays with a single toned-down orange and two information hues that
 - **Chalk-line Orange** (`primary`): fills the one main button on a screen, the FAB, the stepper's + and the switch's on track, always edged in `primary-border`. Labels on it are `on-primary` white in both themes.
 - **Pressed Orange** (`primary-hover`): a shade *darker* than the fill, never lighter, so the white label keeps its contrast on hover and press.
 - **Orange Ink** (`primary-text`): orange as text: links, snackbar actions, the selected nav icon, today's date in the picker.
-- **Orange Wash** (`primary-subtle`): a faint translucent wash behind `primary-text`: the selected unit, a selected segment, today's program day. Never a card fill.
+- **Orange Wash** (`primary-subtle`): a faint translucent wash behind `primary-text`: the selected unit, a selected segment, today's program day, the header band of a program day's main lift. A band or row tint, never a whole-card fill.
 
 ### Secondary
 - **Resolved Blue** (`info`): text only. It marks a weight resolved from the viewer's own or an estimated 1RM, e.g. a percentage set on someone else's public workout. Never a button, never a fill.
@@ -409,6 +409,17 @@ The Programs list leaves out the created date: the program screen shows it, and 
 ### Program Weeks
 A program's screen lists its weeks as collapsible sections. Each heading is "Week 1 · <label>" in title-3 (15/600), so the open week's days carry the weight. Under it sits a caption summary ("6 days · 5 workouts") and an `expand_more` chevron that turns to open. Only the week that matters opens: the week holding today for a running program, otherwise week 1. An "Expand all" / "Collapse all" text button sits above the first week. Each day row names its lifts ("Back squat · Clean · Bench  +3 more", `exercisePreview()`), clamped to two lines, and a live run marks today's day with the `primary-subtle` wash and TODAY pill. A live run also leads with that day as its own row above "View progress", tapping straight into the scheduled workout. An unstarted program says what Start does underneath it ("Schedules 30 workouts from the date you pick."). The description above is `fg-2` and clamps at four lines, with a `primary-text` "Show more".
 
+### Program Day (session brief)
+The read-only view of one program day, laid out as a session brief, capped at 640px so reps read straight across to load.
+- **Shape first:** three stat tiles (`bg-1`, hairline, 10px radius): lifts, sets and peak intensity, values in `stat` (20/600 tabular). Only the peak is orange (`primary-text`); with no percentage sets it shows the top fixed load instead.
+- **Main lift:** a card with a `primary-border` edge. A `primary-subtle` header band holds an orange index, the name in title-2 and the note. The body is `bg-1`.
+  - **Headline:** the load range in 28px blue mono, with the unit at 14px `fg-2` beside it. To the right sits "6 × 3 / 70–75% of 80 kg PR".
+  - **Set-group ledger:** below, identical consecutive sets collapse to "3 × 3 · 70% · 56 kg", with loads right-aligned on one edge.
+  - **No 1RM:** the headline becomes the prescription ("70–75%" in `fg-1`), with "No 1RM yet · set PR" under it.
+- **The rest:** a numbered `ListGroup`, with indices in Inter tabular (`fg-3`).
+  - **Each row:** a one-line summary ("4 × 3 · 50–70% of Snatch") and the note, clamped to 2 lines, with the load range on the right. Percentage-resolved loads are `info` blue; fixed loads are `fg-1`; open sets read "choose load".
+  - **Missing 1RM:** a row links "set <lift> PR", naming the basis lift when it isn't the row's own. When the main lift already offers that link, the row reads "needs <lift> PR" in `fg-3` instead of linking twice.
+
 ### Cards / Containers
 - **Corner Style:** 10px.
 - **Background:** `bg-1`.
@@ -452,7 +463,7 @@ Dialogs and sheets on `bg-2` with a `border-default` edge and 14px radius (sheet
 ### Don't:
 - **Don't** put a second orange fill on a screen; use the secondary button.
 - **Don't** use `colorScheme.secondary` expecting a second color: it's orange.
-- **Don't** use `info` blue for a button or fill, or `primary-subtle` as a card background.
+- **Don't** use `info` blue for a button or fill, or `primary-subtle` as a whole-card background (a header band or a row tint is fine).
 - **Don't** add a shadow to anything in the page flow, or use gradients, glows, glassmorphism or gym-themed textures.
 - **Don't** fetch fonts at runtime (`google_fonts`); Inter and JetBrains Mono are bundled.
 - **Don't** pack controls tighter on desktop to fit more; wider screens get more room, not more density.
