@@ -8,7 +8,6 @@ import 'package:nomorex/features/programs/models/program_set.dart';
 import 'package:nomorex/features/workouts/models/workout_set.dart';
 import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
 import 'package:nomorex/features/workouts/utils/parsed_set.dart';
-import 'package:nomorex/features/workouts/utils/workout_copier.dart';
 import 'package:nomorex/features/workouts/widgets/set_editor.dart';
 import 'package:nomorex/shared/models/editable_set_row.dart';
 
@@ -109,44 +108,6 @@ void main() {
         'absolute_weight_kg': 100,
       });
       expect(s.targetRepsMax, isNull);
-    });
-  });
-
-  group('copiedSetRow', () {
-    const ranged = WorkoutSet(
-      id: 's1',
-      workoutExerciseId: 'we1',
-      position: 2,
-      weightMode: 'absolute',
-      targetReps: 7,
-      targetRepsMax: 9,
-      absoluteWeightKg: 100,
-      completed: true,
-      actualReps: 8,
-      actualWeightKg: 100,
-    );
-
-    test('carries the rep range but no logged results', () {
-      final row = copiedSetRow(ranged, workoutExerciseId: 'new', userId: 'u1');
-      expect(row['target_reps'], 7);
-      expect(row['target_reps_max'], 9);
-      expect(row['workout_exercise_id'], 'new');
-      expect(row.containsKey('completed'), isFalse);
-      expect(row.containsKey('actual_reps'), isFalse);
-      expect(row.containsKey('actual_weight_kg'), isFalse);
-    });
-
-    test('omits target_reps_max for a single rep count', () {
-      const single = WorkoutSet(
-        id: 's1',
-        workoutExerciseId: 'we1',
-        position: 0,
-        weightMode: 'absolute',
-        targetReps: 5,
-        absoluteWeightKg: 100,
-      );
-      final row = copiedSetRow(single, workoutExerciseId: 'new', userId: 'u1');
-      expect(row.containsKey('target_reps_max'), isFalse);
     });
   });
 

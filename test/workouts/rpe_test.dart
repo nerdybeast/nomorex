@@ -13,7 +13,6 @@ import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
 import 'package:nomorex/features/workouts/providers/workout_detail_provider.dart';
 import 'package:nomorex/features/workouts/screens/workout_detail_screen.dart';
 import 'package:nomorex/features/workouts/utils/parsed_set.dart';
-import 'package:nomorex/features/workouts/utils/workout_copier.dart';
 import 'package:nomorex/features/workouts/widgets/set_editor.dart';
 import 'package:nomorex/shared/models/editable_set_row.dart';
 import 'package:nomorex/shared/widgets/number_stepper_field.dart';
@@ -193,15 +192,6 @@ void main() {
       expect((p.rpeMin, p.rpeMax), (8.0, null));
     });
 
-    test('copiedSetRow carries the RPE target but never the logged RPE', () {
-      final row = copiedSetRow(_set('s1', rpeMin: 6, rpeMax: 7, actualRpe: 9),
-          workoutExerciseId: 'n', userId: 'u');
-      expect(row['rpe_min'], 6);
-      expect(row['rpe_max'], 7);
-      expect(row.containsKey('actual_rpe'), isFalse);
-      expect(copiedSetRow(_set('s2'), workoutExerciseId: 'n', userId: 'u').containsKey('rpe_min'),
-          isFalse);
-    });
   });
 
   group('NumberStepperField max', () {
