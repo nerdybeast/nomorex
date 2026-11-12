@@ -200,3 +200,5 @@ $RECYCLE.BIN/
 # unbounded if the server gets stuck retrying (e.g. after a stale
 # .dart_tool/package_config.json), restart the IDE's Dart server if so.
 custom_lint.log
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
