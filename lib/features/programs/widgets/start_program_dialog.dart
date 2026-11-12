@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../../shared/widgets/summary_card.dart';
 import '../utils/program_day_date.dart';
 
 /// Asks for a program's start date. Returns the chosen date, or null if the
 /// user cancelled. Shared by starting your own program (ProgramDetailScreen)
 /// and starting a copy of someone else's (CommunityProgramDetailScreen), so
 /// both flows schedule identically.
+///
+/// [workoutCount], when given, says up front what starting does: it puts
+/// that many workouts on the calendar.
 Future<DateTime?> showStartProgramDialog(
   BuildContext context, {
   required int dayCount,
+  int? workoutCount,
 }) async {
   var startDate = DateTime.now();
 
@@ -39,7 +44,9 @@ Future<DateTime?> showStartProgramDialog(
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  'Ends around ${formatDate(programDayDate(startDate, dayCount - 1))}.',
+                  workoutCount != null && workoutCount > 0
+                      ? '${pluralize(workoutCount, 'workout')}, ends around ${formatDate(programDayDate(startDate, dayCount - 1))}.'
+                      : 'Ends around ${formatDate(programDayDate(startDate, dayCount - 1))}.',
                   style: Theme.of(ctx).textTheme.bodySmall,
                 ),
               ),

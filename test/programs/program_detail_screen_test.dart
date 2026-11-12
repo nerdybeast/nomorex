@@ -107,9 +107,27 @@ void main() {
     expect(find.text('3 days · 2 workouts'), findsNWidgets(2));
 
     await tester.ensureVisible(find.byKey(const Key('program_week_toggle_w1')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('program_week_toggle_w1')));
     await tester.pumpAndSettle();
+    // The ListView builds lazily, so scroll the opened week into view.
+    await tester.dragUntilVisible(find.text('W2 Day 1'), find.byType(ListView), const Offset(0, -200));
     expect(find.text('W2 Day 1'), findsOneWidget);
+  });
+
+  testWidgets('Expand all opens every week, then reads Collapse all', (tester) async {
+    await _pump(tester, _Detail(_program()));
+    await tester.tap(find.text('Expand all'));
+    await tester.pumpAndSettle();
+    await tester.dragUntilVisible(find.text('W2 Day 1'), find.byType(ListView), const Offset(0, -200));
+    expect(find.text('W2 Day 1'), findsOneWidget);
+    await tester.dragUntilVisible(find.text('Collapse all'), find.byType(ListView), const Offset(0, 200));
+    expect(find.text('Collapse all'), findsOneWidget);
+  });
+
+  testWidgets('a program that has not started says what Start does', (tester) async {
+    await _pump(tester, _Detail(_program()));
+    expect(find.text('Schedules 4 workouts from the date you pick.'), findsOneWidget);
   });
 
   testWidgets('a running program opens on the week holding today', (tester) async {
@@ -126,6 +144,13 @@ void main() {
     expect(find.text('W2 Day 1'), findsOneWidget);
     expect(find.text('W1 Day 1'), findsNothing);
     expect(find.textContaining('In progress', findRichText: true), findsOneWidget);
+    // Today (position 4) leads the page and is marked in its week.
+    expect(
+      find.descendant(of: find.byKey(const Key('program_today_row')), matching: find.text('W2 Day 2')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('program_day_today_pill')), findsWidgets);
+    expect(find.byKey(const Key('program_start_hint')), findsNothing);
   });
 
   testWidgets('a long description is clamped with Show more', (tester) async {

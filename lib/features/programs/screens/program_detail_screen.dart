@@ -10,9 +10,11 @@ import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
 import '../../../shared/widgets/summary_card.dart';
 import '../models/program.dart';
+import '../models/program_day.dart';
 import '../models/program_instance.dart';
 import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
+import '../providers/program_instance_workouts_provider.dart';
 import '../providers/program_instances_list_provider.dart';
 import '../providers/program_instances_provider.dart';
 import '../providers/programs_provider.dart';
@@ -32,8 +34,9 @@ class ProgramDetailScreen extends ConsumerWidget {
   const ProgramDetailScreen({super.key, required this.programId});
   final String programId;
 
-  Future<void> _startProgram(BuildContext context, WidgetRef ref, int dayCount) async {
-    final startDate = await showStartProgramDialog(context, dayCount: dayCount);
+  Future<void> _startProgram(BuildContext context, WidgetRef ref, int dayCount, int workoutCount) async {
+    final startDate =
+        await showStartProgramDialog(context, dayCount: dayCount, workoutCount: workoutCount);
     if (startDate == null || !context.mounted) return;
 
     try {
@@ -53,29 +56,10 @@ class ProgramDetailScreen extends ConsumerWidget {
         content: const Text("Couldn't start the program. Check your connection and try again."),
         action: SnackBarAction(
           label: 'Retry',
-          onPressed: () => _startProgram(context, ref, dayCount),
+          onPressed: () => _startProgram(context, ref, dayCount, workoutCount),
         ),
       ));
     }
-  }
-
-  /// One collapsible section per week. Only the week that matters opens:
-  /// this week for a running program, week 1 otherwise. Six expanded weeks
-  /// were a five-screen scroll that pushed Start out of reach.
-  List<Widget> _weekSections(Program program, ProgramInstance? run) {
-    final open = currentWeekIndex(
-      [for (final w in program.weeks) [for (final d in w.days) d.position]],
-      run?.startedAt,
-    );
-    return [
-      for (var i = 0; i < program.weeks.length; i++)
-        _WeekSection(
-          key: ValueKey('${program.weeks[i].id}-${run?.id}'),
-          week: program.weeks[i],
-          programId: programId,
-          initiallyExpanded: i == open,
-        ),
-    ];
   }
 
   @override
@@ -137,8 +121,10 @@ class ProgramDetailScreen extends ConsumerWidget {
             if (program.description != null && program.description!.isNotEmpty) ...[
               const SizedBox(height: 12),
               _Description(program.description!),
-            ],
-            const SizedBox(height: 12),
+              // The description ends in its own Show more or an 8px gap.
+              const SizedBox(height: 4),
+            ] else
+              const SizedBox(height: 12),
             _ProgramFacts(program: program),
             const SizedBox(height: 24),
             if (program.isArchived) ...[
@@ -162,27 +148,92 @@ class ProgramDetailScreen extends ConsumerWidget {
                   date: formatDate(activeInstance.startedAt),
                 ),
                 const SizedBox(height: 12),
+                if (!isProgramUpcoming(activeInstance.startedAt))
+                  _TodayRow(program: program, run: activeInstance),
                 FilledButton.icon(
                   onPressed: () => context
                       .push(AppConstants.routeProgramInstanceDetail(activeInstance!.id)),
                   icon: const Icon(Icons.visibility_outlined),
                   label: const Text('View progress'),
                 ),
-              ] else
+              ] else ...[
                 FilledButton.icon(
                   onPressed: () => _startProgram(
                     context,
                     ref,
                     program.weeks.fold<int>(0, (sum, w) => sum + w.days.length),
+                    _workoutCount(program),
                   ),
                   icon: const Icon(Icons.play_arrow),
                   label: const Text('Start program'),
                 ),
-              const SizedBox(height: 24),
-              ..._weekSections(program, activeInstance),
+                const SizedBox(height: 8),
+                // Starting commits a lot: say so before the dialog does.
+                Text(
+                  'Schedules ${pluralize(_workoutCount(program), 'workout')} from the date you pick.',
+                  key: const Key('program_start_hint'),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: NomorexTokens.of(context).fg3),
+                ),
+              ],
+              // Expand all's own button height supplies the rest of the gap.
+              const SizedBox(height: 8),
+              _WeekList(program: program, run: activeInstance),
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Training days: each non-rest day becomes one workout when started.
+int _workoutCount(Program program) =>
+    templateStats(program.weeks.map(StatsWeek.fromWeek).toList()).workouts;
+
+/// Today's day of a running program, above everything else it's about to
+/// do: the day (with its TODAY pill) and its lifts, tapping straight into the scheduled
+/// workout. Nothing shows outside the run's dates or for a rest day with
+/// nothing to open (the row still says it's a rest day).
+class _TodayRow extends ConsumerWidget {
+  const _TodayRow({required this.program, required this.run});
+
+  final Program program;
+  final ProgramInstance run;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ProgramDay? today;
+    for (final week in program.weeks) {
+      for (final day in week.days) {
+        if (isProgramDayToday(run.startedAt, day.position)) today = day;
+      }
+    }
+    final day = today;
+    if (day == null) return const SizedBox.shrink();
+    final workouts = ref.watch(programInstanceWorkoutsProvider(run.id)).asData?.value ?? const {};
+    final workoutId = workouts[day.id];
+    final canOpen = programDayHasContent(day);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: ListGroup(
+        children: [
+          ProgramDayCard(
+            key: const Key('program_today_row'),
+            // The TODAY pill already says when; the title stays the day's own.
+            title: day.title,
+            subtitle: programDaySubtitle(day),
+            highlighted: true,
+            showChevron: canOpen,
+            // The run's own workout when there is one; the run screen
+            // otherwise (a day added to the template after the start).
+            onTap: !canOpen
+                ? null
+                : () => context.push(workoutId != null
+                    ? AppConstants.routeWorkoutDetail(workoutId)
+                    : AppConstants.routeProgramInstanceDetail(run.id)),
+          ),
+        ],
       ),
     );
   }
@@ -205,46 +256,109 @@ class _ProgramFacts extends StatelessWidget {
   }
 }
 
-class _WeekSection extends StatefulWidget {
+/// The program's weeks as collapsible sections. Only the week that matters
+/// opens: this week for a running program, week 1 otherwise. Six expanded
+/// weeks were a five-screen scroll that pushed Start out of reach. Expand all
+/// is there for reading the whole block at once.
+class _WeekList extends StatefulWidget {
+  const _WeekList({required this.program, required this.run});
+
+  final Program program;
+  final ProgramInstance? run;
+
+  @override
+  State<_WeekList> createState() => _WeekListState();
+}
+
+class _WeekListState extends State<_WeekList> {
+  late Set<int> _open = {_initialWeek()};
+
+  int _initialWeek() => currentWeekIndex(
+        [for (final w in widget.program.weeks) [for (final d in w.days) d.position]],
+        widget.run?.startedAt,
+      );
+
+  @override
+  void didUpdateWidget(_WeekList old) {
+    super.didUpdateWidget(old);
+    // A run starting or ending moves the week that matters.
+    if (old.run?.id != widget.run?.id) _open = {_initialWeek()};
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final weeks = widget.program.weeks;
+    final allOpen = _open.length == weeks.length;
+    final run = widget.run;
+    final live = run != null && !isProgramUpcoming(run.startedAt);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (weeks.length > 1)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              key: const Key('program_weeks_toggle_all'),
+              onPressed: () => setState(() {
+                _open = allOpen ? {} : {for (var i = 0; i < weeks.length; i++) i};
+              }),
+              child: Text(allOpen ? 'Collapse all' : 'Expand all'),
+            ),
+          ),
+        for (var i = 0; i < weeks.length; i++)
+          _WeekSection(
+            week: weeks[i],
+            programId: widget.program.id,
+            expanded: _open.contains(i),
+            todayStartedAt: live ? run.startedAt : null,
+            onToggle: () => setState(() {
+              _open = {..._open};
+              if (!_open.remove(i)) _open.add(i);
+            }),
+          ),
+      ],
+    );
+  }
+}
+
+class _WeekSection extends StatelessWidget {
   const _WeekSection({
-    super.key,
     required this.week,
     required this.programId,
-    required this.initiallyExpanded,
+    required this.expanded,
+    required this.onToggle,
+    this.todayStartedAt,
   });
 
   final ProgramWeek week;
   final String programId;
-  final bool initiallyExpanded;
+  final bool expanded;
+  final VoidCallback onToggle;
 
-  @override
-  State<_WeekSection> createState() => _WeekSectionState();
-}
-
-class _WeekSectionState extends State<_WeekSection> {
-  late bool _expanded = widget.initiallyExpanded;
+  /// A live run's start date, so today's day can be marked; null otherwise.
+  final DateTime? todayStartedAt;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tokens = NomorexTokens.of(context);
-    final week = widget.week;
     final days = week.days.length;
     final workouts = week.days.where((d) => !d.isRestDay).length;
     final heading = 'Week ${week.weekNumber}${week.label != null ? ' · ${week.label}' : ''}';
+    final startedAt = todayStartedAt;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Semantics(
             button: true,
-            expanded: _expanded,
+            expanded: expanded,
             child: InkWell(
               key: Key('program_week_toggle_${week.id}'),
               borderRadius: BorderRadius.circular(NomorexSizes.radiusMd),
-              onTap: () => setState(() => _expanded = !_expanded),
+              onTap: onToggle,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
@@ -253,9 +367,11 @@ class _WeekSectionState extends State<_WeekSection> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // title-3, so the open week's days carry the weight
+                          // rather than six equally loud headings.
                           Semantics(
                             header: true,
-                            child: Text(heading, style: theme.textTheme.titleLarge),
+                            child: Text(heading, style: theme.textTheme.titleMedium),
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -271,7 +387,7 @@ class _WeekSectionState extends State<_WeekSection> {
                     ),
                     const SizedBox(width: 8),
                     AnimatedRotation(
-                      turns: _expanded ? 0.5 : 0,
+                      turns: expanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 150),
                       curve: Curves.easeOut,
                       child: Icon(Icons.expand_more, color: tokens.fg3),
@@ -281,7 +397,7 @@ class _WeekSectionState extends State<_WeekSection> {
               ),
             ),
           ),
-          if (_expanded) ...[
+          if (expanded) ...[
             const SizedBox(height: 4),
             ListGroup(
               children: [
@@ -289,14 +405,15 @@ class _WeekSectionState extends State<_WeekSection> {
                   ProgramDayCard(
                     title: day.title,
                     subtitle: programDaySubtitle(day),
+                    highlighted: startedAt != null && isProgramDayToday(startedAt, day.position),
                     showChevron: programDayHasContent(day),
                     onTap: programDayHasContent(day)
-                        ? () => context.push(AppConstants.routeProgramDayDetail(widget.programId, day.id))
+                        ? () => context.push(AppConstants.routeProgramDayDetail(programId, day.id))
                         : null,
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
           ],
         ],
       ),
@@ -342,6 +459,7 @@ class _DescriptionState extends State<_Description> {
               maxLines: _expanded ? null : _clampLines,
               overflow: _expanded ? null : TextOverflow.ellipsis,
             ),
+            if (!overflows && !_expanded) const SizedBox(height: 8),
             if (overflows || _expanded)
               TextButton(
                 key: const Key('program_description_toggle'),
