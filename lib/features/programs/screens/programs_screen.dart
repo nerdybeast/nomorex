@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/active_archived_tabs.dart';
 import '../../../shared/widgets/archived_row_actions.dart';
 import '../../../shared/widgets/list_group.dart';
@@ -12,6 +11,7 @@ import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/summary_card.dart';
 import '../utils/program_stats.dart';
+import '../widgets/program_run_status.dart';
 import '../widgets/program_stats_chips.dart';
 import '../models/program.dart';
 import '../models/program_instance.dart';
@@ -235,19 +235,17 @@ class _ProgramTile extends ConsumerWidget {
                 fontStyle: FontStyle.italic,
               ),
             )
-          : Text(_truncatedDescription(description)),
+          : Text(description),
       status: activeInstance == null
           ? null
-          : Text(
-              isProgramUpcoming(activeInstance.startedAt)
-                  ? 'Upcoming — starts ${formatDate(activeInstance.startedAt)}'
-                  : 'In progress — started ${formatDate(activeInstance.startedAt)}',
-              style: TextStyle(color: NomorexTokens.of(context).primaryText, fontWeight: FontWeight.w600),
+          : ProgramRunStatus(
+              upcoming: isProgramUpcoming(activeInstance.startedAt),
+              date: formatDate(activeInstance.startedAt),
             ),
-      chips: [
-        ...programStatsChips(stats),
-        SummaryInfoChip(Icons.event_outlined, formatDate(program.createdAt)),
-      ],
+      // The created date lives on the program screen; here it wrapped onto a
+      // line of its own and repeated the days chip's calendar icon. The list
+      // is already sorted by it.
+      chips: programStatsChips(stats),
       onTap: () => context.push(AppConstants.routeProgramDetail(program.id)),
       trailing: PopupMenuButton<String>(
         onSelected: (value) async {
@@ -264,10 +262,5 @@ class _ProgramTile extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  String _truncatedDescription(String description) {
-    if (description.length <= 200) return description;
-    return '${description.substring(0, 200)}...';
   }
 }

@@ -286,6 +286,8 @@ void main() {
       await tester.tap(find.byKey(const Key('community_program_start')));
       await tester.pumpAndSettle();
       expect(find.text('Start date'), findsOneWidget);
+      // One training day and one rest day: the dialog counts only the workout.
+      expect(find.textContaining('1 workout, ends around'), findsOneWidget);
 
       await tester.tap(find.widgetWithText(FilledButton, 'Start'));
       await tester.pumpAndSettle();

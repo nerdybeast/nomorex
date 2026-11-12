@@ -19,6 +19,7 @@ class SetPrLink extends ConsumerWidget {
     required this.exerciseId,
     required this.exerciseName,
     this.style,
+    this.label = 'set PR',
   });
 
   /// The exercise whose 1RM the set resolves against — a set's
@@ -30,6 +31,10 @@ class SetPrLink extends ConsumerWidget {
   final String exerciseName;
 
   final TextStyle? style;
+
+  /// The link text. Name the lift ("set Snatch PR") when it sits next to a
+  /// different lift, so it's clear whose PR it records.
+  final String label;
 
   Future<void> _open(BuildContext context, WidgetRef ref) async {
     final String targetId;
@@ -75,7 +80,7 @@ class SetPrLink extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           child: Text(
-            'set PR',
+            label,
             style: (style ?? DefaultTextStyle.of(context).style).copyWith(
               color: linkColor,
               decoration: TextDecoration.underline,
