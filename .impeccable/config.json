@@ -15,6 +15,21 @@
         "value": "inter",
         "createdAt": "2026-11-12T20:47:08.443Z",
         "reason": "Agent: Inter is the bundled brand face in DESIGN.md and app_theme.dart"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "mono",
+        "createdAt": "2026-11-12T21:50:40.257Z",
+        "reason": "Agent: detector reads the 'JetBrains Mono' family as 'mono'; JetBrains Mono is declared in DESIGN.md typography"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/*.html"
+        ],
+        "createdAt": "2026-11-12T21:57:37.815Z",
+        "reason": "Agent: spent decision-round sketches (skeleton thumbnails of the first viewport), not shipping UI; the built Flutter screen pads its containers 12-16px"
       }
     ]
   }
