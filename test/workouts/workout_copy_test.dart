@@ -15,7 +15,6 @@ import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
 import 'package:nomorex/features/workouts/screens/edit_workout_screen.dart';
 import 'package:nomorex/features/workouts/screens/workout_detail_screen.dart';
 import 'package:nomorex/features/workouts/screens/workouts_screen.dart';
-import 'package:nomorex/features/workouts/utils/workout_copier.dart';
 import 'package:nomorex/shared/models/one_rep_max.dart';
 
 class _StubWorkoutsNotifier extends WorkoutsNotifier {
@@ -104,22 +103,6 @@ Future<void> _pumpDetail(
 }
 
 void main() {
-  test('a workout derived from an import stays marked imported', () {
-    final columns = copyAttributionColumns(_copiedWorkout(isImported: true));
-
-    expect(columns['is_copy'], isTrue);
-    expect(columns['is_imported'], isTrue);
-    expect(columns['copied_from_user_id'], isNull);
-  });
-
-  test('a workout derived from a Community copy is not marked imported', () {
-    expect(copyAttributionColumns(_copiedWorkout())['is_imported'], isFalse);
-  });
-
-  test('a workout the user created derives no attribution', () {
-    expect(copyAttributionColumns(_copiedWorkout(isCopy: false)), isEmpty);
-  });
-
   testWidgets('an imported workout is badged Imported on its list card', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

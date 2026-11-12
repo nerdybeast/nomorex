@@ -2,7 +2,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/workout.dart';
 import '../utils/parsed_set.dart';
-import '../utils/workout_copier.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../programs/providers/finished_program_instances_provider.dart';
 import '../../programs/providers/program_instance_detail_provider.dart';
@@ -235,44 +234,18 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     ref.invalidate(workoutsProvider);
   }
 
+  /// Finishes the session and, for a standalone workout, eagerly creates the
+  /// next not-started instance of its group so the Workouts list always has a
+  /// live row to show instead of this now-frozen completion. Both happen in
+  /// one transaction in the `finish_workout` RPC, which skips the next
+  /// instance for program-materialized days and when a live sibling exists.
   Future<void> finishWorkout({String? sessionNotes}) async {
     final current = await future;
-    await _db.rpc('finish_workout_session', params: {
+    await _db.rpc('finish_workout', params: {
       'p_workout_id': workoutId,
       'p_session_notes': sessionNotes,
+      'p_today': DateTime.now().toIso8601String().split('T').first,
     });
-
-    // Eagerly materialize the next not-started instance for this group, so
-    // the Workouts list always has a live/actionable row to show instead of
-    // this now-frozen completion. Standalone workouts only — a
-    // program-materialized day doesn't spawn a standalone copy of itself;
-    // repeating a whole program goes through starting a new program
-    // instance instead. Skipped if a live sibling already exists (e.g. this
-    // finish is racing another tab, or repeatWorkout() already made one).
-    if (current.programInstanceId == null) {
-      final liveSibling = await _db
-          .from('workouts')
-          .select('id')
-          .eq('user_id', _userId)
-          .eq('workout_group_id', current.workoutGroupId)
-          .inFilter('status', ['not_started', 'in_progress', 'paused']).maybeSingle();
-      if (liveSibling == null) {
-        final nextWorkout = await _db.from('workouts').insert({
-          'user_id': _userId,
-          'title': current.title,
-          'date': DateTime.now().toIso8601String().split('T').first,
-          if (current.notes != null) 'notes': current.notes,
-          'workout_group_id': current.workoutGroupId,
-          ...copyAttributionColumns(current),
-        }).select('id').single();
-        await copyWorkoutContents(
-          _db,
-          userId: _userId,
-          sourceExercises: current.exercises,
-          targetWorkoutId: nextWorkout['id'] as String,
-        );
-      }
-    }
 
     ref.invalidate(workoutsProvider);
     ref.invalidate(inProgressWorkoutsProvider);
@@ -294,60 +267,22 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     await _refresh();
   }
 
-  /// Starts another instance of this workout's group. Reuses an existing
-  /// not-started sibling if one's already there (the common case — finishing
-  /// a workout eagerly creates the next instance, see finishWorkout()) rather
-  /// than creating a duplicate; only falls back to creating+copying a new row
-  /// when no sibling exists at all (e.g. a workout finished before eager
-  /// creation existed, or a program-materialized repeat, which doesn't get
-  /// one). Throws a [StateError] instead of creating a second in-progress
-  /// instance of the same logical workout — checked proactively, then backed
-  /// by the DB's partial unique index as a race guard.
+  /// Starts another instance of this workout's group via the `repeat_workout`
+  /// RPC: it reuses the not-started sibling if there is one (finishing a
+  /// workout eagerly creates it, see finishWorkout()), otherwise creates and
+  /// copies a new one, then starts it, all in one transaction. Throws a
+  /// [StateError] instead of creating a second in-progress instance of the
+  /// same logical workout: refused up front by the RPC, and backed by the
+  /// DB's partial unique index (23505) as a race guard.
   Future<String> repeatWorkout() async {
-    final current = await future;
-    final groupId = current.workoutGroupId;
-
-    final existing = await _db
-        .from('workouts')
-        .select('id, status')
-        .eq('user_id', _userId)
-        .eq('workout_group_id', groupId)
-        .inFilter('status', ['not_started', 'in_progress', 'paused']).maybeSingle();
-
-    String targetId;
-    final reusingExisting = existing != null;
-    if (existing != null) {
-      final status = existing['status'] as String;
-      if (status != 'not_started') {
-        throw StateError('This workout is already in progress.');
-      }
-      targetId = existing['id'] as String;
-    } else {
-      final newWorkout = await _db.from('workouts').insert({
-        'user_id': _userId,
-        'title': current.title,
-        'date': DateTime.now().toIso8601String().split('T').first,
-        if (current.notes != null) 'notes': current.notes,
-        'workout_group_id': groupId,
-        ...copyAttributionColumns(current),
-      }).select('id').single();
-      targetId = newWorkout['id'] as String;
-
-      await copyWorkoutContents(
-        _db,
-        userId: _userId,
-        sourceExercises: current.exercises,
-        targetWorkoutId: targetId,
-      );
-    }
-
+    final String targetId;
     try {
-      await _db.rpc('start_workout_session', params: {'p_workout_id': targetId});
+      targetId = await _db.rpc('repeat_workout', params: {
+        'p_workout_id': workoutId,
+        'p_today': DateTime.now().toIso8601String().split('T').first,
+      }) as String;
     } on PostgrestException catch (e) {
-      if (!reusingExisting) {
-        await _db.from('workouts').delete().eq('id', targetId);
-      }
-      if (e.code == '23505') {
+      if (e.code == '23505' || e.message.startsWith('already_in_progress:')) {
         throw StateError('This workout is already in progress.');
       }
       rethrow;

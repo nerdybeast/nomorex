@@ -14,7 +14,6 @@ import 'package:nomorex/features/workouts/providers/workout_detail_provider.dart
 import 'package:nomorex/features/workouts/screens/workout_detail_screen.dart';
 import 'package:nomorex/features/workouts/utils/parsed_set.dart';
 import 'package:nomorex/features/workouts/utils/set_resolver.dart';
-import 'package:nomorex/features/workouts/utils/workout_copier.dart';
 import 'package:nomorex/features/workouts/widgets/set_editor.dart';
 import 'package:nomorex/shared/models/editable_set_row.dart';
 import 'package:nomorex/shared/widgets/set_pr_link.dart';
@@ -172,16 +171,6 @@ void main() {
       expect(s.toEditableRow().weightMode, 'open');
     });
 
-    test('a copied open set stays open and drops the logged weight', () {
-      final row = copiedSetRow(
-        _openSet('s1', actualWeightKg: 40),
-        workoutExerciseId: 'we2',
-        userId: 'u1',
-      );
-      expect(row['weight_mode'], 'open');
-      expect(row['absolute_weight_kg'], isNull);
-      expect(row.containsKey('actual_weight_kg'), isFalse);
-    });
   });
 
   group('SetEditor', () {

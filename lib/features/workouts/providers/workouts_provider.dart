@@ -1,7 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/workout.dart';
-import '../utils/workout_copier.dart';
 import '../utils/workout_group_representative.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../community/providers/community_workouts_provider.dart';
@@ -114,32 +113,15 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
     ref.invalidateSelf();
   }
 
-  /// Deep-copies a workout (and its exercises + sets) to a new workout dated
-  /// today. Copied sets reset completed/actual fields.
+  /// Deep-copies one of the user's workouts (and its exercises + sets) to a
+  /// new workout dated today, in one transaction via the `duplicate_workout`
+  /// RPC. Copied sets reset completed/actual fields, and a copy or an import
+  /// stays one: the server takes attribution from the source row.
   Future<void> duplicateWorkout(String id) async {
-    final userId = _db.auth.currentUser!.id;
-    final source = await _db
-        .from('workouts')
-        .select('*, workout_exercises(*, workout_sets(*))')
-        .eq('id', id)
-        .single();
-    final src = Workout.fromJson(source);
-
-    final newWorkout = await _db.from('workouts').insert({
-      'user_id': userId,
-      'title': '${src.title} (copy)',
-      'date': DateTime.now().toIso8601String().split('T').first,
-      if (src.notes != null) 'notes': src.notes,
-      ...copyAttributionColumns(src),
-    }).select('id').single();
-    final newWorkoutId = newWorkout['id'] as String;
-
-    await copyWorkoutContents(
-      _db,
-      userId: userId,
-      sourceExercises: src.exercises,
-      targetWorkoutId: newWorkoutId,
-    );
+    await _db.rpc('duplicate_workout', params: {
+      'p_workout_id': id,
+      'p_today': DateTime.now().toIso8601String().split('T').first,
+    });
 
     ref.invalidateSelf();
     await future;

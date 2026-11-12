@@ -8,7 +8,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(23);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser with fixed ids.
@@ -72,6 +72,23 @@ select throws_like(
 select throws_like(
   $$ select public.start_program((select pub_program from u), current_date) $$,
   '%not found for the current user%', 'start_program refuses a''s public program too');
+
+-- Duplicate/repeat/finish work only on the caller's own workouts, public or not.
+select throws_like(
+  $$ select public.duplicate_workout((select pub_workout from u), current_date) $$,
+  'not_found:%', 'duplicate_workout refuses a''s public workout');
+select throws_like(
+  $$ select public.repeat_workout((select priv_workout from u), current_date) $$,
+  'not_found:%', 'repeat_workout refuses a''s workout');
+select throws_like(
+  $$ select public.finish_workout((select live_workout from u), 'b was here', current_date) $$,
+  'not_found:%', 'finish_workout refuses a''s live workout');
+select throws_like(
+  $$ select public.copy_workout_tree((select pub_workout from u), (select priv_workout from u)) $$,
+  'not_found:%', 'copy_workout_tree refuses a''s workouts');
+select throws_like(
+  $$ select public.new_workout_from((select pub_workout from u), 'stolen', current_date, null) $$,
+  'not_found:%', 'new_workout_from refuses a''s workout');
 
 -- The session functions are filtered to the caller's rows, so on a's
 -- workout they do nothing at all (checked as superuser below).

@@ -10,7 +10,6 @@ import 'package:nomorex/features/workouts/models/workout_set.dart';
 import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
 import 'package:nomorex/features/workouts/utils/parsed_set.dart';
 import 'package:nomorex/features/workouts/utils/set_resolver.dart';
-import 'package:nomorex/features/workouts/utils/workout_copier.dart';
 import 'package:nomorex/features/workouts/widgets/set_editor.dart';
 import 'package:nomorex/shared/models/editable_set_row.dart';
 
@@ -160,28 +159,6 @@ void main() {
       expect(p.toEditableRow().percentageMax, 72.5);
     });
 
-    test('copiedSetRow carries percentage_max, and omits it for a single percentage', () {
-      const ranged = WorkoutSet(
-        id: 's1',
-        workoutExerciseId: 'we1',
-        position: 0,
-        weightMode: 'percentage',
-        targetReps: 7,
-        percentage: 67,
-        percentageMax: 72.5,
-      );
-      const single = WorkoutSet(
-        id: 's2',
-        workoutExerciseId: 'we1',
-        position: 1,
-        weightMode: 'percentage',
-        targetReps: 5,
-        percentage: 80,
-      );
-      expect(copiedSetRow(ranged, workoutExerciseId: 'n', userId: 'u')['percentage_max'], 72.5);
-      expect(copiedSetRow(single, workoutExerciseId: 'n', userId: 'u').containsKey('percentage_max'),
-          isFalse);
-    });
   });
 
   group('SetEditor %1RM range', () {
