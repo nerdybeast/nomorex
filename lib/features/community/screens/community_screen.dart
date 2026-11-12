@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/owner_name.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
@@ -134,23 +135,32 @@ class _WorkoutsTab extends ConsumerWidget {
             ],
           );
         }
+        final notifier = ref.read(communityWorkoutsProvider.notifier);
         final filtered =
             workouts.where((w) => _matches(query, w.title, w.ownerDisplayName)).toList();
-        if (filtered.isEmpty) {
-          return const Center(child: Text('No workouts match your search.'));
-        }
         return ListView(
           padding: shellListPadding(context),
           children: [
-            ListGroup(
-              children: [
-                for (final w in filtered)
-                  CommunityWorkoutCard(
-                    workout: w,
-                    onTap: () => context.push(AppConstants.routeCommunityWorkoutDetail(w.id)),
-                  ),
-              ],
-            ),
+            if (filtered.isEmpty)
+              const _NoMatches('No workouts match your search.')
+            else
+              ListGroup(
+                children: [
+                  for (final w in filtered)
+                    CommunityWorkoutCard(
+                      workout: w,
+                      onTap: () => context.push(AppConstants.routeCommunityWorkoutDetail(w.id)),
+                    ),
+                ],
+              ),
+            if (notifier.hasMore)
+              _LoadMore(
+                key: const Key('community_workouts_load_more'),
+                searching: query.isNotEmpty,
+                loadedCount: workouts.length,
+                noun: 'workouts',
+                onLoadMore: notifier.loadMore,
+              ),
           ],
         );
       },
@@ -184,26 +194,109 @@ class _ProgramsTab extends ConsumerWidget {
             ],
           );
         }
+        final notifier = ref.read(communityProgramsProvider.notifier);
         final filtered =
             programs.where((p) => _matches(query, p.name, p.ownerDisplayName)).toList();
-        if (filtered.isEmpty) {
-          return const Center(child: Text('No programs match your search.'));
-        }
         return ListView(
           padding: shellListPadding(context),
           children: [
-            ListGroup(
-              children: [
-                for (final p in filtered)
-                  CommunityProgramCard(
-                    program: p,
-                    onTap: () => context.push(AppConstants.routeCommunityProgramDetail(p.id)),
-                  ),
-              ],
-            ),
+            if (filtered.isEmpty)
+              const _NoMatches('No programs match your search.')
+            else
+              ListGroup(
+                children: [
+                  for (final p in filtered)
+                    CommunityProgramCard(
+                      program: p,
+                      onTap: () => context.push(AppConstants.routeCommunityProgramDetail(p.id)),
+                    ),
+                ],
+              ),
+            if (notifier.hasMore)
+              _LoadMore(
+                key: const Key('community_programs_load_more'),
+                searching: query.isNotEmpty,
+                loadedCount: programs.length,
+                noun: 'programs',
+                onLoadMore: notifier.loadMore,
+              ),
           ],
         );
       },
+    );
+  }
+}
+
+class _NoMatches extends StatelessWidget {
+  const _NoMatches(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: Text(message)),
+      );
+}
+
+/// The foot of a Community list while more pages exist. Search only covers
+/// what's loaded, so while searching it says so rather than implying the
+/// matches above are everything.
+class _LoadMore extends StatefulWidget {
+  const _LoadMore({
+    super.key,
+    required this.searching,
+    required this.loadedCount,
+    required this.noun,
+    required this.onLoadMore,
+  });
+
+  final bool searching;
+  final int loadedCount;
+  final String noun;
+  final Future<void> Function() onLoadMore;
+
+  @override
+  State<_LoadMore> createState() => _LoadMoreState();
+}
+
+class _LoadMoreState extends State<_LoadMore> {
+  bool _busy = false;
+
+  Future<void> _load() async {
+    setState(() => _busy = true);
+    try {
+      await widget.onLoadMore();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = NomorexTokens.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Column(
+        children: [
+          if (widget.searching)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Searching the newest ${widget.loadedCount} ${widget.noun}. Load more to search older ones.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens.fg3),
+              ),
+            ),
+          FilledButton(
+            style: tokens.secondaryButtonStyle,
+            onPressed: _busy ? null : _load,
+            child: _busy
+                ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Load more'),
+          ),
+        ],
+      ),
     );
   }
 }
