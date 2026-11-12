@@ -7,6 +7,7 @@ import '../../../core/utils/duration_formatter.dart';
 import '../models/workout.dart';
 import '../providers/finished_workouts_provider.dart';
 import '../utils/workout_timer.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 class WorkoutHistoryScreen extends ConsumerStatefulWidget {
   const WorkoutHistoryScreen({super.key, this.initialGroupId});
@@ -119,7 +120,7 @@ class _HistoryEntryCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: contentPadding(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

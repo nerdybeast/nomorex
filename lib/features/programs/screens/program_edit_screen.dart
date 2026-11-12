@@ -16,6 +16,7 @@ import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
 import '../utils/parsed_program_set.dart';
 import '../../../core/utils/sequential_naming.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 // SetEditor is shared with the workouts feature, so its "Add sets (%)"
 // callback speaks ParsedSet regardless of caller; convert 1:1 to this
@@ -145,7 +146,7 @@ class ProgramEditScreen extends ConsumerWidget {
         data: (program) {
           final notifier = ref.read(programDetailProvider(programId).notifier);
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: contentPadding(context),
             children: [
               if (program.isCopy) ...[
                 Align(

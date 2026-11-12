@@ -72,7 +72,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: contentPadding(context, top: 12, bottom: 0, inShell: true),
             child: TextField(
               key: const Key('community_search'),
               decoration: const InputDecoration(

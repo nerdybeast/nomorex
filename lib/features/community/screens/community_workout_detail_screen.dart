@@ -21,6 +21,7 @@ import '../../workouts/providers/workouts_provider.dart';
 import '../../workouts/utils/set_resolver.dart';
 import '../../../shared/models/one_rep_max.dart';
 import '../providers/community_workout_detail_provider.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 class CommunityWorkoutDetailScreen extends ConsumerWidget {
   const CommunityWorkoutDetailScreen({super.key, required this.workoutId});
@@ -55,7 +56,7 @@ class CommunityWorkoutDetailScreen extends ConsumerWidget {
           child: Text('Error: $e', style: TextStyle(color: colorScheme.error)),
         ),
         data: (workout) => ListView(
-          padding: const EdgeInsets.all(20),
+          padding: contentPadding(context, top: 20, bottom: 20),
           children: [
             Text(workout.title, style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 4),

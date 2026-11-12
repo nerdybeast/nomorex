@@ -14,6 +14,7 @@ import '../../../shared/widgets/list_group.dart';
 import '../../programs/widgets/program_day_card.dart';
 import '../../programs/widgets/start_program_dialog.dart';
 import '../providers/community_program_detail_provider.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 /// Read-only preview of another user's public program, mirroring
 /// [CommunityWorkoutDetailScreen]. The program itself is never editable here;
@@ -49,7 +50,7 @@ class CommunityProgramDetailScreen extends ConsumerWidget {
         data: (program) {
           final weeks = program.weeks.length;
           return ListView(
-            padding: const EdgeInsets.all(20),
+            padding: contentPadding(context, top: 20, bottom: 20),
             children: [
               Text(program.name, style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 4),

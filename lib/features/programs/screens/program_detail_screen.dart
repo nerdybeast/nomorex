@@ -21,6 +21,7 @@ import '../utils/program_stats.dart';
 import '../widgets/program_day_card.dart';
 import '../widgets/program_stats_chips.dart';
 import '../widgets/start_program_dialog.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 /// Read-only rollup of an authored program (mirrors WorkoutDetailScreen's
 /// read affordances), plus the "Start Program" call to action that
@@ -81,7 +82,7 @@ class ProgramDetailScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
         data: (program) => ListView(
-          padding: const EdgeInsets.all(16),
+          padding: contentPadding(context),
           children: [
             Text(program.name, style: Theme.of(context).textTheme.headlineMedium),
             if (program.isArchived) ...[

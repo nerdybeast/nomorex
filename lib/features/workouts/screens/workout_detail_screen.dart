@@ -26,6 +26,7 @@ import '../utils/can_archive_workout.dart';
 import '../utils/set_resolver.dart';
 import '../../../shared/models/one_rep_max.dart';
 import '../widgets/elapsed_timer.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 class WorkoutDetailScreen extends ConsumerWidget {
   const WorkoutDetailScreen({super.key, required this.workoutId});
@@ -76,7 +77,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
         data: (workout) => ListView(
-          padding: const EdgeInsets.all(16),
+          padding: contentPadding(context),
           children: [
             Text(workout.title, style: Theme.of(context).textTheme.headlineMedium),
             if (workout.isArchived) ...[

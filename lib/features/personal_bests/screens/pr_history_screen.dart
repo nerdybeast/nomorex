@@ -14,6 +14,7 @@ import '../../../core/utils/one_rep_max_formula.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 Future<void> _deletePr(BuildContext context, WidgetRef ref, PersonalBest pr, String unit) async {
   final confirmed = await showConfirmDialog(
@@ -60,7 +61,7 @@ class PrHistoryScreen extends ConsumerWidget {
       body: history.isEmpty
           ? const Center(child: Text('No PR history found.'))
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: contentPadding(context),
               children: [
                 Text(history.first.exerciseName, style: theme.textTheme.headlineMedium),
                 const SizedBox(height: 16),
