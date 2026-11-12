@@ -290,7 +290,7 @@ Near-neutral grays with a single toned-down orange and two information hues that
 - **Chalk-line Orange** (`primary`): fills the one main button on a screen, the FAB, the stepper's + and the switch's on track, always edged in `primary-border`. Labels on it are `on-primary` white in both themes.
 - **Pressed Orange** (`primary-hover`): a shade *darker* than the fill, never lighter, so the white label keeps its contrast on hover and press.
 - **Orange Ink** (`primary-text`): orange as text: links, snackbar actions, the selected nav icon, today's date in the picker.
-- **Orange Wash** (`primary-subtle`): a faint translucent wash behind `primary-text`: the selected unit, a selected segment, today's program day, the header band of a program day's main lift. A band or row tint, never a whole-card fill.
+- **Orange Wash** (`primary-subtle`): a faint translucent wash behind `primary-text`: the selected unit, a selected segment, today's program day, the header band of a program day's main lift or an editor's exercise card. A band or row tint, never a whole-card fill.
 
 ### Secondary
 - **Resolved Blue** (`info`): text only. It marks a weight resolved from the viewer's own or an estimated 1RM, e.g. a percentage set on someone else's public workout. Never a button, never a fill.
@@ -419,6 +419,15 @@ The read-only view of one program day, laid out as a session brief, capped at 64
 - **The rest:** a numbered `ListGroup`, with indices in Inter tabular (`fg-3`).
   - **Each row:** a one-line summary ("4 × 3 · 50–70% of Snatch") and the note, clamped to 2 lines, with the load range on the right. Percentage-resolved loads are `info` blue; fixed loads are `fg-1`; open sets read "choose load".
   - **Missing 1RM:** a row links "set <lift> PR", naming the basis lift when it isn't the row's own. When the main lift already offers that link, the row reads "needs <lift> PR" in `fg-3` instead of linking twice.
+
+### Exercise Picker
+Adding an exercise to a workout or program day opens one shared picker (`showExercisePickerSheet`): a 92%-height bottom sheet on a phone, a 560px centered panel on wider screens. The search field is pinned under the title and focused on open; results fill the rest, so the keyboard only covers the end of the list.
+- **Empty search:** a "RECENT" section (the last 8 distinct lifts used in any workout or program), then "ALL EXERCISES" A–Z, under mono eyebrows. Custom lifts carry a "CUSTOM" pill; lifts already in this workout or day read "Added" in `fg-3` and stay pickable.
+- **Typing:** names that start with the query first, then those containing it, with the matched part in `primary-text` 600. Without an exact match, a `primary-subtle` row offers **Create "<name>"** below the matches, which finds or creates the lift by name.
+- **Saving:** one tap saves. The row spins until the insert lands, then the sheet closes; a failure keeps it open with a `danger-text` line.
+
+### Exercise Editor Card
+Each exercise in the workout and program editors is a `bg-1` card whose header band is `primary-subtle`, holding the drag handle, the orange mono position number, the name in title-3 and delete. The body holds the notes field and the set ledger: reps in `fg-2`, the prescription (percentages and "Choose load" in Inter, fixed loads in mono), and, for a percentage set with a 1RM, the resolved load right-aligned in `info` blue mono. "Add sets (%)" and "Add sets (weight)" are compact secondary buttons. A just-added card is scrolled to and edged in `primary-border` for 1.6s before fading back. This is the one place every card carries the band: in an editor, each card is where the work happens.
 
 ### Cards / Containers
 - **Corner Style:** 10px.

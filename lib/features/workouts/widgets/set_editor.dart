@@ -307,6 +307,9 @@ class SetEditor extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercises = ref.watch(exercisesProvider).asData?.value ?? const <Exercise>[];
+    final byId = ref.watch(oneRepMaxProvider).asData?.value ?? const <String, OneRepMax>{};
+    final byName = ref.watch(oneRepMaxByNameProvider).asData?.value ?? const <String, OneRepMax>{};
+    final tokens = NomorexTokens.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -321,25 +324,45 @@ class SetEditor extends ConsumerWidget {
             ids.insert(newIndex, moved);
             onReorderSets(ids);
           },
-          itemBuilder: (context, i) => _SetRow(
-            key: ValueKey(sets[i].id),
-            index: i,
-            set: sets[i],
-            unit: unit,
-            onDelete: () => onDeleteSet(sets[i].id),
-          ),
+          itemBuilder: (context, i) {
+            final set = sets[i];
+            final oneRepMax = set.weightMode == 'percentage'
+                ? lookupOneRepMax(
+                    basisExerciseId: set.basisExerciseId ?? currentExerciseId,
+                    basisExerciseName: set.basisExerciseName ?? currentExerciseName,
+                    byExerciseId: byId,
+                    byExerciseName: byName,
+                  )
+                : null;
+            return _SetRow(
+              key: ValueKey(set.id),
+              index: i,
+              set: set,
+              unit: unit,
+              oneRepMax: oneRepMax,
+              onDelete: () => onDeleteSet(set.id),
+            );
+          },
         ),
-        Row(
+        const SizedBox(height: 8),
+        // Bordered secondary buttons rather than loose text links, so the
+        // two ways to add sets read as actions. A Wrap, so a narrow card
+        // stacks them instead of overflowing.
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            TextButton.icon(
+            _AddSetsButton(
+              label: 'Add sets (%)',
+              icon: Icons.percent,
+              tokens: tokens,
               onPressed: () => _showPercentageSetDialog(context, exercises),
-              icon: const Icon(Icons.add),
-              label: const Text('Add sets (%)'),
             ),
-            TextButton.icon(
+            _AddSetsButton(
+              label: 'Add sets (weight)',
+              icon: Icons.fitness_center,
+              tokens: tokens,
               onPressed: () => _showAbsoluteSetDialog(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Add sets (weight)'),
             ),
           ],
         ),
@@ -348,26 +371,65 @@ class SetEditor extends ConsumerWidget {
   }
 }
 
+class _AddSetsButton extends StatelessWidget {
+  const _AddSetsButton({
+    required this.label,
+    required this.icon,
+    required this.tokens,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final NomorexTokens tokens;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.icon(
+      style: tokens.secondaryButtonStyle.copyWith(
+        minimumSize: const WidgetStatePropertyAll(Size(0, 36)),
+        padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12)),
+        textStyle: WidgetStatePropertyAll(tokens.buttonSmall),
+        // 36px to look at, 48px to hit.
+        tapTargetSize: MaterialTapTargetSize.padded,
+      ),
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16),
+      label: Text(label),
+    );
+  }
+}
+
+/// One prescribed set, read like a ledger line: reps, then the
+/// prescription, then (for a percentage set the lifter has a 1RM for) the
+/// load it resolves to, right-aligned in blue mono.
 class _SetRow extends StatelessWidget {
   const _SetRow({
     super.key,
     required this.index,
     required this.set,
     required this.unit,
+    required this.oneRepMax,
     required this.onDelete,
   });
 
   final int index;
   final EditableSetRow set;
   final String unit;
+  final OneRepMax? oneRepMax;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = NomorexTokens.of(context);
+    final palette = tokens.palette;
+    final body = Theme.of(context).textTheme.bodyMedium!;
     final isPct = set.weightMode == 'percentage';
+    final isOpen = isOpenLoad(set.weightMode);
     final valueLabel = isPct
         ? formatPercentTarget(set.percentage, set.percentageMax)
-        : isOpenLoad(set.weightMode)
+        : isOpen
             ? 'Choose load'
             : (set.absoluteWeightKg != null
                 ? formatWeightForPreference(set.absoluteWeightKg!, unit)
@@ -375,36 +437,69 @@ class _SetRow extends StatelessWidget {
     final basisLabel = set.basisExerciseId != null
         ? (set.basisExerciseName ?? '1RM')
         : '1RM';
-    // The remove button sits beside the tile, not in its `trailing`: a
-    // ListTile merges its children into one semantics node, so a button
-    // inside it can't be activated on its own by assistive tech.
-    final tile = ListTile(
-      dense: true,
-      leading: Row(
-        mainAxisSize: MainAxisSize.min,
+    final prescription = [
+      isPct ? '$valueLabel of $basisLabel' : valueLabel,
+      ?formatRpeTarget(set.rpeMin, set.rpeMax),
+    ].join(' · ');
+    final prescriptionStyle = isPct
+        ? body.copyWith(color: palette.fg1)
+        : isOpen
+            ? body.copyWith(color: palette.fg3)
+            : tokens.weight.copyWith(color: palette.fg1);
+
+    final range = isPct && oneRepMax != null
+        ? resolveSetWeightRangeKg(
+            weightMode: set.weightMode,
+            percentage: set.percentage,
+            percentageMax: set.percentageMax,
+            oneRepMaxKg: oneRepMax!.kg,
+          )
+        : null;
+
+    // The remove button sits beside the row's content rather than inside a
+    // ListTile: a tile merges its children into one semantics node, so a
+    // button inside it couldn't be activated on its own by assistive tech.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 44),
+      child: Row(
         children: [
           ReorderableDragStartListener(
             index: index,
-            child: const Icon(Icons.drag_handle),
+            child: Tooltip(
+              message: 'Drag to reorder',
+              child: SizedBox(
+                width: 28,
+                height: 40,
+                child: Icon(Icons.drag_handle, size: 18, color: palette.fg3),
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
-          Text(formatTargetReps(set.targetReps, set.targetRepsMax)),
+          SizedBox(
+            width: 72,
+            child: Text(
+              formatTargetReps(set.targetReps, set.targetRepsMax),
+              style: body.copyWith(
+                color: palette.fg2,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          Expanded(child: Text(prescription, style: prescriptionStyle)),
+          if (range != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              formatResolvedWeightRange(range.low, range.high, unit, estimated: oneRepMax!.isEstimated),
+              key: ValueKey('set_editor_resolved_${set.id}'),
+              style: tokens.weight.copyWith(color: palette.info),
+            ),
+          ],
+          IconButton(
+            tooltip: 'Remove set',
+            icon: Icon(Icons.close, size: 18, color: palette.fg3),
+            onPressed: onDelete,
+          ),
         ],
       ),
-      title: Text([
-        isPct ? '$valueLabel of $basisLabel' : valueLabel,
-        ?formatRpeTarget(set.rpeMin, set.rpeMax),
-      ].join(' · ')),
-    );
-    return Row(
-      children: [
-        Expanded(child: tile),
-        IconButton(
-          tooltip: 'Remove set',
-          icon: const Icon(Icons.close),
-          onPressed: onDelete,
-        ),
-      ],
     );
   }
 }

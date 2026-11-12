@@ -179,13 +179,7 @@ void main() {
     await tester.tap(find.text('Exercise'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.byType(TextFormField),
-      ),
-      'Back',
-    );
+    await tester.enterText(find.byKey(const Key('exercise_picker_search')), 'Back');
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Back Squat'));

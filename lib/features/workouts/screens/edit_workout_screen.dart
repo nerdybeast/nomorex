@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../exercises/providers/exercises_provider.dart';
-import '../../exercises/widgets/exercise_picker.dart';
+import '../../exercises/widgets/exercise_picker_sheet.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
@@ -11,65 +10,50 @@ import '../../../shared/widgets/toggle_card.dart';
 import '../providers/workout_detail_provider.dart';
 import '../providers/workouts_provider.dart';
 import '../utils/can_archive_workout.dart';
+import '../widgets/exercise_editor_card.dart';
 import '../widgets/set_editor.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 
-class EditWorkoutScreen extends ConsumerWidget {
+class EditWorkoutScreen extends ConsumerStatefulWidget {
   const EditWorkoutScreen({super.key, required this.workoutId});
   final String workoutId;
 
-  Future<void> _addExercise(BuildContext context, WidgetRef ref) async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add exercise'),
-        content: SizedBox(
-          width: 320,
-          // Watch the exercises reactively: the list is often still loading
-          // when this dialog opens, and RawAutocomplete shows no options (not
-          // even "Add custom") for an empty list. A Consumer rebuilds the
-          // picker once the exercises arrive.
-          child: Consumer(
-            builder: (context, ref, _) {
-              final exercisesAsync = ref.watch(exercisesProvider);
-              return exercisesAsync.when(
-                loading: () => const SizedBox(
-                  height: 72,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (e, _) => SizedBox(
-                  height: 72,
-                  child: Center(child: Text('Could not load exercises: $e')),
-                ),
-                data: (exercises) => ExercisePicker(
-                  exercises: exercises,
-                  selected: null,
-                  onSelected: (ex) async {
-                    Navigator.pop(ctx);
-                    await ref
-                        .read(workoutDetailProvider(workoutId).notifier)
-                        .addExercise(ex.id);
-                  },
-                  onAddCustom: (name) async {
-                    final newEx = await ref
-                        .read(exercisesProvider.notifier)
-                        .addCustomExercise(name);
-                    if (ctx.mounted) Navigator.pop(ctx);
-                    await ref
-                        .read(workoutDetailProvider(workoutId).notifier)
-                        .addExercise(newEx.id);
-                  },
-                ),
-              );
-            },
-          ),
-        ),
-      ),
+  @override
+  ConsumerState<EditWorkoutScreen> createState() => _EditWorkoutScreenState();
+}
+
+class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen>
+    with JustAddedExerciseHighlight {
+  final _scroll = ScrollController();
+
+  String get workoutId => widget.workoutId;
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Opens the exercise picker. A pick saves straight away; once the sheet
+  /// closes, the new card is scrolled to and edged in orange for a moment.
+  Future<void> _addExercise() async {
+    final provider = workoutDetailProvider(workoutId);
+    final before = (await ref.read(provider.future)).exercises;
+    if (!mounted) return;
+    final beforeIds = {for (final e in before) e.id};
+    final added = await showExercisePickerSheet(
+      context,
+      addedExerciseIds: {for (final e in before) e.exerciseId},
+      onPick: (exercise) => ref.read(provider.notifier).addExercise(exercise.id),
     );
+    if (added == null || !mounted) return;
+    final after = (await ref.read(provider.future)).exercises;
+    final newRow = after.where((e) => !beforeIds.contains(e.id) && e.exerciseId == added.id).lastOrNull;
+    if (newRow != null) highlightAddedExercise(newRow.id, scrollController: _scroll);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final detail = ref.watch(workoutDetailProvider(workoutId));
     final unit = ref.watch(unitPreferenceProvider);
     final workoutForArchive = detail.asData?.value;
@@ -103,6 +87,7 @@ class EditWorkoutScreen extends ConsumerWidget {
         data: (workout) {
           final notifier = ref.read(workoutDetailProvider(workoutId).notifier);
           return CustomScrollView(
+            controller: _scroll,
             slivers: [
               SliverPadding(
                 padding: contentPadding(context),
@@ -154,55 +139,34 @@ class EditWorkoutScreen extends ConsumerWidget {
                       return Padding(
                         key: ValueKey(ex.id),
                         padding: const EdgeInsets.only(bottom: 16),
-                        child: Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    ReorderableDragStartListener(
-                                      index: i,
-                                      child: const Padding(
-                                        padding: EdgeInsets.only(right: 8),
-                                        child: Icon(Icons.drag_handle),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(ex.exerciseName,
-                                          style: Theme.of(context).textTheme.titleMedium),
-                                    ),
-                                    IconButton(
-                                      tooltip: 'Delete exercise',
-                                      icon: const Icon(Icons.delete_outline),
-                                      onPressed: () => notifier.removeExercise(ex.id),
-                                    ),
-                                  ],
-                                ),
-                                _AutoSaveField(
-                                  key: ValueKey(ex.id),
-                                  initialValue: ex.notes,
-                                  labelText: 'Notes (e.g. build to a heavy triple)',
-                                  onChanged: (v) => notifier.updateExerciseNotes(ex.id, v),
-                                ),
-                                const SizedBox(height: 8),
-                                SetEditor(
-                                  sets: ex.sets.map((s) => s.toEditableRow()).toList(),
-                                  unit: unit,
-                                  currentExerciseId: ex.exerciseId,
-                                  currentExerciseName: ex.exerciseName,
-                                  onAddPercentageSets: (parsed) =>
-                                      notifier.addPercentageSets(ex.id, parsed),
-                                  onAddAbsoluteSets: (batch) =>
-                                      notifier.addAbsoluteSets(ex.id, batch),
-                                  onDeleteSet: notifier.deleteSet,
-                                  onReorderSets: (orderedIds) =>
-                                      notifier.reorderSets(ex.id, orderedIds),
-                                ),
-                              ],
+                        child: ExerciseEditorCard(
+                          key: ex.id == highlightedExerciseId ? highlightKey : null,
+                          index: i,
+                          name: ex.exerciseName,
+                          highlighted: ex.id == highlightedExerciseId,
+                          onDelete: () => notifier.removeExercise(ex.id),
+                          children: [
+                            _AutoSaveField(
+                              key: ValueKey(ex.id),
+                              initialValue: ex.notes,
+                              labelText: 'Notes (e.g. build to a heavy triple)',
+                              onChanged: (v) => notifier.updateExerciseNotes(ex.id, v),
                             ),
-                          ),
+                            const SizedBox(height: 8),
+                            SetEditor(
+                              sets: ex.sets.map((s) => s.toEditableRow()).toList(),
+                              unit: unit,
+                              currentExerciseId: ex.exerciseId,
+                              currentExerciseName: ex.exerciseName,
+                              onAddPercentageSets: (parsed) =>
+                                  notifier.addPercentageSets(ex.id, parsed),
+                              onAddAbsoluteSets: (batch) =>
+                                  notifier.addAbsoluteSets(ex.id, batch),
+                              onDeleteSet: notifier.deleteSet,
+                              onReorderSets: (orderedIds) =>
+                                  notifier.reorderSets(ex.id, orderedIds),
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -220,7 +184,7 @@ class EditWorkoutScreen extends ConsumerWidget {
                   child: FilledButton.icon(
                     key: const Key('edit_workout_add_exercise'),
                     style: NomorexTokens.of(context).secondaryButtonStyle,
-                    onPressed: () => _addExercise(context, ref),
+                    onPressed: _addExercise,
                     icon: const Icon(Icons.add),
                     label: const Text('Add exercise'),
                   ),
