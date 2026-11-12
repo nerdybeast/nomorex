@@ -426,6 +426,12 @@ Adding an exercise to a workout or program day opens one shared picker (`showExe
 - **Typing:** names that start with the query first, then those containing it, with the matched part in `primary-text` 600. Without an exact match, a `primary-subtle` row offers **Create "<name>"** below the matches, which finds or creates the lift by name.
 - **Saving:** one tap saves. The row spins until the insert lands, then the sheet closes; a failure keeps it open with a `danger-text` line.
 
+### Add Sets Sheet
+"Add sets (%)" and "Add sets (weight)" open one sheet (a bottom sheet on a phone, a 440px panel wider), titled "Add sets · <lift>".
+- **Preview first:** a `bg-1` card reads the batch back as a coach writes it, "3 × 8–10 @ 70–75% · RPE 7": count and reps in `fg-1` 20/600, the load in `primary-text` (mono for a fixed weight), RPE in `fg-2`. A percentage batch adds the resolved load in blue mono ("98–105 kg each set") or "No 1RM recorded for this lift".
+- **Fields as rows:** "Based on" is a pill picker with the basis 1RM on the right; Sets, Reps, %1RM (or weight with its unit toggle under the label) and RPE are hairline-divided rows with a compact stepper on the right. Reps, %1RM and RPE carry a small mono ONE | RANGE toggle beside the label; a range drops to a second line of two steppers joined by "to". Target RPE starts as an "Add target RPE" link.
+- **Footer:** Cancel (secondary) and "Add 3 sets" (primary, twice as wide) on `bg-0`, pinned below the scrolling fields.
+
 ### Exercise Editor Card
 Each exercise in the workout and program editors is a `bg-1` card whose header band is `primary-subtle`, holding the drag handle, the orange mono position number, the name in title-3 and delete. The body holds the notes field and the set ledger: reps in `fg-2`, the prescription (percentages and "Choose load" in Inter, fixed loads in mono), and, for a percentage set with a 1RM, the resolved load right-aligned in `info` blue mono. "Add sets (%)" and "Add sets (weight)" are compact secondary buttons. A just-added card is scrolled to and edged in `primary-border` for 1.6s before fading back. This is the one place every card carries the band: in an editor, each card is where the work happens.
 

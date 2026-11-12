@@ -102,7 +102,7 @@ void main() {
       icon: Icons.add,
     );
 
-    await tester.tap(find.text('Add'));
+    await tester.tap(find.byKey(const Key('set_editor_add')));
     await tester.pumpAndSettle();
 
     expect(added, isNotNull);
@@ -135,14 +135,14 @@ void main() {
       await tester.tap(find.text('Add sets (%)'));
       await tester.pumpAndSettle();
 
-      expect(find.text('This exercise'), findsOneWidget);
+      expect(find.byKey(const Key('set_editor_basis')), findsOneWidget);
 
-      await tester.tap(find.text('This exercise'));
+      await tester.tap(find.byKey(const Key('set_editor_basis')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Front Squat').last);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
 
       expect(added, isNotNull);
@@ -193,7 +193,7 @@ void main() {
         icon: Icons.add,
       );
 
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
 
       expect(capturedSets, 2);
@@ -280,7 +280,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
 
       expect(capturedWeightKg, 100);
@@ -323,7 +323,7 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.text('Add'));
+    await tester.tap(find.byKey(const Key('set_editor_add')));
     await tester.pumpAndSettle();
 
     expect(capturedWeightKg, 102.5);
@@ -448,7 +448,7 @@ void main() {
       expect(find.text('1RM 165 kg'), findsOneWidget);
 
       // "Based on" -> Front Squat (e2), a different lift's 1RM.
-      await tester.tap(find.text('This exercise'));
+      await tester.tap(find.byKey(const Key('set_editor_basis')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Front Squat').last);
       await tester.pumpAndSettle();

@@ -125,7 +125,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Turning the range on starts two above the minimum (1 -> 1 to 3).
-      expect(find.text('Min reps'), findsOneWidget);
+      expect(find.bySemanticsLabel('Increase Min reps'), findsOneWidget);
       expect(_stepperText(tester, 'set_editor_reps_max'), '3');
 
       await _tapIn(tester, 'set_editor_reps', Icons.add, times: 6); // 7
@@ -138,7 +138,7 @@ void main() {
       await tester.tap(setsPlus.first);
       await tester.pump();
 
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
 
       expect(added!.map((s) => s.targetReps), [7, 7]);
@@ -168,7 +168,7 @@ void main() {
       await tester.pumpAndSettle();
       await _tapIn(tester, 'set_editor_reps_max', Icons.remove, times: 2); // 1 to 1
 
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
       expect(added!.single.targetReps, 1);
       expect(added!.single.targetRepsMax, isNull);
@@ -181,14 +181,14 @@ void main() {
 
       await tester.tap(find.text('Add sets (weight)'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add sets (weight)'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('set_editor_rep_range_switch')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
 
       expect(calls, [null, 3]);

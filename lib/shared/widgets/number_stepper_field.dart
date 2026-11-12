@@ -19,6 +19,7 @@ class NumberStepperField extends StatefulWidget {
     this.incrementButtonStyle,
     this.valueTextStyle,
     this.valueDecoration,
+    this.compact = false,
   });
 
   final String label;
@@ -33,6 +34,11 @@ class NumberStepperField extends StatefulWidget {
   final ButtonStyle? incrementButtonStyle;
   final TextStyle? valueTextStyle;
   final InputDecoration? valueDecoration;
+
+  /// Just the [-] value [+] cluster, sized to its content, for a row that
+  /// shows its own label (the "Add sets" sheet). [label] still names the
+  /// buttons for assistive tech ("Increase Reps").
+  final bool compact;
 
   @override
   State<NumberStepperField> createState() => _NumberStepperFieldState();
@@ -89,16 +95,19 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
 
   @override
   Widget build(BuildContext context) {
+    final compact = widget.compact;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: compact ? 0 : 4),
       child: Row(
+        mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
         children: [
-          Expanded(
-            child: Text(
-              widget.label,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+          if (!compact)
+            Expanded(
+              child: Text(
+                widget.label,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
             ),
-          ),
           // Named for assistive tech (and for scripts/web-shot.mjs flows,
           // which find buttons by role + name): an icon alone has no label.
           // MergeSemantics folds the label into the button's own node rather
@@ -115,20 +124,23 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: compact ? 4 : 8),
           SizedBox(
-            width: 80,
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              textAlign: TextAlign.center,
-              style: widget.valueTextStyle,
-              decoration: widget.valueDecoration ?? const InputDecoration(),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onSubmitted: (_) => _commitTyped(),
+            width: compact ? 52 : 80,
+            child: Semantics(
+              label: compact ? widget.label : null,
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                textAlign: TextAlign.center,
+                style: widget.valueTextStyle,
+                decoration: widget.valueDecoration ?? const InputDecoration(),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onSubmitted: (_) => _commitTyped(),
+              ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: compact ? 4 : 8),
           MergeSemantics(
             child: Semantics(
               label: 'Increase ${widget.label}',

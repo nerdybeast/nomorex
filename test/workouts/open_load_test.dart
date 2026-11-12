@@ -188,7 +188,7 @@ void main() {
 
       // RPE is still on offer: "3 x 7-9, %1RM NA, RPE 6-7".
       await _tapKey(tester, 'set_editor_rpe_switch');
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
 
       expect(batch, isNotNull);
@@ -211,7 +211,7 @@ void main() {
       );
       await tester.tap(plus);
       await tester.pump();
-      await tester.tap(find.text('Add'));
+      await tester.tap(find.byKey(const Key('set_editor_add')));
       await tester.pumpAndSettle();
 
       expect(batch!.weightKg, closeTo(lbsToKg(5), 0.001));
