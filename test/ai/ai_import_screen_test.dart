@@ -19,7 +19,8 @@ const _limits = AiImportLimits(maxImages: 8, maxPdfPages: 10, maxImageBytes: 700
 
 final _pngBytes = img.encodePng(img.Image(width: 4, height: 4));
 ImportPage _image() => ImportPage(type: ImportFileType.png, bytes: _pngBytes);
-ImportPage _pdf() => ImportPage(type: ImportFileType.pdf, bytes: Uint8List.fromList('%PDF-1.7'.codeUnits));
+ImportPage _pdf({String? name, int? pages}) =>
+    ImportPage(type: ImportFileType.pdf, bytes: Uint8List.fromList('%PDF-1.7'.codeUnits), name: name, pdfPages: pages);
 
 class _FakePicker implements ImportFilePicker {
   _FakePicker({this.canTakePhoto = false});
@@ -34,7 +35,7 @@ class _FakePicker implements ImportFilePicker {
   Future<List<XFile>> pickImages({required int limit}) async => const [];
 
   @override
-  Future<XFile?> pickPdf() async => null;
+  Future<List<XFile>> pickPdfs() async => const [];
 }
 
 class _StubIntake extends AiImportIntakeNotifier {
@@ -77,10 +78,11 @@ Future<_StubIntake> _pump(WidgetTester tester, ImportIntakeState initial, {bool 
 bool _enabled(WidgetTester tester, String key) => tester.widget<ButtonStyleButton>(find.byKey(Key(key))).enabled;
 
 void main() {
-  testWidgets('states the limits and offers images and a PDF', (tester) async {
+  testWidgets('states the limits and offers images and PDFs', (tester) async {
     await _pump(tester, const ImportIntakeState());
 
-    expect(find.textContaining('up to 8 images, or one PDF of up to 10 pages and 20 MB'), findsOneWidget);
+    expect(find.textContaining('up to 8 images, or PDFs with up to 10 pages in total, each up to 20 MB'), findsOneWidget);
+    expect(find.text('Choose PDFs'), findsOneWidget);
     expect(find.byKey(const Key('ai_import_take_photo')), findsNothing);
     expect(_enabled(tester, 'ai_import_choose_images'), isTrue);
     expect(_enabled(tester, 'ai_import_choose_pdf'), isTrue);
@@ -107,14 +109,33 @@ void main() {
     expect(find.text('1/8'), findsOneWidget);
   });
 
-  testWidgets('a chosen PDF blocks adding images', (tester) async {
-    await _pump(tester, ImportIntakeState(pages: [_pdf()]), canTakePhoto: true);
+  testWidgets('chosen PDFs block adding images, but more PDFs can be added', (tester) async {
+    await _pump(
+      tester,
+      ImportIntakeState(pages: [_pdf(name: 'week 1.pdf', pages: 2), _pdf(name: 'week 2.pdf', pages: 1)]),
+      canTakePhoto: true,
+    );
 
-    expect(find.text('PDF'), findsWidgets);
+    expect(find.text('PDFS'), findsOneWidget);
+    expect(find.text('week 1.pdf'), findsOneWidget);
+    expect(find.text('week 2.pdf'), findsOneWidget);
+    expect(find.textContaining('2 pages'), findsOneWidget);
+    expect(find.text('3/10 pages'), findsOneWidget);
     expect(_enabled(tester, 'ai_import_take_photo'), isFalse);
     expect(_enabled(tester, 'ai_import_choose_images'), isFalse);
+    expect(_enabled(tester, 'ai_import_choose_pdf'), isTrue);
+    expect(find.byTooltip('Remove week 1.pdf'), findsOneWidget);
+  });
+
+  testWidgets('a PDF with no name or page count is numbered, and counted as a file', (tester) async {
+    await _pump(tester, ImportIntakeState(pages: [_pdf(name: 'a.pdf', pages: 1), _pdf()]));
+    expect(find.text('PDF 2'), findsOneWidget);
+    expect(find.text('2 files'), findsOneWidget);
+  });
+
+  testWidgets('as many PDFs as the page cap blocks adding more', (tester) async {
+    await _pump(tester, ImportIntakeState(pages: List.generate(10, (i) => _pdf(name: '$i.pdf'))));
     expect(_enabled(tester, 'ai_import_choose_pdf'), isFalse);
-    expect(find.byTooltip('Remove PDF'), findsOneWidget);
   });
 
   testWidgets('a full set of images blocks adding more', (tester) async {

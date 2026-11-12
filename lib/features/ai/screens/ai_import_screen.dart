@@ -11,7 +11,7 @@ import '../providers/ai_import_intake_provider.dart';
 import '../utils/import_file_check.dart';
 import '../utils/import_messages.dart';
 
-/// Choose the photos, images or PDF for an AI import, upload them and start
+/// Choose the photos, images or PDFs for an AI import, upload them and start
 /// the import. Reached from the Workouts and Programs app bars
 /// ([AiImportButton]).
 ///
@@ -81,15 +81,16 @@ class _Intake extends ConsumerWidget {
     final canTakePhoto = ref.watch(importFilePickerProvider).canTakePhoto;
     final editable = !state.isBusy;
     final imagesFull = state.pages.length >= limits.maxImages;
+    final pdfsFull = state.pages.length >= limits.maxPdfPages;
 
     final pickerStyle = tokens.secondaryButtonStyle;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Add photos of a workout or program, or a PDF of one. '
-          'An import is up to ${limits.maxImages} images, or one PDF of up to '
-          '${limits.maxPdfPages} pages and ${formatMegabytes(limits.maxPdfBytes)}.',
+          'Add photos of a workout or program, or PDFs of one, such as a file for each week. '
+          'An import is up to ${limits.maxImages} images, or PDFs with up to '
+          '${limits.maxPdfPages} pages in total, each up to ${formatMegabytes(limits.maxPdfBytes)}.',
           key: const Key('ai_import_limits_text'),
           style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
@@ -115,9 +116,9 @@ class _Intake extends ConsumerWidget {
         FilledButton.icon(
           key: const Key('ai_import_choose_pdf'),
           style: pickerStyle,
-          onPressed: editable && state.pages.isEmpty ? notifier.choosePdf : null,
+          onPressed: editable && !state.hasImages && !pdfsFull ? notifier.choosePdfs : null,
           icon: const Icon(Icons.picture_as_pdf_outlined),
-          label: const Text('Choose PDF'),
+          label: const Text('Choose PDFs'),
         ),
         if (state.phase == ImportIntakePhase.preparing) ...[
           const SizedBox(height: 16),
@@ -128,8 +129,16 @@ class _Intake extends ConsumerWidget {
           ListGroup(
             key: const Key('ai_import_pages'),
             header: ListGroupHeader(
-              title: state.isPdf ? 'PDF' : 'IMAGES',
-              trailing: state.isPdf ? null : Text('${state.pages.length}/${limits.maxImages}', style: tokens.eyebrow),
+              title: state.isPdf ? 'PDFS' : 'IMAGES',
+              trailing: Text(
+                !state.isPdf
+                    ? '${state.pages.length}/${limits.maxImages}'
+                    : state.pdfPagesKnown
+                    ? '${state.pdfPageTotal}/${limits.maxPdfPages} pages'
+                    : '${state.pages.length} ${state.pages.length == 1 ? 'file' : 'files'}',
+                key: const Key('ai_import_pages_count'),
+                style: tokens.eyebrow,
+              ),
             ),
             children: [
               for (var i = 0; i < state.pages.length; i++)
@@ -174,7 +183,12 @@ class _PageRow extends StatelessWidget {
     final theme = Theme.of(context);
     final palette = NomorexTokens.of(context).palette;
     final isPdf = page.type == ImportFileType.pdf;
-    final label = isPdf ? 'PDF' : 'Page ${index + 1}';
+    final label = isPdf ? (page.name ?? 'PDF ${index + 1}') : 'Page ${index + 1}';
+    final pageCount = page.pdfPages;
+    final details = [
+      formatMegabytes(page.bytes.length),
+      if (pageCount != null) '$pageCount ${pageCount == 1 ? 'page' : 'pages'}',
+    ].join(' · ');
 
     return GroupableTile(
       key: Key('ai_import_page_$index'),
@@ -195,9 +209,9 @@ class _PageRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: theme.textTheme.bodyLarge),
+                Text(label, style: theme.textTheme.bodyLarge, maxLines: 2, overflow: TextOverflow.ellipsis),
                 Text(
-                  formatMegabytes(page.bytes.length),
+                  details,
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
@@ -205,7 +219,7 @@ class _PageRow extends StatelessWidget {
           ),
           IconButton(
             key: Key('ai_import_remove_$index'),
-            tooltip: 'Remove ${isPdf ? 'PDF' : 'page ${index + 1}'}',
+            tooltip: 'Remove ${isPdf ? label : 'page ${index + 1}'}',
             onPressed: onRemove,
             icon: const Icon(Icons.close),
           ),

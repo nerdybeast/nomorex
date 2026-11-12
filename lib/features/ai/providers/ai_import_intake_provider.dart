@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -37,10 +38,16 @@ Future<AiImportLimits> aiImportLimits(Ref ref) async {
 
 /// One file in an import, ready to upload.
 class ImportPage {
-  const ImportPage({required this.type, required this.bytes});
+  const ImportPage({required this.type, required this.bytes, this.name, this.pdfPages});
 
   final ImportFileType type;
   final Uint8List bytes;
+
+  /// The file's name, when the platform gave one. Shown for PDFs.
+  final String? name;
+
+  /// A PDF's page count, or null when it can't be told (and for images).
+  final int? pdfPages;
 }
 
 enum ImportIntakePhase { selecting, preparing, checking, uploading, starting, started }
@@ -66,8 +73,15 @@ class ImportIntakeState {
   /// Set once the import has started.
   final String? jobId;
 
-  bool get isPdf => pages.length == 1 && pages.first.type == ImportFileType.pdf;
-  bool get hasImages => pages.isNotEmpty && !isPdf;
+  /// An import is all PDFs or all images, never a mix.
+  bool get isPdf => pages.isNotEmpty && pages.every((p) => p.type == ImportFileType.pdf);
+  bool get hasImages => pages.any((p) => p.type.isImage);
+
+  /// The PDFs' pages added up, counting only the ones whose count is known.
+  int get pdfPageTotal => pages.fold(0, (sum, p) => sum + (p.pdfPages ?? 0));
+
+  /// Whether every PDF's page count is known, so [pdfPageTotal] is exact.
+  bool get pdfPagesKnown => isPdf && pages.every((p) => p.pdfPages != null);
   bool get isBusy => phase != ImportIntakePhase.selecting && phase != ImportIntakePhase.started;
   bool get canCancel => phase == ImportIntakePhase.checking || phase == ImportIntakePhase.uploading;
   int get totalBytes => pages.fold(0, (sum, p) => sum + p.bytes.length);
@@ -134,27 +148,32 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
     if (picked.isNotEmpty) await addImages(picked);
   }
 
-  Future<void> choosePdf() async {
+  Future<void> choosePdfs() async {
     if (state.isBusy) return;
     if (state.hasImages) {
-      state = state.next(error: await _mixMessage('Remove the images to choose a PDF.'));
+      state = state.next(error: await _mixMessage('Remove the images to add PDFs.'));
       return;
     }
-    final XFile? pdf;
+    final limits = await ref.read(aiImportLimitsProvider.future);
+    if (state.pages.length >= limits.maxPdfPages) {
+      state = state.next(error: 'PDFs can have up to ${limits.maxPdfPages} pages in total.');
+      return;
+    }
+    final List<XFile> picked;
     try {
-      pdf = await ref.read(importFilePickerProvider).pickPdf();
+      picked = await ref.read(importFilePickerProvider).pickPdfs();
     } catch (e) {
       debugPrint('[ai_import] file picker failed: $e');
       state = state.next(error: "Couldn't open your files.");
       return;
     }
-    if (pdf != null) await setPdf(pdf);
+    if (picked.isNotEmpty) await addPdfs(picked);
   }
 
   Future<bool> _blockedFromAddingImages() async {
     if (state.isBusy) return true;
     if (state.isPdf) {
-      state = state.next(error: await _mixMessage('Remove the PDF to add images.'));
+      state = state.next(error: await _mixMessage('Remove the PDFs to add images.'));
       return true;
     }
     final limits = await ref.read(aiImportLimitsProvider.future);
@@ -167,7 +186,7 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
 
   Future<String> _mixMessage(String fix) async {
     final limits = await ref.read(aiImportLimitsProvider.future);
-    return 'An import is either one PDF or up to ${limits.maxImages} images, not both. $fix';
+    return 'An import is either PDFs or up to ${limits.maxImages} images, not both. $fix';
   }
 
   /// Adds picked images in order, preparing each one. Images that can't be
@@ -175,7 +194,7 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
   Future<void> addImages(List<XFile> picked) async {
     if (state.isBusy) return;
     if (state.isPdf) {
-      state = state.next(error: await _mixMessage('Remove the PDF to add images.'));
+      state = state.next(error: await _mixMessage('Remove the PDFs to add images.'));
       return;
     }
     final limits = await ref.read(aiImportLimitsProvider.future);
@@ -226,46 +245,91 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
     state = state.next(pages: pages, phase: ImportIntakePhase.selecting, error: error);
   }
 
-  /// Sets the import to a single PDF, if it's within the limits.
-  Future<void> setPdf(XFile file) async {
+  /// Adds picked PDFs, sorted by name in natural order ("week 2" before
+  /// "week 10"), after any already chosen. Each is checked on its own; one
+  /// that can't be used is skipped, and the last problem is reported.
+  ///
+  /// The page cap covers the whole import, not each file: the model's output
+  /// budget is per import, so ten one-page PDFs and one ten-page PDF cost
+  /// about the same. A PDF has at least one page, so the cap also bounds
+  /// the number of files.
+  Future<void> addPdfs(List<XFile> picked) async {
     if (state.isBusy) return;
     if (state.hasImages) {
-      state = state.next(error: await _mixMessage('Remove the images to choose a PDF.'));
+      state = state.next(error: await _mixMessage('Remove the images to add PDFs.'));
       return;
     }
     final limits = await ref.read(aiImportLimitsProvider.future);
-    final limitText = 'PDFs can be up to ${formatMegabytes(limits.maxPdfBytes)}';
-
-    // Checked before reading, so an enormous file is never loaded.
-    final length = await file.length();
-    if (length > limits.maxPdfBytes) {
-      state = state.next(error: '$limitText, and ${_fileName(file)} is ${formatMegabytes(length)}.');
-      return;
-    }
+    final sizeLimit = 'PDFs can be up to ${formatMegabytes(limits.maxPdfBytes)}';
+    final pageLimit = 'PDFs can have up to ${limits.maxPdfPages} pages in total';
+    final sorted = [...picked]..sort((a, b) => compareNatural(a.name, b.name));
 
     state = state.next(phase: ImportIntakePhase.preparing);
-    final bytes = await file.readAsBytes();
+    final pages = [...state.pages];
+    var total = state.totalBytes;
+    var pageTotal = state.pdfPageTotal;
     String? error;
-    if (detectImportFileType(bytes) != ImportFileType.pdf) {
-      error = '${_fileName(file, capitalize: true)} isn\'t a PDF.';
-    } else if (bytes.length > limits.maxPdfBytes) {
-      error = '$limitText, and ${_fileName(file)} is ${formatMegabytes(bytes.length)}.';
-    } else if (bytes.length > kImportMaxTotalBytes) {
-      error = 'An import can be up to ${formatMegabytes(kImportMaxTotalBytes)} in total.';
-    } else if (isEncryptedPdf(bytes)) {
-      error = '${_fileName(file, capitalize: true)} is password protected. Remove the password and try again.';
-    } else {
-      final pages = countPdfPages(bytes);
-      if (pages != null && pages > limits.maxPdfPages) {
-        error = 'PDFs can have up to ${limits.maxPdfPages} pages, and ${_fileName(file)} has $pages.';
+    for (final file in sorted) {
+      if (pages.length >= limits.maxPdfPages) {
+        error = '$pageLimit. ${_fileName(file, capitalize: true)} wasn\'t added.';
+        continue;
       }
+      // Checked before reading, so an enormous file is never loaded.
+      final length = await file.length();
+      if (length > limits.maxPdfBytes) {
+        error = '$sizeLimit, and ${_fileName(file)} is ${formatMegabytes(length)}.';
+        continue;
+      }
+      if (file.name.isNotEmpty && pages.any((p) => p.name == file.name && p.bytes.length == length)) {
+        error = '${_fileName(file, capitalize: true)} is already added.';
+        continue;
+      }
+
+      final Uint8List bytes;
+      try {
+        bytes = await file.readAsBytes();
+      } catch (e) {
+        debugPrint('[ai_import] reading ${file.name} failed: $e');
+        error = '${_fileName(file, capitalize: true)} couldn\'t be read.';
+        continue;
+      }
+      if (detectImportFileType(bytes) != ImportFileType.pdf) {
+        error = '${_fileName(file, capitalize: true)} isn\'t a PDF.';
+        continue;
+      }
+      if (bytes.length > limits.maxPdfBytes) {
+        error = '$sizeLimit, and ${_fileName(file)} is ${formatMegabytes(bytes.length)}.';
+        continue;
+      }
+      if (isEncryptedPdf(bytes)) {
+        error = '${_fileName(file, capitalize: true)} is password protected. Remove the password and try again.';
+        continue;
+      }
+      final count = countPdfPages(bytes);
+      if (count != null && pageTotal + count > limits.maxPdfPages) {
+        error = pages.isEmpty
+            ? '$pageLimit, and ${_fileName(file)} has $count.'
+            : '$pageLimit, and ${_fileName(file)} would make ${pageTotal + count}. It wasn\'t added.';
+        continue;
+      }
+      if (total + bytes.length > kImportMaxTotalBytes) {
+        error =
+            'An import can be up to ${formatMegabytes(kImportMaxTotalBytes)} in total. '
+            '${_fileName(file, capitalize: true)} wasn\'t added.';
+        continue;
+      }
+      total += bytes.length;
+      pageTotal += count ?? 0;
+      pages.add(
+        ImportPage(
+          type: ImportFileType.pdf,
+          bytes: bytes,
+          name: file.name.isEmpty ? null : file.name,
+          pdfPages: count,
+        ),
+      );
     }
-    state = error == null
-        ? state.next(
-            pages: [ImportPage(type: ImportFileType.pdf, bytes: bytes)],
-            phase: ImportIntakePhase.selecting,
-          )
-        : state.next(phase: ImportIntakePhase.selecting, error: error);
+    state = state.next(pages: pages, phase: ImportIntakePhase.selecting, error: error);
   }
 
   void removeAt(int index) {

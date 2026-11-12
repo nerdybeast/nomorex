@@ -22,7 +22,7 @@ class AiImportButton extends ConsumerWidget {
     return IconButton(
       key: const Key('ai_import_entry'),
       icon: const Icon(Icons.document_scanner_outlined),
-      tooltip: 'Import from photo or PDF',
+      tooltip: 'Import from photos or PDFs',
       onPressed: () => context.push(AppConstants.routeAiImport),
     );
   }

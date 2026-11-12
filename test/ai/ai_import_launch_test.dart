@@ -63,7 +63,7 @@ void main() {
   group('entry point', () {
     testWidgets('opens the import flow, with a label for screen readers', (tester) async {
       await pump(tester, const AiImportCheck(allowed: true));
-      expect(find.byTooltip('Import from photo or PDF'), findsOneWidget);
+      expect(find.byTooltip('Import from photos or PDFs'), findsOneWidget);
       await openImport(tester);
       expect(find.byKey(const Key('ai_import_choose_images')), findsOneWidget);
     });
