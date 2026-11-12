@@ -73,6 +73,18 @@ class _TestProgramDetailNotifier extends ProgramDetailNotifier {
   }
 }
 
+/// Delete lives in an expanded week's body (a button in the header would be
+/// merged into the tile's semantics), so expand Week 1 first if needed.
+Future<void> _tapDeleteWeek(WidgetTester tester) async {
+  if (find.text('Delete week').evaluate().isEmpty) {
+    await tester.tap(find.text('Week 1'));
+    await tester.pumpAndSettle();
+  }
+  await tester.ensureVisible(find.text('Delete week'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Delete week'));
+}
+
 void main() {
   testWidgets('tapping the Week FAB calls addWeek', (tester) async {
     var addWeekCalled = false;
@@ -220,7 +232,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.delete_outline));
+      await _tapDeleteWeek(tester);
       await tester.pumpAndSettle();
 
       expect(removedWeekId, 'w1');
@@ -274,7 +286,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Tap delete -> dialog appears; Cancel -> no delete.
-    await tester.tap(find.byIcon(Icons.delete_outline));
+    await _tapDeleteWeek(tester);
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.text('This will also delete its 1 day.'), findsOneWidget);
@@ -290,7 +302,7 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
 
     // Tap delete -> dialog appears again; Delete -> removeWeek called.
-    await tester.tap(find.byIcon(Icons.delete_outline));
+    await _tapDeleteWeek(tester);
     await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(

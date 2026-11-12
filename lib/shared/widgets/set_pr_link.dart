@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_theme.dart';
 import '../../features/exercises/providers/exercises_provider.dart';
 
 /// Inline "set PR" link, shown in place of a working weight when a percentage
@@ -59,15 +60,28 @@ class SetPrLink extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return InkWell(
+    // primary-text, not the primary fill: the fill is only 3.7:1 as text
+    // on a dark card. The padding grows the hit area past the bare line of
+    // text without moving the text itself much.
+    final linkColor = NomorexTokens.of(context).primaryText;
+    return Semantics(
+      button: true,
+      label: 'Set PR for $exerciseName',
       onTap: () => _open(context, ref),
-      child: Text(
-        'set PR',
-        style: (style ?? DefaultTextStyle.of(context).style).copyWith(
-          color: colorScheme.primary,
-          decoration: TextDecoration.underline,
-          decorationColor: colorScheme.primary,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () => _open(context, ref),
+        borderRadius: BorderRadius.circular(NomorexSizes.radiusSm),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Text(
+            'set PR',
+            style: (style ?? DefaultTextStyle.of(context).style).copyWith(
+              color: linkColor,
+              decoration: TextDecoration.underline,
+              decorationColor: linkColor,
+            ),
+          ),
         ),
       ),
     );

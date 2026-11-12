@@ -375,7 +375,10 @@ class _SetRow extends StatelessWidget {
     final basisLabel = set.basisExerciseId != null
         ? (set.basisExerciseName ?? '1RM')
         : '1RM';
-    return ListTile(
+    // The remove button sits beside the tile, not in its `trailing`: a
+    // ListTile merges its children into one semantics node, so a button
+    // inside it can't be activated on its own by assistive tech.
+    final tile = ListTile(
       dense: true,
       leading: Row(
         mainAxisSize: MainAxisSize.min,
@@ -392,10 +395,16 @@ class _SetRow extends StatelessWidget {
         isPct ? '$valueLabel of $basisLabel' : valueLabel,
         ?formatRpeTarget(set.rpeMin, set.rpeMax),
       ].join(' · ')),
-      trailing: IconButton(
-        icon: const Icon(Icons.close),
-        onPressed: onDelete,
-      ),
+    );
+    return Row(
+      children: [
+        Expanded(child: tile),
+        IconButton(
+          tooltip: 'Remove set',
+          icon: const Icon(Icons.close),
+          onPressed: onDelete,
+        ),
+      ],
     );
   }
 }

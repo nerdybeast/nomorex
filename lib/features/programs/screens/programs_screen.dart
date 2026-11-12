@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/active_archived_tabs.dart';
 import '../../../shared/widgets/archived_row_actions.dart';
 import '../../../shared/widgets/list_group.dart';
@@ -241,7 +242,7 @@ class _ProgramTile extends ConsumerWidget {
               isProgramUpcoming(activeInstance.startedAt)
                   ? 'Upcoming — starts ${formatDate(activeInstance.startedAt)}'
                   : 'In progress — started ${formatDate(activeInstance.startedAt)}',
-              style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w600),
+              style: TextStyle(color: NomorexTokens.of(context).primaryText, fontWeight: FontWeight.w600),
             ),
       chips: [
         ...programStatsChips(stats),

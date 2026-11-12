@@ -173,13 +173,8 @@ void main() {
       expect(find.textContaining('set a 1RM'), findsNothing);
       expect(find.text('set PR'), findsOneWidget);
       expect(
-        find.byWidgetPredicate(
-          (w) =>
-              w is InkWell &&
-              w.child is Text &&
-              (w.child as Text).data == 'set PR',
-        ),
-        findsOneWidget,
+        find.ancestor(of: find.text('set PR'), matching: find.byType(InkWell)),
+        findsWidgets,
       );
     },
   );

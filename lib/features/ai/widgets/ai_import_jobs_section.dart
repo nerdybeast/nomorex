@@ -118,7 +118,7 @@ class _JobRow extends StatelessWidget {
         "Usually under a minute. You'll be told when it's ready.",
       ),
       AiImportJobState.ready => (
-        Icon(Icons.check_circle_outline, color: theme.colorScheme.primary),
+        Icon(Icons.check_circle_outline, color: NomorexTokens.of(context).primaryText),
         '$thing ready to review',
         'Check what was read before saving it.',
       ),

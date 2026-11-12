@@ -70,4 +70,32 @@ void main() {
 
     expect(newUnit, 'lbs');
   });
+
+  testWidgets('each unit segment has a full touch-target tap area and button semantics',
+      (tester) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: UnitToggle(
+              preference: 'both',
+              value: 'kg',
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    for (final u in ['kg', 'lbs']) {
+      final tapArea = find.ancestor(of: find.text(u), matching: find.byType(InkWell));
+      expect(tester.getSize(tapArea).height, greaterThanOrEqualTo(48));
+    }
+    expect(
+      tester.getSemantics(find.ancestor(of: find.text('lbs'), matching: find.byType(Semantics)).first),
+      matchesSemantics(label: 'Pounds', isButton: true, hasTapAction: true, hasSelectedState: true),
+    );
+    handle.dispose();
+  });
 }

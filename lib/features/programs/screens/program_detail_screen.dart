@@ -71,6 +71,7 @@ class ProgramDetailScreen extends ConsumerWidget {
         actions: [
           if (!isArchived)
             IconButton(
+              tooltip: 'Edit program',
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => context.push(AppConstants.routeProgramEdit(programId)),
             ),
@@ -130,7 +131,7 @@ class ProgramDetailScreen extends ConsumerWidget {
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium
-                      ?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
+                      ?.copyWith(color: NomorexTokens.of(context).primaryText, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
                 FilledButton.icon(

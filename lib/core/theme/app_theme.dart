@@ -403,9 +403,14 @@ abstract final class AppTheme {
         foregroundColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.disabled) ? p.fg3 : fg,
         ),
-        side: WidgetStateProperty.resolveWith(
-          (s) => BorderSide(color: s.contains(WidgetState.disabled) ? p.borderSubtle : edge),
-        ),
+        // Keyboard focus: a 2px fg-1 edge, which stands out on every fill
+        // (orange, neutral, red) in both themes. The overlay stays
+        // transparent, so pointer hover/press only darkens the fill.
+        side: WidgetStateProperty.resolveWith((s) {
+          if (s.contains(WidgetState.disabled)) return BorderSide(color: p.borderSubtle);
+          if (s.contains(WidgetState.focused)) return BorderSide(color: p.fg1, width: 2);
+          return BorderSide(color: edge);
+        }),
         overlayColor: const WidgetStatePropertyAll(Colors.transparent),
       );
     }
@@ -428,6 +433,9 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: p.bg0,
       canvasColor: p.bg0,
+      // InkWell's default focus fill (list rows, tiles, nav items), so a
+      // keyboard user can see which row is focused.
+      focusColor: p.bg3,
       dividerColor: p.borderSubtle,
       textTheme: textTheme,
       iconTheme: IconThemeData(color: p.fg2),
@@ -485,7 +493,9 @@ abstract final class AppTheme {
           return s.contains(WidgetState.disabled) ? Colors.transparent : p.bg2;
         }),
         checkColor: WidgetStatePropertyAll(p.onPrimary),
-        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+        overlayColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.focused) ? p.primarySubtle : Colors.transparent,
+        ),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
@@ -497,7 +507,9 @@ abstract final class AppTheme {
         trackOutlineColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.selected) ? p.primaryBorder : p.borderDefault,
         ),
-        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+        overlayColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.focused) ? p.primarySubtle : Colors.transparent,
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(style: primaryButton),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -529,6 +541,7 @@ abstract final class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: p.primary,
         foregroundColor: p.onPrimary,
+        focusColor: p.primaryHover,
         elevation: 0,
         focusElevation: 0,
         hoverElevation: 0,
@@ -546,7 +559,11 @@ abstract final class AppTheme {
             if (s.contains(WidgetState.disabled)) return p.fg3;
             return s.contains(WidgetState.selected) ? p.primaryText : p.fg2;
           }),
-          side: WidgetStatePropertyAll(BorderSide(color: p.borderDefault)),
+          side: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.focused)
+                ? BorderSide(color: p.fg1, width: 2)
+                : BorderSide(color: p.borderDefault),
+          ),
           shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: rMd)),
           textStyle: WidgetStatePropertyAll(_inter(13, 18, FontWeight.w500)),
           overlayColor: const WidgetStatePropertyAll(Colors.transparent),
@@ -563,7 +580,9 @@ abstract final class AppTheme {
           borderRadius: const BorderRadius.all(Radius.circular(1)),
         ),
         dividerColor: p.borderSubtle,
-        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+        overlayColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.focused) ? p.bg3 : Colors.transparent,
+        ),
       ),
       popupMenuTheme: PopupMenuThemeData(
         color: p.bg2,

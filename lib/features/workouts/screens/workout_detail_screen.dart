@@ -56,6 +56,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
         actions: [
           if (showEditIcon)
             IconButton(
+              tooltip: 'Edit workout',
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => context.push(AppConstants.routeWorkoutEdit(workoutId)),
             ),

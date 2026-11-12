@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/copy_errors.dart';
+import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
@@ -238,44 +239,29 @@ class _WeekCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(programDetailProvider(programId).notifier);
+    Future<void> deleteWeek() async {
+      if (week.days.isEmpty) {
+        await notifier.removeWeek(week.id);
+        return;
+      }
+      final dayCount = week.days.length;
+      final confirmed = await showConfirmDialog(
+        context,
+        title: 'Delete week?',
+        message: 'This will also delete its $dayCount ${dayCount == 1 ? 'day' : 'days'}.',
+        confirmLabel: 'Delete',
+      );
+      if (confirmed) {
+        await notifier.removeWeek(week.id);
+      }
+    }
+
     return Card(
       child: ExpansionTile(
         shape: const Border(),
         collapsedShape: const Border(),
         title: Text('Week ${week.weekNumber}${week.label != null ? ' — ${week.label}' : ''}'),
         subtitle: Text('${week.days.length} ${week.days.length == 1 ? 'day' : 'days'}'),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete_outline),
-          onPressed: () async {
-            if (week.days.isEmpty) {
-              await notifier.removeWeek(week.id);
-              return;
-            }
-            final dayCount = week.days.length;
-            final confirmed = await showDialog<bool>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: const Text('Delete week?'),
-                content: Text(
-                  'This will also delete its $dayCount ${dayCount == 1 ? 'day' : 'days'}.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: () => Navigator.pop(ctx, true),
-                    child: const Text('Delete'),
-                  ),
-                ],
-              ),
-            );
-            if (confirmed == true) {
-              await notifier.removeWeek(week.id);
-            }
-          },
-        ),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -294,15 +280,21 @@ class _WeekCard extends ConsumerWidget {
               unit: unit,
               onAddExercise: onAddExercise,
             ),
+          // Delete lives in the expanded body rather than the header's
+          // `trailing`: the header is a ListTile, which would merge the
+          // button into its own semantics node.
           Padding(
             padding: const EdgeInsets.all(8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => onAddDay(week),
-                icon: const Icon(Icons.add),
-                label: const Text('Day'),
-              ),
+            child: Row(
+              children: [
+                TextButton.icon(
+                  onPressed: () => onAddDay(week),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Day'),
+                ),
+                const Spacer(),
+                _DeleteTextButton(label: 'Delete week', onPressed: deleteWeek),
+              ],
             ),
           ),
         ],
@@ -333,10 +325,6 @@ class _DayCard extends ConsumerWidget {
       child: ExpansionTile(
         title: Text(day.title),
         subtitle: Text(day.isRestDay ? 'Rest day' : '${day.exercises.length} exercises'),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete_outline),
-          onPressed: () => notifier.removeDay(day.id),
-        ),
         children: [
           if (!day.isRestDay)
             Padding(
@@ -371,6 +359,7 @@ class _DayCard extends ConsumerWidget {
                                       style: Theme.of(context).textTheme.titleMedium),
                                 ),
                                 IconButton(
+                                  tooltip: 'Delete exercise',
                                   icon: const Icon(Icons.delete_outline),
                                   onPressed: () => notifier.removeExercise(ex.id),
                                 ),
@@ -414,20 +403,58 @@ class _DayCard extends ConsumerWidget {
                 },
               ),
             ),
-          if (!day.isRestDay)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => onAddExercise(day.id),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Exercise'),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Row(
+              children: [
+                if (!day.isRestDay)
+                  TextButton.icon(
+                    onPressed: () => onAddExercise(day.id),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Exercise'),
+                  ),
+                const Spacer(),
+                _DeleteTextButton(
+                  label: 'Delete day',
+                  onPressed: () async {
+                    final count = day.exercises.length;
+                    if (count > 0) {
+                      final confirmed = await showConfirmDialog(
+                        context,
+                        title: 'Delete day?',
+                        message: 'This will also delete its $count ${count == 1 ? 'exercise' : 'exercises'}.',
+                        confirmLabel: 'Delete',
+                      );
+                      if (!confirmed) return;
+                    }
+                    await notifier.removeDay(day.id);
+                  },
                 ),
-              ),
+              ],
             ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// A destructive action in an expanded week or day: danger-text, so it reads
+/// apart from the neutral "+ Day" / "+ Exercise" beside it.
+class _DeleteTextButton extends StatelessWidget {
+  const _DeleteTextButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final danger = NomorexTokens.of(context).palette.dangerText;
+    return TextButton.icon(
+      style: TextButton.styleFrom(foregroundColor: danger),
+      onPressed: onPressed,
+      icon: const Icon(Icons.delete_outline),
+      label: Text(label),
     );
   }
 }

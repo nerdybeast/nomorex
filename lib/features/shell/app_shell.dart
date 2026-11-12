@@ -201,24 +201,35 @@ class _NavItem extends StatelessWidget {
     final palette = NomorexTokens.of(context).palette;
     // Selected: filled icon in primary-text, label in fg-1. Everything else
     // stays fg-3 — no pill or indicator behind the icon.
-    return InkWell(
+    // A bare InkWell reads as plain text: say it's a button and which tab is
+    // current, the way NavigationRail does on wide layouts. The subtree's own
+    // semantics are replaced, so the tap action is re-declared here.
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
       onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            selected ? selectedIcon : icon,
-            size: 20,
-            color: selected ? palette.primaryText : palette.fg3,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: selected ? palette.fg1 : palette.fg3,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        focusColor: palette.bg3,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              selected ? selectedIcon : icon,
+              size: 20,
+              color: selected ? palette.primaryText : palette.fg3,
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: selected ? palette.fg1 : palette.fg3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

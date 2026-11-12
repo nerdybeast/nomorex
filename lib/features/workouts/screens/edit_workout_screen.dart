@@ -173,6 +173,7 @@ class EditWorkoutScreen extends ConsumerWidget {
                                           style: Theme.of(context).textTheme.titleMedium),
                                     ),
                                     IconButton(
+                                      tooltip: 'Delete exercise',
                                       icon: const Icon(Icons.delete_outline),
                                       onPressed: () => notifier.removeExercise(ex.id),
                                     ),
