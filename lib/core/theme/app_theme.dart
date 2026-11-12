@@ -168,6 +168,10 @@ class NomorexTokens extends ThemeExtension<NomorexTokens> {
     required this.weight,
     required this.weightMd,
     required this.weightLg,
+    required this.weightSm,
+    required this.weightXs,
+    required this.bodySmall,
+    required this.buttonSmall,
     required this.stepperValue,
     required this.stat,
     required this.timer,
@@ -189,6 +193,22 @@ class NomorexTokens extends ThemeExtension<NomorexTokens> {
   final TextStyle weight;
   final TextStyle weightMd;
   final TextStyle weightLg;
+
+  /// Mono 12/500: a secondary number beside a weight ("e1RM 112.5").
+  final TextStyle weightSm;
+
+  /// Mono 11/500: unit tags and chart axis labels. The type floor: nothing is
+  /// set smaller than 11px.
+  final TextStyle weightXs;
+
+  /// The design's body-small, Inter 13/18 in fg-2: row details, card bodies,
+  /// empty-state messages. Not [TextTheme.bodySmall], which is the 12px
+  /// caption.
+  final TextStyle bodySmall;
+
+  /// The design's button-sm, Inter 13/500: small buttons inside cards and
+  /// rows. Callers set the color.
+  final TextStyle buttonSmall;
 
   /// Inter 24/600 with tabular figures — the number in every
   /// [NumberStepperField].
@@ -238,6 +258,10 @@ class NomorexTokens extends ThemeExtension<NomorexTokens> {
     TextStyle? weight,
     TextStyle? weightMd,
     TextStyle? weightLg,
+    TextStyle? weightSm,
+    TextStyle? weightXs,
+    TextStyle? bodySmall,
+    TextStyle? buttonSmall,
     TextStyle? stepperValue,
     TextStyle? stat,
     TextStyle? timer,
@@ -253,6 +277,10 @@ class NomorexTokens extends ThemeExtension<NomorexTokens> {
       weight: weight ?? this.weight,
       weightMd: weightMd ?? this.weightMd,
       weightLg: weightLg ?? this.weightLg,
+      weightSm: weightSm ?? this.weightSm,
+      weightXs: weightXs ?? this.weightXs,
+      bodySmall: bodySmall ?? this.bodySmall,
+      buttonSmall: buttonSmall ?? this.buttonSmall,
       stepperValue: stepperValue ?? this.stepperValue,
       stat: stat ?? this.stat,
       timer: timer ?? this.timer,
@@ -403,9 +431,14 @@ abstract final class AppTheme {
         foregroundColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.disabled) ? p.fg3 : fg,
         ),
-        side: WidgetStateProperty.resolveWith(
-          (s) => BorderSide(color: s.contains(WidgetState.disabled) ? p.borderSubtle : edge),
-        ),
+        // Keyboard focus: a 2px fg-1 edge, which stands out on every fill
+        // (orange, neutral, red) in both themes. The overlay stays
+        // transparent, so pointer hover/press only darkens the fill.
+        side: WidgetStateProperty.resolveWith((s) {
+          if (s.contains(WidgetState.disabled)) return BorderSide(color: p.borderSubtle);
+          if (s.contains(WidgetState.focused)) return BorderSide(color: p.fg1, width: 2);
+          return BorderSide(color: edge);
+        }),
         overlayColor: const WidgetStatePropertyAll(Colors.transparent),
       );
     }
@@ -428,6 +461,9 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: p.bg0,
       canvasColor: p.bg0,
+      // InkWell's default focus fill (list rows, tiles, nav items), so a
+      // keyboard user can see which row is focused.
+      focusColor: p.bg3,
       dividerColor: p.borderSubtle,
       textTheme: textTheme,
       iconTheme: IconThemeData(color: p.fg2),
@@ -485,7 +521,9 @@ abstract final class AppTheme {
           return s.contains(WidgetState.disabled) ? Colors.transparent : p.bg2;
         }),
         checkColor: WidgetStatePropertyAll(p.onPrimary),
-        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+        overlayColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.focused) ? p.primarySubtle : Colors.transparent,
+        ),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
@@ -497,7 +535,9 @@ abstract final class AppTheme {
         trackOutlineColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.selected) ? p.primaryBorder : p.borderDefault,
         ),
-        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+        overlayColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.focused) ? p.primarySubtle : Colors.transparent,
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(style: primaryButton),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -529,6 +569,7 @@ abstract final class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: p.primary,
         foregroundColor: p.onPrimary,
+        focusColor: p.primaryHover,
         elevation: 0,
         focusElevation: 0,
         hoverElevation: 0,
@@ -546,7 +587,11 @@ abstract final class AppTheme {
             if (s.contains(WidgetState.disabled)) return p.fg3;
             return s.contains(WidgetState.selected) ? p.primaryText : p.fg2;
           }),
-          side: WidgetStatePropertyAll(BorderSide(color: p.borderDefault)),
+          side: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.focused)
+                ? BorderSide(color: p.fg1, width: 2)
+                : BorderSide(color: p.borderDefault),
+          ),
           shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: rMd)),
           textStyle: WidgetStatePropertyAll(_inter(13, 18, FontWeight.w500)),
           overlayColor: const WidgetStatePropertyAll(Colors.transparent),
@@ -563,7 +608,9 @@ abstract final class AppTheme {
           borderRadius: const BorderRadius.all(Radius.circular(1)),
         ),
         dividerColor: p.borderSubtle,
-        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+        overlayColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.focused) ? p.bg3 : Colors.transparent,
+        ),
       ),
       popupMenuTheme: PopupMenuThemeData(
         color: p.bg2,
@@ -697,6 +744,10 @@ abstract final class AppTheme {
           weight: _mono(14, 20),
           weightMd: _mono(16, 22, letterSpacing: -0.16),
           weightLg: _mono(20, 26, letterSpacing: -0.2),
+          weightSm: _mono(12, 16),
+          weightXs: _mono(11, 16),
+          bodySmall: _inter(13, 18, FontWeight.w400, color: p.fg2),
+          buttonSmall: _inter(13, 18, FontWeight.w500),
           stepperValue: _inter(24, 30, FontWeight.w600, letterSpacing: -0.24, color: p.fg1)
               .copyWith(fontFeatures: _tabular),
           stat: _inter(20, 26, FontWeight.w600, letterSpacing: -0.2, color: p.fg1)

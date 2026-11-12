@@ -25,7 +25,7 @@ class UnitToggle extends StatelessWidget {
     final tokens = NomorexTokens.of(context);
     final palette = tokens.palette;
     // Mono, so the tag sits naturally beside a mono weight.
-    final labelStyle = tokens.weight.copyWith(fontSize: 11, height: 16 / 11);
+    final labelStyle = tokens.weightXs;
 
     if (preference != 'both') {
       return Container(
@@ -38,35 +38,72 @@ class UnitToggle extends StatelessWidget {
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.all(1),
-      decoration: BoxDecoration(
-        border: Border.all(color: palette.borderDefault),
-        borderRadius: BorderRadius.circular(NomorexSizes.radiusSm),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final u in const ['kg', 'lbs']) _segment(palette, labelStyle, u),
-        ],
-      ),
+    // The track stays small beside a weight, but each segment's tap area is
+    // a full touch target tall: this sits in the weight dialog and Add PR,
+    // used mid-session. The border is painted behind the taller row.
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Center(
+              child: Container(
+                height: _segmentHeight + 4,
+                decoration: BoxDecoration(
+                  border: Border.all(color: palette.borderDefault),
+                  borderRadius: BorderRadius.circular(NomorexSizes.radiusSm),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final u in const ['kg', 'lbs']) _segment(palette, labelStyle, u),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
+  static const _segmentHeight = 22.0;
+
   Widget _segment(NomorexPalette palette, TextStyle labelStyle, String u) {
     final selected = u == value;
-    return InkWell(
-      onTap: selected ? null : () => onChanged(u),
-      borderRadius: BorderRadius.circular(3),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: selected ? palette.primarySubtle : Colors.transparent,
-          borderRadius: BorderRadius.circular(3),
-        ),
-        child: Text(
-          u,
-          style: labelStyle.copyWith(color: selected ? palette.primaryText : palette.fg2),
+    final onTap = selected ? null : () => onChanged(u);
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: u == 'kg' ? 'Kilograms' : 'Pounds',
+      onTap: onTap,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        focusColor: palette.bg3,
+        child: SizedBox(
+          height: NomorexSizes.touchTarget,
+          child: Center(
+            child: Container(
+              height: _segmentHeight,
+              constraints: const BoxConstraints(minWidth: 40),
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: selected ? palette.primarySubtle : Colors.transparent,
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Text(
+                u,
+                style: labelStyle.copyWith(color: selected ? palette.primaryText : palette.fg2),
+              ),
+            ),
+          ),
         ),
       ),
     );

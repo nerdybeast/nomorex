@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -14,6 +16,33 @@ const double kShellFabClearance = 88;
 /// in the NavigationRail instead of floating over the content.
 double shellFabClearance(BuildContext context) => isMobile(context) ? kShellFabClearance : 0;
 
-/// Standard 16px list padding plus [shellFabClearance] at the bottom.
+/// The widest a list or detail screen's content gets. Wider windows get more
+/// margin, not longer rows: past this a row's title and chevron drift too far
+/// apart to read as one line.
+const double kContentMaxWidth = 840;
+
+/// Width of the shell's NavigationRail plus its divider on wide layouts.
+const double kShellRailWidth = 81;
+
+/// Horizontal inset that keeps content at most [kContentMaxWidth] wide and
+/// centered, never less than 16px. Applied as scroll-view padding rather than
+/// a ConstrainedBox, so the scroll view (wheel, scrollbar, drag) still spans
+/// the whole window. [inShell] accounts for the rail beside a shell tab.
+double contentInset(BuildContext context, {bool inShell = false}) {
+  final width = MediaQuery.sizeOf(context).width;
+  if (width < AppConstants.kMobileBreakpoint) return 16;
+  final body = width - (inShell ? kShellRailWidth : 0);
+  return math.max(16, (body - kContentMaxWidth) / 2);
+}
+
+/// Padding for a list or detail screen's scroll view: [contentInset] on the
+/// sides, [top]/[bottom] as given.
+EdgeInsets contentPadding(BuildContext context, {double top = 16, double bottom = 16, bool inShell = false}) {
+  final inset = contentInset(context, inShell: inShell);
+  return EdgeInsets.fromLTRB(inset, top, inset, bottom);
+}
+
+/// Standard list padding on a shell tab, centered at [kContentMaxWidth] on
+/// wide layouts, plus [shellFabClearance] at the bottom.
 EdgeInsets shellListPadding(BuildContext context) =>
-    EdgeInsets.fromLTRB(16, 16, 16, 16 + shellFabClearance(context));
+    contentPadding(context, bottom: 16 + shellFabClearance(context), inShell: true);

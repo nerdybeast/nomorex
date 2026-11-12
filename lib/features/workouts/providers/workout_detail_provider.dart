@@ -181,6 +181,13 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     await _refresh();
   }
 
+  /// Records (or with null, clears) the reps the lifter actually completed,
+  /// leaving any logged weight alone. Logging-only, like [logRpe].
+  Future<void> logReps(String setId, int? reps) async {
+    await _db.from('workout_sets').update({'actual_reps': reps}).eq('id', setId);
+    await _refresh();
+  }
+
   /// Records (or with null, clears) the effort the lifter reports for a set.
   /// Logging-only: never copied when the workout is duplicated or shared.
   Future<void> logRpe(String setId, double? rpe) async {

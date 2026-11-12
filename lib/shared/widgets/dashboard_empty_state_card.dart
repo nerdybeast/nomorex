@@ -73,7 +73,7 @@ class DashboardEmptyStateCard extends StatelessWidget {
                 child: Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 13, height: 18 / 13, color: palette.fg2),
+                  style: NomorexTokens.of(context).bodySmall,
                 ),
               ),
               if (label != null) ...[
@@ -85,7 +85,7 @@ class DashboardEmptyStateCard extends StatelessWidget {
                         foregroundColor: palette.primaryText,
                         minimumSize: const Size(0, NomorexSizes.controlHeightSm),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
-                        textStyle: theme.textTheme.labelLarge?.copyWith(fontSize: 13),
+                        textStyle: NomorexTokens.of(context).buttonSmall,
                       ).copyWith(overlayColor: const WidgetStatePropertyAll(Colors.transparent)),
                       child: Text(label),
                     ),
@@ -94,7 +94,7 @@ class DashboardEmptyStateCard extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(0, NomorexSizes.controlHeightSm),
                         padding: const EdgeInsets.symmetric(horizontal: 10),
-                        textStyle: theme.textTheme.labelLarge?.copyWith(fontSize: 13),
+                        textStyle: NomorexTokens.of(context).buttonSmall,
                       ),
                       child: Text(label),
                     ),

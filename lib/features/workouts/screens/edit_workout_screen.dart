@@ -12,6 +12,7 @@ import '../providers/workout_detail_provider.dart';
 import '../providers/workouts_provider.dart';
 import '../utils/can_archive_workout.dart';
 import '../widgets/set_editor.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 class EditWorkoutScreen extends ConsumerWidget {
   const EditWorkoutScreen({super.key, required this.workoutId});
@@ -104,7 +105,7 @@ class EditWorkoutScreen extends ConsumerWidget {
           return CustomScrollView(
             slivers: [
               SliverPadding(
-                padding: const EdgeInsets.all(16),
+                padding: contentPadding(context),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     _AutoSaveField(
@@ -173,6 +174,7 @@ class EditWorkoutScreen extends ConsumerWidget {
                                           style: Theme.of(context).textTheme.titleMedium),
                                     ),
                                     IconButton(
+                                      tooltip: 'Delete exercise',
                                       icon: const Icon(Icons.delete_outline),
                                       onPressed: () => notifier.removeExercise(ex.id),
                                     ),

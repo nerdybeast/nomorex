@@ -70,11 +70,7 @@ class PrProgression extends StatelessWidget {
             xTicks: progressionXTicks(points.first.date, points.last.date),
             lineColor: palette.primary,
             gridColor: palette.borderSubtle,
-            labelStyle: tokens.weight.copyWith(
-              fontSize: 10,
-              height: 1.2,
-              color: palette.fg3,
-            ),
+            labelStyle: tokens.weightXs.copyWith(color: palette.fg3),
           ),
         ),
       ),

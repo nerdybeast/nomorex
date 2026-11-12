@@ -14,6 +14,7 @@ import '../../../shared/widgets/list_group.dart';
 import '../../programs/widgets/program_day_card.dart';
 import '../../programs/widgets/start_program_dialog.dart';
 import '../providers/community_program_detail_provider.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 /// Read-only preview of another user's public program, mirroring
 /// [CommunityWorkoutDetailScreen]. The program itself is never editable here;
@@ -49,14 +50,14 @@ class CommunityProgramDetailScreen extends ConsumerWidget {
         data: (program) {
           final weeks = program.weeks.length;
           return ListView(
-            padding: const EdgeInsets.all(20),
+            padding: contentPadding(context, top: 20, bottom: 20),
             children: [
               Text(program.name, style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 4),
               Text(
                 'by ${ownerDisplayName(program.ownerDisplayName)} · '
                 '$weeks ${weeks == 1 ? 'week' : 'weeks'}',
-                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
               if (program.description != null && program.description!.isNotEmpty) ...[
                 const SizedBox(height: 8),
@@ -234,7 +235,7 @@ class _CopyActionsState extends ConsumerState<_CopyActions> with AutomaticKeepAl
               copies == 1 ? "You've saved this once" : "You've saved this $copies times",
               key: const Key('community_program_saved_hint'),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ],
@@ -302,7 +303,7 @@ class _Badge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
       ),
     );
   }

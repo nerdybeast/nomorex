@@ -43,6 +43,24 @@ class _RecordingCommunityProgramsNotifier extends CommunityProgramsNotifier {
   Future<void> refresh() async => onRefresh();
 }
 
+class _PagedCommunityWorkoutsNotifier extends CommunityWorkoutsNotifier {
+  _PagedCommunityWorkoutsNotifier(this._first, this._next);
+  final List<Workout> _first;
+  final List<Workout> _next;
+  bool _more = true;
+  int loads = 0;
+  @override
+  bool get hasMore => _more;
+  @override
+  Future<List<Workout>> build() async => _first;
+  @override
+  Future<void> loadMore() async {
+    loads++;
+    _more = false;
+    state = AsyncData([..._first, ..._next]);
+  }
+}
+
 Workout _workout({
   required String id,
   required String title,
@@ -297,5 +315,37 @@ void main() {
 
     expect(workoutsRefreshed, isTrue);
     expect(programsRefreshed, isTrue);
+  });
+
+  testWidgets('Community loads more workouts on demand, and says search covers only what is loaded',
+      (tester) async {
+    final paged = _PagedCommunityWorkoutsNotifier(
+      [_workout(id: 'w1', title: 'Front Squat Day')],
+      [_workout(id: 'w2', title: 'Old Squat Day')],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          communityWorkoutsProvider.overrideWith(() => paged),
+          communityProgramsProvider.overrideWith(() => _StubCommunityProgramsNotifier(const [])),
+        ],
+        child: const MaterialApp(home: CommunityScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('community_tab_workouts')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Old Squat Day'), findsNothing);
+    await tester.enterText(find.byType(TextField).first, 'old');
+    await tester.pumpAndSettle();
+    expect(find.text('No workouts match your search.'), findsOneWidget);
+    expect(find.text('Searching the newest 1 workouts. Load more to search older ones.'), findsOneWidget);
+
+    await tester.tap(find.text('Load more'));
+    await tester.pumpAndSettle();
+    expect(paged.loads, 1);
+    expect(find.text('Old Squat Day'), findsOneWidget);
+    expect(find.text('Load more'), findsNothing);
   });
 }

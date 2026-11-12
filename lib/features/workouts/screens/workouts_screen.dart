@@ -74,7 +74,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
         body: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: contentPadding(context, top: 12, bottom: 0, inShell: true),
               child: TextField(
                 decoration: const InputDecoration(
                   hintText: 'Search workouts...',
@@ -188,10 +188,8 @@ class _WorkoutTile extends ConsumerWidget {
           ? null
           : Text(
               statusLabel,
-              style: TextStyle(
-                fontSize: 12,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
               ),
             ),
       chips: [

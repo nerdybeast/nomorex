@@ -21,6 +21,7 @@ import '../../workouts/providers/workouts_provider.dart';
 import '../../workouts/utils/set_resolver.dart';
 import '../../../shared/models/one_rep_max.dart';
 import '../providers/community_workout_detail_provider.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 class CommunityWorkoutDetailScreen extends ConsumerWidget {
   const CommunityWorkoutDetailScreen({super.key, required this.workoutId});
@@ -55,13 +56,13 @@ class CommunityWorkoutDetailScreen extends ConsumerWidget {
           child: Text('Error: $e', style: TextStyle(color: colorScheme.error)),
         ),
         data: (workout) => ListView(
-          padding: const EdgeInsets.all(20),
+          padding: contentPadding(context, top: 20, bottom: 20),
           children: [
             Text(workout.title, style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 4),
             Text(
               'by ${ownerDisplayName(workout.ownerDisplayName)} · ${formatDate(workout.date)}',
-              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
             if (workout.notes != null && workout.notes!.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -226,7 +227,7 @@ class _CopyActionsState extends ConsumerState<_CopyActions> with AutomaticKeepAl
               copies == 1 ? "You've saved this once" : "You've saved this $copies times",
               key: const Key('community_workout_saved_hint'),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ],
@@ -250,7 +251,7 @@ class _Badge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
       ),
     );
   }

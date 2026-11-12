@@ -11,6 +11,7 @@ import '../../../shared/models/one_rep_max.dart';
 import '../models/program_exercise.dart';
 import '../models/program_set.dart';
 import '../providers/program_detail_provider.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 /// Read-only preview of a single program day's programmed exercises/sets,
 /// reached by tapping a day card while browsing a program template (before
@@ -46,7 +47,7 @@ class ProgramDayDetailScreen extends ConsumerWidget {
                 pinned: true,
               ),
               SliverPadding(
-                padding: const EdgeInsets.all(16),
+                padding: contentPadding(context),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     Text(

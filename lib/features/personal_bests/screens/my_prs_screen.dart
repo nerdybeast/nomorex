@@ -66,7 +66,7 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: contentPadding(context, top: 12, bottom: 0, inShell: true),
             child: TextField(
               decoration: const InputDecoration(
                 hintText: 'Search exercises...',

@@ -50,7 +50,7 @@ class CopiedFromBadge extends StatelessWidget {
             child: Text(
               label,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, height: 16 / 12, color: palette.fg2),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: palette.fg2),
             ),
           ),
         ],

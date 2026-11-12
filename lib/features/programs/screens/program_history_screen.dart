@@ -6,6 +6,7 @@ import '../../../core/utils/date_formatter.dart';
 import '../models/program_instance.dart';
 import '../providers/finished_program_instances_provider.dart';
 import '../widgets/program_stats_chips.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 /// Program runs the user has completed or abandoned, most recent first —
 /// the Programs-page counterpart of the Workout history screen.
@@ -64,7 +65,7 @@ class _HistoryEntryCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: contentPadding(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
