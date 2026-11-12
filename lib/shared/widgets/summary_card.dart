@@ -4,9 +4,10 @@ import 'archived_pill.dart';
 import 'list_group.dart';
 
 /// Shared chrome for a list entry that summarizes a program or workout: a
-/// bordered icon tile, a bold [title], an optional muted [subtitle] (e.g. the author),
-/// an optional [badge] (e.g. a `CopiedFromBadge`), an optional [body] and
-/// [status] line, and a row of small [chips].
+/// bordered icon tile, a [title] in title-3, an optional [status] line right
+/// under it, an optional muted [subtitle] (e.g. the author), an optional
+/// [badge] (e.g. a `CopiedFromBadge`), an optional [body] clamped to two
+/// lines, and a row of small [chips].
 ///
 /// [trailing] defaults to a chevron; pass a menu button for owner-editable
 /// lists.
@@ -83,7 +84,12 @@ class SummaryCard extends StatelessWidget {
                     ],
                   )
                 else
-                  Text(title, style: theme.textTheme.titleSmall),
+                  // title-3: the name is what the row is scanned for, so it
+                  // leads the 13px body by weight and a size step.
+                  Text(title, style: theme.textTheme.titleMedium),
+                // State (running, paused, upcoming) sits right under the
+                // name: it matters more than the description below it.
+                if (status != null) ...[const SizedBox(height: 4), status!],
                 if (sub != null) ...[
                   const SizedBox(height: 2),
                   Text(sub, style: theme.textTheme.bodySmall?.copyWith(color: palette.fg3)),
@@ -91,12 +97,15 @@ class SummaryCard extends StatelessWidget {
                 if (badge != null) ...[const SizedBox(height: 6), badge!],
                 if (body != null) ...[
                   const SizedBox(height: 4),
+                  // Two lines at most, so a long description can't outweigh
+                  // the name or push the next row off screen.
                   DefaultTextStyle.merge(
                     style: NomorexTokens.of(context).bodySmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     child: body!,
                   ),
                 ],
-                if (status != null) ...[const SizedBox(height: 6), status!],
                 if (chips.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Wrap(spacing: 12, runSpacing: 4, children: chips),

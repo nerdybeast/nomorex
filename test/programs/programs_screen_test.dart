@@ -326,7 +326,7 @@ void main() {
   });
 
   testWidgets(
-    'a description longer than 200 characters is truncated with an ellipsis',
+    'a long description is clamped to two lines with an ellipsis',
     (tester) async {
       final longDescription = 'A' * 250;
       final programs = [
@@ -348,9 +348,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final expectedPreview = '${'A' * 200}...';
-      expect(find.text(expectedPreview), findsOneWidget);
-      expect(find.text(longDescription), findsNothing);
+      final text = tester.widget<RichText>(
+        find.descendant(of: find.text(longDescription), matching: find.byType(RichText)),
+      );
+      expect(text.maxLines, 2);
+      expect(text.overflow, TextOverflow.ellipsis);
     },
   );
 

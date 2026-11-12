@@ -235,19 +235,17 @@ class _ProgramTile extends ConsumerWidget {
                 fontStyle: FontStyle.italic,
               ),
             )
-          : Text(_truncatedDescription(description)),
+          : Text(description),
       status: activeInstance == null
           ? null
-          : Text(
-              isProgramUpcoming(activeInstance.startedAt)
-                  ? 'Upcoming — starts ${formatDate(activeInstance.startedAt)}'
-                  : 'In progress — started ${formatDate(activeInstance.startedAt)}',
-              style: TextStyle(color: NomorexTokens.of(context).primaryText, fontWeight: FontWeight.w600),
+          : _RunStatus(
+              upcoming: isProgramUpcoming(activeInstance.startedAt),
+              date: formatDate(activeInstance.startedAt),
             ),
-      chips: [
-        ...programStatsChips(stats),
-        SummaryInfoChip(Icons.event_outlined, formatDate(program.createdAt)),
-      ],
+      // The created date lives on the program screen; here it wrapped onto a
+      // line of its own and repeated the days chip's calendar icon. The list
+      // is already sorted by it.
+      chips: programStatsChips(stats),
       onTap: () => context.push(AppConstants.routeProgramDetail(program.id)),
       trailing: PopupMenuButton<String>(
         onSelected: (value) async {
@@ -265,9 +263,50 @@ class _ProgramTile extends ConsumerWidget {
       ),
     );
   }
+}
 
-  String _truncatedDescription(String description) {
-    if (description.length <= 200) return description;
-    return '${description.substring(0, 200)}...';
+/// A running program's state under its name: the design system's status dot
+/// (orange with a halo while in progress, gray while upcoming) and a quiet
+/// line, so the program's name stays the loudest thing on the row.
+class _RunStatus extends StatelessWidget {
+  const _RunStatus({required this.upcoming, required this.date});
+
+  final bool upcoming;
+  final String date;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = NomorexTokens.of(context).palette;
+    final base = Theme.of(context).textTheme.bodySmall?.copyWith(color: palette.fg3);
+    return Row(
+      children: [
+        Container(
+          key: const Key('program_run_status_dot'),
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: upcoming ? palette.fg3 : palette.primary,
+            boxShadow: upcoming ? null : [BoxShadow(color: palette.primarySubtle, spreadRadius: 3)],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text.rich(
+            TextSpan(
+              style: base,
+              children: [
+                TextSpan(
+                  text: upcoming ? 'Upcoming' : 'In progress',
+                  style: TextStyle(color: palette.fg1, fontWeight: FontWeight.w500),
+                ),
+                TextSpan(text: upcoming ? ' · starts $date' : ' · started $date'),
+              ],
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
   }
 }

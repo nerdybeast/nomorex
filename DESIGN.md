@@ -395,7 +395,16 @@ The heart of tap-first logging (`NumberStepperField`). A 40px − button (`bg-2`
 Related rows go in one bordered `ListGroup` (`bg-1`, 10px radius, `border-subtle`) with hairline dividers, not a card each. An optional header strip sits on `bg-0` with a mono eyebrow. Rows (`GroupableTile`) pad 12×16 and fill `bg-3` on hover/press; outside a group the same row renders as its own card. Today's row can take a `primary-subtle` fill.
 
 ### Summary Card
-The row for a workout or program: a 32px icon tile (`bg-2`, `border-default`, 6px radius, 18px `fg-2` icon), a 14/500 title, a `fg-3` caption, a 13px `fg-2` detail line, and a `fg-3` chevron. Archived rows mute the title to `fg-2` and swap in the archive icon.
+The row for a workout or program, read top to bottom in priority order:
+- a 32px icon tile (`bg-2`, `border-default`, 6px radius, 18px `fg-2` icon);
+- the name in title-3 (15/600), the thing the row is scanned for;
+- the run state right under it (a running program shows the 8px status dot, orange with a `primary-subtle` halo while in progress and `fg-3` while upcoming, then "In progress · started Nov 1" in caption, state word in `fg-1`);
+- an optional `fg-3` caption and badge;
+- a 13px `fg-2` description, clamped to two lines;
+- the facts chips (weeks, days, workouts) 8px below;
+- a `fg-3` chevron or the overflow menu.
+
+The Programs list leaves out the created date: the program screen shows it, and the list is sorted by it. Archived rows mute the title to `fg-2` and swap in the archive icon.
 
 ### Cards / Containers
 - **Corner Style:** 10px.
