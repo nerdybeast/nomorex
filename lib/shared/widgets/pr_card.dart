@@ -113,7 +113,7 @@ class PrCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: Text(
                 estimate,
-                style: tokens.weight.copyWith(fontSize: 12, height: 16 / 12, color: palette.info),
+                style: tokens.weightSm.copyWith(color: palette.info),
               ),
             ),
           ],
@@ -126,7 +126,7 @@ class PrCard extends StatelessWidget {
               note,
               maxLines: notesMaxLines,
               overflow: notesMaxLines == null ? null : TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(fontSize: 13, height: 18 / 13, color: palette.fg2),
+              style: tokens.bodySmall,
             ),
           ],
           if (footer != null) ...[

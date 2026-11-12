@@ -168,6 +168,10 @@ class NomorexTokens extends ThemeExtension<NomorexTokens> {
     required this.weight,
     required this.weightMd,
     required this.weightLg,
+    required this.weightSm,
+    required this.weightXs,
+    required this.bodySmall,
+    required this.buttonSmall,
     required this.stepperValue,
     required this.stat,
     required this.timer,
@@ -189,6 +193,22 @@ class NomorexTokens extends ThemeExtension<NomorexTokens> {
   final TextStyle weight;
   final TextStyle weightMd;
   final TextStyle weightLg;
+
+  /// Mono 12/500: a secondary number beside a weight ("e1RM 112.5").
+  final TextStyle weightSm;
+
+  /// Mono 11/500: unit tags and chart axis labels. The type floor: nothing is
+  /// set smaller than 11px.
+  final TextStyle weightXs;
+
+  /// The design's body-small, Inter 13/18 in fg-2: row details, card bodies,
+  /// empty-state messages. Not [TextTheme.bodySmall], which is the 12px
+  /// caption.
+  final TextStyle bodySmall;
+
+  /// The design's button-sm, Inter 13/500: small buttons inside cards and
+  /// rows. Callers set the color.
+  final TextStyle buttonSmall;
 
   /// Inter 24/600 with tabular figures — the number in every
   /// [NumberStepperField].
@@ -238,6 +258,10 @@ class NomorexTokens extends ThemeExtension<NomorexTokens> {
     TextStyle? weight,
     TextStyle? weightMd,
     TextStyle? weightLg,
+    TextStyle? weightSm,
+    TextStyle? weightXs,
+    TextStyle? bodySmall,
+    TextStyle? buttonSmall,
     TextStyle? stepperValue,
     TextStyle? stat,
     TextStyle? timer,
@@ -253,6 +277,10 @@ class NomorexTokens extends ThemeExtension<NomorexTokens> {
       weight: weight ?? this.weight,
       weightMd: weightMd ?? this.weightMd,
       weightLg: weightLg ?? this.weightLg,
+      weightSm: weightSm ?? this.weightSm,
+      weightXs: weightXs ?? this.weightXs,
+      bodySmall: bodySmall ?? this.bodySmall,
+      buttonSmall: buttonSmall ?? this.buttonSmall,
       stepperValue: stepperValue ?? this.stepperValue,
       stat: stat ?? this.stat,
       timer: timer ?? this.timer,
@@ -716,6 +744,10 @@ abstract final class AppTheme {
           weight: _mono(14, 20),
           weightMd: _mono(16, 22, letterSpacing: -0.16),
           weightLg: _mono(20, 26, letterSpacing: -0.2),
+          weightSm: _mono(12, 16),
+          weightXs: _mono(11, 16),
+          bodySmall: _inter(13, 18, FontWeight.w400, color: p.fg2),
+          buttonSmall: _inter(13, 18, FontWeight.w500),
           stepperValue: _inter(24, 30, FontWeight.w600, letterSpacing: -0.24, color: p.fg1)
               .copyWith(fontFeatures: _tabular),
           stat: _inter(20, 26, FontWeight.w600, letterSpacing: -0.2, color: p.fg1)

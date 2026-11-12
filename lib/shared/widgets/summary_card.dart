@@ -92,7 +92,7 @@ class SummaryCard extends StatelessWidget {
                 if (body != null) ...[
                   const SizedBox(height: 4),
                   DefaultTextStyle.merge(
-                    style: TextStyle(fontSize: 13, height: 18 / 13, color: palette.fg2),
+                    style: NomorexTokens.of(context).bodySmall,
                     child: body!,
                   ),
                 ],

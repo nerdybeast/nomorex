@@ -61,7 +61,7 @@ class CommunityWorkoutDetailScreen extends ConsumerWidget {
             const SizedBox(height: 4),
             Text(
               'by ${ownerDisplayName(workout.ownerDisplayName)} · ${formatDate(workout.date)}',
-              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
             if (workout.notes != null && workout.notes!.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -226,7 +226,7 @@ class _CopyActionsState extends ConsumerState<_CopyActions> with AutomaticKeepAl
               copies == 1 ? "You've saved this once" : "You've saved this $copies times",
               key: const Key('community_workout_saved_hint'),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ],
@@ -250,7 +250,7 @@ class _Badge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
       ),
     );
   }

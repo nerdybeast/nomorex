@@ -25,7 +25,7 @@ class UnitToggle extends StatelessWidget {
     final tokens = NomorexTokens.of(context);
     final palette = tokens.palette;
     // Mono, so the tag sits naturally beside a mono weight.
-    final labelStyle = tokens.weight.copyWith(fontSize: 11, height: 16 / 11);
+    final labelStyle = tokens.weightXs;
 
     if (preference != 'both') {
       return Container(

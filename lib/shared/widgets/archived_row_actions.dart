@@ -26,7 +26,7 @@ class ArchivedRowActions extends StatelessWidget {
             minimumSize: const WidgetStatePropertyAll(Size(0, NomorexSizes.controlHeightSm)),
             padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12)),
             textStyle: WidgetStatePropertyAll(
-              Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 13),
+              NomorexTokens.of(context).buttonSmall,
             ),
           ),
           onPressed: onRestore,

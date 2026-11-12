@@ -151,7 +151,7 @@ class _BestSummary extends StatelessWidget {
         if (estimate != null)
           Text(
             estimate,
-            style: tokens.weight.copyWith(fontSize: 12, height: 16 / 12, color: palette.info),
+            style: tokens.weightSm.copyWith(color: palette.info),
           ),
       ],
     );

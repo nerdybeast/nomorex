@@ -349,11 +349,7 @@ class _DashboardWelcomeBanner extends StatelessWidget {
             const SizedBox(height: 6),
             Text.rich(
               TextSpan(
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontSize: 13,
-                  height: 18 / 13,
-                  color: palette.fg2,
-                ),
+                style: NomorexTokens.of(context).bodySmall,
                 children: [
                   const TextSpan(text: 'Log a workout, hit a '),
                   TextSpan(text: 'new PR', style: emphasis),

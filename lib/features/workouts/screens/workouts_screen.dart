@@ -188,10 +188,8 @@ class _WorkoutTile extends ConsumerWidget {
           ? null
           : Text(
               statusLabel,
-              style: TextStyle(
-                fontSize: 12,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
               ),
             ),
       chips: [
