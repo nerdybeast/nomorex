@@ -84,6 +84,11 @@ typography:
     fontSize: "14px"
     fontWeight: 500
     lineHeight: "20px"
+  button-sm:
+    fontFamily: "Inter"
+    fontSize: "13px"
+    fontWeight: 500
+    lineHeight: "18px"
   caption:
     fontFamily: "Inter"
     fontSize: "12px"
@@ -134,6 +139,18 @@ typography:
     fontWeight: 500
     lineHeight: "26px"
     letterSpacing: "-0.2px"
+    fontFeature: "tnum"
+  weight-sm:
+    fontFamily: "JetBrains Mono"
+    fontSize: "12px"
+    fontWeight: 500
+    lineHeight: "16px"
+    fontFeature: "tnum"
+  weight-xs:
+    fontFamily: "JetBrains Mono"
+    fontSize: "11px"
+    fontWeight: 500
+    lineHeight: "16px"
     fontFeature: "tnum"
   eyebrow:
     fontFamily: "JetBrains Mono"
@@ -311,15 +328,17 @@ Near-neutral grays with a single toned-down orange and two information hues that
 - **Title 1** (600, 24/30, −0.36px): screen-level headings.
 - **Title 2** (600, 18/24, −0.18px): dialog titles, section headings.
 - **Title 3** (600, 15/22, −0.07px): app-bar titles, card titles.
-- **Body** (400, 14/20): all UI text; `body-strong` is 14/500 (list-row titles). **Body small** (400, 13/18) for subtitles and snackbars.
-- **Button** (500, 14/20); segmented buttons 13/500.
+- **Body** (400, 14/20): all UI text; `body-strong` is 14/500 (list-row titles). **Body small** (400, 13/18, `fg-2`; `NomorexTokens.bodySmall`) for row details, card bodies, empty-state messages and snackbars. It is not `TextTheme.bodySmall`, which is the 12px caption.
+- **Button** (500, 14/20); **Button small** (500, 13/18; `NomorexTokens.buttonSmall`) for small in-card buttons and segments.
 - **Caption** (400, 12/16): dates, helper text, badges.
 - **Nav** (500, 11/14): rail and bottom-bar labels. Nothing is smaller than 11px.
-- **Weight / Weight md / Weight lg** (JetBrains Mono 500, 14 / 16 / 20, tabular): a load inline, in a PR row, on its own.
+- **Weight / Weight md / Weight lg** (JetBrains Mono 500, 14 / 16 / 20, tabular): a load inline, in a PR row, on its own. **Weight sm** (12) for a secondary number beside a weight ("e1RM 112.5"); **Weight xs** (11) for unit tags and chart axis labels.
 - **Eyebrow** (JetBrains Mono 500, 11/16, 0.66px tracking, upper-cased by the caller): list-group headers ("RECENT PRS"), the ARCHIVED pill.
 - **Stepper value / Stat / Timer** (Inter 600, 24 / 20 / 40, tabular): the number in every stepper, counts and durations in summaries, the running workout clock.
 
 ### Named Rules
+**The Theme Styles Only Rule.** Text takes a `TextTheme` or `NomorexTokens` style, optionally with `copyWith(color: …)`. No `TextStyle(fontSize: …)` at a call site: a new size is a new token.
+
 **The Mono Load Rule.** Every weight renders in a `weight*` mono style, with its unit ("140 kg"), so loads line up down a list. Estimated values end in " (est.)".
 
 **The Steady Digits Rule.** Any number that changes while you look at it (steppers, stats, timers) uses tabular figures, so it never shifts or re-fits.
@@ -332,7 +351,7 @@ A 4px grid with a 2px half-step. List rows pad 12px × 16px; cards pad 16px; dia
 
 Sizes are touch-first: primary, secondary and danger buttons are full width by default at 44px (`control-height-lg`), every control keeps a 48px hit area, stepper buttons are 40px squares beside an 80px value. Outlined and text buttons use 36px (`control-height`). App bar 52px, nav bar 56px, FAB 52px.
 
-Below 600px (`kMobileBreakpoint`) the shell is a bottom app bar with a centered FAB; at 600px and above it's a navigation rail on `bg-1`. Both carry Home, Programs, Workouts, My PRs and Community, in that order. Phone and desktop are equal citizens: the desktop layout gets more room, not more density.
+Below 600px (`kMobileBreakpoint`) the shell is a bottom app bar with a centered FAB; at 600px and above it's a navigation rail on `bg-1`. Both carry Home, Programs, Workouts, My PRs and Community, in that order. Phone and desktop are equal citizens: the desktop layout gets more room, not more density. List and detail screens cap their content at 840px (`kContentMaxWidth`), centered, via `contentPadding()` / `shellListPadding()` in `responsive_layout.dart`. The cap is scroll-view padding, not a `ConstrainedBox`, so scrolling still works across the whole window. Forms cap at 520px.
 
 ### Named Rules
 **The Arm's-Length Rule.** Anything done mid-session must be operable with one thumb at arm's length: 44px controls, 48px hit areas, no target packed tighter to fit another row.
@@ -367,6 +386,7 @@ Sturdy and plain: solid fills with a 1px edge in the fill's own family, no rippl
 - **Danger** (`dangerButtonStyle`): same shape in `danger`, for an irreversible action.
 - **Outlined / Text:** 36px, `fg-1` label, `bg-3` on hover; outlined adds a `bg-2` fill and `border-default` edge.
 - **Disabled:** `bg-3` fill, `fg-3` label, `border-subtle` edge. Prefer an enabled control that explains what's missing.
+- **Keyboard focus:** filled buttons and segmented buttons get a 2px `fg-1` edge, which stands out on orange, neutral and red fills in both themes. Rows, tiles, nav items, text, outlined and icon buttons fill with `bg-3`. Checkboxes and switches show a `primary-subtle` halo.
 
 ### Number Stepper (signature)
 The heart of tap-first logging (`NumberStepperField`). A 40px − button (`bg-2` fill, `border-control` edge), an 80px borderless value in `stepper-value` (24/600 tabular, still typeable), and a 40px + button (`primary` fill, `primary-border` edge), 8px apart. Floored at a sensible minimum; buttons are named "Decrease <label>" / "Increase <label>" for screen readers. Reps, %1RM, weight, sets and RPE all use it; ranges reveal a second "Max" stepper behind a switch.
@@ -391,7 +411,7 @@ The row for a workout or program: a 32px icon tile (`bg-2`, `border-default`, 6p
 
 ### Badges and Toggles
 - **Pills** (`CopiedFromBadge`, `ArchivedPill`): full radius, 1px `border-default`, no fill; 12px `fg-2` text with a 14px icon, or a mono eyebrow.
-- **Unit toggle:** a 4px-radius bordered track; the selected unit takes `primary-subtle` with `primary-text`, in 11px mono.
+- **Unit toggle:** a 4px-radius bordered track; the selected unit takes `primary-subtle` with `primary-text`, in 11px mono. The track stays small, but each segment's tap area is a full 48px tall, and each segment is a button ("Kilograms" / "Pounds") with a selected state.
 - **Segmented button:** `bg-3` track, selected segment `primary-subtle` with `primary-text`, 13/500.
 - **Switch:** on = `primary` track with white thumb; off = `bg-3` track, `fg-3` thumb, `border-default` outline.
 
@@ -407,7 +427,8 @@ Dialogs and sheets on `bg-2` with a `border-default` edge and 14px radius (sheet
 ## Do's and Don'ts
 
 ### Do:
-- **Do** make every mid-session action a tap: a stepper, switch or single-purpose button ("Log RPE", "Log weight"). Typing is the fallback.
+- **Do** make every mid-session action a tap: a stepper, switch or single-purpose button ("Log reps", "Log RPE", "Log weight"). Typing is the fallback.
+- **Do** keep small controls' hit areas at 48px even when they look smaller (the unit toggle, the inline "set PR" link's padded target).
 - **Do** keep controls 44px tall with a 48px hit area, and give every icon-only control a tooltip or semantics label.
 - **Do** read colors from `NomorexTokens.of(context)` / the theme; add a new token to `NomorexPalette` rather than hardcoding a `Color`.
 - **Do** put related rows in one `ListGroup` rather than a card each.
@@ -429,5 +450,5 @@ Dialogs and sheets on `bg-2` with a `border-default` edge and 14px radius (sheet
 ### Not yet implemented
 The Sleek Orange Design System artifact also specifies the following, which the code doesn't do yet. The code is the source of truth until they ship:
 - Material Symbols Outlined at weight 300 (the app uses stock Material Icons).
-- A 2px `primary` keyboard focus ring with a 2px `bg-0` gap, and a 3px `primary-subtle` halo on focused fields (the app uses Flutter's default focus).
+- The artifact's 2px `primary` focus ring with a 2px `bg-0` gap, and a 3px `primary-subtle` halo on focused fields. The app uses the focus treatment under Buttons instead: Flutter has no ring-with-gap, and a `primary` ring is invisible on a `primary` fill.
 - 120–200ms ease-out motion tokens for hover, press and sheets (the app uses Flutter defaults).

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-12T20:22:42+00:00",
+  "generatedAt": "2026-11-12T20:48:02+00:00",
   "title": "Design System: NoMoreX",
   "extensions": {
     "colorMeta": {
@@ -733,6 +733,11 @@
         "section": "colors"
       },
       {
+        "name": "The Theme Styles Only Rule",
+        "body": "Text takes a `TextTheme` or `NomorexTokens` style, optionally with `copyWith(color: …)`. No `TextStyle(fontSize: …)` at a call site: a new size is a new token.",
+        "section": "typography"
+      },
+      {
         "name": "The Mono Load Rule",
         "body": "Every weight renders in a `weight*` mono style, with its unit (\"140 kg\"), so loads line up down a list. Estimated values end in \" (est.)\".",
         "section": "typography"
@@ -759,7 +764,8 @@
       }
     ],
     "dos": [
-      "**Do** make every mid-session action a tap: a stepper, switch or single-purpose button (\"Log RPE\", \"Log weight\"). Typing is the fallback.",
+      "**Do** make every mid-session action a tap: a stepper, switch or single-purpose button (\"Log reps\", \"Log RPE\", \"Log weight\"). Typing is the fallback.",
+      "**Do** keep small controls' hit areas at 48px even when they look smaller (the unit toggle, the inline \"set PR\" link's padded target).",
       "**Do** keep controls 44px tall with a 48px hit area, and give every icon-only control a tooltip or semantics label.",
       "**Do** read colors from `NomorexTokens.of(context)` / the theme; add a new token to `NomorexPalette` rather than hardcoding a `Color`.",
       "**Do** put related rows in one `ListGroup` rather than a card each.",
