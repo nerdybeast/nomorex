@@ -406,6 +406,9 @@ The row for a workout or program, read top to bottom in priority order:
 
 The Programs list leaves out the created date: the program screen shows it, and the list is sorted by it. Archived rows mute the title to `fg-2` and swap in the archive icon.
 
+### Program Weeks
+A program's screen lists its weeks as collapsible sections. Each heading is "Week 1 · <label>" in title-2, with a caption summary under it ("6 days · 5 workouts") and an `expand_more` chevron that turns to open. Only the week that matters opens: the week holding today for a running program, otherwise week 1. Each day row names its lifts ("Back squat · Clean · Bench  +3 more", `exercisePreview()`), clamped to two lines. The description above is `fg-2` and clamps at four lines, with a `primary-text` "Show more".
+
 ### Cards / Containers
 - **Corner Style:** 10px.
 - **Background:** `bg-1`.

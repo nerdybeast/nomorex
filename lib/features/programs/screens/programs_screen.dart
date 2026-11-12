@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/active_archived_tabs.dart';
 import '../../../shared/widgets/archived_row_actions.dart';
 import '../../../shared/widgets/list_group.dart';
@@ -12,6 +11,7 @@ import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/summary_card.dart';
 import '../utils/program_stats.dart';
+import '../widgets/program_run_status.dart';
 import '../widgets/program_stats_chips.dart';
 import '../models/program.dart';
 import '../models/program_instance.dart';
@@ -238,7 +238,7 @@ class _ProgramTile extends ConsumerWidget {
           : Text(description),
       status: activeInstance == null
           ? null
-          : _RunStatus(
+          : ProgramRunStatus(
               upcoming: isProgramUpcoming(activeInstance.startedAt),
               date: formatDate(activeInstance.startedAt),
             ),
@@ -261,52 +261,6 @@ class _ProgramTile extends ConsumerWidget {
           PopupMenuItem(value: 'archive', child: Text('Archive')),
         ],
       ),
-    );
-  }
-}
-
-/// A running program's state under its name: the design system's status dot
-/// (orange with a halo while in progress, gray while upcoming) and a quiet
-/// line, so the program's name stays the loudest thing on the row.
-class _RunStatus extends StatelessWidget {
-  const _RunStatus({required this.upcoming, required this.date});
-
-  final bool upcoming;
-  final String date;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = NomorexTokens.of(context).palette;
-    final base = Theme.of(context).textTheme.bodySmall?.copyWith(color: palette.fg3);
-    return Row(
-      children: [
-        Container(
-          key: const Key('program_run_status_dot'),
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: upcoming ? palette.fg3 : palette.primary,
-            boxShadow: upcoming ? null : [BoxShadow(color: palette.primarySubtle, spreadRadius: 3)],
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text.rich(
-            TextSpan(
-              style: base,
-              children: [
-                TextSpan(
-                  text: upcoming ? 'Upcoming' : 'In progress',
-                  style: TextStyle(color: palette.fg1, fontWeight: FontWeight.w500),
-                ),
-                TextSpan(text: upcoming ? ' · starts $date' : ' · started $date'),
-              ],
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
     );
   }
 }

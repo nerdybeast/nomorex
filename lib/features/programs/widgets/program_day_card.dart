@@ -89,6 +89,8 @@ class ProgramDayCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: highlighted ? palette.fg2 : palette.fg3,
                   ),
