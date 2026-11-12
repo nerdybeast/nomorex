@@ -1,0 +1,433 @@
+---
+name: NoMoreX
+description: Sleek Orange v3, a quiet, tap-first strength-training log in light and dark.
+colors:
+  bg-0-dark: "#121212"
+  bg-1-dark: "#171717"
+  bg-2-dark: "#1C1C1C"
+  bg-3-dark: "#262626"
+  border-subtle-dark: "#262626"
+  border-default-dark: "#333333"
+  border-control-dark: "#6B6B6B"
+  fg-1-dark: "#EDEDED"
+  fg-2-dark: "#A1A1A1"
+  fg-3-dark: "#8F8F8F"
+  primary-dark: "#C8470F"
+  primary-hover-dark: "#B8420F"
+  primary-border-dark: "#DD6A35"
+  primary-text-dark: "#F5814A"
+  primary-subtle-dark: "rgba(200, 71, 15, 0.16)"
+  info-dark: "#6AA6F8"
+  danger-dark: "#C93434"
+  danger-hover-dark: "#B52E2E"
+  danger-text-dark: "#FF7B72"
+  danger-subtle-dark: "rgba(255, 123, 114, 0.10)"
+  bg-0-light: "#FAFAFA"
+  bg-1-light: "#FFFFFF"
+  bg-2-light: "#FFFFFF"
+  bg-3-light: "#F0F0F0"
+  border-subtle-light: "#EBEBEB"
+  border-default-light: "#DEDEDE"
+  border-control-light: "#8F8F8F"
+  fg-1-light: "#171717"
+  fg-2-light: "#525252"
+  fg-3-light: "#6B6B6B"
+  primary-light: "#C2410C"
+  primary-hover-light: "#AD3A0B"
+  primary-border-light: "#9A3412"
+  primary-text-light: "#C2410C"
+  primary-subtle-light: "rgba(194, 65, 12, 0.08)"
+  info-light: "#1F63D6"
+  danger-light: "#C62828"
+  danger-hover-light: "#AD2121"
+  danger-text-light: "#C62828"
+  danger-subtle-light: "rgba(198, 40, 40, 0.06)"
+  on-primary: "#FFFFFF"
+  on-danger: "#FFFFFF"
+typography:
+  display:
+    fontFamily: "Inter"
+    fontSize: "32px"
+    fontWeight: 600
+    lineHeight: "38px"
+    letterSpacing: "-0.64px"
+  title-1:
+    fontFamily: "Inter"
+    fontSize: "24px"
+    fontWeight: 600
+    lineHeight: "30px"
+    letterSpacing: "-0.36px"
+  title-2:
+    fontFamily: "Inter"
+    fontSize: "18px"
+    fontWeight: 600
+    lineHeight: "24px"
+    letterSpacing: "-0.18px"
+  title-3:
+    fontFamily: "Inter"
+    fontSize: "15px"
+    fontWeight: 600
+    lineHeight: "22px"
+    letterSpacing: "-0.07px"
+  body:
+    fontFamily: "Inter"
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: "20px"
+  body-small:
+    fontFamily: "Inter"
+    fontSize: "13px"
+    fontWeight: 400
+    lineHeight: "18px"
+  button:
+    fontFamily: "Inter"
+    fontSize: "14px"
+    fontWeight: 500
+    lineHeight: "20px"
+  caption:
+    fontFamily: "Inter"
+    fontSize: "12px"
+    fontWeight: 400
+    lineHeight: "16px"
+  nav:
+    fontFamily: "Inter"
+    fontSize: "11px"
+    fontWeight: 500
+    lineHeight: "14px"
+  stepper-value:
+    fontFamily: "Inter"
+    fontSize: "24px"
+    fontWeight: 600
+    lineHeight: "30px"
+    letterSpacing: "-0.24px"
+    fontFeature: "tnum"
+  stat:
+    fontFamily: "Inter"
+    fontSize: "20px"
+    fontWeight: 600
+    lineHeight: "26px"
+    letterSpacing: "-0.2px"
+    fontFeature: "tnum"
+  timer:
+    fontFamily: "Inter"
+    fontSize: "40px"
+    fontWeight: 600
+    lineHeight: "48px"
+    letterSpacing: "-0.8px"
+    fontFeature: "tnum"
+  weight:
+    fontFamily: "JetBrains Mono"
+    fontSize: "14px"
+    fontWeight: 500
+    lineHeight: "20px"
+    fontFeature: "tnum"
+  weight-md:
+    fontFamily: "JetBrains Mono"
+    fontSize: "16px"
+    fontWeight: 500
+    lineHeight: "22px"
+    letterSpacing: "-0.16px"
+    fontFeature: "tnum"
+  weight-lg:
+    fontFamily: "JetBrains Mono"
+    fontSize: "20px"
+    fontWeight: 500
+    lineHeight: "26px"
+    letterSpacing: "-0.2px"
+    fontFeature: "tnum"
+  eyebrow:
+    fontFamily: "JetBrains Mono"
+    fontSize: "11px"
+    fontWeight: 500
+    lineHeight: "16px"
+    letterSpacing: "0.66px"
+rounded:
+  sm: "4px"
+  md: "6px"
+  lg: "10px"
+  xl: "14px"
+  full: "999px"
+spacing:
+  xs: "4px"
+  sm: "8px"
+  md: "12px"
+  lg: "16px"
+  xl: "20px"
+  2xl: "24px"
+components:
+  button-primary:
+    backgroundColor: "{colors.primary-dark}"
+    textColor: "{colors.on-primary}"
+    typography: "{typography.button}"
+    rounded: "{rounded.md}"
+    padding: "0 16px"
+    height: "44px"
+  button-primary-hover:
+    backgroundColor: "{colors.primary-hover-dark}"
+  button-secondary:
+    backgroundColor: "{colors.bg-2-dark}"
+    textColor: "{colors.fg-1-dark}"
+    typography: "{typography.button}"
+    rounded: "{rounded.md}"
+    padding: "0 16px"
+    height: "44px"
+  button-secondary-hover:
+    backgroundColor: "{colors.bg-3-dark}"
+  button-danger:
+    backgroundColor: "{colors.danger-dark}"
+    textColor: "{colors.on-danger}"
+    typography: "{typography.button}"
+    rounded: "{rounded.md}"
+    padding: "0 16px"
+    height: "44px"
+  button-outlined:
+    backgroundColor: "{colors.bg-2-dark}"
+    textColor: "{colors.fg-1-dark}"
+    typography: "{typography.button}"
+    rounded: "{rounded.md}"
+    padding: "0 12px"
+    height: "36px"
+  stepper-increment:
+    backgroundColor: "{colors.primary-dark}"
+    textColor: "{colors.on-primary}"
+    rounded: "{rounded.md}"
+    size: "40px"
+  stepper-decrement:
+    backgroundColor: "{colors.bg-2-dark}"
+    textColor: "{colors.fg-1-dark}"
+    rounded: "{rounded.md}"
+    size: "40px"
+  text-field:
+    backgroundColor: "{colors.bg-2-dark}"
+    textColor: "{colors.fg-1-dark}"
+    typography: "{typography.body}"
+    rounded: "{rounded.md}"
+    padding: "12px"
+  list-group:
+    backgroundColor: "{colors.bg-1-dark}"
+    rounded: "{rounded.lg}"
+  list-row:
+    textColor: "{colors.fg-1-dark}"
+    padding: "12px 16px"
+  list-row-hover:
+    backgroundColor: "{colors.bg-3-dark}"
+  list-header:
+    backgroundColor: "{colors.bg-0-dark}"
+    textColor: "{colors.fg-3-dark}"
+    typography: "{typography.eyebrow}"
+    padding: "8px 12px 8px 16px"
+  card:
+    backgroundColor: "{colors.bg-1-dark}"
+    rounded: "{rounded.lg}"
+    padding: "12px 16px"
+  dialog:
+    backgroundColor: "{colors.bg-2-dark}"
+    rounded: "{rounded.xl}"
+    padding: "20px"
+  badge:
+    textColor: "{colors.fg-2-dark}"
+    typography: "{typography.caption}"
+    rounded: "{rounded.full}"
+    padding: "2px 8px"
+  fab:
+    backgroundColor: "{colors.primary-dark}"
+    textColor: "{colors.on-primary}"
+    rounded: "{rounded.full}"
+    size: "52px"
+  app-bar:
+    backgroundColor: "{colors.bg-0-dark}"
+    textColor: "{colors.fg-1-dark}"
+    typography: "{typography.title-3}"
+    height: "52px"
+  nav-rail-selected:
+    backgroundColor: "{colors.bg-3-dark}"
+    textColor: "{colors.primary-text-dark}"
+    rounded: "{rounded.md}"
+---
+
+# Design System: NoMoreX
+
+## Overview
+
+**Creative North Star: "The Chalk Line"**
+
+NoMoreX is used on the gym floor: chalky hands, a minute between sets, the phone propped on a bench, read at arm's length. The Chalk Line is that floor made into an interface. It's plain and sturdy. Gray surfaces separated by hairlines stay out of the way, and one orange mark says what to do next. Every common action is a tap: steppers instead of text fields, a "Log RPE" button instead of a form, one obvious primary button per screen. The same system has to hold up at a desk, where coaches and athletes author multi-week programs on a wider screen, so it scales by layout (bottom bar below 600px, navigation rail above) rather than by changing character.
+
+Inside that, the rule is **quiet chrome, loud data**. Loads, reps, percentages and PRs are what you see first: weights are set in mono so they line up down a list, counts and timers use tabular figures so digits don't jump. Precision shows up in alignment and exact numbers, never in density: when a bigger tap target and one more row on screen compete, the tap target wins.
+
+The world is literal and functional. The gym is in how the app is used, not in how it's decorated: no chalk textures, plates, grit, gradients, glows or glass.
+
+**Key Characteristics:**
+- Tap-first: steppers, switches and single-purpose buttons for anything done mid-session; 44px controls, 48px hit areas.
+- Neutral gray surfaces in four close steps; 1px hairlines do the separating.
+- One accent (orange), on one main action per screen and the current place in the app.
+- Small, even Inter type scale; weights in JetBrains Mono; tabular figures on every changing number.
+- Flat in flow; only overlays cast a shadow.
+- Light and dark themes, following the device.
+
+## Colors
+
+Near-neutral grays with a single toned-down orange and two information hues that are never used as fills except red for destructive actions. Every color comes in a dark and a light value (suffix `-dark` / `-light`); both themes are built from one set of component rules in `lib/core/theme/app_theme.dart` (`NomorexPalette`).
+
+### Primary
+- **Chalk-line Orange** (`primary`): fills the one main button on a screen, the FAB, the stepper's + and the switch's on track, always edged in `primary-border`. Labels on it are `on-primary` white in both themes.
+- **Pressed Orange** (`primary-hover`): a shade *darker* than the fill, never lighter, so the white label keeps its contrast on hover and press.
+- **Orange Ink** (`primary-text`): orange as text: links, snackbar actions, the selected nav icon, today's date in the picker.
+- **Orange Wash** (`primary-subtle`): a faint translucent wash behind `primary-text`: the selected unit, a selected segment, today's program day. Never a card fill.
+
+### Secondary
+- **Resolved Blue** (`info`): text only. It marks a weight resolved from the viewer's own or an estimated 1RM, e.g. a percentage set on someone else's public workout. Never a button, never a fill.
+
+### Tertiary
+- **Warning Red** (`danger` / `danger-hover`): destructive button fills only ("Discard", "Delete permanently"); hover darkens.
+- **Error Ink** (`danger-text`, with `danger-subtle` wash): validation messages, invalid field outlines, destructive menu items. This is what `ColorScheme.error` carries.
+
+### Neutral
+- **Floor** (`bg-0`): page, app bar, bottom nav, and recessed strips inside a container (list headers, dialog footers).
+- **Mat** (`bg-1`): cards, list containers, the navigation rail.
+- **Bench** (`bg-2`): overlays, text-field fills, secondary buttons, icon tiles, the stepper's − button.
+- **Raised** (`bg-3`): hover and pressed rows, the selected nav item, snackbars, the switch's off track, disabled fills.
+- **Hairline** (`border-subtle`): lines between areas and around cards.
+- **Edge** (`border-default`): edges of pressable things and overlays, badges.
+- **Control Edge** (`border-control`): field outlines, checkbox and stepper − outlines; 3:1 or better on `bg-0`…`bg-2`.
+- **Ink 1 / 2 / 3** (`fg-1`, `fg-2`, `fg-3`): titles and values / body and descriptions / dates, captions, chevrons, inactive nav. All three pass 4.5:1 on every surface, `bg-3` included.
+
+### Named Rules
+**The One Mark Rule.** Orange fills appear on one main action per screen plus the current-place indicators (FAB, selected nav icon). Everything else is neutral. If two orange buttons are visible, one of them is the secondary style.
+
+**The Secondary Is Orange Trap Rule.** `ColorScheme.secondary`, `tertiary` and every `*Container` role are pinned to orange so stock Material widgets never fall back to purple or teal. Reaching for `colorScheme.secondary` to get "another color" gets orange. Anything without a stock slot is read from `NomorexTokens.of(context)`.
+
+**The White-on-White Rule.** In light mode `bg-1` and `bg-2` are both white. Never rely on one against the other to separate anything; use a border.
+
+## Typography
+
+**Body Font:** Inter (bundled in `assets/fonts/`, never fetched at runtime)
+**Numeric/Label Font:** JetBrains Mono (bundled)
+
+**Character:** Inter carries every word at a small, even scale, with headings set apart by weight and tight tracking rather than size or capitals. JetBrains Mono is reserved for loads and the caps eyebrow labels, so a column of weights reads like a ruled ledger.
+
+### Hierarchy
+- **Display** (600, 32/38, −0.64px): rare; the largest heading.
+- **Title 1** (600, 24/30, −0.36px): screen-level headings.
+- **Title 2** (600, 18/24, −0.18px): dialog titles, section headings.
+- **Title 3** (600, 15/22, −0.07px): app-bar titles, card titles.
+- **Body** (400, 14/20): all UI text; `body-strong` is 14/500 (list-row titles). **Body small** (400, 13/18) for subtitles and snackbars.
+- **Button** (500, 14/20); segmented buttons 13/500.
+- **Caption** (400, 12/16): dates, helper text, badges.
+- **Nav** (500, 11/14): rail and bottom-bar labels. Nothing is smaller than 11px.
+- **Weight / Weight md / Weight lg** (JetBrains Mono 500, 14 / 16 / 20, tabular): a load inline, in a PR row, on its own.
+- **Eyebrow** (JetBrains Mono 500, 11/16, 0.66px tracking, upper-cased by the caller): list-group headers ("RECENT PRS"), the ARCHIVED pill.
+- **Stepper value / Stat / Timer** (Inter 600, 24 / 20 / 40, tabular): the number in every stepper, counts and durations in summaries, the running workout clock.
+
+### Named Rules
+**The Mono Load Rule.** Every weight renders in a `weight*` mono style, with its unit ("140 kg"), so loads line up down a list. Estimated values end in " (est.)".
+
+**The Steady Digits Rule.** Any number that changes while you look at it (steppers, stats, timers) uses tabular figures, so it never shifts or re-fits.
+
+**The Sentence Case Rule.** Titles, buttons, tabs and app bars are sentence case. Capitals appear only in mono eyebrows, which are a label style, not shouting.
+
+## Layout
+
+A 4px grid with a 2px half-step. List rows pad 12px × 16px; cards pad 16px; dialogs pad 20px (actions 20px sides, 16px bottom). Mobile screens use 16px side gutters and 24px between sections.
+
+Sizes are touch-first: primary, secondary and danger buttons are full width by default at 44px (`control-height-lg`), every control keeps a 48px hit area, stepper buttons are 40px squares beside an 80px value. Outlined and text buttons use 36px (`control-height`). App bar 52px, nav bar 56px, FAB 52px.
+
+Below 600px (`kMobileBreakpoint`) the shell is a bottom app bar with a centered FAB; at 600px and above it's a navigation rail on `bg-1`. Both carry Home, Programs, Workouts, My PRs and Community, in that order. Phone and desktop are equal citizens: the desktop layout gets more room, not more density.
+
+### Named Rules
+**The Arm's-Length Rule.** Anything done mid-session must be operable with one thumb at arm's length: 44px controls, 48px hit areas, no target packed tighter to fit another row.
+
+## Elevation & Depth
+
+Flat by default. Depth comes from the four surface steps and hairline borders, not shadows. Every in-flow surface (cards, app bar, buttons, FAB) has elevation 0 and a transparent surface tint. Only overlays (dialogs, bottom sheets, menus, snackbars) cast a shadow, in `overlayShadow`: strong in dark (`rgba(0,0,0,0.55)`), soft in light (`rgba(0,0,0,0.08)`), at Material elevation 8 (menus, snackbars) or 12 (dialogs, sheets).
+
+### Named Rules
+**The Floor Stays Flat Rule.** If it scrolls with the page, it has no shadow. Shadows mean "this is above the page."
+
+## Shapes
+
+Gently squared. Small radii keep the hairline look crisp.
+- **Small** (4px): checkboxes, the unit toggle, segments.
+- **Medium** (6px): buttons, fields, stepper buttons, icon tiles, snackbars, list tiles, tooltips, the selected nav indicator.
+- **Large** (10px): cards and list containers.
+- **Extra large** (14px): dialogs and bottom-sheet tops.
+- **Full**: badges and pills, the switch, the FAB (a true circle with a `primary-border` edge).
+
+Borders are always 1px, except focused fields (1.5px) and checkbox edges (1.5px).
+
+## Components
+
+The stock Material widgets are themed rather than wrapped; custom shared widgets live in `lib/shared/widgets/`.
+
+### Buttons
+Sturdy and plain: solid fills with a 1px edge in the fill's own family, no ripple (overlay transparent).
+- **Shape:** medium radius (6px), 44px tall, full width unless placed in a `Row`/`Expanded`.
+- **Primary** (`FilledButton`): `primary` fill, `primary-border` edge, white 14/500 label. Hover/press: `primary-hover`.
+- **Secondary** (`NomorexTokens.secondaryButtonStyle`): same size, `bg-2` fill, `border-default` edge, `fg-1` label; hover `bg-3`. The equal-weight alternate beside a primary ("Pause" beside "Finish", "Cancel").
+- **Danger** (`dangerButtonStyle`): same shape in `danger`, for an irreversible action.
+- **Outlined / Text:** 36px, `fg-1` label, `bg-3` on hover; outlined adds a `bg-2` fill and `border-default` edge.
+- **Disabled:** `bg-3` fill, `fg-3` label, `border-subtle` edge. Prefer an enabled control that explains what's missing.
+
+### Number Stepper (signature)
+The heart of tap-first logging (`NumberStepperField`). A 40px − button (`bg-2` fill, `border-control` edge), an 80px borderless value in `stepper-value` (24/600 tabular, still typeable), and a 40px + button (`primary` fill, `primary-border` edge), 8px apart. Floored at a sensible minimum; buttons are named "Decrease <label>" / "Increase <label>" for screen readers. Reps, %1RM, weight, sets and RPE all use it; ranges reveal a second "Max" stepper behind a switch.
+
+### List Groups and Rows
+Related rows go in one bordered `ListGroup` (`bg-1`, 10px radius, `border-subtle`) with hairline dividers, not a card each. An optional header strip sits on `bg-0` with a mono eyebrow. Rows (`GroupableTile`) pad 12×16 and fill `bg-3` on hover/press; outside a group the same row renders as its own card. Today's row can take a `primary-subtle` fill.
+
+### Summary Card
+The row for a workout or program: a 32px icon tile (`bg-2`, `border-default`, 6px radius, 18px `fg-2` icon), a 14/500 title, a `fg-3` caption, a 13px `fg-2` detail line, and a `fg-3` chevron. Archived rows mute the title to `fg-2` and swap in the archive icon.
+
+### Cards / Containers
+- **Corner Style:** 10px.
+- **Background:** `bg-1`.
+- **Shadow Strategy:** none (see Elevation).
+- **Border:** 1px `border-subtle`.
+- **Internal Padding:** 12px × 16px for rows, 16px for content cards.
+
+### Inputs / Fields
+- **Style:** `bg-2` fill, 1px `border-control` outline, 6px radius, 12px padding, 14px text, `fg-3` hint, `fg-2` label.
+- **Focus:** outline turns `primary` at 1.5px.
+- **Error:** `danger-text` outline and 12px message. **Disabled:** `border-subtle` outline.
+
+### Badges and Toggles
+- **Pills** (`CopiedFromBadge`, `ArchivedPill`): full radius, 1px `border-default`, no fill; 12px `fg-2` text with a 14px icon, or a mono eyebrow.
+- **Unit toggle:** a 4px-radius bordered track; the selected unit takes `primary-subtle` with `primary-text`, in 11px mono.
+- **Segmented button:** `bg-3` track, selected segment `primary-subtle` with `primary-text`, 13/500.
+- **Switch:** on = `primary` track with white thumb; off = `bg-3` track, `fg-3` thumb, `border-default` outline.
+
+### Navigation
+- **App bar:** `bg-0`, 52px, hairline bottom border, left-aligned 15/600 title, `fg-2` icons, no elevation.
+- **Mobile:** bottom app bar on `bg-0` with a centered 52px orange FAB. Any FAB on a shell screen sets its own `heroTag`.
+- **Desktop / tablet:** navigation rail on `bg-1`; selected item `bg-3` indicator (6px radius) with a `primary-text` 20px icon and `fg-1` label; unselected `fg-3`.
+- **Tabs:** sentence-case 14/500 labels, `fg-1` selected / `fg-2` unselected, a 2px `fg-2` underline (not orange). `ActiveArchivedTabs` uses them on Workouts and Programs.
+
+### Overlays
+Dialogs and sheets on `bg-2` with a `border-default` edge and 14px radius (sheets round the top only, with a 36×4 drag handle); menus `bg-2` at 10px; snackbars floating, `bg-3`, 6px radius, `primary-text` action. Tooltips invert: `fg-1` fill, `bg-0` text.
+
+## Do's and Don'ts
+
+### Do:
+- **Do** make every mid-session action a tap: a stepper, switch or single-purpose button ("Log RPE", "Log weight"). Typing is the fallback.
+- **Do** keep controls 44px tall with a 48px hit area, and give every icon-only control a tooltip or semantics label.
+- **Do** read colors from `NomorexTokens.of(context)` / the theme; add a new token to `NomorexPalette` rather than hardcoding a `Color`.
+- **Do** put related rows in one `ListGroup` rather than a card each.
+- **Do** render weights in the mono `weight*` styles with their unit, and estimated values with " (est.)".
+- **Do** use tabular figures for every number that changes on screen.
+- **Do** darken on hover and press (`primary-hover`, `danger-hover`, `bg-3`), never lighten.
+- **Do** use Material Icons, outlined at rest (`Icons.*_outlined`), 18–20px, `fg-2` beside text and `fg-3` for chevrons.
+
+### Don't:
+- **Don't** put a second orange fill on a screen; use the secondary button.
+- **Don't** use `colorScheme.secondary` expecting a second color: it's orange.
+- **Don't** use `info` blue for a button or fill, or `primary-subtle` as a card background.
+- **Don't** add a shadow to anything in the page flow, or use gradients, glows, glassmorphism or gym-themed textures.
+- **Don't** fetch fonts at runtime (`google_fonts`); Inter and JetBrains Mono are bundled.
+- **Don't** pack controls tighter on desktop to fit more; wider screens get more room, not more density.
+- **Don't** put a separate button inside a `ListTile`'s `trailing`; place it beside the tile in a `Row`.
+- **Don't** set text below 11px or use capitals outside mono eyebrows.
+
+### Not yet implemented
+The Sleek Orange Design System artifact also specifies the following, which the code doesn't do yet. The code is the source of truth until they ship:
+- Material Symbols Outlined at weight 300 (the app uses stock Material Icons).
+- A 2px `primary` keyboard focus ring with a 2px `bg-0` gap, and a 3px `primary-subtle` halo on focused fields (the app uses Flutter's default focus).
+- 120–200ms ease-out motion tokens for hover, press and sheets (the app uses Flutter defaults).

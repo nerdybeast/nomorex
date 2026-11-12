@@ -1,0 +1,782 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-12T20:22:42+00:00",
+  "title": "Design System: NoMoreX",
+  "extensions": {
+    "colorMeta": {
+      "bg-0-dark": {
+        "role": "neutral",
+        "displayName": "Floor (dark)",
+        "canonical": "#121212",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "bg-1-dark": {
+        "role": "neutral",
+        "displayName": "Mat (dark)",
+        "canonical": "#171717",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "bg-2-dark": {
+        "role": "neutral",
+        "displayName": "Bench (dark)",
+        "canonical": "#1C1C1C",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "bg-3-dark": {
+        "role": "neutral",
+        "displayName": "Raised (dark)",
+        "canonical": "#262626",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "border-subtle-dark": {
+        "role": "neutral",
+        "displayName": "Hairline (dark)",
+        "canonical": "#262626",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "border-default-dark": {
+        "role": "neutral",
+        "displayName": "Edge (dark)",
+        "canonical": "#333333",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "border-control-dark": {
+        "role": "neutral",
+        "displayName": "Control Edge (dark)",
+        "canonical": "#6B6B6B",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "fg-1-dark": {
+        "role": "neutral",
+        "displayName": "Ink 1 (dark)",
+        "canonical": "#EDEDED",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "fg-2-dark": {
+        "role": "neutral",
+        "displayName": "Ink 2 (dark)",
+        "canonical": "#A1A1A1",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "fg-3-dark": {
+        "role": "neutral",
+        "displayName": "Ink 3 (dark)",
+        "canonical": "#8F8F8F",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "primary-dark": {
+        "role": "primary",
+        "displayName": "Chalk-line Orange (dark)",
+        "canonical": "#C8470F",
+        "tonalRamp": [
+          "#391F13",
+          "#663119",
+          "#98401A",
+          "#D04E16",
+          "#E77341",
+          "#E59F80",
+          "#E9C7B9",
+          "#F7F0ED"
+        ]
+      },
+      "primary-hover-dark": {
+        "role": "primary",
+        "displayName": "Pressed Orange (dark)",
+        "canonical": "#B8420F",
+        "tonalRamp": [
+          "#391F13",
+          "#66311A",
+          "#97411B",
+          "#CE4E17",
+          "#E67342",
+          "#E49F81",
+          "#E9C8B9",
+          "#F7F0ED"
+        ]
+      },
+      "primary-border-dark": {
+        "role": "primary",
+        "displayName": "Orange Edge (dark)",
+        "canonical": "#DD6A35",
+        "tonalRamp": [
+          "#362016",
+          "#603420",
+          "#8D4625",
+          "#C05626",
+          "#D97A4F",
+          "#DCA389",
+          "#E5CABD",
+          "#F6F1EE"
+        ]
+      },
+      "primary-text-dark": {
+        "role": "primary",
+        "displayName": "Orange Ink (dark)",
+        "canonical": "#F5814A",
+        "tonalRamp": [
+          "#3A1F12",
+          "#683118",
+          "#9B4218",
+          "#D35012",
+          "#EB753D",
+          "#E7A07E",
+          "#EAC8B8",
+          "#F8F0ED"
+        ]
+      },
+      "primary-subtle-dark": {
+        "role": "primary",
+        "displayName": "Orange Wash (dark)",
+        "canonical": "rgba(200, 71, 15, 0.16)"
+      },
+      "info-dark": {
+        "role": "secondary",
+        "displayName": "Resolved Blue (dark)",
+        "canonical": "#6AA6F8",
+        "tonalRamp": [
+          "#12233A",
+          "#173968",
+          "#174F9C",
+          "#1164D5",
+          "#3C86EC",
+          "#7EAAE7",
+          "#B7CDEB",
+          "#EDF1F8"
+        ]
+      },
+      "danger-dark": {
+        "role": "tertiary",
+        "displayName": "Warning Red (dark)",
+        "canonical": "#C93434",
+        "tonalRamp": [
+          "#331919",
+          "#5A2525",
+          "#842E2E",
+          "#B23333",
+          "#CD5B5B",
+          "#D59090",
+          "#E2C0C0",
+          "#F6EFEF"
+        ]
+      },
+      "danger-hover-dark": {
+        "role": "tertiary",
+        "displayName": "Pressed Red (dark)",
+        "canonical": "#B52E2E",
+        "tonalRamp": [
+          "#331919",
+          "#5A2525",
+          "#852E2E",
+          "#B33333",
+          "#CD5A5A",
+          "#D59090",
+          "#E2C0C0",
+          "#F6EFEF"
+        ]
+      },
+      "danger-text-dark": {
+        "role": "tertiary",
+        "displayName": "Error Ink (dark)",
+        "canonical": "#FF7B72",
+        "tonalRamp": [
+          "#3C1310",
+          "#6C1913",
+          "#A21910",
+          "#DF1507",
+          "#F53F33",
+          "#ED8078",
+          "#EDB8B5",
+          "#F8EDEC"
+        ]
+      },
+      "danger-subtle-dark": {
+        "role": "tertiary",
+        "displayName": "Error Wash (dark)",
+        "canonical": "rgba(255, 123, 114, 0.10)"
+      },
+      "bg-0-light": {
+        "role": "neutral",
+        "displayName": "Floor (light)",
+        "canonical": "#FAFAFA",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "bg-1-light": {
+        "role": "neutral",
+        "displayName": "Mat (light)",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "bg-2-light": {
+        "role": "neutral",
+        "displayName": "Bench (light)",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "bg-3-light": {
+        "role": "neutral",
+        "displayName": "Raised (light)",
+        "canonical": "#F0F0F0",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "border-subtle-light": {
+        "role": "neutral",
+        "displayName": "Hairline (light)",
+        "canonical": "#EBEBEB",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "border-default-light": {
+        "role": "neutral",
+        "displayName": "Edge (light)",
+        "canonical": "#DEDEDE",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "border-control-light": {
+        "role": "neutral",
+        "displayName": "Control Edge (light)",
+        "canonical": "#8F8F8F",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "fg-1-light": {
+        "role": "neutral",
+        "displayName": "Ink 1 (light)",
+        "canonical": "#171717",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "fg-2-light": {
+        "role": "neutral",
+        "displayName": "Ink 2 (light)",
+        "canonical": "#525252",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "fg-3-light": {
+        "role": "neutral",
+        "displayName": "Ink 3 (light)",
+        "canonical": "#6B6B6B",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "primary-light": {
+        "role": "primary",
+        "displayName": "Chalk-line Orange (light)",
+        "canonical": "#C2410C",
+        "tonalRamp": [
+          "#3A1E13",
+          "#672F18",
+          "#9A3E19",
+          "#D24B13",
+          "#E9703E",
+          "#E69D7F",
+          "#EAC7B8",
+          "#F7F0ED"
+        ]
+      },
+      "primary-hover-light": {
+        "role": "primary",
+        "displayName": "Pressed Orange (light)",
+        "canonical": "#AD3A0B",
+        "tonalRamp": [
+          "#3A1E13",
+          "#672F18",
+          "#9A3E19",
+          "#D24B14",
+          "#E9703F",
+          "#E69D7F",
+          "#EAC7B8",
+          "#F7F0ED"
+        ]
+      },
+      "primary-border-light": {
+        "role": "primary",
+        "displayName": "Orange Edge (light)",
+        "canonical": "#9A3412",
+        "tonalRamp": [
+          "#381D15",
+          "#632E1C",
+          "#933C1F",
+          "#C8481D",
+          "#E06E47",
+          "#E09C85",
+          "#E7C6BB",
+          "#F7F0EE"
+        ]
+      },
+      "primary-text-light": {
+        "role": "primary",
+        "displayName": "Orange Ink (light)",
+        "canonical": "#C2410C",
+        "tonalRamp": [
+          "#3A1E13",
+          "#672F18",
+          "#9A3E19",
+          "#D24B13",
+          "#E9703E",
+          "#E69D7F",
+          "#EAC7B8",
+          "#F7F0ED"
+        ]
+      },
+      "primary-subtle-light": {
+        "role": "primary",
+        "displayName": "Orange Wash (light)",
+        "canonical": "rgba(194, 65, 12, 0.08)"
+      },
+      "info-light": {
+        "role": "secondary",
+        "displayName": "Resolved Blue (light)",
+        "canonical": "#1F63D6",
+        "tonalRamp": [
+          "#162237",
+          "#1E3761",
+          "#234B90",
+          "#225EC3",
+          "#4C81DC",
+          "#87A7DE",
+          "#BCCCE6",
+          "#EEF1F7"
+        ]
+      },
+      "danger-light": {
+        "role": "tertiary",
+        "displayName": "Warning Red (light)",
+        "canonical": "#C62828",
+        "tonalRamp": [
+          "#351818",
+          "#5D2222",
+          "#8A2929",
+          "#BA2B2B",
+          "#D45454",
+          "#D98C8C",
+          "#E4BEBE",
+          "#F6EEEE"
+        ]
+      },
+      "danger-hover-light": {
+        "role": "tertiary",
+        "displayName": "Pressed Red (light)",
+        "canonical": "#AD2121",
+        "tonalRamp": [
+          "#351717",
+          "#5E2121",
+          "#8B2828",
+          "#BC2929",
+          "#D65252",
+          "#DA8B8B",
+          "#E4BEBE",
+          "#F6EEEE"
+        ]
+      },
+      "danger-text-light": {
+        "role": "tertiary",
+        "displayName": "Error Ink (light)",
+        "canonical": "#C62828",
+        "tonalRamp": [
+          "#351818",
+          "#5D2222",
+          "#8A2929",
+          "#BA2B2B",
+          "#D45454",
+          "#D98C8C",
+          "#E4BEBE",
+          "#F6EEEE"
+        ]
+      },
+      "danger-subtle-light": {
+        "role": "tertiary",
+        "displayName": "Error Wash (light)",
+        "canonical": "rgba(198, 40, 40, 0.06)"
+      },
+      "on-primary": {
+        "role": "primary",
+        "displayName": "On Orange",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      },
+      "on-danger": {
+        "role": "tertiary",
+        "displayName": "On Red",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#595959",
+          "#737373",
+          "#949494",
+          "#B2B2B2",
+          "#D1D1D1",
+          "#F2F2F2"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "weight": {
+        "displayName": "Weight",
+        "purpose": "Every load, inline."
+      },
+      "eyebrow": {
+        "displayName": "Eyebrow",
+        "purpose": "Caps mono list-group headers and pills."
+      },
+      "stepper-value": {
+        "displayName": "Stepper value",
+        "purpose": "The number in every NumberStepperField."
+      },
+      "timer": {
+        "displayName": "Timer",
+        "purpose": "The running workout clock."
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlay-dark",
+        "value": "0 8px 24px rgba(0,0,0,0.55)",
+        "purpose": "Dialogs, sheets, menus, snackbars in dark (Material elevation 8–12)."
+      },
+      {
+        "name": "overlay-light",
+        "value": "0 8px 24px rgba(0,0,0,0.08)",
+        "purpose": "The same overlays in light."
+      }
+    ],
+    "motion": [
+      {
+        "name": "flutter-default",
+        "value": "Flutter/Material defaults",
+        "purpose": "No custom motion tokens in code yet; the artifact's 120–200ms ease-out is not implemented."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "600px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main action on a screen. Full width, 44px.",
+      "html": "<button class=\"ds-btn-primary\">Start workout</button>",
+      "css": ".ds-btn-primary { font-family: Inter, system-ui, sans-serif; background:#C8470F; color:#FFFFFF; border:1px solid #DD6A35; border-radius:6px; height:44px; min-width:240px; padding:0 16px; font-size:14px; line-height:20px; font-weight:500; cursor:pointer; transition:background 150ms ease-out; } .ds-btn-primary:hover, .ds-btn-primary:active { background:#B8420F; } .ds-btn-primary:focus-visible { outline:2px solid #C8470F; outline-offset:2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Equal-weight neutral alternate beside a primary (Pause, Cancel).",
+      "html": "<button class=\"ds-btn-secondary\">Pause</button>",
+      "css": ".ds-btn-secondary { font-family: Inter, system-ui, sans-serif; background:#1C1C1C; color:#EDEDED; border:1px solid #333333; border-radius:6px; height:44px; min-width:240px; padding:0 16px; font-size:14px; line-height:20px; font-weight:500; cursor:pointer; transition:background 150ms ease-out; } .ds-btn-secondary:hover, .ds-btn-secondary:active { background:#262626; } .ds-btn-secondary:focus-visible { outline:2px solid #C8470F; outline-offset:2px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Irreversible actions only (Discard, Delete permanently).",
+      "html": "<button class=\"ds-btn-danger\">Discard</button>",
+      "css": ".ds-btn-danger { font-family: Inter, system-ui, sans-serif; background:#C93434; color:#FFFFFF; border:1px solid #C93434; border-radius:6px; height:44px; min-width:240px; padding:0 16px; font-size:14px; line-height:20px; font-weight:500; cursor:pointer; transition:background 150ms ease-out; } .ds-btn-danger:hover, .ds-btn-danger:active { background:#B52E2E; } .ds-btn-danger:focus-visible { outline:2px solid #C8470F; outline-offset:2px; }"
+    },
+    {
+      "name": "Number Stepper",
+      "kind": "custom",
+      "refersTo": "stepper-increment",
+      "description": "Tap-first numeric input: − / typeable value / +. Used for sets, reps, %1RM, weight and RPE.",
+      "html": "<div class=\"ds-stepper\"><span class=\"ds-stepper-label\">Reps</span><div class=\"ds-stepper-row\"><button class=\"ds-stepper-dec\" aria-label=\"Decrease Reps\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\"><path d=\"M19 13H5v-2h14v2z\" fill=\"currentColor\"/></svg></button><input class=\"ds-stepper-value\" value=\"5\" aria-label=\"Reps\"><button class=\"ds-stepper-inc\" aria-label=\"Increase Reps\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\"><path d=\"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z\" fill=\"currentColor\"/></svg></button></div></div>",
+      "css": ".ds-stepper { font-family: Inter, system-ui, sans-serif; display:inline-flex; flex-direction:column; gap:6px; color:#EDEDED; } .ds-stepper-label { font-size:13px; font-weight:500; color:#A1A1A1; } .ds-stepper-row { display:flex; align-items:center; gap:8px; } .ds-stepper-dec, .ds-stepper-inc { width:40px; height:40px; border-radius:6px; display:grid; place-items:center; cursor:pointer; transition:background 150ms ease-out; } .ds-stepper-dec { background:#1C1C1C; color:#EDEDED; border:1px solid #6B6B6B; } .ds-stepper-dec:hover { background:#262626; } .ds-stepper-inc { background:#C8470F; color:#FFFFFF; border:1px solid #DD6A35; } .ds-stepper-inc:hover { background:#B8420F; } .ds-stepper-dec:focus-visible, .ds-stepper-inc:focus-visible { outline:2px solid #C8470F; outline-offset:2px; } .ds-stepper-value { font-family: Inter, system-ui, sans-serif; width:80px; background:transparent; border:none; color:#EDEDED; text-align:center; font-size:24px; line-height:30px; font-weight:600; letter-spacing:-0.24px; font-variant-numeric:tabular-nums; } .ds-stepper-value:focus { outline:none; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "text-field",
+      "description": "Fallback for free text (names, notes, search).",
+      "html": "<input class=\"ds-input\" placeholder=\"Workout name\">",
+      "css": ".ds-input { font-family: Inter, system-ui, sans-serif; background:#1C1C1C; color:#EDEDED; border:1px solid #6B6B6B; border-radius:6px; padding:12px; font-size:14px; line-height:20px; width:260px; transition:border-color 150ms ease-out; } .ds-input::placeholder { color:#8F8F8F; } .ds-input:focus { outline:none; border-color:#C8470F; box-shadow:0 0 0 0.5px #C8470F; }"
+    },
+    {
+      "name": "List Group",
+      "kind": "card",
+      "refersTo": "list-group",
+      "description": "Related rows in one bordered container with a mono eyebrow header and hairline dividers.",
+      "html": "<div class=\"ds-group\"><div class=\"ds-group-head\">RECENT PRS</div><div class=\"ds-row\"><span>Back squat</span><span class=\"ds-weight\">140 kg</span></div><div class=\"ds-row\"><span>Clean and jerk</span><span class=\"ds-weight\">112.5 kg</span></div><div class=\"ds-row\"><span>Snatch</span><span class=\"ds-weight\">90 kg</span></div></div>",
+      "css": ".ds-group { font-family: Inter, system-ui, sans-serif; background:#171717; border:1px solid #262626; border-radius:10px; overflow:hidden; width:320px; color:#EDEDED; } .ds-group-head { background:#121212; padding:8px 12px 8px 16px; font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11px; line-height:16px; font-weight:500; letter-spacing:0.66px; color:#8F8F8F; border-bottom:1px solid #262626; } .ds-row { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; font-size:14px; line-height:20px; font-weight:500; border-bottom:1px solid #262626; cursor:pointer; transition:background 150ms ease-out; } .ds-row:last-child { border-bottom:none; } .ds-row:hover { background:#262626; } .ds-weight { font-family:'JetBrains Mono', ui-monospace, monospace; font-size:16px; line-height:22px; letter-spacing:-0.16px; font-variant-numeric:tabular-nums; }"
+    },
+    {
+      "name": "Copied-from Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Attribution pill on a community copy.",
+      "html": "<span class=\"ds-badge\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\"><path d=\"M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z\" fill=\"currentColor\"/></svg>Copied from Alex</span>",
+      "css": ".ds-badge { font-family: Inter, system-ui, sans-serif; display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border:1px solid #333333; border-radius:999px; color:#A1A1A1; font-size:12px; line-height:16px; }"
+    },
+    {
+      "name": "Navigation Rail",
+      "kind": "nav",
+      "refersTo": "nav-rail-selected",
+      "description": "Shell navigation at 600px and wider; bottom app bar below.",
+      "html": "<nav class=\"ds-rail\"><a class=\"ds-rail-item is-active\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\"><path d=\"M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z\" fill=\"currentColor\"/></svg><span>Home</span></a><a class=\"ds-rail-item\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\"><path d=\"M20.57 14.86 22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z\" fill=\"currentColor\"/></svg><span>Workouts</span></a></nav>",
+      "css": ".ds-rail { font-family: Inter, system-ui, sans-serif; background:#171717; border-right:1px solid #262626; display:flex; flex-direction:column; gap:8px; padding:12px 8px; width:80px; } .ds-rail-item { display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 0; border-radius:6px; color:#8F8F8F; text-decoration:none; font-size:11px; line-height:14px; font-weight:500; transition:background 150ms ease-out; } .ds-rail-item:hover { background:#262626; } .ds-rail-item.is-active { background:#262626; color:#EDEDED; } .ds-rail-item.is-active svg { color:#F5814A; } .ds-rail-item:focus-visible { outline:2px solid #C8470F; outline-offset:2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Chalk Line",
+    "overview": "**Creative North Star: \"The Chalk Line\"**\n\nNoMoreX is used on the gym floor: chalky hands, a minute between sets, the phone propped on a bench, read at arm's length. The Chalk Line is that floor made into an interface. It's plain and sturdy. Gray surfaces separated by hairlines stay out of the way, and one orange mark says what to do next. Every common action is a tap: steppers instead of text fields, a \"Log RPE\" button instead of a form, one obvious primary button per screen. The same system has to hold up at a desk, where coaches and athletes author multi-week programs on a wider screen, so it scales by layout (bottom bar below 600px, navigation rail above) rather than by changing character.\n\nInside that, the rule is **quiet chrome, loud data**. Loads, reps, percentages and PRs are what you see first: weights are set in mono so they line up down a list, counts and timers use tabular figures so digits don't jump. Precision shows up in alignment and exact numbers, never in density: when a bigger tap target and one more row on screen compete, the tap target wins.\n\nThe world is literal and functional. The gym is in how the app is used, not in how it's decorated: no chalk textures, plates, grit, gradients, glows or glass.",
+    "keyCharacteristics": [
+      "Tap-first: steppers, switches and single-purpose buttons for anything done mid-session; 44px controls, 48px hit areas.",
+      "Neutral gray surfaces in four close steps; 1px hairlines do the separating.",
+      "One accent (orange), on one main action per screen and the current place in the app.",
+      "Small, even Inter type scale; weights in JetBrains Mono; tabular figures on every changing number.",
+      "Flat in flow; only overlays cast a shadow.",
+      "Light and dark themes, following the device."
+    ],
+    "rules": [
+      {
+        "name": "The One Mark Rule",
+        "body": "Orange fills appear on one main action per screen plus the current-place indicators (FAB, selected nav icon). Everything else is neutral. If two orange buttons are visible, one of them is the secondary style.",
+        "section": "colors"
+      },
+      {
+        "name": "The Secondary Is Orange Trap Rule",
+        "body": "`ColorScheme.secondary`, `tertiary` and every `*Container` role are pinned to orange so stock Material widgets never fall back to purple or teal. Reaching for `colorScheme.secondary` to get \"another color\" gets orange. Anything without a stock slot is read from `NomorexTokens.of(context)`.",
+        "section": "colors"
+      },
+      {
+        "name": "The White-on-White Rule",
+        "body": "In light mode `bg-1` and `bg-2` are both white. Never rely on one against the other to separate anything; use a border.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Load Rule",
+        "body": "Every weight renders in a `weight*` mono style, with its unit (\"140 kg\"), so loads line up down a list. Estimated values end in \" (est.)\".",
+        "section": "typography"
+      },
+      {
+        "name": "The Steady Digits Rule",
+        "body": "Any number that changes while you look at it (steppers, stats, timers) uses tabular figures, so it never shifts or re-fits.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Titles, buttons, tabs and app bars are sentence case. Capitals appear only in mono eyebrows, which are a label style, not shouting.",
+        "section": "typography"
+      },
+      {
+        "name": "The Arm's-Length Rule",
+        "body": "Anything done mid-session must be operable with one thumb at arm's length: 44px controls, 48px hit areas, no target packed tighter to fit another row.",
+        "section": "layout"
+      },
+      {
+        "name": "The Floor Stays Flat Rule",
+        "body": "If it scrolls with the page, it has no shadow. Shadows mean \"this is above the page.\"",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** make every mid-session action a tap: a stepper, switch or single-purpose button (\"Log RPE\", \"Log weight\"). Typing is the fallback.",
+      "**Do** keep controls 44px tall with a 48px hit area, and give every icon-only control a tooltip or semantics label.",
+      "**Do** read colors from `NomorexTokens.of(context)` / the theme; add a new token to `NomorexPalette` rather than hardcoding a `Color`.",
+      "**Do** put related rows in one `ListGroup` rather than a card each.",
+      "**Do** render weights in the mono `weight*` styles with their unit, and estimated values with \" (est.)\".",
+      "**Do** use tabular figures for every number that changes on screen.",
+      "**Do** darken on hover and press (`primary-hover`, `danger-hover`, `bg-3`), never lighten.",
+      "**Do** use Material Icons, outlined at rest (`Icons.*_outlined`), 18–20px, `fg-2` beside text and `fg-3` for chevrons."
+    ],
+    "donts": [
+      "**Don't** put a second orange fill on a screen; use the secondary button.",
+      "**Don't** use `colorScheme.secondary` expecting a second color: it's orange.",
+      "**Don't** use `info` blue for a button or fill, or `primary-subtle` as a card background.",
+      "**Don't** add a shadow to anything in the page flow, or use gradients, glows, glassmorphism or gym-themed textures.",
+      "**Don't** fetch fonts at runtime (`google_fonts`); Inter and JetBrains Mono are bundled.",
+      "**Don't** pack controls tighter on desktop to fit more; wider screens get more room, not more density.",
+      "**Don't** put a separate button inside a `ListTile`'s `trailing`; place it beside the tile in a `Row`.",
+      "**Don't** set text below 11px or use capitals outside mono eyebrows."
+    ]
+  }
+}
