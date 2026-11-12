@@ -47,6 +47,7 @@ Omit every field that is absent. Never write null. Numbers are JSON numbers.
 
 Reading rules:
 - When there are several images, each is labelled "Page N:" and they are in page order. Content can continue from one page onto the next.
+- When there are several PDFs, each is labelled "File N:" and they are in order. They are parts of one workout or program, often one file per week: read them as a whole, continue from one file into the next, and keep numbering weeks across files rather than starting again at Week 1.
 - Copy only what is written. Never invent, calculate or assume a value.
 - If a value is present but you cannot read it, omit it and name it in "unreadable".
 - "type" is "workout" for one session, "program" for several days or weeks, and "none" if the file has no training content.

@@ -61,6 +61,7 @@ function edgeRuntime(): JobRuntime {
 
 interface Limits {
   max_images: number;
+  max_pdf_pages: number;
   max_image_bytes: number;
   max_pdf_bytes: number;
 }
@@ -77,15 +78,19 @@ type MediaPart = { media: { url: string; contentType: string } };
 type PromptPart = MediaPart | { text: string };
 
 /**
- * The files as prompt parts, with a "Page N:" label before each image when
- * there are several, as Anthropic's vision guide recommends. The label makes
- * the page order explicit rather than implied by position, which matters when
- * a week continues onto the next page. A PDF is one document with its own
- * pages, and is always the only file, so it's never labelled.
+ * The files as prompt parts, with a label before each one when there are
+ * several, as Anthropic's vision guide recommends. The label makes the order
+ * explicit rather than implied by position, which matters when a week
+ * continues onto the next page or file. Images are "Page N:"; PDFs are
+ * "File N:", because each is a document with its own pages (often one file
+ * per week of a program). An import is all images or all PDFs.
  */
 export function labelPages(media: MediaPart[]): PromptPart[] {
   if (media.length < 2) return media;
-  return media.flatMap((part, i) => [{ text: `Page ${i + 1}:` }, part]);
+  return media.flatMap((part, i) => {
+    const label = part.media.contentType === 'application/pdf' ? 'File' : 'Page';
+    return [{ text: `${label} ${i + 1}:` }, part];
+  });
 }
 
 const naturalOrder = new Intl.Collator('en', { numeric: true });
@@ -108,7 +113,11 @@ async function loadVerifiedFiles(
     .filter((o) => !o.name.startsWith('.') && o.id !== null)
     .sort((a, b) => naturalOrder.compare(a.name, b.name));
   if (objects.length === 0) throw new JobFailure('unreadable_file', 'no files in the import');
-  if (objects.length > limits.max_images) throw new JobFailure('invalid_file', 'too many files');
+  // Each PDF has at least one page, so the page cap also caps their number.
+  // The exact count per type is checked once the files are typed.
+  if (objects.length > Math.max(limits.max_images, limits.max_pdf_pages)) {
+    throw new JobFailure('invalid_file', 'too many files');
+  }
 
   const remove = async (name: string) => {
     const { error: e } = await storage.remove([`${folder}/${name}`]);
@@ -151,7 +160,11 @@ async function loadVerifiedFiles(
     media.push({ media: { url: `data:${type};base64,${toBase64(bytes)}`, contentType: type! } });
   }
 
-  if (pdfs > 0 && objects.length > 1) throw new JobFailure('invalid_file', 'a PDF must be the only file');
+  const images = media.length - pdfs;
+  if (pdfs > 0 && images > 0) throw new JobFailure('invalid_file', "images and PDFs can't be mixed");
+  if (pdfs > limits.max_pdf_pages || images > limits.max_images) {
+    throw new JobFailure('invalid_file', 'too many files');
+  }
   return media;
 }
 

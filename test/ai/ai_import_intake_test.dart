@@ -37,7 +37,7 @@ XFile _pdf(String name, String body) =>
 
 class _FakePicker implements ImportFilePicker {
   List<XFile> images = [];
-  XFile? pdf;
+  List<XFile> pdfs = [];
   Object? error;
 
   @override
@@ -56,7 +56,10 @@ class _FakePicker implements ImportFilePicker {
   }
 
   @override
-  Future<XFile?> pickPdf() async => pdf;
+  Future<List<XFile>> pickPdfs() async {
+    if (error != null) throw error!;
+    return pdfs;
+  }
 }
 
 /// Records every network call, and fails or blocks on demand.
@@ -171,56 +174,118 @@ void main() {
     });
   });
 
-  group('choosing a PDF', () {
-    test('accepts a PDF within the limits', () async {
-      picker.pdf = _pdf('plan.pdf', '<< /Type /Pages /Count 4 >>');
-      await notifier().choosePdf();
+  group('choosing PDFs', () {
+    test('accepts a PDF within the limits, with its name and page count', () async {
+      picker.pdfs = [_pdf('plan.pdf', '<< /Type /Pages /Count 4 >>')];
+      await notifier().choosePdfs();
       expect(state().isPdf, isTrue);
+      expect(state().error, isNull);
+      expect(state().pages.single.name, 'plan.pdf');
+      expect(state().pdfPageTotal, 4);
+    });
+
+    test('adds several PDFs in natural name order, after any already chosen', () async {
+      await notifier().addPdfs([_pdf('intro.pdf', '<< /Type /Pages /Count 1 >>')]);
+      picker.pdfs = [
+        _pdf('week 10.pdf', '<< /Type /Pages /Count 1 >>'),
+        _pdf('week 2.pdf', '<< /Type /Pages /Count 2 >>'),
+        _pdf('week 1.pdf', '<< /Type /Pages /Count 1 >>'),
+      ];
+      await notifier().choosePdfs();
+      expect(state().pages.map((p) => p.name), ['intro.pdf', 'week 1.pdf', 'week 2.pdf', 'week 10.pdf']);
+      expect(state().pdfPageTotal, 5);
+      expect(state().pdfPagesKnown, isTrue);
       expect(state().error, isNull);
     });
 
+    test('the page cap covers the whole import: the file that goes over is refused', () async {
+      await notifier().addPdfs([
+        _pdf('a.pdf', '<< /Type /Pages /Count 6 >>'),
+        _pdf('b.pdf', '<< /Type /Pages /Count 5 >>'),
+        _pdf('c.pdf', '<< /Type /Pages /Count 4 >>'),
+      ]);
+      expect(state().pages.map((p) => p.name), ['a.pdf', 'c.pdf']);
+      expect(state().error, 'PDFs can have up to 10 pages in total, and "b.pdf" would make 11. It wasn\'t added.');
+    });
+
+    test('no more files than the page cap, even when page counts are unknown', () async {
+      await notifier().addPdfs([for (var i = 1; i <= 11; i++) _pdf('$i.pdf', '')]);
+      expect(state().pages, hasLength(10));
+      expect(state().pdfPagesKnown, isFalse);
+      expect(state().error, 'PDFs can have up to 10 pages in total. "11.pdf" wasn\'t added.');
+    });
+
+    test('a bad file in a batch is skipped and the rest are kept', () async {
+      await notifier().addPdfs([
+        _pdf('a.pdf', ''),
+        _pdf('b.pdf', 'trailer << /Encrypt 3 0 R >>'),
+        _pdf('c.pdf', ''),
+      ]);
+      expect(state().pages.map((p) => p.name), ['a.pdf', 'c.pdf']);
+      expect(state().error, contains('password protected'));
+    });
+
+    test('the same file picked twice is added once', () async {
+      await notifier().addPdfs([_pdf('a.pdf', '')]);
+      await notifier().addPdfs([_pdf('a.pdf', '')]);
+      expect(state().pages, hasLength(1));
+      expect(state().error, '"a.pdf" is already added.');
+    });
+
     test('refuses a file over the size limit before reading it', () async {
-      await notifier().setPdf(XFile.fromData(Uint8List(5000), name: 'big.pdf', path: 'big.pdf'));
+      await notifier().addPdfs([XFile.fromData(Uint8List(5000), name: 'big.pdf', path: 'big.pdf')]);
       expect(state().pages, isEmpty);
       expect(state().error, allOf(startsWith('PDFs can be up to '), contains('"big.pdf" is ')));
     });
 
     test('refuses a file that isn\'t really a PDF', () async {
-      await notifier().setPdf(_png('scan.pdf'));
+      await notifier().addPdfs([_png('scan.pdf')]);
       expect(state().error, '"scan.pdf" isn\'t a PDF.');
     });
 
     test('refuses a password-protected PDF', () async {
-      await notifier().setPdf(_pdf('locked.pdf', 'trailer << /Encrypt 3 0 R >>'));
+      await notifier().addPdfs([_pdf('locked.pdf', 'trailer << /Encrypt 3 0 R >>')]);
       expect(state().error, contains('password protected'));
       expect(state().pages, isEmpty);
     });
 
     test('refuses a PDF over the page limit, naming both numbers', () async {
-      await notifier().setPdf(_pdf('long.pdf', '<< /Type /Pages /Count 14 >>'));
-      expect(state().error, 'PDFs can have up to 10 pages, and "long.pdf" has 14.');
+      await notifier().addPdfs([_pdf('long.pdf', '<< /Type /Pages /Count 14 >>')]);
+      expect(state().error, 'PDFs can have up to 10 pages in total, and "long.pdf" has 14.');
     });
   });
 
-  group('one PDF or images, never both', () {
-    test('images can\'t be added to a PDF', () async {
-      await notifier().setPdf(_pdf('plan.pdf', ''));
+  group('PDFs or images, never both', () {
+    test('images can\'t be added to PDFs', () async {
+      await notifier().addPdfs([_pdf('plan.pdf', '')]);
       picker.images = [_png('a.png')];
       await notifier().chooseImages();
       expect(state().isPdf, isTrue);
-      expect(state().error, 'An import is either one PDF or up to 3 images, not both. Remove the PDF to add images.');
+      expect(state().error, 'An import is either PDFs or up to 3 images, not both. Remove the PDFs to add images.');
     });
 
-    test('a PDF can\'t be added to images', () async {
+    test('PDFs can\'t be added to images', () async {
       await notifier().addImages([_png('a.png')]);
-      picker.pdf = _pdf('plan.pdf', '');
-      await notifier().choosePdf();
+      picker.pdfs = [_pdf('plan.pdf', '')];
+      await notifier().choosePdfs();
       expect(state().hasImages, isTrue);
-      expect(state().error, contains('Remove the images to choose a PDF.'));
+      expect(state().isPdf, isFalse);
+      expect(state().error, contains('Remove the images to add PDFs.'));
     });
   });
 
   group('submit', () {
+    test('uploads several PDFs as numbered pages, in order', () async {
+      await notifier().addPdfs([_pdf('week 2.pdf', ''), _pdf('week 1.pdf', '')]);
+      await notifier().submit();
+
+      final importId = intake.startedImportId!;
+      expect(intake.uploads, [
+        ('u1/$importId/page-1.pdf', 'application/pdf'),
+        ('u1/$importId/page-2.pdf', 'application/pdf'),
+      ]);
+    });
+
     test('checks, uploads every page in order, then starts the import', () async {
       await notifier().addImages([_png('a.png'), _png('b.png')]);
       await notifier().submit();

@@ -60,7 +60,13 @@ function setup(options: Options = {}) {
           select: () => ({
             single: () =>
               Promise.resolve({
-                data: { max_images: 8, max_image_bytes: 100, max_pdf_bytes: 1000, ...options.limits },
+                data: {
+                  max_images: 8,
+                  max_pdf_pages: 10,
+                  max_image_bytes: 100,
+                  max_pdf_bytes: 1000,
+                  ...options.limits,
+                },
                 error: null,
               }),
           }),
@@ -393,23 +399,50 @@ Deno.test('the real size is checked too, with the limit for its real type', asyn
   assertEquals(t.removed, [`${FOLDER}/liar.jpg`]);
 });
 
-Deno.test('a PDF may not be mixed with images or other PDFs', async () => {
-  for (
-    const files of [[{ name: 'a.pdf', bytes: PDF }, { name: 'b.jpg', bytes: JPEG }], [{
-      name: 'a.pdf',
-      bytes: PDF,
-    }, { name: 'b.pdf', bytes: PDF }]]
-  ) {
-    const t = setup({ files });
-    await t.run();
-    assertEquals(t.modelCalls.length, 0);
-    assertEquals(t.finishes()[0].p_failure_code, 'invalid_file');
-  }
+Deno.test('several PDFs are read together, each labelled as a file, in natural order', async () => {
+  const pdf = (n: number) => encoder.encode(`%PDF-1.7 week ${n}`);
+  const t = setup({
+    files: [
+      { name: 'page-10.pdf', bytes: pdf(10) },
+      { name: 'page-2.pdf', bytes: pdf(2) },
+      { name: 'page-1.pdf', bytes: pdf(1) },
+    ],
+  });
+  await t.run();
+  assertEquals(t.finishes()[0].p_failure_code, undefined);
+  const [call] = t.modelCalls;
+  assertEquals(call.userParts.slice(0, 6), [
+    'File 1:',
+    '<media>',
+    'File 2:',
+    '<media>',
+    'File 3:',
+    '<media>',
+  ]);
+  const dataUrl = (bytes: Uint8Array) => `data:application/pdf;base64,${btoa(String.fromCharCode(...bytes))}`;
+  assertEquals(call.media, [dataUrl(pdf(1)), dataUrl(pdf(2)), dataUrl(pdf(10))]);
+});
+
+Deno.test('a PDF may not be mixed with images', async () => {
+  const t = setup({ files: [{ name: 'a.pdf', bytes: PDF }, { name: 'b.jpg', bytes: JPEG }] });
+  await t.run();
+  assertEquals(t.modelCalls.length, 0);
+  assertEquals(t.finishes()[0].p_failure_code, 'invalid_file');
+});
+
+Deno.test('more PDFs than the page cap are refused', async () => {
+  const t = setup({
+    limits: { max_images: 8, max_pdf_pages: 2 },
+    files: [{ name: 'a.pdf', bytes: PDF }, { name: 'b.pdf', bytes: PDF }, { name: 'c.pdf', bytes: PDF }],
+  });
+  await t.run();
+  assertEquals(t.modelCalls.length, 0);
+  assertEquals(t.finishes()[0].p_failure_code, 'invalid_file');
 });
 
 Deno.test('too many images are refused before any download', async () => {
   const t = setup({
-    limits: { max_images: 1 },
+    limits: { max_images: 1, max_pdf_pages: 1 },
     files: [{ name: 'a.jpg', bytes: JPEG }, { name: 'b.jpg', bytes: JPEG }],
   });
   await t.run();

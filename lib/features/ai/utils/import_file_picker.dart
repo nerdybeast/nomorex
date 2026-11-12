@@ -64,5 +64,6 @@ class ImportFilePicker {
     );
   }
 
-  Future<XFile?> pickPdf() => openFile(acceptedTypeGroups: const [_pdfTypes]);
+  /// Any number of PDFs; the caller checks the count.
+  Future<List<XFile>> pickPdfs() => openFiles(acceptedTypeGroups: const [_pdfTypes]);
 }
