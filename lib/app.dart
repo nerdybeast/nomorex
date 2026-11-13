@@ -19,6 +19,7 @@ import 'features/admin/utils/admin_route_guard.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/screens/landing_screen.dart';
 import 'features/auth/screens/login_screen.dart';
+import 'features/shell/app_frame.dart';
 import 'features/shell/app_shell.dart';
 import 'shared/widgets/haptic_tap_scope.dart';
 import 'shared/widgets/keyboard_dismiss_scope.dart';
@@ -87,154 +88,161 @@ GoRouter router(Ref ref) {
         path: AppConstants.routeLogin,
         builder: (_, _) => const LoginScreen(),
       ),
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) => AppShell(shell: shell),
-        branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: AppConstants.routeHome,
-              builder: (_, _) => const DashboardScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: AppConstants.routePrograms,
-              builder: (_, _) => const ProgramsScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: AppConstants.routeWorkouts,
-              builder: (_, _) => const WorkoutsScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: AppConstants.routePrs,
-              builder: (_, _) => const MyPrsScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: AppConstants.routeCommunity,
-              builder: (_, _) => const CommunityScreen(),
-            ),
-          ]),
-        ],
-      ),
-      GoRoute(
-        path: AppConstants.routeProfile,
-        builder: (_, _) => const ProfileScreen(),
-      ),
-      GoRoute(
-        path: AppConstants.routeAdmin,
-        // Runs for the child routes too. The server checks the role again on
-        // every admin call; this only keeps non-admins off the screens.
-        redirect: (_, _) => adminRouteRedirect(() => ref.read(currentUserRolesProvider.future)),
-        builder: (_, _) => const AdminScreen(),
+      // Every signed-in page. On wide layouts AppFrame keeps the sidebar
+      // beside whichever of them is showing; on a phone it adds nothing.
+      ShellRoute(
+        builder: (context, state, child) => AppFrame(location: state.uri.path, child: child),
         routes: [
-          GoRoute(
-            path: 'users',
-            builder: (_, _) => const AdminUsersScreen(),
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, shell) => AppShell(shell: shell),
+            branches: [
+              StatefulShellBranch(routes: [
+                GoRoute(
+                  path: AppConstants.routeHome,
+                  builder: (_, _) => const DashboardScreen(),
+                ),
+              ]),
+              StatefulShellBranch(routes: [
+                GoRoute(
+                  path: AppConstants.routePrograms,
+                  builder: (_, _) => const ProgramsScreen(),
+                ),
+              ]),
+              StatefulShellBranch(routes: [
+                GoRoute(
+                  path: AppConstants.routeWorkouts,
+                  builder: (_, _) => const WorkoutsScreen(),
+                ),
+              ]),
+              StatefulShellBranch(routes: [
+                GoRoute(
+                  path: AppConstants.routePrs,
+                  builder: (_, _) => const MyPrsScreen(),
+                ),
+              ]),
+              StatefulShellBranch(routes: [
+                GoRoute(
+                  path: AppConstants.routeCommunity,
+                  builder: (_, _) => const CommunityScreen(),
+                ),
+              ]),
+            ],
           ),
           GoRoute(
-            path: 'ai-imports',
-            builder: (_, _) => const AdminAiImportsScreen(),
+            path: AppConstants.routeProfile,
+            builder: (_, _) => const ProfileScreen(),
           ),
           GoRoute(
-            path: 'audit-log',
-            builder: (_, _) => const AdminAuditLogScreen(),
+            path: AppConstants.routeAdmin,
+            // Runs for the child routes too. The server checks the role again on
+            // every admin call; this only keeps non-admins off the screens.
+            redirect: (_, _) => adminRouteRedirect(() => ref.read(currentUserRolesProvider.future)),
+            builder: (_, _) => const AdminScreen(),
+            routes: [
+              GoRoute(
+                path: 'users',
+                builder: (_, _) => const AdminUsersScreen(),
+              ),
+              GoRoute(
+                path: 'ai-imports',
+                builder: (_, _) => const AdminAiImportsScreen(),
+              ),
+              GoRoute(
+                path: 'audit-log',
+                builder: (_, _) => const AdminAuditLogScreen(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: AppConstants.routeAiImport,
+            builder: (_, _) => const AiImportScreen(),
+          ),
+          GoRoute(
+            path: '/ai-import/review/:jobId',
+            builder: (_, state) => AiImportReviewScreen(jobId: state.pathParameters['jobId']!),
+          ),
+          GoRoute(
+            path: AppConstants.routeAddPr,
+            builder: (_, state) => AddPrScreen(
+              exerciseId: state.uri.queryParameters['exerciseId'],
+              initialWeightKg: double.tryParse(state.uri.queryParameters['weightKg'] ?? ''),
+              initialReps: int.tryParse(state.uri.queryParameters['reps'] ?? ''),
+            ),
+          ),
+          GoRoute(
+            path: '/prs/:exerciseId/history',
+            builder: (_, state) =>
+                PrHistoryScreen(exerciseId: state.pathParameters['exerciseId']!),
+          ),
+          GoRoute(
+            path: AppConstants.routeWorkoutNew,
+            builder: (_, _) => const NewWorkoutScreen(),
+          ),
+          GoRoute(
+            path: '/workouts/:id/edit',
+            builder: (_, state) =>
+                EditWorkoutScreen(workoutId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/workouts/:id/finish',
+            builder: (_, state) =>
+                FinishWorkoutScreen(workoutId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: AppConstants.routeWorkoutHistory,
+            builder: (_, state) => WorkoutHistoryScreen(
+              initialGroupId: state.uri.queryParameters['groupId'],
+            ),
+          ),
+          GoRoute(
+            path: '/workouts/:id',
+            builder: (_, state) =>
+                WorkoutDetailScreen(workoutId: state.pathParameters['id']!),
+          ),
+          // Declared ahead of '/community/:id' so the static "programs" segment is
+          // never mistaken for a workout id.
+          GoRoute(
+            path: '/community/programs/:id',
+            builder: (_, state) =>
+                CommunityProgramDetailScreen(programId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/community/:id',
+            builder: (_, state) =>
+                CommunityWorkoutDetailScreen(workoutId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: AppConstants.routeProgramNew,
+            builder: (_, _) => const NewProgramScreen(),
+          ),
+          // Static segment, declared ahead of '/programs/:id'.
+          GoRoute(
+            path: AppConstants.routeProgramHistory,
+            builder: (_, _) => const ProgramHistoryScreen(),
+          ),
+          GoRoute(
+            path: '/programs/:id/edit',
+            builder: (_, state) =>
+                ProgramEditScreen(programId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/programs/:programId/days/:dayId',
+            builder: (_, state) => ProgramDayDetailScreen(
+              programId: state.pathParameters['programId']!,
+              dayId: state.pathParameters['dayId']!,
+            ),
+          ),
+          GoRoute(
+            path: '/programs/:id',
+            builder: (_, state) =>
+                ProgramDetailScreen(programId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/program-instances/:id',
+            builder: (_, state) =>
+                ProgramInstanceDetailScreen(instanceId: state.pathParameters['id']!),
           ),
         ],
-      ),
-      GoRoute(
-        path: AppConstants.routeAiImport,
-        builder: (_, _) => const AiImportScreen(),
-      ),
-      GoRoute(
-        path: '/ai-import/review/:jobId',
-        builder: (_, state) => AiImportReviewScreen(jobId: state.pathParameters['jobId']!),
-      ),
-      GoRoute(
-        path: AppConstants.routeAddPr,
-        builder: (_, state) => AddPrScreen(
-          exerciseId: state.uri.queryParameters['exerciseId'],
-          initialWeightKg: double.tryParse(state.uri.queryParameters['weightKg'] ?? ''),
-          initialReps: int.tryParse(state.uri.queryParameters['reps'] ?? ''),
-        ),
-      ),
-      GoRoute(
-        path: '/prs/:exerciseId/history',
-        builder: (_, state) =>
-            PrHistoryScreen(exerciseId: state.pathParameters['exerciseId']!),
-      ),
-      GoRoute(
-        path: AppConstants.routeWorkoutNew,
-        builder: (_, _) => const NewWorkoutScreen(),
-      ),
-      GoRoute(
-        path: '/workouts/:id/edit',
-        builder: (_, state) =>
-            EditWorkoutScreen(workoutId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: '/workouts/:id/finish',
-        builder: (_, state) =>
-            FinishWorkoutScreen(workoutId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: AppConstants.routeWorkoutHistory,
-        builder: (_, state) => WorkoutHistoryScreen(
-          initialGroupId: state.uri.queryParameters['groupId'],
-        ),
-      ),
-      GoRoute(
-        path: '/workouts/:id',
-        builder: (_, state) =>
-            WorkoutDetailScreen(workoutId: state.pathParameters['id']!),
-      ),
-      // Declared ahead of '/community/:id' so the static "programs" segment is
-      // never mistaken for a workout id.
-      GoRoute(
-        path: '/community/programs/:id',
-        builder: (_, state) =>
-            CommunityProgramDetailScreen(programId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: '/community/:id',
-        builder: (_, state) =>
-            CommunityWorkoutDetailScreen(workoutId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: AppConstants.routeProgramNew,
-        builder: (_, _) => const NewProgramScreen(),
-      ),
-      // Static segment, declared ahead of '/programs/:id'.
-      GoRoute(
-        path: AppConstants.routeProgramHistory,
-        builder: (_, _) => const ProgramHistoryScreen(),
-      ),
-      GoRoute(
-        path: '/programs/:id/edit',
-        builder: (_, state) =>
-            ProgramEditScreen(programId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: '/programs/:programId/days/:dayId',
-        builder: (_, state) => ProgramDayDetailScreen(
-          programId: state.pathParameters['programId']!,
-          dayId: state.pathParameters['dayId']!,
-        ),
-      ),
-      GoRoute(
-        path: '/programs/:id',
-        builder: (_, state) =>
-            ProgramDetailScreen(programId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: '/program-instances/:id',
-        builder: (_, state) =>
-            ProgramInstanceDetailScreen(instanceId: state.pathParameters['id']!),
       ),
     ],
   );

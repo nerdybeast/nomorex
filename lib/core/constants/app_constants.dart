@@ -1,6 +1,11 @@
 class AppConstants {
   static const double kMobileBreakpoint = 600.0;
 
+  /// From this width the sidebar opens expanded by default; between
+  /// [kMobileBreakpoint] and here it opens collapsed to a rail. Either way the
+  /// user can toggle it, and the choice is remembered per side of this line.
+  static const double kSidebarExpandedBreakpoint = 1024.0;
+
   /// Cap for the scaled-up in-progress workout timer: roughly the content width
   /// of a large phone (~430pt device minus the screen's 16pt horizontal
   /// padding), so the timer fills a phone edge-to-edge and stops growing on

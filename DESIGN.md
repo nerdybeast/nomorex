@@ -256,7 +256,13 @@ components:
     textColor: "{colors.fg-1-dark}"
     typography: "{typography.title-3}"
     height: "52px"
-  nav-rail-selected:
+  sidebar:
+    backgroundColor: "{colors.bg-1-dark}"
+    width: "232px"
+  sidebar-rail:
+    backgroundColor: "{colors.bg-1-dark}"
+    width: "76px"
+  nav-item-selected:
     backgroundColor: "{colors.bg-3-dark}"
     textColor: "{colors.primary-text-dark}"
     rounded: "{rounded.md}"
@@ -268,7 +274,7 @@ components:
 
 **Creative North Star: "The Chalk Line"**
 
-NoMoreX is used on the gym floor: chalky hands, a minute between sets, the phone propped on a bench, read at arm's length. The Chalk Line is that floor made into an interface. It's plain and sturdy. Gray surfaces separated by hairlines stay out of the way, and one orange mark says what to do next. Every common action is a tap: steppers instead of text fields, a "Log RPE" button instead of a form, one obvious primary button per screen. The same system has to hold up at a desk, where coaches and athletes author multi-week programs on a wider screen, so it scales by layout (bottom bar below 600px, navigation rail above) rather than by changing character.
+NoMoreX is used on the gym floor: chalky hands, a minute between sets, the phone propped on a bench, read at arm's length. The Chalk Line is that floor made into an interface. It's plain and sturdy. Gray surfaces separated by hairlines stay out of the way, and one orange mark says what to do next. Every common action is a tap: steppers instead of text fields, a "Log RPE" button instead of a form, one obvious primary button per screen. The same system has to hold up at a desk, where coaches and athletes author multi-week programs on a wider screen, so it scales by layout (bottom bar below 600px, a sidebar above) rather than by changing character.
 
 Inside that, the rule is **quiet chrome, loud data**. Loads, reps, percentages and PRs are what you see first: weights are set in mono so they line up down a list, counts and timers use tabular figures so digits don't jump. Precision shows up in alignment and exact numbers, never in density: when a bigger tap target and one more row on screen compete, the tap target wins.
 
@@ -293,7 +299,7 @@ Near-neutral grays with a single toned-down orange and two information hues that
 - **Orange Wash** (`primary-subtle`): a faint translucent wash behind `primary-text`: the selected unit, a selected segment, today's program day, the header band of a program day's main lift or an editor's exercise card. A band or row tint, never a whole-card fill.
 
 ### Secondary
-- **Resolved Blue** (`info`): text only. It marks a weight resolved from the viewer's own or an estimated 1RM, e.g. a percentage set on someone else's public workout. Never a button, never a fill.
+- **Resolved Blue** (`info`): text only. It marks a weight resolved from the viewer's own or an estimated 1RM, e.g. a percentage set on someone else's public workout. The one other use is the plan label on the sidebar's account card ("Free"); a paid plan there will take `primary-text` instead. Never a button, never a fill.
 
 ### Tertiary
 - **Warning Red** (`danger` / `danger-hover`): destructive button fills only ("Discard", "Delete permanently"); hover darkens.
@@ -301,7 +307,7 @@ Near-neutral grays with a single toned-down orange and two information hues that
 
 ### Neutral
 - **Floor** (`bg-0`): page, app bar, bottom nav, and recessed strips inside a container (list headers, dialog footers).
-- **Mat** (`bg-1`): cards, list containers, the navigation rail.
+- **Mat** (`bg-1`): cards, list containers, the sidebar.
 - **Bench** (`bg-2`): overlays, text-field fills, secondary buttons, icon tiles, the stepper's − button.
 - **Raised** (`bg-3`): hover and pressed rows, the selected nav item, snackbars, the switch's off track, disabled fills.
 - **Hairline** (`border-subtle`): lines between areas and around cards.
@@ -331,7 +337,7 @@ Near-neutral grays with a single toned-down orange and two information hues that
 - **Body** (400, 14/20): all UI text; `body-strong` is 14/500 (list-row titles). **Body small** (400, 13/18, `fg-2`; `NomorexTokens.bodySmall`) for row details, card bodies, empty-state messages and snackbars. It is not `TextTheme.bodySmall`, which is the 12px caption.
 - **Button** (500, 14/20); **Button small** (500, 13/18; `NomorexTokens.buttonSmall`) for small in-card buttons and segments.
 - **Caption** (400, 12/16): dates, helper text, badges.
-- **Nav** (500, 11/14): rail and bottom-bar labels. Nothing is smaller than 11px.
+- **Nav** (500, 11/14): collapsed-sidebar and bottom-bar labels. Nothing is smaller than 11px.
 - **Weight / Weight md / Weight lg** (JetBrains Mono 500, 14 / 16 / 20, tabular): a load inline, in a PR row, on its own. **Weight sm** (12) for a secondary number beside a weight ("e1RM 112.5"); **Weight xs** (11) for unit tags and chart axis labels.
 - **Eyebrow** (JetBrains Mono 500, 11/16, 0.66px tracking, upper-cased by the caller): list-group headers ("RECENT PRS"), the ARCHIVED pill.
 - **Stepper value / Stat / Timer** (Inter 600, 24 / 20 / 40, tabular): the number in every stepper, counts and durations in summaries, the running workout clock.
@@ -351,7 +357,7 @@ A 4px grid with a 2px half-step. List rows pad 12px × 16px; cards pad 16px; dia
 
 Sizes are touch-first: primary, secondary and danger buttons are full width by default at 44px (`control-height-lg`), every control keeps a 48px hit area, stepper buttons are 40px squares beside an 80px value. Outlined and text buttons use 36px (`control-height`). App bar 52px, nav bar 56px, FAB 52px.
 
-Below 600px (`kMobileBreakpoint`) the shell is a bottom app bar with a centered FAB; at 600px and above it's a navigation rail on `bg-1`. Both carry Home, Programs, Workouts, My PRs and Community, in that order. Phone and desktop are equal citizens: the desktop layout gets more room, not more density. List and detail screens cap their content at 840px (`kContentMaxWidth`), centered, via `contentPadding()` / `shellListPadding()` in `responsive_layout.dart`. The cap is scroll-view padding, not a `ConstrainedBox`, so scrolling still works across the whole window. Forms cap at 520px.
+Below 600px (`kMobileBreakpoint`) the shell is a bottom app bar with a centered FAB; at 600px and above every signed-in page sits beside a sidebar on `bg-1`, which collapses to a rail. Both carry Home, Programs, Workouts, My PRs and Community, in that order. Phone and desktop are equal citizens: the desktop layout gets more room, not more density. List and detail screens cap their content at 840px (`kContentMaxWidth`), centered, via `contentPadding()` / `shellListPadding()` in `responsive_layout.dart`. The cap is scroll-view padding, not a `ConstrainedBox`, so scrolling still works across the whole window. Forms cap at 520px.
 
 ### Named Rules
 **The Arm's-Length Rule.** Anything done mid-session must be operable with one thumb at arm's length: 44px controls, 48px hit areas, no target packed tighter to fit another row.
@@ -456,7 +462,13 @@ Each exercise in the workout and program editors is a `bg-1` card whose header b
 ### Navigation
 - **App bar:** `bg-0`, 52px, hairline bottom border, left-aligned 15/600 title, `fg-2` icons, no elevation.
 - **Mobile:** bottom app bar on `bg-0` with a centered 52px orange FAB. Any FAB on a shell screen sets its own `heroTag`.
-- **Desktop / tablet:** navigation rail on `bg-1`; selected item `bg-3` indicator (6px radius) with a `primary-text` 20px icon and `fg-1` label; unselected `fg-3`.
+- **Desktop / tablet: the sidebar** (`AppSidebar`), on `bg-1` with a hairline right edge, beside every signed-in page, detail and edit screens included. 232px expanded; 76px collapsed to a rail. Tablets (600–1023px, `kSidebarExpandedBreakpoint`) open collapsed and wider windows open expanded. The toggle beside the wordmark (or `[`) switches it, the choice is saved on the device per side of 1024px, and expanding always pushes the page over rather than covering it. Top to bottom:
+  - **Header**, 52px like the app bar: the "NoMoreX" wordmark (title-3, the X in `primary-text`) and the collapse toggle; collapsed, "NX" and the expand toggle.
+  - **New**: a secondary-style button, not an orange fill, so each page's own main action stays the one orange fill. It opens a menu: new personal best, workout, program, then "Import from photos or PDFs" while imports are on. `N` opens it. On the rail it opens to the button's right.
+  - **Destinations**: 44px rows, 20px icon and 14/500 label. Selected: `bg-3` fill (6px radius), filled `primary-text` icon, `fg-1` label; unselected: `fg-3` icon, `fg-2` label. On the rail the label sits under the icon in the nav style.
+  - **Running**: a mono eyebrow, then a row per live session (title, "Session in progress" or "Paused", the clock in `weight-sm`) and per program run ("Today · Week 2", "Starts Nov 20"), each led by the 8px status dot. Empty, it says so in one `fg-3` caption line.
+  - **Footer**: Admin (admins only), then the account card: a 36px avatar, the display name or email, and the role pill plus plan label ("Free" in `info`). It opens Profile.
+- **Breadcrumbs:** beside the sidebar, detail screens lead their app-bar title with the section in `fg-2` ("Programs › ZT 6 Week Program"), which goes back to the section's list. The back arrow stays, because it returns to wherever the page was opened from. Phones keep the plain title.
 - **Tabs:** sentence-case 14/500 labels, `fg-1` selected / `fg-2` unselected, a 2px `fg-2` underline (not orange). `ActiveArchivedTabs` uses them on Workouts and Programs.
 
 ### Overlays

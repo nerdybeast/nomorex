@@ -8,6 +8,7 @@ import '../models/workout.dart';
 import '../providers/finished_workouts_provider.dart';
 import '../utils/workout_timer.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../shell/widgets/breadcrumb_title.dart';
 
 class WorkoutHistoryScreen extends ConsumerStatefulWidget {
   const WorkoutHistoryScreen({super.key, this.initialGroupId});
@@ -32,7 +33,7 @@ class _WorkoutHistoryScreenState extends ConsumerState<WorkoutHistoryScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Workout history')),
+      appBar: AppBar(title: const BreadcrumbTitle(title: 'Workout history')),
       body: historyAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),

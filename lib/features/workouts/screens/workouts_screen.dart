@@ -54,17 +54,20 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
                       ref.read(archivedWorkoutsProvider.notifier).refresh();
                     },
             ),
-            const AiImportButton(),
+            // On wide layouts import is in the sidebar's New menu.
+            if (isMobile(context)) const AiImportButton(),
             IconButton(
               icon: const Icon(Icons.history),
               tooltip: 'Workout history',
               onPressed: () => context.push(AppConstants.routeWorkoutHistory),
             ),
-            IconButton(
-              icon: const Icon(Icons.person_outline),
-              tooltip: 'Profile',
-              onPressed: () => context.push(AppConstants.routeProfile),
-            ),
+            // On wide layouts the sidebar's account card opens Profile.
+            if (isMobile(context))
+              IconButton(
+                icon: const Icon(Icons.person_outline),
+                tooltip: 'Profile',
+                onPressed: () => context.push(AppConstants.routeProfile),
+              ),
           ],
           bottom: ActiveArchivedTabs(
             activeCount: activeAsync.asData?.value.length,
@@ -74,7 +77,7 @@ class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
         body: Column(
           children: [
             Padding(
-              padding: contentPadding(context, top: 12, bottom: 0, inShell: true),
+              padding: contentPadding(context, top: 12, bottom: 0),
               child: TextField(
                 decoration: const InputDecoration(
                   hintText: 'Search workouts...',

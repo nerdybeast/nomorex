@@ -56,11 +56,13 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
                     ref.read(communityProgramsProvider.notifier).refresh();
                   },
           ),
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            tooltip: 'Profile',
-            onPressed: () => context.push(AppConstants.routeProfile),
-          ),
+          // On wide layouts the sidebar's account card opens Profile.
+          if (isMobile(context))
+            IconButton(
+              icon: const Icon(Icons.person_outline),
+              tooltip: 'Profile',
+              onPressed: () => context.push(AppConstants.routeProfile),
+            ),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -73,7 +75,7 @@ class _CommunityScreenState extends ConsumerState<CommunityScreen>
       body: Column(
         children: [
           Padding(
-            padding: contentPadding(context, top: 12, bottom: 0, inShell: true),
+            padding: contentPadding(context, top: 12, bottom: 0),
             child: TextField(
               key: const Key('community_search'),
               decoration: const InputDecoration(

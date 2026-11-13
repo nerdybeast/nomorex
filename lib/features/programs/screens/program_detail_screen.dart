@@ -26,6 +26,7 @@ import '../widgets/program_run_status.dart';
 import '../widgets/program_stats_chips.dart';
 import '../widgets/start_program_dialog.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../shell/widgets/breadcrumb_title.dart';
 
 /// Read-only rollup of an authored program (mirrors WorkoutDetailScreen's
 /// read affordances), plus the "Start Program" call to action that
@@ -79,7 +80,7 @@ class ProgramDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Program'),
+        title: BreadcrumbTitle(title: 'Program', current: detail.asData?.value.name),
         actions: [
           if (!isArchived)
             IconButton(

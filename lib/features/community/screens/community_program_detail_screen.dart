@@ -15,6 +15,7 @@ import '../../programs/widgets/program_day_card.dart';
 import '../../programs/widgets/start_program_dialog.dart';
 import '../providers/community_program_detail_provider.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../shell/widgets/breadcrumb_title.dart';
 
 /// Read-only preview of another user's public program, mirroring
 /// [CommunityWorkoutDetailScreen]. The program itself is never editable here;
@@ -34,7 +35,7 @@ class CommunityProgramDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Program'),
+        title: const BreadcrumbTitle(title: 'Program'),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),

@@ -56,17 +56,19 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
                 ? null
                 : () => ref.read(personalBestsProvider.notifier).refresh(),
           ),
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            tooltip: 'Profile',
-            onPressed: () => context.push(AppConstants.routeProfile),
-          ),
+          // On wide layouts the sidebar's account card opens Profile.
+          if (isMobile(context))
+            IconButton(
+              icon: const Icon(Icons.person_outline),
+              tooltip: 'Profile',
+              onPressed: () => context.push(AppConstants.routeProfile),
+            ),
         ],
       ),
       body: Column(
         children: [
           Padding(
-            padding: contentPadding(context, top: 12, bottom: 0, inShell: true),
+            padding: contentPadding(context, top: 12, bottom: 0),
             child: TextField(
               decoration: const InputDecoration(
                 hintText: 'Search exercises...',

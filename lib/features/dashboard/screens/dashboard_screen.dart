@@ -94,11 +94,13 @@ class DashboardScreen extends ConsumerWidget {
                     ref.invalidate(aiImportJobsProvider);
                   },
           ),
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            tooltip: 'Profile',
-            onPressed: () => context.push(AppConstants.routeProfile),
-          ),
+          // On wide layouts the sidebar's account card opens Profile.
+          if (isMobile(context))
+            IconButton(
+              icon: const Icon(Icons.person_outline),
+              tooltip: 'Profile',
+              onPressed: () => context.push(AppConstants.routeProfile),
+            ),
         ],
       ),
       body: ListView(

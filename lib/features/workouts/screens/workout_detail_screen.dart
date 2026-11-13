@@ -27,6 +27,7 @@ import '../utils/set_resolver.dart';
 import '../../../shared/models/one_rep_max.dart';
 import '../widgets/elapsed_timer.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../shell/widgets/breadcrumb_title.dart';
 
 class WorkoutDetailScreen extends ConsumerWidget {
   const WorkoutDetailScreen({super.key, required this.workoutId});
@@ -53,7 +54,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Workout'),
+        title: BreadcrumbTitle(title: 'Workout', current: workout?.title),
         actions: [
           if (showEditIcon)
             IconButton(
