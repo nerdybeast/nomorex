@@ -8,7 +8,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(23);
+select plan(27);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser with fixed ids.
@@ -41,6 +41,12 @@ union all select '00000000-0000-4000-8000-00000000d021'::uuid, pub_program, a, 1
 insert into public.program_days (program_id, program_week_id, user_id, day_number, title, position)
 select priv_program, '00000000-0000-4000-8000-00000000d011'::uuid, a, 1, 'Day 1', 0 from u
 union all select pub_program, '00000000-0000-4000-8000-00000000d021'::uuid, a, 1, 'Day 1', 0 from u;
+insert into public.program_exercises (id, program_day_id, user_id, exercise_id, position)
+select '00000000-0000-4000-8000-00000000d022'::uuid,
+       (select id from public.program_days where program_week_id = '00000000-0000-4000-8000-00000000d021'::uuid),
+       a, predefined, 0 from u;
+insert into public.program_sets (id, program_exercise_id, user_id, position, target_reps, weight_mode)
+select '00000000-0000-4000-8000-00000000d023'::uuid, '00000000-0000-4000-8000-00000000d022'::uuid, a, 0, 5, 'open' from u;
 
 create temp table snapshot on commit drop as
 select id, status, started_at, paused_at, finished_at, session_notes from public.workouts
@@ -89,6 +95,21 @@ select throws_like(
 select throws_like(
   $$ select public.new_workout_from((select pub_workout from u), 'stolen', current_date, null) $$,
   'not_found:%', 'new_workout_from refuses a''s workout');
+
+-- The program editor's functions (#127) work only on the caller's own
+-- programs, even where a's public program is readable.
+select throws_like(
+  $$ select public.duplicate_program_week('00000000-0000-4000-8000-00000000d021'::uuid) $$,
+  'not_found:%', 'duplicate_program_week refuses a''s public week');
+select throws_like(
+  $$ select public.copy_program_day(
+       (select id from public.program_days where program_week_id = '00000000-0000-4000-8000-00000000d021'::uuid),
+       array['00000000-0000-4000-8000-00000000d021'::uuid]) $$,
+  'not_found:%', 'copy_program_day refuses a''s public day');
+select throws_like(
+  $$ select public.replace_program_set_group(array['00000000-0000-4000-8000-00000000d023'::uuid], 3,
+       '{"target_reps": 1, "weight_mode": "open"}'::jsonb) $$,
+  'not_found:%', 'replace_program_set_group refuses a''s sets');
 
 -- The session functions are filtered to the caller's rows, so on a's
 -- workout they do nothing at all (checked as superuser below).
@@ -149,6 +170,14 @@ select is(
 select is(
   (select count(*)::int from public.program_instances where program_id in (select priv_program from u union all select pub_program from u)),
   0, 'no program run of a''s programs was created by b''s calls');
+select is(
+  (select row(
+     (select count(*) from public.program_weeks where program_id = pub_program),
+     (select count(*) from public.program_days where program_id = pub_program),
+     (select string_agg(id::text || ':' || target_reps, ',') from public.program_sets
+      where program_exercise_id = '00000000-0000-4000-8000-00000000d022'::uuid))::text from u),
+  row(1::bigint, 1::bigint, '00000000-0000-4000-8000-00000000d023:5'::text)::text,
+  'b''s program editor calls left a''s public program exactly as it was');
 select is(
   (select count(*)::int from public.workouts
    where user_id = (select a from u) and id not in (select priv_workout from u union all select pub_workout from u union all select live_workout from u)),
