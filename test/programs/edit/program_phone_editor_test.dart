@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -63,6 +64,16 @@ class _Notifier extends ProgramDetailNotifier {
   }
 
   @override
+  Future<void> reorderDays(List<String> orderedDayIds) async {
+    calls.add('reorderDays ${orderedDayIds.join(',')}');
+  }
+
+  @override
+  Future<void> reorderWeeks(List<String> orderedWeekIds) async {
+    calls.add('reorderWeeks ${orderedWeekIds.join(',')}');
+  }
+
+  @override
   Future<void> reorderExercises({required String dayId, required List<String> orderedExerciseIds}) async {
     calls.add('reorder $dayId ${orderedExerciseIds.join(',')}');
   }
@@ -87,7 +98,7 @@ ProgramExercise _ex(String id, String day, int pos, String name, List<ProgramSet
     ProgramExercise(id: id, programDayId: day, exerciseId: 'x$id', exerciseName: name, position: pos, notes: notes, sets: sets);
 
 /// Week 1 "Meso 1/4": Day 1 (Muscle Snatch 4 × 3 · 20 kg, Snatch 10 × 1 ·
-/// 80%), Day 2 (Front Squat). Week 2: Day 3 (Clean).
+/// 80%), "Day 2 (Athletic Development)" (Front Squat). Week 2: Day 3 (Clean).
 Program _program({Set<String> removedDays = const {}}) {
   List<ProgramDay> keep(List<ProgramDay> days) => [for (final d in days) if (!removedDays.contains(d.id)) d];
   return Program(
@@ -109,7 +120,7 @@ Program _program({Set<String> removedDays = const {}}) {
                 notes: 'In bottom + press'),
             _ex('pe2', 'd1', 1, 'Snatch', [for (var i = 0; i < 10; i++) _set('b$i', 'pe2', i, reps: 1, pct: 80)]),
           ]),
-          ProgramDay(id: 'd2', programWeekId: 'w1', dayNumber: 2, title: 'Day 2', position: 1, exercises: [
+          ProgramDay(id: 'd2', programWeekId: 'w1', dayNumber: 2, title: 'Day 2 (Athletic Development)', position: 1, exercises: [
             _ex('pe3', 'd2', 0, 'Front Squat', [_set('c0', 'pe3', 0, kg: 80)]),
           ]),
         ]),
@@ -184,6 +195,14 @@ void main() {
     expect(find.text('ZT Strong Like Bull'), findsOneWidget); // the details row
   });
 
+  testWidgets('a long day title shows in full on its week card', (tester) async {
+    await _pump(tester, []);
+
+    final title = tester.renderObject<RenderParagraph>(find.text('Day 2 (Athletic Development)'));
+    expect(title.didExceedMaxLines, isFalse);
+    expect(title.size.width, lessThan(390));
+  });
+
   testWidgets('wider than a phone it keeps the one-page editor', (tester) async {
     await _pump(tester, [], phone: false);
 
@@ -225,7 +244,7 @@ void main() {
     expect(find.text('20 kg'), findsOneWidget);
     expect(find.text('In bottom + press'), findsOneWidget);
 
-    await tester.tap(find.bySemanticsLabel(RegExp('^Day 2,')));
+    await tester.tap(find.bySemanticsLabel(RegExp('^Day 2 ')));
     await tester.pumpAndSettle();
     expect(find.text('Front Squat'), findsOneWidget);
     expect(find.text('Muscle Snatch'), findsNothing);
@@ -261,6 +280,63 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(calls, contains('reorder d1 pe2,pe1'));
+  });
+
+  testWidgets('dragging a week card by its handle reorders the weeks', (tester) async {
+    final calls = <String>[];
+    await _pump(tester, calls);
+
+    final handle = find.byKey(const ValueKey('edit_week_handle_w1'));
+    await tester.ensureVisible(handle);
+    await tester.pumpAndSettle();
+    final drag = await tester.startGesture(tester.getCenter(handle));
+    await tester.pump(kPressTimeout);
+    for (var i = 0; i < 12; i++) {
+      await drag.moveBy(const Offset(0, 40));
+      await tester.pump();
+    }
+    await drag.up();
+    await tester.pumpAndSettle();
+
+    expect(calls, ['reorderWeeks w2,w1']);
+  });
+
+  testWidgets('the week menu has no move entries, since weeks are dragged', (tester) async {
+    await _pump(tester, []);
+
+    await tester.tap(find.byKey(const ValueKey('edit_week_more_w1')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Duplicate week'), findsOneWidget);
+    expect(find.text('Move earlier'), findsNothing);
+    expect(find.text('Move later'), findsNothing);
+  });
+
+  testWidgets('dragging a day card by its handle reorders the week''s days', (tester) async {
+    final calls = <String>[];
+    await _pump(tester, calls, initial: '/programs/p1/edit/weeks/w1');
+
+    final drag = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey('edit_day_handle_d1'))));
+    await tester.pump(kPressTimeout);
+    for (var i = 0; i < 12; i++) {
+      await drag.moveBy(const Offset(0, 25));
+      await tester.pump();
+    }
+    await drag.up();
+    await tester.pumpAndSettle();
+
+    expect(calls, ['reorderDays d2,d1']);
+  });
+
+  testWidgets('the day menu has no move entries, since days are dragged', (tester) async {
+    await _pump(tester, [], initial: '/programs/p1/edit/weeks/w1');
+
+    await tester.tap(find.byKey(const ValueKey('edit_day_more_d1')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Duplicate day'), findsOneWidget);
+    expect(find.text('Move earlier'), findsNothing);
+    expect(find.text('Move later'), findsNothing);
   });
 
   testWidgets('Duplicate week from a week card', (tester) async {

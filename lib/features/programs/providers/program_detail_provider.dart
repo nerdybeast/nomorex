@@ -60,31 +60,12 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
     await _refresh();
   }
 
-  /// Reassigns the position/week_number slots already held by [orderedWeekIds]
-  /// in the new order. A two-phase (negative, then final) update dodges the
-  /// unique(program_id, week_number) constraint, which plain sequential
-  /// single-row updates would otherwise transiently violate on a cyclic swap.
+  /// Puts the program's weeks in [orderedWeekIds] order (every week, once).
+  /// Their days move with them: `reorder_program_weeks` renumbers the weeks
+  /// and hands the days their global positions in the new week order in one
+  /// transaction, so the schedule `start_program` lays out follows the weeks.
   Future<void> reorderWeeks(List<String> orderedWeekIds) async {
-    final current = await future;
-    final positions = (orderedWeekIds
-            .map((id) => current.weeks.firstWhere((w) => w.id == id).position)
-            .toList()
-          ..sort());
-    final weekNumbers = (orderedWeekIds
-            .map((id) => current.weeks.firstWhere((w) => w.id == id).weekNumber)
-            .toList()
-          ..sort());
-    for (var i = 0; i < orderedWeekIds.length; i++) {
-      await _db
-          .from('program_weeks')
-          .update({'position': -(i + 1), 'week_number': -(i + 1)}).eq('id', orderedWeekIds[i]);
-    }
-    for (var i = 0; i < orderedWeekIds.length; i++) {
-      await _db
-          .from('program_weeks')
-          .update({'position': positions[i], 'week_number': weekNumbers[i]}).eq(
-              'id', orderedWeekIds[i]);
-    }
+    await _db.rpc('reorder_program_weeks', params: {'p_program_id': programId, 'p_week_ids': orderedWeekIds});
     await _refresh();
   }
 
@@ -151,7 +132,7 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
     await _refresh();
   }
 
-  /// Same two-phase trick as [reorderWeeks], for the unique(program_id, position)
+  /// A two-phase (negative, then final) update, for the unique(program_id, position)
   /// constraint on program_days. Only reorders within the set of ids passed in
   /// (typically a single week's days); day_number is left untouched since it's
   /// not unique and isn't display-order-derived.

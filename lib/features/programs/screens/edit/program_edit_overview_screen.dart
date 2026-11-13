@@ -16,6 +16,7 @@ import '../../models/program_week.dart';
 import '../../providers/program_detail_provider.dart';
 import '../../utils/program_edit_summary.dart';
 import 'program_edit_actions.dart';
+import 'widgets/edit_chrome.dart';
 
 /// The phone editor's top level: the program's details behind one row, then
 /// a card per week listing its days and their first lifts. Tapping a week
@@ -71,10 +72,7 @@ class ProgramEditOverviewScreen extends ConsumerWidget {
                   child: Text('No weeks yet. Add one to start planning.', style: tokens.bodySmall),
                 )
               else
-                for (final week in program.weeks) ...[
-                  _WeekCard(key: ValueKey(week.id), program: program, week: week),
-                  const SizedBox(height: 12),
-                ],
+                _WeekList(program: program),
               FilledButton.icon(
                 key: const Key('edit_program_add_week'),
                 style: tokens.secondaryButtonStyle,
@@ -86,6 +84,57 @@ class ProgramEditOverviewScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// The weeks, dragged by their handles to reorder. The new order shows at
+/// once and holds until the save comes back, rather than snapping back
+/// while it's in flight.
+class _WeekList extends ConsumerStatefulWidget {
+  const _WeekList({required this.program});
+
+  final Program program;
+
+  @override
+  ConsumerState<_WeekList> createState() => _WeekListState();
+}
+
+class _WeekListState extends ConsumerState<_WeekList> {
+  List<String>? _pending;
+
+  Future<void> _reorder(List<ProgramWeek> weeks, int oldIndex, int newIndex) async {
+    final ids = weeks.map((w) => w.id).toList();
+    final moved = ids.removeAt(oldIndex);
+    ids.insert(newIndex, moved);
+    setState(() => _pending = ids);
+    try {
+      await ref.read(programDetailProvider(widget.program.id).notifier).reorderWeeks(ids);
+    } catch (_) {
+      if (mounted) showEditSnack(context, "Couldn't move the week. Try again.");
+    } finally {
+      if (mounted) setState(() => _pending = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final byId = {for (final w in widget.program.weeks) w.id: w};
+    final pending = _pending;
+    final weeks = pending != null && pending.length == byId.length && pending.every(byId.containsKey)
+        ? [for (final id in pending) byId[id]!]
+        : widget.program.weeks;
+    return ReorderableListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      buildDefaultDragHandles: false,
+      itemCount: weeks.length,
+      itemBuilder: (context, i) => Padding(
+        key: ValueKey(weeks[i].id),
+        padding: const EdgeInsets.only(bottom: 12),
+        child: _WeekCard(program: widget.program, week: weeks[i], index: i),
+      ),
+      onReorderItem: (oldIndex, newIndex) => _reorder(weeks, oldIndex, newIndex),
     );
   }
 }
@@ -188,13 +237,17 @@ Future<void> _showDetailsSheet(BuildContext context, String programId) {
   );
 }
 
-/// One week: its title and size, then each day with its first lifts. The
-/// card opens the week; ⋯ holds duplicate, rename, move and delete.
+/// One week: a drag handle, its title and size, then each day with its
+/// first lifts. The card opens the week; ⋯ holds duplicate, rename and
+/// delete.
 class _WeekCard extends ConsumerWidget {
-  const _WeekCard({super.key, required this.program, required this.week});
+  const _WeekCard({required this.program, required this.week, required this.index});
 
   final Program program;
   final ProgramWeek week;
+
+  /// Its place in the list, for the drag handle.
+  final int index;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -215,12 +268,25 @@ class _WeekCard extends ConsumerWidget {
           onTap: open,
           hoverColor: tokens.palette.bg3,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 4, 14),
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
+                    ReorderableDragStartListener(
+                      index: index,
+                      // Hidden from screen readers: the list gives each week
+                      // move up/down actions of its own.
+                      child: ExcludeSemantics(
+                        child: SizedBox(
+                          key: ValueKey('edit_week_handle_${week.id}'),
+                          width: 36,
+                          height: 48,
+                          child: Icon(Icons.drag_indicator, size: 20, color: tokens.fg3),
+                        ),
+                      ),
+                    ),
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.only(top: 6),
@@ -241,19 +307,18 @@ class _WeekCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-                if (week.days.isNotEmpty) const SizedBox(height: 6),
+                if (week.days.isNotEmpty) const SizedBox(height: 2),
+                // Stacked rather than in two columns: titles like "Day 6
+                // (Athletic Development)" don't fit a fixed column on a phone.
                 for (final day in week.days)
                   Padding(
-                    padding: const EdgeInsets.only(right: 12, top: 2),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
+                    key: ValueKey('edit_week_day_${day.id}'),
+                    padding: const EdgeInsets.only(left: 36, right: 12, top: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SizedBox(
-                          width: 84,
-                          child: Text(day.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
-                        ),
-                        Expanded(child: _DayLifts(day: day)),
+                        Text(day.title, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                        _DayLifts(day: day),
                       ],
                     ),
                   ),

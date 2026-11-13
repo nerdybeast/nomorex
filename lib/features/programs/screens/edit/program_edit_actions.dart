@@ -10,11 +10,12 @@ import '../../providers/program_detail_provider.dart';
 import '../../utils/program_edit_summary.dart';
 import 'widgets/edit_chrome.dart';
 
-enum _WeekAction { duplicate, rename, moveUp, moveDown, delete }
+enum _WeekAction { duplicate, rename, delete }
 
-enum _DayAction { duplicate, copy, rename, restDay, moveUp, moveDown, delete }
+enum _DayAction { duplicate, copy, rename, restDay, delete }
 
-/// The ⋯ menu for a week. [onDeleted] runs after the week is gone, so a
+/// The ⋯ menu for a week. Weeks are moved by dragging on the program screen,
+/// so it has no move entries. [onDeleted] runs after the week is gone, so a
 /// screen showing it can leave.
 Future<void> showWeekActions(
   BuildContext context,
@@ -23,15 +24,12 @@ Future<void> showWeekActions(
   required ProgramWeek week,
   VoidCallback? onDeleted,
 }) async {
-  final index = program.weeks.indexWhere((w) => w.id == week.id);
   final action = await showActionSheet<_WeekAction>(
     context,
     title: weekTitle(week),
     actions: [
       const SheetAction(_WeekAction.duplicate, 'Duplicate week', Icons.content_copy_outlined),
       const SheetAction(_WeekAction.rename, 'Rename', Icons.edit_outlined),
-      if (index > 0) const SheetAction(_WeekAction.moveUp, 'Move earlier', Icons.arrow_upward),
-      if (index < program.weeks.length - 1) const SheetAction(_WeekAction.moveDown, 'Move later', Icons.arrow_downward),
       const SheetAction(_WeekAction.delete, 'Delete week', Icons.delete_outline, danger: true),
     ],
   );
@@ -57,13 +55,6 @@ Future<void> showWeekActions(
         initial: week.label,
       );
       if (label != null) await notifier.updateWeekMeta(week.id, label: label);
-    case _WeekAction.moveUp || _WeekAction.moveDown:
-      final ids = program.weeks.map((w) => w.id).toList();
-      final to = action == _WeekAction.moveUp ? index - 1 : index + 1;
-      ids
-        ..removeAt(index)
-        ..insert(to, week.id);
-      await notifier.reorderWeeks(ids);
     case _WeekAction.delete:
       final days = week.days.length;
       if (days > 0) {
@@ -80,7 +71,8 @@ Future<void> showWeekActions(
   }
 }
 
-/// The ⋯ menu for a day. [onDeleted] runs after the day is gone.
+/// The ⋯ menu for a day. Days are moved by dragging on the week screen, so
+/// it has no move entries. [onDeleted] runs after the day is gone.
 Future<void> showDayActions(
   BuildContext context,
   WidgetRef ref, {
@@ -89,7 +81,6 @@ Future<void> showDayActions(
   required ProgramDay day,
   VoidCallback? onDeleted,
 }) async {
-  final index = week.days.indexWhere((d) => d.id == day.id);
   final action = await showActionSheet<_DayAction>(
     context,
     title: day.title,
@@ -103,8 +94,6 @@ Future<void> showDayActions(
         day.isRestDay ? 'Make it a training day' : 'Make it a rest day',
         day.isRestDay ? Icons.fitness_center_outlined : Icons.bedtime_outlined,
       ),
-      if (index > 0) const SheetAction(_DayAction.moveUp, 'Move earlier', Icons.arrow_upward),
-      if (index < week.days.length - 1) const SheetAction(_DayAction.moveDown, 'Move later', Icons.arrow_downward),
       const SheetAction(_DayAction.delete, 'Delete day', Icons.delete_outline, danger: true),
     ],
   );
@@ -146,13 +135,6 @@ Future<void> showDayActions(
         if (!confirmed) return;
       }
       await notifier.updateDayMeta(day.id, isRestDay: !day.isRestDay);
-    case _DayAction.moveUp || _DayAction.moveDown:
-      final ids = week.days.map((d) => d.id).toList();
-      final to = action == _DayAction.moveUp ? index - 1 : index + 1;
-      ids
-        ..removeAt(index)
-        ..insert(to, day.id);
-      await notifier.reorderDays(ids);
     case _DayAction.delete:
       final count = day.exercises.length;
       if (count > 0) {
