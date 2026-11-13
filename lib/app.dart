@@ -40,7 +40,9 @@ import 'features/community/screens/community_workout_detail_screen.dart';
 import 'features/programs/screens/programs_screen.dart';
 import 'features/programs/screens/new_program_screen.dart';
 import 'features/programs/screens/program_history_screen.dart';
-import 'features/programs/screens/program_edit_screen.dart';
+import 'features/programs/screens/edit/program_day_edit_screen.dart';
+import 'features/programs/screens/edit/program_edit_entry.dart';
+import 'features/programs/screens/edit/program_week_edit_screen.dart';
 import 'features/programs/screens/program_detail_screen.dart';
 import 'features/programs/screens/program_day_detail_screen.dart';
 import 'features/programs/screens/program_instance_detail_screen.dart';
@@ -223,7 +225,21 @@ GoRouter router(Ref ref) {
           GoRoute(
             path: '/programs/:id/edit',
             builder: (_, state) =>
-                ProgramEditScreen(programId: state.pathParameters['id']!),
+                ProgramEditEntry(programId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/programs/:id/edit/weeks/:weekId',
+            builder: (_, state) => ProgramWeekEditScreen(
+              programId: state.pathParameters['id']!,
+              weekId: state.pathParameters['weekId']!,
+            ),
+          ),
+          GoRoute(
+            path: '/programs/:id/edit/days/:dayId',
+            builder: (_, state) => ProgramDayEditScreen(
+              programId: state.pathParameters['id']!,
+              dayId: state.pathParameters['dayId']!,
+            ),
           ),
           GoRoute(
             path: '/programs/:programId/days/:dayId',

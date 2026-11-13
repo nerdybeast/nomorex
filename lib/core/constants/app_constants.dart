@@ -70,6 +70,11 @@ class AppConstants {
   static const String routeProgramHistory = '/programs/history';
   static String routeProgramDetail(String id) => '/programs/$id';
   static String routeProgramEdit(String id) => '/programs/$id/edit';
+  // The phone editor's week and day levels (#126). Desktop edits on one page.
+  static String routeProgramEditWeek(String programId, String weekId) =>
+      '/programs/$programId/edit/weeks/$weekId';
+  static String routeProgramEditDay(String programId, String dayId) =>
+      '/programs/$programId/edit/days/$dayId';
   static String routeProgramDayDetail(String programId, String dayId) =>
       '/programs/$programId/days/$dayId';
   static String routeProgramInstanceDetail(String id) => '/program-instances/$id';

@@ -88,7 +88,31 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
     await _refresh();
   }
 
+  /// Inserts a copy of the week right after it, with its days, exercises
+  /// and sets; later weeks move up one. Returns the new week's id.
+  Future<String> duplicateWeek(String weekId) async {
+    final id = await _db.rpc('duplicate_program_week', params: {'p_week_id': weekId}) as String;
+    await _refresh();
+    return id;
+  }
+
   // ---- Days ----
+
+  /// Appends a copy of the day, with its exercises and sets, to the end of
+  /// each of [weekIds] (its own week included, which duplicates it). Returns
+  /// the new days' ids in the same order.
+  Future<List<String>> copyDay(String dayId, List<String> weekIds) async {
+    final ids = await _db.rpc('copy_program_day', params: {'p_day_id': dayId, 'p_week_ids': weekIds}) as List;
+    await _refresh();
+    return ids.cast<String>();
+  }
+
+  /// A copy of the day at the end of its own week. Returns the copy's id.
+  Future<String> duplicateDay(String dayId) async {
+    final current = await future;
+    final week = current.weeks.firstWhere((w) => w.days.any((d) => d.id == dayId));
+    return (await copyDay(dayId, [week.id])).single;
+  }
 
   Future<void> addDay(String weekId, {required String title, bool isRestDay = false}) async {
     final current = await future;
