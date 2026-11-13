@@ -14,6 +14,8 @@ import '../utils/import_file_picker.dart';
 import '../utils/import_image_prep.dart';
 import '../utils/import_messages.dart';
 import 'ai_import_jobs_provider.dart';
+import '../../analytics/analytics.dart';
+import '../../analytics/providers/analytics_provider.dart';
 
 part 'ai_import_intake_provider.g.dart';
 
@@ -427,6 +429,10 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
     state = state.next(phase: ImportIntakePhase.starting);
     try {
       final jobId = await startImport(importId, requestedType: requestedType);
+      ref.read(analyticsProvider).logEvent(AnalyticsEvents.aiImportStarted, {
+        'requested_type': requestedType ?? 'auto',
+        'rerun': 0,
+      });
       state = ImportIntakeState(phase: ImportIntakePhase.started, jobId: jobId);
       // Home and the Realtime watcher pick the new job up from here.
       ref.invalidate(aiImportJobsProvider);

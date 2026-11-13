@@ -10,6 +10,7 @@ import '../../../core/utils/external_link.dart';
 import '../../../core/utils/one_rep_max_formula.dart';
 import '../../../core/utils/owner_name.dart';
 import '../../admin/providers/current_roles_provider.dart';
+import '../../analytics/providers/analytics_provider.dart';
 import '../../ai/providers/ai_smoke_test_provider.dart';
 import '../../ai/utils/genkit_call.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -149,6 +150,8 @@ class ProfileScreen extends ConsumerWidget {
                       style: TextStyle(color: colorScheme.error),
                     ),
                   ],
+                  const SizedBox(height: 12),
+                  const _AnalyticsSwitch(),
                   const SizedBox(height: 28),
                   if (isAdmin) ...[
                     Text('ADMIN', style: NomorexTokens.of(context).eyebrow),
@@ -179,6 +182,28 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Opts this device out of (or back into) usage analytics. Errors and crash
+/// reports to Sentry aren't affected.
+class _AnalyticsSwitch extends ConsumerWidget {
+  const _AnalyticsSwitch();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final enabled = ref.watch(analyticsConsentProvider);
+    return SwitchListTile(
+      key: const Key('profile_analytics_switch'),
+      contentPadding: EdgeInsets.zero,
+      title: const Text('Share usage analytics'),
+      subtitle: const Text(
+        'Which screens and features you use, sent to Google Analytics to help '
+        'improve the app. Never your workouts, notes or name. Applies to this device.',
+      ),
+      value: enabled,
+      onChanged: (value) => ref.read(analyticsConsentProvider.notifier).setEnabled(value),
     );
   }
 }

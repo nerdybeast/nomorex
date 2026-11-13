@@ -15,6 +15,7 @@
     Keep it in step with what the app actually collects:
     ios/Runner/PrivacyInfo.xcprivacy, the Sentry user context
     (sentryUserSync in lib/features/auth/providers/auth_provider.dart), the
+    analytics events (AnalyticsEvents in lib/features/analytics/analytics.dart), the
     AI import notice (lib/features/ai/screens/ai_import_screen.dart), and the
     App Store / Play data-disclosure answers.
   -->
@@ -101,7 +102,7 @@
 <body>
 <main>
   <h1>NoMoreX Privacy Policy</h1>
-  <p class="meta">Last updated: November 12, 2026</p>
+  <p class="meta">Last updated: November 13, 2026</p>
 
   <p>
     NoMoreX is a strength-training log. You record personal bests, build workouts and programs, and log your
@@ -163,6 +164,20 @@
     run into.
   </p>
 
+  <h3>Usage analytics</h3>
+  <p>
+    Unless you turn it off, the app records which screens you open and when you use main features (for example,
+    starting or finishing a workout, logging a personal best, starting a program, or saving from Community), and
+    sends this to Google Analytics. Along with it go a random identifier for your installation of the app, your
+    device type, operating system and app version, and an approximate location (country or region) that Google
+    works out from your IP address. It isn't linked to your account: we don't send your user ID, email, name, or
+    any of your workouts, weights or notes. On the web, Google Analytics stores its identifier in a cookie.
+  </p>
+  <p>
+    You can turn usage analytics off in the app under Profile → Preferences → "Share usage analytics". The setting
+    applies to the device you change it on.
+  </p>
+
   <h3>Files you upload for AI import</h3>
   <p>
     Only if you use AI import: the photos or PDFs you choose, and what was read from them. See
@@ -182,6 +197,7 @@
       bests.</li>
     <li>To show what you choose to publish to other users (see <a href="#public">below</a>).</li>
     <li>To find and fix crashes and errors.</li>
+    <li>To understand which features are used, in aggregate, so we know what to improve.</li>
     <li>To run AI import when you ask for it, and to enforce its usage limits.</li>
   </ul>
   <p>
@@ -233,6 +249,8 @@
     <li><strong>Supabase</strong>: database, sign-in, file storage and server functions. Your account and training
       data are stored here, in the United States (Northern Virginia).</li>
     <li><strong>Sentry</strong>: crash and error reports.</li>
+    <li><strong>Google (Google Analytics for Firebase)</strong>: usage analytics, unless you turn it off. Advertising
+      features, advertising identifiers and ad personalization are switched off.</li>
     <li><strong>Anthropic</strong>: reads the files you upload for AI import, and only when you use it.</li>
     <li><strong>GitHub</strong>: hosts the web app and this page.</li>
     <li><strong>Apple and Google</strong>: distribute the apps through the App Store and Google Play under their own
@@ -258,6 +276,8 @@
     <li><strong>AI import files and results</strong>: as described in <a href="#ai-import">AI import</a>.</li>
     <li><strong>Crash reports</strong>: up to 30 days, then deleted by
       Sentry.</li>
+    <li><strong>Usage analytics</strong>: individual events are deleted by Google after at most 14 months; what we
+      keep longer are totals that don't identify anyone.</li>
   </ul>
 
   <h2 id="delete-account">7. Deleting your account</h2>

@@ -7,6 +7,8 @@ import '../../../core/utils/sequential_naming.dart';
 import 'program_copy_count_provider.dart';
 import 'program_detail_provider.dart';
 import 'program_instances_list_provider.dart';
+import '../../analytics/analytics.dart';
+import '../../analytics/providers/analytics_provider.dart';
 
 part 'programs_provider.g.dart';
 
@@ -91,6 +93,9 @@ class ProgramsNotifier extends _$ProgramsNotifier {
       'p_source_program_id': sourceProgramId,
       'p_start_date': startDate?.toIso8601String().substring(0, 10),
     }) as Map<String, dynamic>;
+    final analytics = ref.read(analyticsProvider);
+    analytics.logEvent(AnalyticsEvents.communityCopy, {'content_type': 'program', 'started': startDate != null ? 1 : 0});
+    if (startDate != null) analytics.logEvent(AnalyticsEvents.programStarted, {'method': 'community'});
 
     ref.invalidate(exercisesProvider);
     ref.invalidate(programCopyCountProvider);

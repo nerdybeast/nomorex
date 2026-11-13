@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/personal_best.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 import '../../workouts/providers/one_rep_max_provider.dart';
+import '../../analytics/analytics.dart';
+import '../../analytics/providers/analytics_provider.dart';
 
 part 'personal_bests_provider.g.dart';
 
@@ -44,6 +46,7 @@ class PersonalBestsNotifier extends _$PersonalBestsNotifier {
       'date': date.toIso8601String().split('T').first, // date only
       if (notes != null && notes.isNotEmpty) 'notes': notes,
     });
+    ref.read(analyticsProvider).logEvent(AnalyticsEvents.prLogged, {'reps': reps});
 
     ref.invalidateSelf();
     ref.invalidate(oneRepMaxProvider);

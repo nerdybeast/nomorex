@@ -10,6 +10,8 @@ import 'finished_workouts_provider.dart';
 import 'in_progress_workouts_provider.dart';
 import 'workout_copy_count_provider.dart';
 import 'workout_detail_provider.dart';
+import '../../analytics/analytics.dart';
+import '../../analytics/providers/analytics_provider.dart';
 
 part 'workouts_provider.g.dart';
 
@@ -139,6 +141,9 @@ class WorkoutsNotifier extends _$WorkoutsNotifier {
       'p_today': DateTime.now().toIso8601String().split('T').first,
       'p_start': start,
     }) as String;
+    final analytics = ref.read(analyticsProvider);
+    analytics.logEvent(AnalyticsEvents.communityCopy, {'content_type': 'workout', 'started': start ? 1 : 0});
+    if (start) analytics.logEvent(AnalyticsEvents.workoutStarted, {'method': 'community'});
 
     ref.invalidate(exercisesProvider);
     ref.invalidate(workoutCopyCountProvider);

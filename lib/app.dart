@@ -10,6 +10,8 @@ import 'core/theme/app_theme.dart';
 import 'features/ai/screens/ai_import_screen.dart';
 import 'features/ai/screens/ai_import_review_screen.dart';
 import 'features/ai/widgets/ai_import_job_alerts.dart';
+import 'features/analytics/providers/analytics_provider.dart';
+import 'features/analytics/utils/screen_tracking.dart';
 import 'features/admin/providers/current_roles_provider.dart';
 import 'features/admin/screens/admin_ai_imports_screen.dart';
 import 'features/admin/screens/admin_audit_log_screen.dart';
@@ -75,7 +77,7 @@ class RouterNotifier extends ChangeNotifier {
 @Riverpod(keepAlive: true)
 GoRouter router(Ref ref) {
   final notifier = RouterNotifier(ref);
-  return GoRouter(
+  final router = GoRouter(
     // Records screen changes as Sentry breadcrumbs.
     observers: [SentryNavigatorObserver()],
     refreshListenable: notifier,
@@ -262,6 +264,8 @@ GoRouter router(Ref ref) {
       ),
     ],
   );
+  ref.onDispose(trackScreenViews(router, ref.read(analyticsProvider)));
+  return router;
 }
 
 class NomorexApp extends ConsumerWidget {
@@ -270,6 +274,9 @@ class NomorexApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(sentryUserSyncProvider);
+    // Loads the user's analytics choice at startup and applies it. Listened
+    // to rather than watched, so toggling it doesn't rebuild the app.
+    ref.listen(analyticsConsentProvider, (_, _) {});
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
       title: 'NoMoreX',

@@ -257,6 +257,17 @@ Until that secret exists, both upload steps log a warning and skip, and
 deploys still succeed. To check after a deploy, look at the step logs, then at
 an event's release and stack trace in Sentry.
 
+## Firebase (Google Analytics)
+
+Usage analytics go to Google Analytics for Firebase, project `nomorex-13bd9308`. Sentry stays the place for errors and crashes. The code lives in `lib/features/analytics/`.
+
+- **Config is generated, not hand-written.** `flutterfire configure` wrote `lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`, `macos/Runner/GoogleService-Info.plist` and `firebase.json`. The API keys in them identify the Firebase project and aren't secrets (the same reasoning as the publishable key below), so they're committed. To regenerate, for example after adding a platform: `flutterfire configure -p nomorex-13bd9308 --platforms=android,ios,macos,web,windows -i com.nomorex.app -m com.nomorex.app --android-package-name=com.nomorex.app`. It needs the Firebase CLI, logged in.
+- **App IDs:** Android, iOS and macOS are all `com.nomorex.app`; macOS shares the iOS Firebase app.
+- **Platforms:** Firebase is initialized on Android, iOS, macOS and web only (`analyticsPlatformSupported`). Linux and Windows run without it, which is how CI's Linux E2E run stays off Firebase.
+- **Debug builds send nothing.** Only release builds collect (`analyticsCollectsInThisBuild`). To see events in the Firebase console's DebugView, build with `--dart-define=ANALYTICS_DEBUG=true` and enable debug mode on the device (`adb shell setprop debug.firebase.analytics.app com.nomorex.app` on Android; `-FIRDebugEnabled` as a launch argument in Xcode on iOS).
+- **Opt-out:** Profile → "Share usage analytics", saved per device (`AnalyticsConsentNotifier`).
+- **Advertising is off.** The Android manifest removes the `AD_ID` permission and turns off ad-ID collection and ad personalization; `ios/Runner/Info.plist` turns off ad personalization. The app never calls `setUserId`, so events aren't linked to accounts. The privacy policy and store disclosures rely on all of this. In the Google Analytics property, keep Google signals off, keep ads personalization off, and keep event data retention at 14 months or less, which is what the privacy policy states.
+
 ## iOS: TestFlight deploys
 
 `.github/workflows/deploy-ios.yml` builds a signed release IPA on every push to
