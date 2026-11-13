@@ -167,6 +167,10 @@ jobs:
     # Free on a public repo. Proves the iOS target still compiles before
     # merge, since deploy-ios.yml only runs after it.
     runs-on: macos-26
+    env:
+      # Builds firebase_analytics without Google's advertising-ID SDKs (no ads;
+      # see web/privacy.html). Same setting as deploy-ios.yml.
+      FIREBASE_ANALYTICS_WITHOUT_ADID: 'true'
 
     steps:
       - uses: actions/checkout@v7
@@ -202,6 +206,9 @@ jobs:
             --build-number="${{ needs.version.outputs.build-number }}" \
             --dart-define=SUPABASE_URL=https://placeholder.supabase.co \
             --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
+
+      - name: Check no advertising-ID SDKs are bundled
+        run: ./scripts/check-ios-no-adid.sh build/ios/iphoneos/Runner.app
 
   db-validate:
     name: Validate DB migrations
