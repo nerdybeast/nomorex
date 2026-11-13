@@ -7,6 +7,7 @@ import '../../../shared/widgets/list_group.dart';
 import '../models/admin_section.dart';
 import '../providers/current_roles_provider.dart';
 import '../widgets/admin_gate.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 /// The admin hub, reached from Profile: one row per [kAdminSections] entry the
 /// user's roles allow.
@@ -22,7 +23,11 @@ class AdminScreen extends ConsumerWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Admin')),
+      appBar: AppBar(
+        // The sidebar is the way back on wide layouts.
+        automaticallyImplyLeading: showsBackForSidebarDestination(context),
+        title: const Text('Admin'),
+      ),
       body: AdminGate(
         child: SafeArea(
           child: SingleChildScrollView(

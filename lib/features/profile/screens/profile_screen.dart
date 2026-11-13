@@ -14,6 +14,7 @@ import '../../ai/providers/ai_smoke_test_provider.dart';
 import '../../ai/utils/genkit_call.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
+import '../../../shared/widgets/responsive_layout.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -65,6 +66,8 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        // The sidebar is the way back on wide layouts.
+        automaticallyImplyLeading: showsBackForSidebarDestination(context),
         title: const Text('Profile'),
         actions: [
           IconButton(

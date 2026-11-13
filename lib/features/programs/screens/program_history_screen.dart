@@ -7,6 +7,7 @@ import '../models/program_instance.dart';
 import '../providers/finished_program_instances_provider.dart';
 import '../widgets/program_stats_chips.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../shell/widgets/breadcrumb_title.dart';
 
 /// Program runs the user has completed or abandoned, most recent first —
 /// the Programs-page counterpart of the Workout history screen.
@@ -19,7 +20,7 @@ class ProgramHistoryScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Program history')),
+      appBar: AppBar(title: const BreadcrumbTitle(title: 'Program history')),
       body: historyAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),

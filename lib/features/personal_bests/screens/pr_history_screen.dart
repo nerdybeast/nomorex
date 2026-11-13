@@ -15,6 +15,7 @@ import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../shell/widgets/breadcrumb_title.dart';
 
 Future<void> _deletePr(BuildContext context, WidgetRef ref, PersonalBest pr, String unit) async {
   final confirmed = await showConfirmDialog(
@@ -42,7 +43,7 @@ class PrHistoryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PR history'),
+        title: const BreadcrumbTitle(title: 'PR history'),
         actions: [
           IconButton(
             key: const Key('pr_history_add'),

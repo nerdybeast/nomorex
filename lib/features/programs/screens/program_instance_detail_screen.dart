@@ -17,6 +17,7 @@ import '../utils/program_stats.dart';
 import '../widgets/program_day_card.dart';
 import '../widgets/program_stats_chips.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../shell/widgets/breadcrumb_title.dart';
 
 /// A running (or upcoming) program: the same week/day layout as the
 /// template browse screen, but each day is highlighted if it's today and
@@ -74,7 +75,9 @@ class ProgramInstanceDetailScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Program')),
+      appBar: AppBar(
+        title: BreadcrumbTitle(title: 'Program', current: instanceAsync.asData?.value.programName),
+      ),
       body: instanceAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),

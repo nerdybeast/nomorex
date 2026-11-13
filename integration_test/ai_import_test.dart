@@ -11,7 +11,7 @@ void main() {
   group('AI import', () {
     // Against the real local stack, where seed.sql switches imports on. Stops
     // before choosing a file, so it never uploads or calls the model.
-    testWidgets('Workouts and Programs lead to the notice, then to choosing files', (tester) async {
+    testWidgets('New leads to the notice, then to choosing files', (tester) async {
       await bootSignedIn(tester);
       final shell = ShellPage(tester);
       final importFlow = AiImportPage(tester);
@@ -23,7 +23,7 @@ void main() {
         // Declining the notice uploads nothing and leaves the flow; it shows
         // again next time, because nothing was recorded.
         await importFlow.declineNotice();
-        expect(AiImportPage.entry, findsOneWidget, reason: 'back on Workouts');
+        expect(AiImportPage.newButton, findsOneWidget, reason: 'back beside the sidebar');
         await importFlow.open();
         expect(importFlow.noticeShown, isTrue);
         await importFlow.acceptNotice();

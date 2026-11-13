@@ -6,7 +6,7 @@
 
 web
 
-(One Flutter codebase ships to iOS, Android and the web with a single shared design language, the Sleek Orange system, rather than Cupertino on iOS and Material on Android. Phone and desktop/web are equally important: logging happens on a phone in the gym, and authoring programs often happens on a larger screen. `AppShell` switches from a bottom bar to a navigation rail above 600px.)
+(One Flutter codebase ships to iOS, Android and the web with a single shared design language, the Sleek Orange system, rather than Cupertino on iOS and Material on Android. Phone and desktop/web are equally important: logging happens on a phone in the gym, and authoring programs often happens on a larger screen. Below 600px navigation is a bottom bar; from 600px up a sidebar sits beside every page, collapsible to a rail.)
 
 ## Users
 

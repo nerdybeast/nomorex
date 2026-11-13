@@ -22,6 +22,7 @@ import '../../workouts/utils/set_resolver.dart';
 import '../../../shared/models/one_rep_max.dart';
 import '../providers/community_workout_detail_provider.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../shell/widgets/breadcrumb_title.dart';
 
 class CommunityWorkoutDetailScreen extends ConsumerWidget {
   const CommunityWorkoutDetailScreen({super.key, required this.workoutId});
@@ -42,7 +43,7 @@ class CommunityWorkoutDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Workout'),
+        title: const BreadcrumbTitle(title: 'Workout'),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),

@@ -16,6 +16,7 @@ import '../models/program_exercise.dart';
 import '../models/program_set.dart';
 import '../providers/program_detail_provider.dart';
 import '../utils/program_day_brief.dart';
+import '../../shell/widgets/breadcrumb_title.dart';
 
 /// Read-only preview of a single program day, reached by tapping a day on a
 /// program (yours or a Community one) — once a program runs, the same tap
@@ -43,7 +44,7 @@ class ProgramDayDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         // The program's name for context; the day itself leads the page.
-        title: Text(detail.asData?.value.name ?? '', overflow: TextOverflow.ellipsis),
+        title: BreadcrumbTitle(title: detail.asData?.value.name ?? ''),
       ),
       body: detail.when(
         loading: () => const Center(child: CircularProgressIndicator()),
