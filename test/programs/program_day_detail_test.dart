@@ -183,7 +183,7 @@ void main() {
     expect(find.text('3'), findsOneWidget); // sets
     expect(find.text('80%'), findsWidgets);
     expect(find.text('peak intensity'), findsOneWidget);
-    expect(find.byKey(const Key('program_day_main_lift')), findsOneWidget);
+    expect(find.byKey(const ValueKey('program_day_lift_card_pe1')), findsOneWidget);
   });
 
   group('Set PR on a lift measured against another lift', () {
@@ -250,6 +250,95 @@ void main() {
       await pumpWith(tester, basisProgram(mainNeedsClean: true));
       expect(find.text('set Clean PR'), findsOneWidget); // the hero's, once
       expect(find.text('needs Clean PR'), findsOneWidget);
+    });
+  });
+
+  group('expanding lifts', () {
+    // Day 1: Snatch, Clean Pull, Back Squat. Only the first opens expanded.
+    Program threeLifts() => Program(
+          id: 'p1',
+          userId: 'u1',
+          name: 'Pull Block',
+          createdAt: DateTime(2026, 7, 1),
+          updatedAt: DateTime(2026, 7, 1),
+          weeks: [
+            ProgramWeek(id: 'wk1', programId: 'p1', weekNumber: 1, position: 0, days: [
+              ProgramDay(id: 'd1', programWeekId: 'wk1', dayNumber: 1, title: 'Day 1', position: 0, exercises: [
+                for (final (i, name) in ['Snatch', 'Clean Pull', 'Back Squat'].indexed)
+                  ProgramExercise(
+                    id: 'pe$i',
+                    programDayId: 'd1',
+                    exerciseId: 'e$i',
+                    exerciseName: name,
+                    position: i,
+                    sets: [
+                      ProgramSet(id: 's$i', programExerciseId: 'pe$i', position: 0, weightMode: 'absolute', targetReps: 3, absoluteWeightKg: 50.0 + i * 10),
+                    ],
+                  ),
+              ]),
+            ]),
+          ],
+        );
+
+    Future<void> pumpLifts(WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            programDetailProvider('p1').overrideWith(() => _StubProgramDetailNotifier(threeLifts())),
+            oneRepMaxProvider.overrideWith((ref) async => const <String, OneRepMax>{}),
+            oneRepMaxByNameProvider.overrideWith((ref) async => const <String, OneRepMax>{}),
+            unitPreferenceProvider.overrideWithValue('kg'),
+          ],
+          child: const MaterialApp(home: ProgramDayDetailScreen(programId: 'p1', dayId: 'd1')),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Finder card(String id) => find.byKey(ValueKey('program_day_lift_card_$id'));
+    Finder row(String id) => find.byKey(ValueKey('program_day_lift_row_$id'));
+
+    testWidgets('only the first lift opens expanded', (tester) async {
+      await pumpLifts(tester);
+      expect(card('pe0'), findsOneWidget);
+      expect(row('pe1'), findsOneWidget);
+      expect(row('pe2'), findsOneWidget);
+    });
+
+    testWidgets('tapping a folded lift expands it and keeps the first open', (tester) async {
+      await pumpLifts(tester);
+      await tester.tap(row('pe2'));
+      await tester.pumpAndSettle();
+
+      expect(card('pe2'), findsOneWidget);
+      expect(card('pe0'), findsOneWidget);
+      expect(row('pe1'), findsOneWidget);
+      // Keeps its place in the day's order.
+      expect(find.descendant(of: card('pe2'), matching: find.text('3')), findsOneWidget);
+    });
+
+    testWidgets('tapping an open lift header folds it back into a row', (tester) async {
+      await pumpLifts(tester);
+      await tester.tap(find.byKey(const ValueKey('program_day_lift_header_pe0')));
+      await tester.pumpAndSettle();
+
+      expect(card('pe0'), findsNothing);
+      expect(row('pe0'), findsOneWidget);
+    });
+
+    testWidgets('screen readers hear whether each lift is expanded', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpLifts(tester);
+
+      expect(
+        tester.getSemantics(find.byKey(const ValueKey('program_day_lift_header_pe0'))),
+        isSemantics(isExpanded: true, hasExpandedState: true, hasTapAction: true),
+      );
+      expect(
+        tester.getSemantics(row('pe1')),
+        isSemantics(isExpanded: false, hasExpandedState: true, hasTapAction: true),
+      );
+      handle.dispose();
     });
   });
 }
