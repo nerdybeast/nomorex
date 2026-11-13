@@ -4,15 +4,13 @@ import '../../../../../core/theme/app_theme.dart';
 import '../../../../../shared/widgets/auto_save_field.dart';
 import '../../../../../shared/widgets/confirm_dialog.dart';
 import '../../../../profile/providers/profile_provider.dart';
-import '../../../../workouts/utils/parsed_set.dart';
-import '../../../../workouts/widgets/set_editor.dart';
 import '../../../models/program_exercise.dart';
 import '../../../providers/program_detail_provider.dart';
-import '../../../utils/parsed_program_set.dart';
+import '../../../widgets/set_group_editor.dart';
 
 /// Edits one exercise of a program day in a sheet over the day: its notes
-/// and sets, or delete it. Stays in step with the saved program, and closes
-/// itself if the exercise goes away.
+/// and its sets as groups ([SetGroupEditor]), or delete it. Stays in step
+/// with the saved program, and closes itself if the exercise goes away.
 Future<void> showExerciseEditSheet(
   BuildContext context, {
   required String programId,
@@ -118,17 +116,7 @@ class _ExerciseEditSheet extends ConsumerWidget {
                   onChanged: (v) => notifier.updateExerciseNotes(ex.id, v),
                 ),
                 const SizedBox(height: 12),
-                SetEditor(
-                  sets: ex.sets.map((s) => s.toEditableRow()).toList(),
-                  unit: unit,
-                  currentExerciseId: ex.exerciseId,
-                  currentExerciseName: ex.exerciseName,
-                  onAddPercentageSets: (parsed) =>
-                      notifier.addPercentageSets(ex.id, [for (final p in parsed) _toParsedProgramSet(p)]),
-                  onAddAbsoluteSets: (batch) => notifier.addAbsoluteSets(ex.id, batch),
-                  onDeleteSet: notifier.deleteSet,
-                  onReorderSets: (orderedIds) => notifier.reorderSets(ex.id, orderedIds),
-                ),
+                SetGroupEditor(programId: programId, exercise: ex, unit: unit),
               ],
             ),
           ),
@@ -155,15 +143,3 @@ class _ExerciseEditSheet extends ConsumerWidget {
     );
   }
 }
-
-// SetEditor speaks the workouts feature's ParsedSet; programs store a
-// ParsedProgramSet. Same fields, one to one.
-ParsedProgramSet _toParsedProgramSet(ParsedSet p) => ParsedProgramSet(
-      p.targetReps,
-      p.percentage,
-      basisExerciseId: p.basisExerciseId,
-      targetRepsMax: p.targetRepsMax,
-      percentageMax: p.percentageMax,
-      rpeMin: p.rpeMin,
-      rpeMax: p.rpeMax,
-    );

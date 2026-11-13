@@ -46,215 +46,6 @@ class SetEditor extends ConsumerWidget {
   final void Function(String setId) onDeleteSet;
   final void Function(List<String> orderedSetIds) onReorderSets;
 
-  Future<void> _showPercentageSetDialog(
-    BuildContext context,
-    List<Exercise> exercises,
-  ) async {
-    var sets = 1;
-    var reps = 1;
-    int? repsMax;
-    var percentage = 70.0;
-    double? percentageMax;
-    double? rpeMin;
-    double? rpeMax;
-    Exercise? basisExercise;
-
-    await _showSetsSheet(
-      context,
-      (ctx, setState) => _SetsSheet(
-        title: 'Add sets · $currentExerciseName',
-        sets: sets,
-        preview: _PercentPreview(
-          sets: sets,
-          reps: reps,
-          repsMax: repsMax,
-          percentage: percentage,
-          percentageMax: percentageMax,
-          rpeMin: rpeMin,
-          rpeMax: rpeMax,
-          basisExerciseId: basisExercise?.id ?? currentExerciseId,
-          basisExerciseName: basisExercise?.name ?? currentExerciseName,
-          unit: unit,
-        ),
-        fields: [
-          _BasisRow(
-            exercises: exercises,
-            value: basisExercise,
-            currentExerciseName: currentExerciseName,
-            basisExerciseId: basisExercise?.id ?? currentExerciseId,
-            basisExerciseName: basisExercise?.name ?? currentExerciseName,
-            unit: unit,
-            onChanged: (v) => setState(() => basisExercise = v),
-          ),
-          _setsCountRow(sets: sets, onChanged: (v) => setState(() => sets = v)),
-          _repTargetInput(
-            reps: reps,
-            repsMax: repsMax,
-            onChanged: (r, max) => setState(() {
-              reps = r;
-              repsMax = max;
-            }),
-          ),
-          // One %1RM (or range) shared by the whole batch keeps the sheet a
-          // fixed height; wave-loading is another batch at the next
-          // percentage. One decimal so half-percent prescriptions like 72.5%
-          // can be typed; the +/- step stays 5.
-          _RangeInput(
-            value: percentage,
-            max: percentageMax,
-            label: '%1RM',
-            minLabel: 'Min %1RM',
-            maxLabel: 'Max %1RM',
-            switchLabel: '%1RM range',
-            // The database accepts above 0 and up to 200% (#36), the same
-            // bounds an AI import accepts.
-            floor: kMinSetPercentage,
-            ceiling: kMaxSetPercentage,
-            step: 5,
-            decimals: 1,
-            spread: 5,
-            valueKey: const Key('set_editor_pct'),
-            switchKey: const Key('set_editor_pct_range_switch'),
-            maxKey: const Key('set_editor_pct_max'),
-            onChanged: (v, max) => setState(() {
-              percentage = v;
-              percentageMax = max;
-            }),
-          ),
-          _RpeTargetInput(
-            rpeMin: rpeMin,
-            rpeMax: rpeMax,
-            onChanged: (min, max) => setState(() {
-              rpeMin = min;
-              rpeMax = max;
-            }),
-          ),
-        ],
-        onAdd: () {
-          onAddPercentageSets([
-            for (var i = 0; i < sets; i++)
-              ParsedSet(
-                reps,
-                percentage,
-                basisExerciseId: basisExercise?.id,
-                targetRepsMax: _rangeTop(reps, repsMax),
-                percentageMax: _rangeTop(percentage, percentageMax),
-                rpeMin: rpeMin,
-                rpeMax: rpeMin == null ? null : _rangeTop(rpeMin!, rpeMax),
-              ),
-          ]);
-          Navigator.pop(ctx);
-        },
-      ),
-    );
-  }
-
-  Future<void> _showAbsoluteSetDialog(BuildContext context) async {
-    var sets = 1;
-    var reps = 1;
-    int? repsMax;
-    var weightDisplay = 0.0;
-    var openLoad = false;
-    double? rpeMin;
-    double? rpeMax;
-    var dialogUnit = unit == 'both' ? 'kg' : unit;
-
-    await _showSetsSheet(
-      context,
-      (ctx, setState) {
-        final tokens = NomorexTokens.of(ctx);
-        final weightLabel = 'Weight ($dialogUnit)';
-        return _SetsSheet(
-          title: 'Add sets · $currentExerciseName',
-          sets: sets,
-          preview: _Preview(
-            line: _sentence(
-              ctx,
-              sets: sets,
-              reps: reps,
-              repsMax: repsMax,
-              load: openLoad ? null : '${_trimNumber(weightDisplay)} $dialogUnit',
-              loadIsMono: true,
-              rpe: formatRpeTarget(rpeMin, rpeMax),
-            ),
-            detail: openLoad
-                ? Text('The lifter picks the weight on the day', style: tokens.bodySmall)
-                : null,
-          ),
-          fields: [
-            _setsCountRow(sets: sets, onChanged: (v) => setState(() => sets = v)),
-            _repTargetInput(
-              reps: reps,
-              repsMax: repsMax,
-              onChanged: (r, max) => setState(() {
-                reps = r;
-                repsMax = max;
-              }),
-            ),
-            // "Vert Pull 3x7-9, %1RM NA": no prescribed load, the lifter
-            // picks it on the day. Hides the weight rather than saving a
-            // misleading 0 kg.
-            SwitchListTile(
-              key: const Key('set_editor_open_load_switch'),
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              title: const Text('No set load'),
-              subtitle: Text('The lifter picks the weight', style: tokens.bodySmall),
-              value: openLoad,
-              onChanged: (on) => setState(() => openLoad = on),
-            ),
-            if (!openLoad)
-              _FieldRow(
-                label: weightLabel,
-                // Under the label rather than beside it: beside it, the
-                // label, toggle and stepper don't fit a phone's row.
-                below: UnitToggle(
-                  preference: unit,
-                  value: dialogUnit,
-                  onChanged: (newUnit) => setState(() {
-                    if (newUnit == dialogUnit) return;
-                    weightDisplay = newUnit == 'lbs' ? kgToLbs(weightDisplay) : lbsToKg(weightDisplay);
-                    dialogUnit = newUnit;
-                  }),
-                ),
-                trailing: _compactStepper(
-                  label: weightLabel,
-                  value: weightDisplay,
-                  min: 0,
-                  step: dialogUnit == 'lbs' ? 5.0 : 2.5,
-                  decimals: 1,
-                  tokens: tokens,
-                  onChanged: (v) => setState(() => weightDisplay = v),
-                ),
-              ),
-            _RpeTargetInput(
-              rpeMin: rpeMin,
-              rpeMax: rpeMax,
-              onChanged: (min, max) => setState(() {
-                rpeMin = min;
-                rpeMax = max;
-              }),
-            ),
-          ],
-          onAdd: () {
-            final weightKg = openLoad
-                ? null
-                : (dialogUnit == 'lbs' ? lbsToKg(weightDisplay) : weightDisplay);
-            onAddAbsoluteSets(AbsoluteSetBatch(
-              sets: sets,
-              reps: reps,
-              repsMax: _rangeTop(reps, repsMax),
-              weightKg: weightKg,
-              rpeMin: rpeMin,
-              rpeMax: rpeMin == null ? null : _rangeTop(rpeMin!, rpeMax),
-            ));
-            Navigator.pop(ctx);
-          },
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercises = ref.watch(exercisesProvider).asData?.value ?? const <Exercise>[];
@@ -307,13 +98,25 @@ class SetEditor extends ConsumerWidget {
               label: 'Add sets (%)',
               icon: Icons.percent,
               tokens: tokens,
-              onPressed: () => _showPercentageSetDialog(context, exercises),
+              onPressed: () => showPercentageSetsSheet(
+                context,
+                exercises: exercises,
+                currentExerciseId: currentExerciseId,
+                currentExerciseName: currentExerciseName,
+                unit: unit,
+                onSubmit: onAddPercentageSets,
+              ),
             ),
             _AddSetsButton(
               label: 'Add sets (weight)',
               icon: Icons.fitness_center,
               tokens: tokens,
-              onPressed: () => _showAbsoluteSetDialog(context),
+              onPressed: () => showAbsoluteSetsSheet(
+                context,
+                currentExerciseName: currentExerciseName,
+                unit: unit,
+                onSubmit: onAddAbsoluteSets,
+              ),
             ),
           ],
         ),
@@ -493,6 +296,7 @@ Future<void> _showSetsSheet(
 class _SetsSheet extends StatelessWidget {
   const _SetsSheet({
     required this.title,
+    this.editing = false,
     required this.sets,
     required this.preview,
     required this.fields,
@@ -500,6 +304,9 @@ class _SetsSheet extends StatelessWidget {
   });
 
   final String title;
+
+  /// Editing an existing group: the button saves rather than adds.
+  final bool editing;
   final int sets;
   final Widget preview;
   final List<Widget> fields;
@@ -573,7 +380,7 @@ class _SetsSheet extends StatelessWidget {
                   child: FilledButton(
                     key: const Key('set_editor_add'),
                     onPressed: onAdd,
-                    child: Text('Add $sets ${sets == 1 ? 'set' : 'sets'}'),
+                    child: Text('${editing ? 'Save' : 'Add'} $sets ${sets == 1 ? 'set' : 'sets'}'),
                   ),
                 ),
               ],
@@ -1183,4 +990,278 @@ class _RpeTargetInput extends StatelessWidget {
       ),
     );
   }
+}
+
+/// What an existing group of identical sets prescribes, to open a sets
+/// sheet pre-filled for editing it.
+class SetsSheetInitial {
+const SetsSheetInitial({
+  required this.sets,
+  required this.reps,
+  this.repsMax,
+  this.percentage,
+  this.percentageMax,
+  this.weightKg,
+  this.basisExerciseId,
+  this.basisExerciseName,
+  this.rpeMin,
+  this.rpeMax,
+});
+
+final int sets;
+final int reps;
+final int? repsMax;
+final double? percentage;
+final double? percentageMax;
+
+/// Null for an open load.
+final double? weightKg;
+
+/// Null when the 1RM is the exercise's own.
+final String? basisExerciseId;
+final String? basisExerciseName;
+final double? rpeMin;
+final double? rpeMax;
+}
+
+/// The "%1RM" sets sheet. Adds a batch, or with [initial] edits an existing
+/// group: it opens filled in, reads "Save" and hands back the whole group.
+/// [onSubmit] gets one [ParsedSet] per set, all alike.
+Future<void> showPercentageSetsSheet(
+BuildContext context, {
+required List<Exercise> exercises,
+required String currentExerciseId,
+required String currentExerciseName,
+required String unit,
+required void Function(List<ParsedSet> sets) onSubmit,
+SetsSheetInitial? initial,
+}) async {
+  var sets = initial?.sets ?? 1;
+  var reps = initial?.reps ?? 1;
+  int? repsMax = initial?.repsMax;
+  var percentage = initial?.percentage ?? 70.0;
+  double? percentageMax = initial?.percentageMax;
+  double? rpeMin = initial?.rpeMin;
+  double? rpeMax = initial?.rpeMax;
+  // The dropdown matches by identity, so the basis has to be one of its
+  // entries; a basis missing from the catalog (another user's lift on a
+  // copy) is added so editing doesn't silently reset it.
+  var pickable = exercises;
+  Exercise? basisExercise;
+  final basisId = initial?.basisExerciseId;
+  if (basisId != null && basisId != currentExerciseId) {
+    basisExercise = exercises.where((e) => e.id == basisId).firstOrNull;
+    if (basisExercise == null) {
+      basisExercise = Exercise(id: basisId, name: initial?.basisExerciseName ?? 'Other lift', isPredefined: false);
+      pickable = [basisExercise, ...exercises];
+    }
+  }
+  final editing = initial != null;
+
+  await _showSetsSheet(
+    context,
+    (ctx, setState) => _SetsSheet(
+      title: '${editing ? 'Edit sets' : 'Add sets'} · $currentExerciseName',
+      editing: editing,
+      sets: sets,
+      preview: _PercentPreview(
+        sets: sets,
+        reps: reps,
+        repsMax: repsMax,
+        percentage: percentage,
+        percentageMax: percentageMax,
+        rpeMin: rpeMin,
+        rpeMax: rpeMax,
+        basisExerciseId: basisExercise?.id ?? currentExerciseId,
+        basisExerciseName: basisExercise?.name ?? currentExerciseName,
+        unit: unit,
+      ),
+      fields: [
+        _BasisRow(
+          exercises: pickable,
+          value: basisExercise,
+          currentExerciseName: currentExerciseName,
+          basisExerciseId: basisExercise?.id ?? currentExerciseId,
+          basisExerciseName: basisExercise?.name ?? currentExerciseName,
+          unit: unit,
+          onChanged: (v) => setState(() => basisExercise = v),
+        ),
+        _setsCountRow(sets: sets, onChanged: (v) => setState(() => sets = v)),
+        _repTargetInput(
+          reps: reps,
+          repsMax: repsMax,
+          onChanged: (r, max) => setState(() {
+            reps = r;
+            repsMax = max;
+          }),
+        ),
+        // One %1RM (or range) shared by the whole batch keeps the sheet a
+        // fixed height; wave-loading is another batch at the next
+        // percentage. One decimal so half-percent prescriptions like 72.5%
+        // can be typed; the +/- step stays 5.
+        _RangeInput(
+          value: percentage,
+          max: percentageMax,
+          label: '%1RM',
+          minLabel: 'Min %1RM',
+          maxLabel: 'Max %1RM',
+          switchLabel: '%1RM range',
+          // The database accepts above 0 and up to 200% (#36), the same
+          // bounds an AI import accepts.
+          floor: kMinSetPercentage,
+          ceiling: kMaxSetPercentage,
+          step: 5,
+          decimals: 1,
+          spread: 5,
+          valueKey: const Key('set_editor_pct'),
+          switchKey: const Key('set_editor_pct_range_switch'),
+          maxKey: const Key('set_editor_pct_max'),
+          onChanged: (v, max) => setState(() {
+            percentage = v;
+            percentageMax = max;
+          }),
+        ),
+        _RpeTargetInput(
+          rpeMin: rpeMin,
+          rpeMax: rpeMax,
+          onChanged: (min, max) => setState(() {
+            rpeMin = min;
+            rpeMax = max;
+          }),
+        ),
+      ],
+      onAdd: () {
+        onSubmit([
+          for (var i = 0; i < sets; i++)
+            ParsedSet(
+              reps,
+              percentage,
+              basisExerciseId: basisExercise?.id,
+              targetRepsMax: _rangeTop(reps, repsMax),
+              percentageMax: _rangeTop(percentage, percentageMax),
+              rpeMin: rpeMin,
+              rpeMax: rpeMin == null ? null : _rangeTop(rpeMin!, rpeMax),
+            ),
+        ]);
+        Navigator.pop(ctx);
+      },
+    ),
+  );
+}
+
+/// The "weight" sets sheet: a fixed load or none ("No set load"). Adds a
+/// batch, or with [initial] edits an existing group.
+Future<void> showAbsoluteSetsSheet(
+BuildContext context, {
+required String currentExerciseName,
+required String unit,
+required void Function(AbsoluteSetBatch batch) onSubmit,
+SetsSheetInitial? initial,
+}) async {
+  var sets = initial?.sets ?? 1;
+  var reps = initial?.reps ?? 1;
+  int? repsMax = initial?.repsMax;
+  var openLoad = initial != null && initial.weightKg == null;
+  double? rpeMin = initial?.rpeMin;
+  double? rpeMax = initial?.rpeMax;
+  var dialogUnit = unit == 'both' ? 'kg' : unit;
+  final initialKg = initial?.weightKg ?? 0.0;
+  var weightDisplay = dialogUnit == 'lbs' ? kgToLbs(initialKg) : initialKg;
+  final editing = initial != null;
+
+  await _showSetsSheet(
+    context,
+    (ctx, setState) {
+      final tokens = NomorexTokens.of(ctx);
+      final weightLabel = 'Weight ($dialogUnit)';
+      return _SetsSheet(
+        title: '${editing ? 'Edit sets' : 'Add sets'} · $currentExerciseName',
+        editing: editing,
+        sets: sets,
+        preview: _Preview(
+          line: _sentence(
+            ctx,
+            sets: sets,
+            reps: reps,
+            repsMax: repsMax,
+            load: openLoad ? null : '${_trimNumber(weightDisplay)} $dialogUnit',
+            loadIsMono: true,
+            rpe: formatRpeTarget(rpeMin, rpeMax),
+          ),
+          detail: openLoad
+              ? Text('The lifter picks the weight on the day', style: tokens.bodySmall)
+              : null,
+        ),
+        fields: [
+          _setsCountRow(sets: sets, onChanged: (v) => setState(() => sets = v)),
+          _repTargetInput(
+            reps: reps,
+            repsMax: repsMax,
+            onChanged: (r, max) => setState(() {
+              reps = r;
+              repsMax = max;
+            }),
+          ),
+          // "Vert Pull 3x7-9, %1RM NA": no prescribed load, the lifter
+          // picks it on the day. Hides the weight rather than saving a
+          // misleading 0 kg.
+          SwitchListTile(
+            key: const Key('set_editor_open_load_switch'),
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            title: const Text('No set load'),
+            subtitle: Text('The lifter picks the weight', style: tokens.bodySmall),
+            value: openLoad,
+            onChanged: (on) => setState(() => openLoad = on),
+          ),
+          if (!openLoad)
+            _FieldRow(
+              label: weightLabel,
+              // Under the label rather than beside it: beside it, the
+              // label, toggle and stepper don't fit a phone's row.
+              below: UnitToggle(
+                preference: unit,
+                value: dialogUnit,
+                onChanged: (newUnit) => setState(() {
+                  if (newUnit == dialogUnit) return;
+                  weightDisplay = newUnit == 'lbs' ? kgToLbs(weightDisplay) : lbsToKg(weightDisplay);
+                  dialogUnit = newUnit;
+                }),
+              ),
+              trailing: _compactStepper(
+                label: weightLabel,
+                value: weightDisplay,
+                min: 0,
+                step: dialogUnit == 'lbs' ? 5.0 : 2.5,
+                decimals: 1,
+                tokens: tokens,
+                onChanged: (v) => setState(() => weightDisplay = v),
+              ),
+            ),
+          _RpeTargetInput(
+            rpeMin: rpeMin,
+            rpeMax: rpeMax,
+            onChanged: (min, max) => setState(() {
+              rpeMin = min;
+              rpeMax = max;
+            }),
+          ),
+        ],
+        onAdd: () {
+          final weightKg = openLoad
+              ? null
+              : (dialogUnit == 'lbs' ? lbsToKg(weightDisplay) : weightDisplay);
+          onSubmit(AbsoluteSetBatch(
+            sets: sets,
+            reps: reps,
+            repsMax: _rangeTop(reps, repsMax),
+            weightKg: weightKg,
+            rpeMin: rpeMin,
+            rpeMax: rpeMin == null ? null : _rangeTop(rpeMin!, rpeMax),
+          ));
+          Navigator.pop(ctx);
+        },
+      );
+    },
+  );
 }

@@ -22,7 +22,10 @@ bool _samePrescription(ProgramSet a, ProgramSet b) =>
     a.absoluteWeightKg == b.absoluteWeightKg &&
     a.rpeMin == b.rpeMin &&
     a.rpeMax == b.rpeMax &&
-    a.basisExerciseId == b.basisExerciseId;
+    a.basisExerciseId == b.basisExerciseId &&
+    // The grouped editor rewrites a group as copies of its first set, so a
+    // per-set note has to match too or it would be overwritten.
+    a.note == b.note;
 
 List<SetGroup> groupConsecutiveSets(List<ProgramSet> sets) {
   final groups = <List<ProgramSet>>[];
