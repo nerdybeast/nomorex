@@ -79,22 +79,8 @@ class ProgramDayDetailScreen extends ConsumerWidget {
               else ...[
                 _DayTiles(day: day, unit: loads.unit),
                 const SizedBox(height: 16),
-                _MainLift(exercise: exercises.first, loads: loads),
-                if (exercises.length > 1) ...[
-                  const SizedBox(height: 16),
-                  ListGroup(
-                    children: [
-                      for (var i = 1; i < exercises.length; i++)
-                        _LiftRow(
-                          index: i + 1,
-                          exercise: exercises[i],
-                          loads: loads,
-                          // The hero already offers this PR; don't link it twice.
-                          linkedBasisId: _missingBasisId(exercises.first, loads),
-                        ),
-                    ],
-                  ),
-                ],
+                // Keyed by day so a different day starts from its own first lift.
+                _Lifts(key: ValueKey(day.id), exercises: exercises, loads: loads),
               ],
             ],
           );
@@ -231,13 +217,77 @@ class _Tile extends StatelessWidget {
   }
 }
 
-/// The day's first lift at full size: orange index and edge, its load range
-/// large in blue mono, and its set groups as rows.
-class _MainLift extends StatelessWidget {
-  const _MainLift({required this.exercise, required this.loads});
+/// The day's lifts in order. The first opens expanded; tapping any other
+/// expands it in place, and tapping an open lift's header folds it back into
+/// a row. Several can be open at once. Runs of folded lifts share one
+/// [ListGroup] between the open cards.
+class _Lifts extends StatefulWidget {
+  const _Lifts({super.key, required this.exercises, required this.loads});
 
+  final List<ProgramExercise> exercises;
+  final _Loads loads;
+
+  @override
+  State<_Lifts> createState() => _LiftsState();
+}
+
+class _LiftsState extends State<_Lifts> {
+  late final Set<String> _open = {widget.exercises.first.id};
+
+  void _toggle(String id) => setState(() => _open.contains(id) ? _open.remove(id) : _open.add(id));
+
+  @override
+  Widget build(BuildContext context) {
+    final exercises = widget.exercises;
+    final loads = widget.loads;
+    // Set PR links an open card already shows; folded rows don't repeat them.
+    final linked = {
+      for (final e in exercises)
+        if (_open.contains(e.id)) ?_missingBasisId(e, loads),
+    };
+
+    final children = <Widget>[];
+    var folded = <Widget>[];
+    void flushFolded() {
+      if (folded.isEmpty) return;
+      children.add(ListGroup(children: folded));
+      folded = <Widget>[];
+    }
+
+    for (var i = 0; i < exercises.length; i++) {
+      final e = exercises[i];
+      if (_open.contains(e.id)) {
+        flushFolded();
+        children.add(_LiftCard(index: i + 1, exercise: e, loads: loads, onCollapse: () => _toggle(e.id)));
+      } else {
+        folded.add(
+          _LiftRow(index: i + 1, exercise: e, loads: loads, linkedBasisIds: linked, onExpand: () => _toggle(e.id)),
+        );
+      }
+    }
+    flushFolded();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) const SizedBox(height: 12),
+          children[i],
+        ],
+      ],
+    );
+  }
+}
+
+/// An expanded lift at full size: orange index and edge, its load range large
+/// in blue mono, and its set groups as rows. The header folds it back.
+class _LiftCard extends StatelessWidget {
+  const _LiftCard({required this.index, required this.exercise, required this.loads, required this.onCollapse});
+
+  final int index;
   final ProgramExercise exercise;
   final _Loads loads;
+  final VoidCallback onCollapse;
 
   @override
   Widget build(BuildContext context) {
@@ -252,77 +302,98 @@ class _MainLift extends StatelessWidget {
 
     final pctRange = basisSet == null ? null : formatPercentTarget(_minPct(percentages), _maxPctOrNull(percentages));
 
-    return Container(
-      key: const Key('program_day_main_lift'),
-      decoration: BoxDecoration(
-        color: palette.bg1,
-        border: Border.all(color: palette.primaryBorder),
-        borderRadius: BorderRadius.circular(NomorexSizes.radiusLg),
-      ),
-      // The border insets the child by its 1px width, so the band is clipped
-      // to the border's inner curve; clipping to the outer radius let its
-      // corners poke past the border.
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(NomorexSizes.radiusLg - 1),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // The warmth sits in a header band behind the name, as a row tint
-            // (like today's day row), not as a fill for the whole card.
-            Container(
-              color: Color.alphaBlend(palette.primarySubtle, palette.bg1),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text('1', style: _indexStyle(context, palette.primaryText)),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(exercise.exerciseName, style: theme.textTheme.titleLarge)),
-                    ],
+    // Its own semantics container, so the card's loads are read with the card
+    // rather than merged into the page around it.
+    return Semantics(
+      container: true,
+      child: Container(
+        key: ValueKey('program_day_lift_card_${exercise.id}'),
+        decoration: BoxDecoration(
+          color: palette.bg1,
+          border: Border.all(color: palette.primaryBorder),
+          borderRadius: BorderRadius.circular(NomorexSizes.radiusLg),
+        ),
+        // The border insets the child by its 1px width, so the band is clipped
+        // to the border's inner curve; clipping to the outer radius let its
+        // corners poke past the border.
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(NomorexSizes.radiusLg - 1),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // The warmth sits in a header band behind the name, as a row tint
+              // (like today's day row), not as a fill for the whole card.
+              Semantics(
+                container: true,
+                expanded: true,
+                onTapHint: 'Collapse',
+                child: Material(
+                  color: Color.alphaBlend(palette.primarySubtle, palette.bg1),
+                  child: InkWell(
+                    key: ValueKey('program_day_lift_header_${exercise.id}'),
+                    onTap: onCollapse,
+                    hoverColor: palette.primarySubtle,
+                    highlightColor: palette.primarySubtle,
+                    splashColor: Colors.transparent,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text('$index', style: _indexStyle(context, palette.primaryText)),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(exercise.exerciseName, style: theme.textTheme.titleLarge)),
+                              const SizedBox(width: 8),
+                              Icon(Icons.expand_less, size: 20, color: tokens.fg3),
+                            ],
+                          ),
+                          if (exercise.notes != null && exercise.notes!.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(exercise.notes!, style: tokens.bodySmall),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
-                  if (exercise.notes != null && exercise.notes!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(exercise.notes!, style: tokens.bodySmall),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: _HeadlineLoad(exercise: exercise, load: load, loads: loads, pctRange: pctRange),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          [
+                            _setsSummary(groups),
+                            // With no 1RM the percentage is the headline, so it
+                            // isn't repeated here.
+                            if (pctRange != null && load.resolved)
+                              '$pctRange'
+                                  '${basisMax == null ? '' : ' of ${formatWeightForPreference(basisMax.kg, loads.unit)} ${basisMax.isEstimated ? 'est. 1RM' : 'PR'}'}',
+                          ].join('\n'),
+                          textAlign: TextAlign.right,
+                          style: tokens.bodySmall,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    for (final g in groups) _GroupRow(group: g, exercise: exercise, loads: loads),
                   ],
-                ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: _HeadlineLoad(exercise: exercise, load: load, loads: loads, pctRange: pctRange),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        [
-                          _setsSummary(groups),
-                          // With no 1RM the percentage is the headline, so it
-                          // isn't repeated here.
-                          if (pctRange != null && load.resolved)
-                            '$pctRange'
-                                '${basisMax == null ? '' : ' of ${formatWeightForPreference(basisMax.kg, loads.unit)} ${basisMax.isEstimated ? 'est. 1RM' : 'PR'}'}',
-                        ].join('\n'),
-                        textAlign: TextAlign.right,
-                        style: tokens.bodySmall,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  for (final g in groups) _GroupRow(group: g, exercise: exercise, loads: loads),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -457,19 +528,26 @@ class _GroupRow extends StatelessWidget {
   }
 }
 
-/// Every lift after the first: its order, name, a one-line summary ("4 × 3
-/// · 50–70% of Snatch") and its load range on the right, as a coach's sheet
-/// collapses it.
+/// A folded lift: its order, name, a one-line summary ("4 × 3 · 50–70% of
+/// Snatch") and its load range on the right, as a coach's sheet collapses
+/// it. Tapping it expands it into a [_LiftCard].
 class _LiftRow extends StatelessWidget {
-  const _LiftRow({required this.index, required this.exercise, required this.loads, this.linkedBasisId});
+  const _LiftRow({
+    required this.index,
+    required this.exercise,
+    required this.loads,
+    required this.onExpand,
+    this.linkedBasisIds = const {},
+  });
 
   final int index;
   final ProgramExercise exercise;
   final _Loads loads;
+  final VoidCallback onExpand;
 
-  /// A basis lift whose Set PR link the page already shows; this row doesn't
-  /// repeat it.
-  final String? linkedBasisId;
+  /// Basis lifts whose Set PR link an open card already shows; this row
+  /// doesn't repeat them.
+  final Set<String> linkedBasisIds;
 
   @override
   Widget build(BuildContext context) {
@@ -500,7 +578,7 @@ class _LiftRow extends StatelessWidget {
         textAlign: TextAlign.right,
         style: tokens.weight.copyWith(color: pct.isNotEmpty ? palette.info : palette.fg1),
       );
-    } else if (missing != null && loads.basisId(missing, exercise) != linkedBasisId) {
+    } else if (missing != null && !linkedBasisIds.contains(loads.basisId(missing, exercise))) {
       value = _setPrLink(missing, exercise, loads, tokens.bodySmall);
     } else if (missing != null) {
       // The hero already links this PR; say why there's no load instead of
@@ -513,30 +591,42 @@ class _LiftRow extends StatelessWidget {
       value = Text(kOpenLoadLabel, style: theme.textTheme.bodySmall?.copyWith(color: tokens.fg3));
     }
 
-    return GroupableTile(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: 24, child: Text('$index', style: _indexStyle(context, tokens.fg3))),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(exercise.exerciseName, style: theme.textTheme.titleSmall),
-                Text(summary, style: tokens.bodySmall),
-                if (exercise.notes != null && exercise.notes!.isNotEmpty)
-                  Text(
-                    exercise.notes!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(color: tokens.fg3),
-                  ),
-              ],
+    // An explicit button, so a row that also holds a Set PR link is still
+    // announced as something that expands rather than as a plain group.
+    return Semantics(
+      container: true,
+      button: true,
+      expanded: false,
+      onTapHint: 'Expand',
+      child: GroupableTile(
+        key: ValueKey('program_day_lift_row_${exercise.id}'),
+        onTap: onExpand,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: 24, child: Text('$index', style: _indexStyle(context, tokens.fg3))),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(exercise.exerciseName, style: theme.textTheme.titleSmall),
+                  Text(summary, style: tokens.bodySmall),
+                  if (exercise.notes != null && exercise.notes!.isNotEmpty)
+                    Text(
+                      exercise.notes!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(color: tokens.fg3),
+                    ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          value,
-        ],
+            const SizedBox(width: 8),
+            value,
+            const SizedBox(width: 4),
+            Icon(Icons.expand_more, size: 20, color: tokens.fg3),
+          ],
+        ),
       ),
     );
   }
