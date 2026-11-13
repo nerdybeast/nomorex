@@ -17,8 +17,9 @@ import '../models/program_day.dart';
 import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
 import '../utils/parsed_program_set.dart';
-import '../../../core/utils/sequential_naming.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../../shared/widgets/auto_save_field.dart';
+import '../widgets/add_day_dialog.dart';
 
 // SetEditor is shared with the workouts feature, so its "Add sets (%)"
 // callback speaks ParsedSet regardless of caller; convert 1:1 to this
@@ -74,49 +75,6 @@ class _ProgramEditScreenState extends ConsumerState<ProgramEditScreen>
     if (newRow != null) highlightAddedExercise(newRow.id);
   }
 
-  Future<void> _addDay(BuildContext context, WidgetRef ref, ProgramWeek week) async {
-    final defaultTitle = nextSequentialName(week.days.map((d) => d.title), 'Day');
-    final controller = TextEditingController();
-    var isRestDay = false;
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: const Text('Add day'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: controller,
-                autofocus: true,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(labelText: 'Title', hintText: defaultTitle),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Rest day'),
-                value: isRestDay,
-                onChanged: (v) => setState(() => isRestDay = v),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
-          ],
-        ),
-      ),
-    );
-    if (result == true) {
-      final typed = controller.text.trim();
-      await ref.read(programDetailProvider(programId).notifier).addDay(
-            week.id,
-            title: typed.isEmpty ? defaultTitle : typed,
-            isRestDay: isRestDay,
-          );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final detail = ref.watch(programDetailProvider(programId));
@@ -155,7 +113,7 @@ class _ProgramEditScreenState extends ConsumerState<ProgramEditScreen>
                 ),
                 const SizedBox(height: 12),
               ],
-              _AutoSaveField(
+              AutoSaveField(
                 initialValue: program.name,
                 labelText: 'Name',
                 onChanged: (v) {
@@ -164,7 +122,7 @@ class _ProgramEditScreenState extends ConsumerState<ProgramEditScreen>
                 },
               ),
               const SizedBox(height: 16),
-              _AutoSaveField(
+              AutoSaveField(
                 initialValue: program.description,
                 labelText: 'Description',
                 maxLines: 3,
@@ -195,7 +153,7 @@ class _ProgramEditScreenState extends ConsumerState<ProgramEditScreen>
                     programId: programId,
                     week: week,
                     unit: unit,
-                    onAddDay: (week) => _addDay(context, ref, week),
+                    onAddDay: (week) => showAddDayDialog(context, ref, programId: programId, week: week),
                     onAddExercise: _addExercise,
                     highlightedExerciseId: highlightedExerciseId,
                     highlightKey: highlightKey,
@@ -266,7 +224,7 @@ class _WeekCard extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: _AutoSaveField(
+            child: AutoSaveField(
               key: ValueKey('${week.id}-label'),
               initialValue: week.label,
               labelText: 'Label (e.g. Loading Week 2/6)',
@@ -353,7 +311,7 @@ class _DayCard extends ConsumerWidget {
                       highlighted: ex.id == highlightedExerciseId,
                       onDelete: () => notifier.removeExercise(ex.id),
                       children: [
-                        _AutoSaveField(
+                        AutoSaveField(
                           key: ValueKey(ex.id),
                           initialValue: ex.notes,
                           labelText: 'Notes (e.g. build to a heavy triple)',
@@ -441,76 +399,6 @@ class _DeleteTextButton extends StatelessWidget {
       onPressed: onPressed,
       icon: const Icon(Icons.delete_outline),
       label: Text(label),
-    );
-  }
-}
-
-// Tabbing or clicking away doesn't fire onFieldSubmitted (that only fires on
-// Enter/"done"), so a typed value would otherwise be silently dropped —
-// commit on blur too, same pattern as edit_workout_screen's _AutoSaveField.
-class _AutoSaveField extends StatefulWidget {
-  const _AutoSaveField({
-    super.key,
-    required this.initialValue,
-    required this.labelText,
-    required this.onChanged,
-    this.maxLines = 1,
-  });
-
-  final String? initialValue;
-  final String labelText;
-  final int maxLines;
-  final ValueChanged<String> onChanged;
-
-  @override
-  State<_AutoSaveField> createState() => _AutoSaveFieldState();
-}
-
-class _AutoSaveFieldState extends State<_AutoSaveField> {
-  late final _controller = TextEditingController(text: widget.initialValue);
-  final _focusNode = FocusNode();
-  late String _lastCommitted = widget.initialValue ?? '';
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus) _commit();
-    });
-  }
-
-  @override
-  void didUpdateWidget(_AutoSaveField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialValue != widget.initialValue &&
-        widget.initialValue != _controller.text) {
-      _controller.text = widget.initialValue ?? '';
-      _lastCommitted = widget.initialValue ?? '';
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _commit() {
-    if (_controller.text == _lastCommitted) return;
-    _lastCommitted = _controller.text;
-    widget.onChanged(_controller.text);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: _controller,
-      focusNode: _focusNode,
-      maxLines: widget.maxLines,
-      textCapitalization: TextCapitalization.sentences,
-      decoration: InputDecoration(labelText: widget.labelText),
-      onFieldSubmitted: (_) => _commit(),
     );
   }
 }

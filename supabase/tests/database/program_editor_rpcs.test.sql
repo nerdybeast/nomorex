@@ -1,5 +1,5 @@
--- duplicate_program_week, copy_program_day and replace_program_set_group
--- (#127) keep a program's week numbers and global day positions unique and
+-- duplicate_program_week, copy_program_day, replace_program_set_group (#127)
+-- and reorder_program_weeks (#128) keep a program's week numbers and global day positions unique and
 -- in order, copy every prescription column, and replace a set group in
 -- place. Runs as the seeded a@a.com; cross-user refusals are in
 -- rls_rpcs.test.sql.
@@ -7,7 +7,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(33);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser with fixed ids.
@@ -209,6 +209,39 @@ select throws_ok(
 select is(
   (select count(*)::int from public.program_sets where program_exercise_id = (select e3 from t)), 3,
   'a failed call leaves the group as it was');
+
+-- ---------------------------------------------------------------------------
+-- reorder_program_weeks
+-- ---------------------------------------------------------------------------
+
+-- P is now: Week 1 (old w1), Week 2 (the duplicate), Week 3 (old w2),
+-- Week 4 (old w3, holding the copied Day 1). Move the last week first.
+create temp table before_slots on commit drop as
+select array_agg(position order by position) as slots
+from public.program_days where program_id = (select p from t);
+
+select lives_ok(
+  $$ select public.reorder_program_weeks((select p from t), array[
+       (select w3 from t), (select w1 from t), (select week_id from dup), (select w2 from t)]) $$,
+  'reorders every week of the program');
+select is(
+  (select array_agg(id order by week_number) from public.program_weeks where program_id = (select p from t)),
+  array[(select w3 from t), (select w1 from t), (select week_id from dup), (select w2 from t)],
+  'week numbers follow the new order');
+select is((select v from day_order),
+  '1:Day 1, 2:Day 1, 2:Day 2, 2:Day 1, 3:Day 1, 3:Day 2, 4:Day 3',
+  'the days move with their weeks, keeping their order inside each week');
+select is(
+  (select array_agg(position order by position) from public.program_days where program_id = (select p from t)),
+  (select slots from before_slots),
+  'the days keep the same set of positions, so the schedule doesn''t stretch');
+select throws_like(
+  $$ select public.reorder_program_weeks((select p from t), array[(select w1 from t), (select w2 from t)]) $$,
+  'invalid_argument:%', 'refuses a list that leaves weeks out');
+select throws_like(
+  $$ select public.reorder_program_weeks((select p from t), array[
+       (select w3 from t), (select w1 from t), (select week_id from dup), (select qw from t)]) $$,
+  'invalid_argument:%', 'refuses a week of another program');
 
 select * from finish();
 rollback;

@@ -8,7 +8,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(28);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser with fixed ids.
@@ -110,6 +110,10 @@ select throws_like(
   $$ select public.replace_program_set_group(array['00000000-0000-4000-8000-00000000d023'::uuid], 3,
        '{"target_reps": 1, "weight_mode": "open"}'::jsonb) $$,
   'not_found:%', 'replace_program_set_group refuses a''s sets');
+select throws_like(
+  $$ select public.reorder_program_weeks((select pub_program from u),
+       array['00000000-0000-4000-8000-00000000d021'::uuid]) $$,
+  'not_found:%', 'reorder_program_weeks refuses a''s public program');
 
 -- The session functions are filtered to the caller's rows, so on a's
 -- workout they do nothing at all (checked as superuser below).
