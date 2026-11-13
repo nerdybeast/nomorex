@@ -287,6 +287,20 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
     await _refresh();
   }
 
+  /// Replaces a run of identical consecutive sets ([setIds], all of one
+  /// exercise) with [count] sets of [prescription], in the same place. A
+  /// count of 0 removes the group. [prescription] uses the column names
+  /// (`target_reps`, `weight_mode`, `absolute_weight_kg` in kg, …); see
+  /// `replace_program_set_group`.
+  Future<void> replaceSetGroup(List<String> setIds, int count, Map<String, Object?> prescription) async {
+    await _db.rpc('replace_program_set_group', params: {
+      'p_set_ids': setIds,
+      'p_count': count,
+      'p_set': prescription,
+    });
+    await _refresh();
+  }
+
   // ---- Program meta ----
 
   Future<void> updateProgramMeta({String? name, String? description}) async {
