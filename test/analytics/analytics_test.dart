@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -56,6 +58,37 @@ void main() {
     // Same screen with a different record is not a new screen view, and the
     // record's ID never appears.
     expect(analytics.screens, ['/workouts', '/workouts/:id']);
+  });
+
+  group('runFirebaseInit', () {
+    test('a Firebase that never loads does not hold up startup', () async {
+      // What a blocked www.gstatic.com looks like on web: the future never
+      // completes.
+      final reported = <Object>[];
+      final started = DateTime.now();
+      await runFirebaseInit(
+        () => Completer<void>().future,
+        timeout: const Duration(milliseconds: 50),
+        report: (e, _) async => reported.add(e),
+      );
+      expect(DateTime.now().difference(started), lessThan(const Duration(seconds: 2)));
+      expect(reported, isEmpty, reason: 'a timeout is not reported');
+    });
+
+    test('a failure is reported and swallowed', () async {
+      final reported = <Object>[];
+      await runFirebaseInit(
+        () async => throw StateError('no config'),
+        report: (e, _) async => reported.add(e),
+      );
+      expect(reported.single, isA<StateError>());
+    });
+
+    test('a normal start completes', () async {
+      var ran = false;
+      await runFirebaseInit(() async => ran = true, report: (e, _) async => fail('$e'));
+      expect(ran, isTrue);
+    });
   });
 
   group('AnalyticsConsentNotifier', () {
