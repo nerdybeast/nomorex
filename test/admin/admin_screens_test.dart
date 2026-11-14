@@ -91,6 +91,12 @@ void main() {
       expect(find.byKey(const Key('admin_ai_imports_switch')), findsOneWidget);
     });
 
+    testWidgets('lists the Exercises section', (tester) async {
+      await pump(tester);
+      expect(find.byKey(const Key('admin_section_${AppConstants.routeAdminExercises}')), findsOneWidget);
+      expect(find.text('Exercises'), findsOneWidget);
+    });
+
     testWidgets('a section needing a role the user lacks is hidden', (tester) async {
       // The guard is bypassed here so the hub itself has to filter: a user with
       // only some other role sees no admin sections, and the gate says so.
