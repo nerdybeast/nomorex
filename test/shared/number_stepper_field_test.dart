@@ -109,4 +109,81 @@ void main() {
     expect(changed, 6);
     handle.dispose();
   });
+
+  group('typed entry', () {
+    Future<List<double>> pumpStateful(WidgetTester tester, {double start = 0, double min = 0, double? max}) async {
+      final changes = <double>[];
+      var value = start;
+      await tester.pumpWidget(
+        StatefulBuilder(
+          builder: (context, setState) => _wrap(NumberStepperField(
+            label: 'Weight',
+            value: value,
+            min: min,
+            max: max,
+            step: 2.5,
+            decimals: 1,
+            onChanged: (v) {
+              changes.add(v);
+              setState(() => value = v);
+            },
+          )),
+        ),
+      );
+      return changes;
+    }
+
+    testWidgets('is reported without submitting or leaving the field', (tester) async {
+      // iOS's number pad has no Done key, and tapping a dialog's Save button
+      // doesn't unfocus the field, so the value must arrive as it's typed.
+      final changes = await pumpStateful(tester);
+
+      await tester.enterText(find.byType(TextField), '100');
+      await tester.pump();
+
+      expect(changes.last, 100);
+      expect(find.text('100'), findsOneWidget);
+    });
+
+    testWidgets('is not reformatted mid-edit', (tester) async {
+      await pumpStateful(tester);
+
+      await tester.enterText(find.byType(TextField), '10.');
+      await tester.pump();
+
+      expect(find.text('10.'), findsOneWidget);
+    });
+
+    testWidgets('is clamped, and the text tidied on submit', (tester) async {
+      final changes = await pumpStateful(tester, start: 5, min: 0, max: 50);
+
+      await tester.enterText(find.byType(TextField), '80');
+      await tester.pump();
+      expect(changes.last, 50);
+
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+      expect(find.text('50'), findsOneWidget);
+    });
+
+    testWidgets('the +/- buttons step from the typed value', (tester) async {
+      await pumpStateful(tester);
+
+      await tester.enterText(find.byType(TextField), '100');
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.add));
+      await tester.pump();
+
+      expect(find.text('102.5'), findsOneWidget);
+    });
+
+    testWidgets('unparseable text reports nothing', (tester) async {
+      final changes = await pumpStateful(tester, start: 5);
+
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pump();
+
+      expect(changes, isEmpty);
+    });
+  });
 }

@@ -71,7 +71,9 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
   @override
   void didUpdateWidget(NumberStepperField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.value != widget.value) {
+    // A value we just reported from typing comes straight back here; leave
+    // the text alone so "10." or a half-typed "1" isn't reformatted mid-edit.
+    if (oldWidget.value != widget.value && widget.value != _typedValue) {
       _controller.text = _format(widget.value);
     }
   }
@@ -83,14 +85,41 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
     super.dispose();
   }
 
-  void _commitTyped() => _apply(double.tryParse(_controller.text) ?? widget.value);
+  /// The last value reported while the user was typing, so
+  /// [didUpdateWidget] can tell it apart from a change made elsewhere.
+  double? _typedValue;
 
-  void _apply(double next) {
+  double _clamp(double next) {
     final ceiling = widget.max;
     final clamped = next < widget.min
         ? widget.min
         : (ceiling != null && next > ceiling ? ceiling : next);
-    widget.onChanged(double.parse(clamped.toStringAsFixed(widget.decimals)));
+    return double.parse(clamped.toStringAsFixed(widget.decimals));
+  }
+
+  // Reports each keystroke that parses. The field can't rely on
+  // submit/blur alone: iOS's number pad has no Done key, and tapping a
+  // dialog's Save button neither submits nor unfocuses the field, so the
+  // typed value would be lost (typing 100 saved 0).
+  void _onTyped(String text) {
+    final parsed = double.tryParse(text);
+    if (parsed == null) return;
+    final next = _clamp(parsed);
+    _typedValue = next;
+    if (next != widget.value) widget.onChanged(next);
+  }
+
+  // On submit or blur, also tidy the text to the clamped, formatted value.
+  void _commitTyped() {
+    final next = _clamp(double.tryParse(_controller.text) ?? widget.value);
+    _typedValue = null;
+    _controller.text = _format(next);
+    widget.onChanged(next);
+  }
+
+  void _apply(double next) {
+    _typedValue = null;
+    widget.onChanged(_clamp(next));
   }
 
   @override
@@ -136,6 +165,7 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
                 style: widget.valueTextStyle,
                 decoration: widget.valueDecoration ?? const InputDecoration(),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: _onTyped,
                 onSubmitted: (_) => _commitTyped(),
               ),
             ),
