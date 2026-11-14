@@ -70,11 +70,21 @@ bool get analyticsPlatformSupported =>
 /// events in Firebase's DebugView.
 const bool analyticsCollectsInThisBuild = kReleaseMode || bool.fromEnvironment('ANALYTICS_DEBUG');
 
-/// Initializes Firebase where Analytics is supported. A failure is reported
-/// to Sentry and leaves the app running without analytics.
+/// How long startup waits for Firebase before going on without analytics.
+const firebaseInitTimeout = Duration(seconds: 5);
+
+/// Initializes Firebase where Analytics is supported, without ever holding up
+/// startup. A failure is reported to Sentry and the app runs without
+/// analytics.
+///
+/// On web, Firebase is skipped entirely in builds that don't collect, so
+/// `flutter run`, cloud sessions and Playwright never contact Google. Native
+/// debug builds still initialize it: the native SDKs start on their own and
+/// have to be told to stop collecting.
 Future<void> initFirebase() async {
   if (!analyticsPlatformSupported) return;
-  try {
+  if (kIsWeb && !analyticsCollectsInThisBuild) return;
+  await runFirebaseInit(() async {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     // The native SDKs remember this across launches, so a debug build turns
     // collection off before it can log anything automatically. The user's
@@ -82,10 +92,30 @@ Future<void> initFirebase() async {
     if (!analyticsCollectsInThisBuild) {
       await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(false);
     }
+  });
+}
+
+/// Runs [initialize], giving up after [timeout]. On web, Firebase loads its
+/// SDK from www.gstatic.com and never completes if that's blocked (an ad
+/// blocker, a filtered network), which left the app on its splash screen.
+/// A timeout isn't reported, since blockers would make it constant noise.
+@visibleForTesting
+Future<void> runFirebaseInit(
+  Future<void> Function() initialize, {
+  Duration timeout = firebaseInitTimeout,
+  Future<void> Function(Object error, StackTrace stackTrace)? report,
+}) async {
+  try {
+    await initialize().timeout(timeout);
+  } on TimeoutException {
+    debugPrint('[analytics] Firebase did not start within $timeout; running without analytics');
   } catch (error, stackTrace) {
-    await Sentry.captureException(error, stackTrace: stackTrace);
+    await (report ?? _reportToSentry)(error, stackTrace);
   }
 }
+
+Future<void> _reportToSentry(Object error, StackTrace stackTrace) =>
+    Sentry.captureException(error, stackTrace: stackTrace);
 
 /// [AppAnalytics] when Firebase isn't initialized.
 class NoopAnalytics implements AppAnalytics {
