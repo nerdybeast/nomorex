@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:nomorex/features/ai/models/ai_import_limits.dart';
 import 'package:nomorex/features/ai/providers/ai_import_gate_provider.dart';
 import 'package:nomorex/features/ai/screens/ai_import_screen.dart';
-import 'package:nomorex/features/ai/widgets/ai_import_button.dart';
 import 'package:nomorex/features/ai/widgets/ai_import_jobs_section.dart';
 
 import 'ai_import_job_fakes.dart';
@@ -16,8 +15,9 @@ import 'ai_import_job_fakes.dart';
 void main() {
   late FakeGate gate;
 
-  /// Home (with the entry point) and the import screen, as in the app.
-  Future<GoRouter> pump(WidgetTester tester, AiImportCheck check, {bool enabled = true, Object? consentError}) async {
+  /// A screen that links to the import screen, as the "New" menus do (their
+  /// entry is tested in test/shell/), and the import screen itself.
+  Future<GoRouter> pump(WidgetTester tester, AiImportCheck check, {Object? consentError}) async {
     gate = FakeGate(check, consentError: consentError);
     final router = GoRouter(
       initialLocation: '/shell/home',
@@ -25,8 +25,19 @@ void main() {
         GoRoute(
           path: '/shell/home',
           builder: (_, _) => Scaffold(
-            appBar: AppBar(title: const Text('Workouts'), actions: const [AiImportButton()]),
-            body: const Text('Workouts screen'),
+            appBar: AppBar(title: const Text('Workouts')),
+            body: Builder(
+              builder: (context) => Column(
+                children: [
+                  const Text('Workouts screen'),
+                  TextButton(
+                    key: const Key('ai_import_entry'),
+                    onPressed: () => context.push('/ai-import'),
+                    child: const Text('Import'),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
         GoRoute(path: '/ai-import', builder: (_, _) => const AiImportScreen()),
@@ -43,7 +54,7 @@ void main() {
               maxPdfPages: 10,
               maxImageBytes: 7000000,
               maxPdfBytes: 20000000,
-              enabled: enabled,
+              enabled: true,
             ),
           ),
           aiImportGateProvider.overrideWith(() => gate),
@@ -60,18 +71,10 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  group('entry point', () {
-    testWidgets('opens the import flow, with a label for screen readers', (tester) async {
-      await pump(tester, const AiImportCheck(allowed: true));
-      expect(find.byTooltip('Import from photos or PDFs'), findsOneWidget);
-      await openImport(tester);
-      expect(find.byKey(const Key('ai_import_choose_images')), findsOneWidget);
-    });
-
-    testWidgets('is hidden while imports are switched off', (tester) async {
-      await pump(tester, const AiImportCheck(allowed: true), enabled: false);
-      expect(find.byKey(const Key('ai_import_entry')), findsNothing);
-    });
+  testWidgets('opens on the file pickers when an import can start', (tester) async {
+    await pump(tester, const AiImportCheck(allowed: true));
+    await openImport(tester);
+    expect(find.byKey(const Key('ai_import_choose_images')), findsOneWidget);
   });
 
   group('one-time notice', () {

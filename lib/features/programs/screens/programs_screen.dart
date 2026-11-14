@@ -18,7 +18,6 @@ import '../models/program_instance.dart';
 import '../providers/program_instances_list_provider.dart';
 import '../providers/programs_provider.dart';
 import '../utils/program_progress.dart';
-import '../../ai/widgets/ai_import_button.dart';
 
 class ProgramsScreen extends ConsumerStatefulWidget {
   const ProgramsScreen({super.key});
@@ -58,8 +57,6 @@ class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
                       ref.read(archivedProgramsProvider.notifier).refresh();
                     },
             ),
-            // On wide layouts import is in the sidebar's New menu.
-            if (isMobile(context)) const AiImportButton(),
             IconButton(
               icon: const Icon(Icons.history),
               tooltip: 'Program history',

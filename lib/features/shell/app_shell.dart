@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
+import '../ai/providers/ai_import_intake_provider.dart';
 import 'nav_section.dart';
 
 class AppShell extends ConsumerWidget {
@@ -10,25 +11,32 @@ class AppShell extends ConsumerWidget {
 
   final StatefulNavigationShell shell;
 
-  void _showAddMenu(BuildContext context) {
+  void _showAddMenu(BuildContext context, {required bool importEnabled}) {
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final action in kNewItemActions)
-              ListTile(
-                leading: Icon(action.icon),
-                title: Text(action.label),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  context.push(action.route);
-                },
-              ),
-          ],
-        ),
-      ),
+      builder: (ctx) {
+        Widget item(NewItemAction action, {Key? key}) => ListTile(
+              key: key,
+              leading: Icon(action.icon),
+              title: Text(action.label),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push(action.route);
+              },
+            );
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final action in kNewItemActions) item(action),
+              if (importEnabled) ...[
+                const Divider(height: 9),
+                item(kAiImportAction, key: const Key('ai_import_entry')),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -36,6 +44,9 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isMobile = MediaQuery.sizeOf(context).width < AppConstants.kMobileBreakpoint;
     final colorScheme = Theme.of(context).colorScheme;
+    // Watched rather than read on tap: the limits load lazily, so a read at
+    // tap time could still be loading and leave import out.
+    final importEnabled = ref.watch(aiImportLimitsProvider.select((l) => l.value?.enabled ?? false));
 
     if (isMobile) {
       return Scaffold(
@@ -69,7 +80,7 @@ class AppShell extends ConsumerWidget {
         floatingActionButton: FloatingActionButton(
           key: const Key('shell_add_fab'),
           heroTag: 'shellAddFab',
-          onPressed: () => _showAddMenu(context),
+          onPressed: () => _showAddMenu(context, importEnabled: importEnabled),
           tooltip: 'Add',
           child: const Icon(Icons.add, size: 26),
         ),

@@ -182,9 +182,9 @@ class _NewButton extends ConsumerWidget {
         _menuItem(
           context,
           key: const Key('ai_import_entry'),
-          icon: Icons.document_scanner_outlined,
-          label: 'Import from photos or PDFs',
-          route: AppConstants.routeAiImport,
+          icon: kAiImportAction.icon,
+          label: kAiImportAction.label,
+          route: kAiImportAction.route,
         ),
       ],
     ];
