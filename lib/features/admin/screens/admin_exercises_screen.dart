@@ -136,6 +136,10 @@ class _AdminExercisesScreenState extends ConsumerState<AdminExercisesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Keeps the auto-disposed actions notifier alive while a save is in flight:
+    // with only ref.read it's disposed during the network call, and the
+    // invalidations after it throw, so a save that worked reports a failure.
+    ref.watch(adminExerciseActionsProvider);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Exercises'),
@@ -175,6 +179,8 @@ class _AdminExercisesScreenState extends ConsumerState<AdminExercisesScreen> {
                         const SizedBox(width: 12),
                         FilledButton.icon(
                           key: const Key('admin_exercises_add'),
+                          // The theme's filled buttons are full-width; in a Row that's infinite.
+                          style: FilledButton.styleFrom(minimumSize: const Size(0, NomorexSizes.controlHeightLg)),
                           onPressed: _add,
                           icon: const Icon(Icons.add),
                           label: const Text('Add'),

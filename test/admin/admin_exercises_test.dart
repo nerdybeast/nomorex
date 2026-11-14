@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomorex/core/theme/app_theme.dart';
 import 'package:nomorex/features/admin/models/admin_audit_entry.dart';
 import 'package:nomorex/features/admin/models/admin_exercise.dart';
 import 'package:nomorex/features/admin/models/app_roles.dart';
@@ -70,6 +71,8 @@ class _FakeActions extends AdminExerciseActionsNotifier {
   @override
   Future<dynamic> callRpc(String fn, Map<String, dynamic> params) async {
     server.calls.add((fn, params));
+    // Answer later, like the network: an instant reply hid an auto-dispose bug.
+    await Future<void>.delayed(const Duration(milliseconds: 10));
     if (fn == 'admin_export_exercises') return '-- The official exercise catalog\ninsert into ...';
     final error = server.error;
     if (error != null) {
@@ -113,7 +116,8 @@ void main() {
         adminExercisesProvider.overrideWith(() => _FakeList(server)),
         adminExerciseActionsProvider.overrideWith(() => _FakeActions(server)),
       ],
-      child: const MaterialApp(home: AdminExercisesScreen()),
+      // The app theme, not a bare MaterialApp: its full-width buttons once crashed this screen.
+      child: MaterialApp(theme: AppTheme.light(), home: const AdminExercisesScreen()),
     ));
     await tester.pumpAndSettle();
   }
