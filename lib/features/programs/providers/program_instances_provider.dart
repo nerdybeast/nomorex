@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'finished_program_instances_provider.dart';
 import 'program_instance_detail_provider.dart';
 import 'program_instances_list_provider.dart';
+import '../../analytics/analytics.dart';
+import '../../analytics/providers/analytics_provider.dart';
 
 part 'program_instances_provider.g.dart';
 
@@ -24,6 +26,7 @@ class ProgramInstancesNotifier extends _$ProgramInstancesNotifier {
       'p_program_id': programId,
       'p_start_date': startDate.toIso8601String().substring(0, 10),
     }) as String;
+    ref.read(analyticsProvider).logEvent(AnalyticsEvents.programStarted, {'method': 'own'});
     ref.invalidate(currentProgramInstancesProvider);
     return instanceId;
   }

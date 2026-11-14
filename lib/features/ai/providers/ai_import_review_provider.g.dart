@@ -61,7 +61,7 @@ final class AiImportReviewNotifierProvider
 }
 
 String _$aiImportReviewNotifierHash() =>
-    r'dbd347740c6100dfa687657013df32b5623ce334';
+    r'f0cc00ee47cb82e487076230e8981196a65fefb1';
 
 /// One import's review: the job and its result, plus the three ways out of a
 /// review (accept, re-run as the other type, discard). Null when the job

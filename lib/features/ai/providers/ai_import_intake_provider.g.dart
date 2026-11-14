@@ -154,7 +154,7 @@ final class AiImportIntakeNotifierProvider
 }
 
 String _$aiImportIntakeNotifierHash() =>
-    r'3ab01e4ec544a669e102911a1f0e4a5e005dfb46';
+    r'1fcdf6eccaa1e0ba239fb9d5fd7e861165d0f32d';
 
 /// Picks, checks and uploads the files for one import, then starts it.
 ///

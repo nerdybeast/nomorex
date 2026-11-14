@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "531602826330",
+    "project_id": "nomorex-13bd9308",
+    "storage_bucket": "nomorex-13bd9308.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:531602826330:android:bf8d15c99dbdadf9e1a463",
+        "android_client_info": {
+          "package_name": "com.nomorex.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpmsDfW0U0MyX5A4BXCHEVcqcQcM4OYBo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
+import 'features/analytics/analytics.dart';
 
 Future<void> main() async {
   // Binding, Sentry and the app all start inside one zone. Calling
@@ -32,6 +33,8 @@ Future<void> main() async {
         options.captureNativeFailedRequests = true;
       },
       appRunner: () async {
+        // Analytics only; a failure is reported and the app runs without it.
+        await initFirebase();
         // Inside the app runner so a failed Supabase init is reported.
         await Supabase.initialize(
           url: const String.fromEnvironment('SUPABASE_URL'),

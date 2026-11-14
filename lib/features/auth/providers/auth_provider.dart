@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../analytics/providers/analytics_provider.dart';
 
 part 'auth_provider.g.dart';
 
@@ -47,6 +48,7 @@ class AuthNotifier extends _$AuthNotifier {
       email: email,
       password: password,
     );
+    ref.read(analyticsProvider).logLogin();
   }
 
   Future<void> signOut() async {

@@ -9,6 +9,8 @@ import '../../workouts/providers/workouts_provider.dart';
 import '../models/ai_import_result.dart';
 import 'ai_import_intake_provider.dart';
 import 'ai_import_jobs_provider.dart';
+import '../../analytics/analytics.dart';
+import '../../analytics/providers/analytics_provider.dart';
 
 part 'ai_import_review_provider.g.dart';
 
@@ -77,6 +79,9 @@ class AiImportReviewNotifier extends _$AiImportReviewNotifier {
   Future<AcceptedImport> accept(Map<String, dynamic> reviewed) async {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final saved = await acceptImport(jobId, reviewed, today);
+    ref.read(analyticsProvider).logEvent(AnalyticsEvents.aiImportAccepted, {
+      'content_type': saved.programId != null ? 'program' : 'workout',
+    });
     // Saved, so the uploaded files aren't needed again.
     if (state.value?.importId case final importId?) {
       await ref.read(aiImportJobsProvider.notifier).removeImportFiles(importId);
@@ -93,6 +98,7 @@ class AiImportReviewNotifier extends _$AiImportReviewNotifier {
   /// and replaces this job, whose result is deleted. Returns the new job ID.
   Future<String> rerunAs(String importId, String type) async {
     final newJobId = await startImport(importId, type);
+    ref.read(analyticsProvider).logEvent(AnalyticsEvents.aiImportStarted, {'requested_type': type, 'rerun': 1});
     ref.invalidate(aiImportJobsProvider);
     return newJobId;
   }

@@ -9,6 +9,8 @@ import '../../programs/providers/program_instances_list_provider.dart';
 import 'finished_workouts_provider.dart';
 import 'in_progress_workouts_provider.dart';
 import 'workouts_provider.dart';
+import '../../analytics/analytics.dart';
+import '../../analytics/providers/analytics_provider.dart';
 
 part 'workout_detail_provider.g.dart';
 
@@ -218,6 +220,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
 
   Future<void> startWorkout() async {
     await _db.rpc('start_workout_session', params: {'p_workout_id': workoutId});
+    ref.read(analyticsProvider).logEvent(AnalyticsEvents.workoutStarted, {'method': 'start'});
     _invalidateStatusLists();
     await _refresh();
   }
@@ -252,6 +255,9 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
       'p_workout_id': workoutId,
       'p_session_notes': sessionNotes,
       'p_today': DateTime.now().toIso8601String().split('T').first,
+    });
+    ref.read(analyticsProvider).logEvent(AnalyticsEvents.workoutFinished, {
+      'from_program': current.programInstanceId != null ? 1 : 0,
     });
 
     ref.invalidate(workoutsProvider);
@@ -294,6 +300,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
       }
       rethrow;
     }
+    ref.read(analyticsProvider).logEvent(AnalyticsEvents.workoutStarted, {'method': 'repeat'});
 
     ref.invalidate(workoutsProvider);
     ref.invalidate(inProgressWorkoutsProvider);

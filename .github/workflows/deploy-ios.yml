@@ -47,6 +47,10 @@ jobs:
     # Free on a public repo; a private repo would bill these minutes at the
     # macOS multiplier.
     runs-on: macos-26
+    env:
+      # Builds firebase_analytics without Google's advertising-ID SDKs (no ads;
+      # see web/privacy.html). Checked after the archive below.
+      FIREBASE_ANALYTICS_WITHOUT_ADID: 'true'
     steps:
       - uses: actions/checkout@v7
 
@@ -202,6 +206,11 @@ jobs:
             echo "::error::Xcode created a new development certificate instead of using IOS_DEV_CERT_P12. Revoke the new 'Created via API' certificate and check the secret (docs/build.md)."
             exit 1
           fi
+
+      # Before anything is uploaded: the shipped app must not carry the
+      # advertising-ID SDKs that the privacy policy says aren't used.
+      - name: Check no advertising-ID SDKs are bundled
+        run: ./scripts/check-ios-no-adid.sh "$ARCHIVE_PATH/Products/Applications/Runner.app"
 
       # ios/ExportOptions.plist has destination=upload, so this step signs
       # the IPA for App Store distribution and uploads it to App Store Connect.
