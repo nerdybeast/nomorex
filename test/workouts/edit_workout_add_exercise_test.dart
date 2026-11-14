@@ -21,15 +21,9 @@ class _TestExercisesNotifier extends ExercisesNotifier {
   @override
   Future<List<Exercise>> build() => _future;
 
-  // The real one finds by name first and only then creates; keep that so the
-  // test proves the picker goes through it.
-  @override
-  Future<Exercise> ensureExerciseByName(String name) async {
-    for (final e in await future) {
-      if (e.name.toLowerCase() == name.trim().toLowerCase()) return e;
-    }
-    return addCustomExercise(name.trim());
-  }
+  // ensureExerciseByName is the real one: it finds by name or alias first and
+  // only then calls addCustomExercise, so the test proves the picker goes
+  // through it.
 
   @override
   Future<Exercise> addCustomExercise(String name) async {
@@ -68,7 +62,17 @@ const _catalog = [
   Exercise(id: 'e3', name: 'Snatch Pull', isPredefined: true),
   Exercise(id: 'e4', name: 'Power Snatch', isPredefined: true),
   Exercise(id: 'e5', name: 'Dude Pulls', isPredefined: false, userId: 'u1'),
+  Exercise(id: 'e6', name: 'Clean & Jerk', isPredefined: true, slug: 'clean_and_jerk', aliases: ['C&J']),
 ];
+
+// Built per test rather than const: DateTime isn't const.
+final _retired = Exercise(
+  id: 'e7',
+  name: 'Retired Lift',
+  isPredefined: true,
+  slug: 'retired_lift',
+  retiredAt: DateTime(2026, 11, 1),
+);
 
 Future<void> _pumpEditor(
   WidgetTester tester, {
@@ -177,6 +181,47 @@ void main() {
     expect(createdName, 'Tall Clean');
     expect(added, 'new-custom');
     expect(find.byType(ExercisePickerPanel), findsNothing);
+  });
+
+  testWidgets('a retired exercise is not offered, in the list or in search', (tester) async {
+    await _pumpEditor(tester, exercises: Future.value([..._catalog, _retired]), recent: const ['e7']);
+    await _openPicker(tester);
+    expect(find.byKey(const ValueKey('exercise_picker_row_e7')), findsNothing);
+
+    await tester.enterText(_search, 'retired');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('exercise_picker_row_e7')), findsNothing);
+  });
+
+  testWidgets('typing a retired exercise\'s name resolves to it instead of creating a duplicate', (tester) async {
+    String? createdName;
+    String? added;
+    await _pumpEditor(
+      tester,
+      exercises: Future.value([..._catalog, _retired]),
+      onAddCustom: (name) => createdName = name,
+      onAddExercise: (id) => added = id,
+    );
+    await _openPicker(tester);
+    await tester.enterText(_search, 'retired lift');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('exercise_picker_create')));
+    await tester.pumpAndSettle();
+
+    expect(createdName, isNull);
+    expect(added, 'e7');
+  });
+
+  testWidgets('search finds an exercise by its alias and says which alias matched', (tester) async {
+    await _pumpEditor(tester);
+    await _openPicker(tester);
+    await tester.enterText(_search, 'c&j');
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('exercise_picker_row_e6')), findsOneWidget);
+    expect(find.text('Also called C&J'), findsOneWidget);
+    // An exact alias is an exact match: no "Create" row.
+    expect(find.byKey(const Key('exercise_picker_create')), findsNothing);
   });
 
   testWidgets('a failed save keeps the picker open and says so', (tester) async {

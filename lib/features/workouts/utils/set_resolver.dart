@@ -1,3 +1,4 @@
+import '../../../core/utils/exercise_name.dart';
 import '../../../shared/models/one_rep_max.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
@@ -14,7 +15,8 @@ String resolveBasisExerciseId(WorkoutSet set, WorkoutExercise exercise) =>
 /// meaningful within one user's catalog: on someone else's public workout the
 /// set points at *their* exercise row, so a viewer who has recorded a PR for
 /// the same lift — under their own id — would otherwise look like they had no
-/// 1RM at all. Names are compared case-insensitively.
+/// 1RM at all. Names are compared by [normalizeExerciseName], and an official
+/// exercise's aliases count (see `oneRepMaxByNameProvider`).
 OneRepMax? lookupOneRepMax({
   required String basisExerciseId,
   required String basisExerciseName,
@@ -22,7 +24,7 @@ OneRepMax? lookupOneRepMax({
   required Map<String, OneRepMax> byExerciseName,
 }) {
   return byExerciseId[basisExerciseId] ??
-      byExerciseName[basisExerciseName.toLowerCase()];
+      byExerciseName[normalizeExerciseName(basisExerciseName)];
 }
 
 /// Shown in place of a load for an open-load set.

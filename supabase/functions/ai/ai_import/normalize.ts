@@ -18,6 +18,27 @@ export interface ExerciseMatch {
 export interface CatalogExercise {
   id: string;
   name: string;
+  /** Other names an official exercise answers to. Custom ones have none. */
+  aliases?: string[];
+  is_predefined?: boolean;
+  retired_at?: string | null;
+  created_at?: string;
+}
+
+/**
+ * The one rule for "the same exercise name": whitespace collapsed, trimmed,
+ * lowercased. Must match the database's normalize_exercise_name() and the
+ * app's normalizeExerciseName() (lib/core/utils/exercise_name.dart); the
+ * tests run the same cases as exercise_catalog.test.sql.
+ */
+export function normalizeExerciseName(name: string): string {
+  return name.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+/** Lower sorts first: active official, retired official, then custom. */
+function catalogRank(e: CatalogExercise): number {
+  if (!e.is_predefined) return 2;
+  return e.retired_at ? 1 : 0;
 }
 
 export interface ImportSet {
@@ -138,20 +159,22 @@ class Catalog {
   private byName = new Map<string, CatalogExercise>();
 
   constructor(exercises: CatalogExercise[]) {
-    // First one wins, the same as ensureExerciseByName with duplicate names.
-    for (const e of exercises) {
-      const key = Catalog.key(e.name);
-      if (!this.byName.has(key)) this.byName.set(key, e);
+    // Names and aliases, in the order the server's find_exercise_for_user()
+    // and the app's findExerciseByName() pick: active official, retired
+    // official, then the oldest custom row. First one wins.
+    const ordered = [...exercises].sort((a, b) =>
+      catalogRank(a) - catalogRank(b) || (a.created_at ?? '').localeCompare(b.created_at ?? '')
+    );
+    for (const e of ordered) {
+      for (const name of [e.name, ...(e.aliases ?? [])]) {
+        const key = normalizeExerciseName(name);
+        if (key && !this.byName.has(key)) this.byName.set(key, e);
+      }
     }
   }
 
-  // The same rule as ensureExerciseByName: trimmed and case-insensitive.
-  private static key(name: string) {
-    return name.trim().toLowerCase();
-  }
-
   find(name: string | undefined) {
-    return name === undefined ? undefined : this.byName.get(Catalog.key(name));
+    return name === undefined ? undefined : this.byName.get(normalizeExerciseName(name));
   }
 
   /** A name in the catalog beats the model's suggestion. A suggestion must exist. */

@@ -593,6 +593,24 @@ Check it with
 Every admin after that is added from the app. No email belongs in a migration
 or in `seed.sql`, because the repo is public.
 
+### Official exercise catalog
+
+Official exercises (`is_predefined = true`) are edited in the database, and
+`supabase/catalog/official_exercises.sql` keeps a copy in the repo so the
+catalog survives a database wipe. The file is an upsert keyed on each
+exercise's `slug`, so it is safe to run any number of times:
+
+- `supabase db reset` loads it automatically, before `seed.sql`.
+- After wiping a hosted project, open its SQL editor and run the file once.
+  It creates every exercise it lists and updates any with the same slug. It
+  never deletes anything.
+
+Commit the file whenever the catalog changes. A slug is permanent: changing
+one in the file adds a second exercise rather than renaming the first. If a
+run stops with `duplicate: "…" already uses one of these names or aliases`,
+an exercise already in the database answers to a name the file gives a
+different slug. Retire or rename that row, then run the file again.
+
 ## AI backend (Genkit edge function)
 
 AI features run in one Supabase Edge Function, `supabase/functions/ai`, built

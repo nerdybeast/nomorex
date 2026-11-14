@@ -57,8 +57,8 @@ final class OneRepMaxProvider
 
 String _$oneRepMaxHash() => r'69d41be518cb1bcfc9a3af664d1e7d6ab86dc87e';
 
-/// Lowercased exercise name -> the user's current 1RM (kg), by the same
-/// latest-entry rule as [oneRepMax].
+/// Normalized exercise name ([normalizeExerciseName]) -> the user's current
+/// 1RM (kg), by the same latest-entry rule as [oneRepMax].
 ///
 /// [oneRepMax]'s id keying is enough for the user's own workouts, but misses
 /// on someone else's: a public workout's percentage set carries the *owner's*
@@ -67,12 +67,16 @@ String _$oneRepMaxHash() => r'69d41be518cb1bcfc9a3af664d1e7d6ab86dc87e';
 /// `ExercisesNotifier.ensureExerciseByName` creates when a viewer sets a PR
 /// from a read-only workout). Matching on name bridges the two so the preview
 /// starts resolving instead of offering "set PR" forever.
+///
+/// An official exercise's aliases are keys too, so a PR on Clean & Jerk
+/// resolves a set whose basis is someone's custom "C&J". A name always beats
+/// an alias for the same key.
 
 @ProviderFor(oneRepMaxByName)
 final oneRepMaxByNameProvider = OneRepMaxByNameProvider._();
 
-/// Lowercased exercise name -> the user's current 1RM (kg), by the same
-/// latest-entry rule as [oneRepMax].
+/// Normalized exercise name ([normalizeExerciseName]) -> the user's current
+/// 1RM (kg), by the same latest-entry rule as [oneRepMax].
 ///
 /// [oneRepMax]'s id keying is enough for the user's own workouts, but misses
 /// on someone else's: a public workout's percentage set carries the *owner's*
@@ -81,6 +85,10 @@ final oneRepMaxByNameProvider = OneRepMaxByNameProvider._();
 /// `ExercisesNotifier.ensureExerciseByName` creates when a viewer sets a PR
 /// from a read-only workout). Matching on name bridges the two so the preview
 /// starts resolving instead of offering "set PR" forever.
+///
+/// An official exercise's aliases are keys too, so a PR on Clean & Jerk
+/// resolves a set whose basis is someone's custom "C&J". A name always beats
+/// an alias for the same key.
 
 final class OneRepMaxByNameProvider
     extends
@@ -92,8 +100,8 @@ final class OneRepMaxByNameProvider
     with
         $FutureModifier<Map<String, OneRepMax>>,
         $FutureProvider<Map<String, OneRepMax>> {
-  /// Lowercased exercise name -> the user's current 1RM (kg), by the same
-  /// latest-entry rule as [oneRepMax].
+  /// Normalized exercise name ([normalizeExerciseName]) -> the user's current
+  /// 1RM (kg), by the same latest-entry rule as [oneRepMax].
   ///
   /// [oneRepMax]'s id keying is enough for the user's own workouts, but misses
   /// on someone else's: a public workout's percentage set carries the *owner's*
@@ -102,6 +110,10 @@ final class OneRepMaxByNameProvider
   /// `ExercisesNotifier.ensureExerciseByName` creates when a viewer sets a PR
   /// from a read-only workout). Matching on name bridges the two so the preview
   /// starts resolving instead of offering "set PR" forever.
+  ///
+  /// An official exercise's aliases are keys too, so a PR on Clean & Jerk
+  /// resolves a set whose basis is someone's custom "C&J". A name always beats
+  /// an alias for the same key.
   OneRepMaxByNameProvider._()
     : super(
         from: null,
@@ -128,4 +140,4 @@ final class OneRepMaxByNameProvider
   }
 }
 
-String _$oneRepMaxByNameHash() => r'4d8cdd2cff1b1de3bcb2a1a3e864c3ecedf6663d';
+String _$oneRepMaxByNameHash() => r'9491ab052fd2a0872a501e9d93aa9015602d80d3';

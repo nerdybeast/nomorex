@@ -79,4 +79,37 @@ void main() {
     expect(maxes['squat']!.kg, 90);
     expect(maxes['bench']!.kg, 65);
   });
+
+  group('oneRepMaxesByName', () {
+    Map<String, dynamic> pr(String name, double kg, String date, {List<String> aliases = const []}) => {
+          'weight_kg': kg,
+          'reps': 1,
+          'date': date,
+          'created_at': '${date}T00:00:00Z',
+          'exercises': {'name': name, 'aliases': aliases},
+        };
+
+    test('keys are normalized names, and an official exercise\'s aliases resolve too', () {
+      final maxes = oneRepMaxesByName(
+        [pr('  Clean   & Jerk', 120, '2026-01-01', aliases: ['C&J'])],
+        OneRepMaxFormula.brzycki,
+      );
+      expect(maxes['clean & jerk']!.kg, 120);
+      expect(maxes['c&j']!.kg, 120);
+    });
+
+    test('a name beats an alias for the same key', () {
+      final maxes = oneRepMaxesByName(
+        [
+          // Newer, but only reaches "c&j" through an alias.
+          pr('Clean & Jerk', 120, '2026-02-01', aliases: ['C&J']),
+          // The user's own custom exercise literally named "C&J".
+          pr('C&J', 100, '2026-01-01'),
+        ],
+        OneRepMaxFormula.brzycki,
+      );
+      expect(maxes['c&j']!.kg, 100);
+      expect(maxes['clean & jerk']!.kg, 120);
+    });
+  });
 }

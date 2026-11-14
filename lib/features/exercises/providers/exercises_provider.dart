@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/exercise.dart';
+import '../utils/exercise_match.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 
 part 'exercises_provider.g.dart';
@@ -45,21 +46,18 @@ class ExercisesNotifier extends _$ExercisesNotifier {
     return Exercise.fromJson(response);
   }
 
-  /// The viewer's own exercise named [name] (case-insensitive), creating a
-  /// custom one if they don't already have it. Lets a viewer record a PR
-  /// against a lift that so far only exists in another user's catalog — e.g.
-  /// tapping "set PR" on a public workout built around the owner's custom
-  /// exercise, whose id means nothing to the viewer.
+  /// The exercise in the viewer's catalog that [name] refers to — an official
+  /// one by name or alias first ([findExerciseByName], the server's order) —
+  /// creating a custom one if there's none. Lets a viewer record a PR against
+  /// a lift that so far only exists in another user's catalog — e.g. tapping
+  /// "set PR" on a public workout built around the owner's custom exercise,
+  /// whose id means nothing to the viewer.
   ///
-  /// `exercises.name` has no unique constraint, so the dedupe here is
+  /// Custom exercise names have no unique constraint, so the dedupe here is
   /// best-effort by design: it stops repeat taps piling up duplicates without
   /// pretending to be a database-level guarantee.
   Future<Exercise> ensureExerciseByName(String name) async {
-    final trimmed = name.trim();
     final existing = await future;
-    for (final e in existing) {
-      if (e.name.toLowerCase() == trimmed.toLowerCase()) return e;
-    }
-    return addCustomExercise(trimmed);
+    return findExerciseByName(existing, name) ?? await addCustomExercise(name.trim());
   }
 }
