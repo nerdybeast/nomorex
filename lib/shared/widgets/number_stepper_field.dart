@@ -114,7 +114,7 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
     final next = _clamp(double.tryParse(_controller.text) ?? widget.value);
     _typedValue = null;
     _controller.text = _format(next);
-    if (next != widget.value) widget.onChanged(next);
+    widget.onChanged(next);
   }
 
   void _apply(double next) {
