@@ -268,6 +268,26 @@ void main() {
       expect(logged, [('s1', 10.0)]);
     });
 
+    testWidgets('a typed weight is saved without pressing Done', (tester) async {
+      // iOS's number pad has no Done key: the user types and taps Save.
+      final logged = await _pumpDetail(tester, _workout(status: 'paused', sets: [_openSet('s1')]));
+
+      await tester.tap(find.byKey(const Key('set_actual_weight_s1')));
+      await _settle(tester);
+      await tester.enterText(
+        find.descendant(
+          of: find.byKey(const Key('log_weight_value')),
+          matching: find.byType(TextField),
+        ),
+        '100',
+      );
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await _settle(tester);
+
+      expect(logged, [('s1', 100.0)]);
+    });
+
     testWidgets('a lbs user logs in lbs and it is saved in kg', (tester) async {
       final logged = await _pumpDetail(
         tester,
