@@ -30,6 +30,12 @@ const kAdminSections = [
     route: AppConstants.routeAdminUsers,
   ),
   AdminSection(
+    title: 'Exercises',
+    subtitle: 'Add, rename, retire and export the official exercises',
+    icon: Icons.fitness_center,
+    route: AppConstants.routeAdminExercises,
+  ),
+  AdminSection(
     title: 'AI imports',
     subtitle: 'Turn importing from photos and PDFs on or off for everyone',
     icon: Icons.document_scanner_outlined,

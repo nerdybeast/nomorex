@@ -6,7 +6,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(56);
+select plan(64);
 
 -- ---------------------------------------------------------------------------
 -- Helpers and fixtures
@@ -73,6 +73,21 @@ select throws_ok($$ select public.require_role('admin') $$,
   '42501', null, 'require_role is not callable by clients');
 select throws_ok($$ select public.lock_user_roles() $$,
   '42501', null, 'lock_user_roles is not callable by clients');
+-- The exercise catalog functions (detailed in admin_exercises.test.sql).
+select throws_like($$ select * from public.admin_list_exercises() $$,
+  'forbidden:%', 'b cannot list official exercises through the admin function');
+select throws_like($$ select public.admin_export_exercises() $$,
+  'forbidden:%', 'b cannot export the catalog');
+select throws_like($$ select * from public.admin_create_exercise('b_lift', 'B Lift') $$,
+  'forbidden:%', 'b cannot create an official exercise');
+select throws_like($$ select public.admin_update_exercise((select id from public.exercises where slug = 'back_squat'), 'Hacked') $$,
+  'forbidden:%', 'b cannot rename an official exercise');
+select throws_like($$ select public.admin_set_exercise_retired((select id from public.exercises where slug = 'back_squat'), true) $$,
+  'forbidden:%', 'b cannot retire an official exercise');
+select throws_like($$ select public.admin_delete_exercise((select id from public.exercises where slug = 'back_squat')) $$,
+  'forbidden:%', 'b cannot delete an official exercise');
+select throws_ok($$ select public.exercise_usage_count(gen_random_uuid()) $$,
+  '42501', null, 'exercise_usage_count is not callable by clients');
 
 -- ---------------------------------------------------------------------------
 -- anon can't call anything.
@@ -88,6 +103,8 @@ select throws_ok($$ select public.admin_grant_role((select b from u), 'admin') $
   '42501', null, 'anon cannot grant a role');
 select throws_ok($$ select public.admin_set_ai_imports_enabled(false) $$,
   '42501', null, 'anon cannot switch AI imports off');
+select throws_ok($$ select * from public.admin_create_exercise('anon_lift', 'Anon Lift') $$,
+  '42501', null, 'anon cannot create an official exercise');
 select throws_ok($$ select count(*) from public.user_roles $$, '42501', null, 'anon cannot read user_roles');
 
 -- ---------------------------------------------------------------------------

@@ -605,7 +605,9 @@ exercise's `slug`, so it is safe to run any number of times:
   It creates every exercise it lists and updates any with the same slug. It
   never deletes anything.
 
-Commit the file whenever the catalog changes. A slug is permanent: changing
+Edit the catalog in the app at Profile → Admin → Exercises, then use its
+**Export catalog** button: it shows this file's exact contents with a Copy
+button. Paste that over the file and commit it. A slug is permanent: changing
 one in the file adds a second exercise rather than renaming the first. If a
 run stops with `duplicate: "…" already uses one of these names or aliases`,
 an exercise already in the database answers to a name the file gives a

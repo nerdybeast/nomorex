@@ -15,6 +15,7 @@ import 'features/analytics/utils/screen_tracking.dart';
 import 'features/admin/providers/current_roles_provider.dart';
 import 'features/admin/screens/admin_ai_imports_screen.dart';
 import 'features/admin/screens/admin_audit_log_screen.dart';
+import 'features/admin/screens/admin_exercises_screen.dart';
 import 'features/admin/screens/admin_users_screen.dart';
 import 'features/admin/screens/admin_screen.dart';
 import 'features/admin/utils/admin_route_guard.dart';
@@ -146,6 +147,10 @@ GoRouter router(Ref ref) {
               GoRoute(
                 path: 'users',
                 builder: (_, _) => const AdminUsersScreen(),
+              ),
+              GoRoute(
+                path: 'exercises',
+                builder: (_, _) => const AdminExercisesScreen(),
               ),
               GoRoute(
                 path: 'ai-imports',
