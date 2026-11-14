@@ -1,3 +1,4 @@
+import '../../../core/utils/exercise_name.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../exercises/models/exercise.dart';
 
@@ -55,7 +56,7 @@ class AiImportResult {
     final byKey = <String, ExerciseToCheck>{};
     void add(String name, ImportMatch? match) {
       if (match?.confidence == 'exact') return;
-      final key = exerciseKey(name);
+      final key = normalizeExerciseName(name);
       final existing = byKey[key];
       byKey[key] = existing == null
           ? ExerciseToCheck(key: key, name: name, match: match, occurrences: 1)
@@ -259,10 +260,6 @@ class CreateCustomExercise extends ExerciseFix {
   final String name;
 }
 
-/// The same rule as `ensureExerciseByName` and the server: trimmed and
-/// case-insensitive.
-String exerciseKey(String name) => name.trim().toLowerCase();
-
 /// The stored result with the user's review applied, ready for
 /// `ai_import_accept`:
 /// - [title] replaces the read title (blank leaves the server's fallback);
@@ -280,7 +277,7 @@ Map<String, dynamic> buildReviewedPayload(
   String? unit,
 }) {
   Map<String, dynamic> fixed(Map<String, dynamic> named) {
-    final fix = fixes[exerciseKey(named['name'] as String? ?? '')];
+    final fix = fixes[normalizeExerciseName(named['name'] as String? ?? '')];
     return switch (fix) {
       null => named,
       UseExistingExercise(:final exercise) => {

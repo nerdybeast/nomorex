@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../../core/utils/exercise_name.dart';
 import '../models/exercise.dart';
 import '../providers/exercises_provider.dart';
 import '../providers/recent_exercises_provider.dart';
+import '../utils/exercise_match.dart';
 
 /// Opens the exercise picker: a near-full-height bottom sheet on a phone, a
 /// tall centered panel on a wider screen. The search field is pinned at the
@@ -202,7 +204,12 @@ class _ExercisePickerPanelState extends ConsumerState<ExercisePickerPanel> {
     );
   }
 
-  Widget _results(List<Exercise> exercises, List<String> recentIds) {
+  Widget _results(List<Exercise> catalog, List<String> recentIds) {
+    // Retired official exercises stay in the catalog, so names already in use
+    // still resolve, but nobody picks them for new work. Typing one's exact
+    // name still offers "Create …", which resolves to it rather than making a
+    // custom duplicate, the same as the server would.
+    final exercises = [for (final e in catalog) if (!e.isRetired) e];
     final entries = <Widget>[];
     final query = _query;
     bool busy(String id) => _savingId == id;
@@ -266,31 +273,30 @@ class _ExercisePickerPanelState extends ConsumerState<ExercisePickerPanel> {
   }
 }
 
-/// [exercises] whose name contains [query] (case-insensitive), names that
-/// start with it first, each part A–Z; and the one whose name is exactly
-/// [query], if any, which suppresses "Create …".
+/// [exercises] whose name or alias contains [query] (by
+/// [normalizeExerciseName]), names that start with it first, each part A–Z;
+/// and the one that is exactly [query] by name or alias, if any, which
+/// suppresses "Create …".
 ({List<Exercise> matches, Exercise? exact}) searchExercises(
   List<Exercise> exercises,
   String query,
 ) {
-  final q = query.trim().toLowerCase();
+  final q = normalizeExerciseName(query);
   if (q.isEmpty) return (matches: exercises, exact: null);
-  Exercise? exact;
   final prefix = <Exercise>[];
   final infix = <Exercise>[];
   for (final e in exercises) {
-    final name = e.name.toLowerCase();
-    if (name == q) exact ??= e;
-    if (name.startsWith(q)) {
+    final keys = e.matchKeys.toList();
+    if (keys.any((k) => k.startsWith(q))) {
       prefix.add(e);
-    } else if (name.contains(q)) {
+    } else if (keys.any((k) => k.contains(q))) {
       infix.add(e);
     }
   }
   int byName(Exercise a, Exercise b) => a.name.toLowerCase().compareTo(b.name.toLowerCase());
   prefix.sort(byName);
   infix.sort(byName);
-  return (matches: [...prefix, ...infix], exact: exact);
+  return (matches: [...prefix, ...infix], exact: findExerciseByName(exercises, query));
 }
 
 class _SectionLabel extends StatelessWidget {
@@ -345,9 +351,16 @@ class _ExerciseRow extends StatelessWidget {
               )
             : null;
 
+    final alias = _matchedAlias(exercise, query);
+
     return Semantics(
       button: true,
-      label: [exercise.name, if (!exercise.isPredefined) 'custom', if (added) 'already added'].join(', '),
+      label: [
+        exercise.name,
+        if (alias != null) 'also called $alias',
+        if (!exercise.isPredefined) 'custom',
+        if (added) 'already added',
+      ].join(', '),
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
@@ -358,13 +371,20 @@ class _ExerciseRow extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text.rich(
-                    _highlight(exercise.name, query, base, base.copyWith(
-                      color: palette.primaryText,
-                      fontWeight: FontWeight.w600,
-                    )),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text.rich(
+                        _highlight(exercise.name, query, base, base.copyWith(
+                          color: palette.primaryText,
+                          fontWeight: FontWeight.w600,
+                        )),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (alias != null)
+                        Text('Also called $alias', style: tokens.bodySmall.copyWith(color: palette.fg3)),
+                    ],
                   ),
                 ),
                 if (!exercise.isPredefined) ...[
@@ -379,6 +399,16 @@ class _ExerciseRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The alias that made [exercise] match [query], when its name didn't.
+String? _matchedAlias(Exercise exercise, String query) {
+  final q = normalizeExerciseName(query);
+  if (q.isEmpty || normalizeExerciseName(exercise.name).contains(q)) return null;
+  for (final a in exercise.aliases) {
+    if (normalizeExerciseName(a).contains(q)) return a;
+  }
+  return null;
 }
 
 /// [name] with the first case-insensitive occurrence of [query] in [match].

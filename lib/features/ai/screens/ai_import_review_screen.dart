@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/exercise_name.dart';
 import '../../../core/utils/percent_range.dart';
 import '../../../core/utils/rpe.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
@@ -616,7 +617,7 @@ class _ExerciseTile extends StatelessWidget {
     final theme = Theme.of(context);
     final tokens = NomorexTokens.of(context);
     final muted = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
-    final status = _resolution(exercise.name, exercise.match, fixes[exerciseKey(exercise.name)]);
+    final status = _resolution(exercise.name, exercise.match, fixes[normalizeExerciseName(exercise.name)]);
     return GroupableTile(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -663,7 +664,7 @@ class _SetLine extends StatelessWidget {
     if (set.percent != null) {
       spans.add(TextSpan(text: ' @ ${formatPercentTarget(set.percent, set.percentMax)}'));
       if (set.basisName case final basis?) {
-        final fix = fixes[exerciseKey(basis)];
+        final fix = fixes[normalizeExerciseName(basis)];
         final shown = switch (fix) {
           UseExistingExercise(:final exercise) => exercise.name,
           CreateCustomExercise(:final name) => name,

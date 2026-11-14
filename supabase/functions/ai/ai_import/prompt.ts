@@ -1,3 +1,5 @@
+import type { CatalogExercise } from './normalize.ts';
+
 export type ImportType = 'workout' | 'program';
 
 /**
@@ -68,6 +70,7 @@ Programs:
 
 Exercises:
 - "name" is the exercise exactly as written, with abbreviations and misspellings kept.
+- A catalog line may end with other names in parentheses after "also:". Those are the same exercise; use the name before the parentheses for "match".
 - When "name" is already in the exercise catalog, omit "match" and "confidence".
 - Otherwise "match" is the closest name from the exercise catalog, copied exactly. Omit it if nothing in the catalog is the same lift.
 - "confidence" is "high" only when you are sure "match" is the same lift, and otherwise "low".
@@ -78,6 +81,18 @@ What goes in "unstructured", with the original wording:
 - Supersets, EMOMs, circuits, conditioning work, and "exercise A or B" choices. A superset or circuit must be named as one in the file. A hand-drawn bracket or other grouping is not enough: keep those exercises structured, and add one "unstructured" entry describing the grouping.
 - Anything else you can read but cannot express in this format. Nothing in the file may be silently dropped.
 "location" says where it appeared, such as "Week 1, Monday" or "Page 2".`;
+
+/**
+ * The catalog as the model reads it: one active exercise per line, with any
+ * aliases after it ("Clean & Jerk (also: C&J)"). Retired exercises are left
+ * out so the model doesn't suggest them, though the Catalog still matches
+ * a file that names one.
+ */
+export function catalogLines(catalog: CatalogExercise[]): string[] {
+  return catalog
+    .filter((e) => !e.retired_at)
+    .map((e) => e.aliases?.length ? `${e.name} (also: ${e.aliases.join(', ')})` : e.name);
+}
 
 /** The per-request text that accompanies the files. */
 export function buildUserPrompt(catalog: string[], requestedType?: ImportType): string {

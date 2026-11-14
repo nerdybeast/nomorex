@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../../core/utils/exercise_name.dart';
 import '../../../core/utils/one_rep_max_formula.dart';
 import '../../../shared/models/one_rep_max.dart';
 
@@ -88,8 +89,8 @@ Future<Map<String, OneRepMax>> oneRepMax(Ref ref) async {
   );
 }
 
-/// Lowercased exercise name -> the user's current 1RM (kg), by the same
-/// latest-entry rule as [oneRepMax].
+/// Normalized exercise name ([normalizeExerciseName]) -> the user's current
+/// 1RM (kg), by the same latest-entry rule as [oneRepMax].
 ///
 /// [oneRepMax]'s id keying is enough for the user's own workouts, but misses
 /// on someone else's: a public workout's percentage set carries the *owner's*
@@ -98,6 +99,10 @@ Future<Map<String, OneRepMax>> oneRepMax(Ref ref) async {
 /// `ExercisesNotifier.ensureExerciseByName` creates when a viewer sets a PR
 /// from a read-only workout). Matching on name bridges the two so the preview
 /// starts resolving instead of offering "set PR" forever.
+///
+/// An official exercise's aliases are keys too, so a PR on Clean & Jerk
+/// resolves a set whose basis is someone's custom "C&J". A name always beats
+/// an alias for the same key.
 @Riverpod(keepAlive: true)
 Future<Map<String, OneRepMax>> oneRepMaxByName(Ref ref) async {
   ref.watch(authStateProvider);
@@ -107,20 +112,41 @@ Future<Map<String, OneRepMax>> oneRepMaxByName(Ref ref) async {
 
   final data = await Supabase.instance.client
       .from('personal_bests')
-      .select('weight_kg, reps, date, created_at, exercises(name)')
+      .select('weight_kg, reps, date, created_at, exercises(name, aliases)')
       .eq('user_id', userId);
+  return oneRepMaxesByName(
+    [for (final row in data as List) row as Map<String, dynamic>],
+    formula,
+  );
+}
 
-  final rows = <OneRepMaxRow>[];
-  for (final row in data as List) {
-    final name = (row['exercises'] as Map<String, dynamic>?)?['name'] as String?;
-    if (name == null || name.isEmpty) continue;
-    rows.add((
-      key: name.toLowerCase(),
-      weightKg: (row['weight_kg'] as num).toDouble(),
-      reps: (row['reps'] as num).toInt(),
-      date: DateTime.parse(row['date'] as String),
-      createdAt: DateTime.parse(row['created_at'] as String),
-    ));
+/// [oneRepMaxByName]'s fold, separate so it's testable without Supabase.
+/// [rows] are `personal_bests` rows with an embedded `exercises(name, aliases)`.
+@visibleForTesting
+Map<String, OneRepMax> oneRepMaxesByName(
+  List<Map<String, dynamic>> rows,
+  OneRepMaxFormula formula,
+) {
+  final byName = <OneRepMaxRow>[];
+  final byAlias = <OneRepMaxRow>[];
+  for (final row in rows) {
+    final exercise = row['exercises'] as Map<String, dynamic>?;
+    final name = exercise?['name'] as String?;
+    if (name == null || name.trim().isEmpty) continue;
+    OneRepMaxRow keyed(String key) => (
+          key: key,
+          weightKg: (row['weight_kg'] as num).toDouble(),
+          reps: (row['reps'] as num).toInt(),
+          date: DateTime.parse(row['date'] as String),
+          createdAt: DateTime.parse(row['created_at'] as String),
+        );
+    byName.add(keyed(normalizeExerciseName(name)));
+    for (final alias in (exercise?['aliases'] as List?) ?? const []) {
+      byAlias.add(keyed(normalizeExerciseName(alias as String)));
+    }
   }
-  return foldOneRepMaxes(rows, formula);
+  return {
+    ...foldOneRepMaxes(byAlias, formula),
+    ...foldOneRepMaxes(byName, formula),
+  };
 }

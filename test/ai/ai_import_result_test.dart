@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomorex/core/utils/exercise_name.dart';
 import 'package:nomorex/features/ai/models/ai_import_result.dart';
 import 'package:nomorex/features/exercises/models/exercise.dart';
 
@@ -89,8 +90,8 @@ void main() {
         workoutResult(),
         title: 'x',
         fixes: {
-          exerciseKey('2 hang clean + 1 jerk'): custom,
-          exerciseKey('Bench'): const UseExistingExercise(
+          normalizeExerciseName('2 hang clean + 1 jerk'): custom,
+          normalizeExerciseName('Bench'): const UseExistingExercise(
             Exercise(id: 'ex-bp', name: 'Bench Press', isPredefined: true),
           ),
         },

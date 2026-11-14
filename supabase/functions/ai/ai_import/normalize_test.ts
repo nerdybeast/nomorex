@@ -1,5 +1,11 @@
 import { assertEquals } from 'jsr:@std/assert@1';
-import { type ImportResult, normalizeResult, parseModelJson } from './normalize.ts';
+import {
+  type CatalogExercise,
+  type ImportResult,
+  normalizeExerciseName,
+  normalizeResult,
+  parseModelJson,
+} from './normalize.ts';
 
 const CATALOG = [
   { id: 'squat', name: 'Back Squat' },
@@ -279,4 +285,51 @@ Deno.test('parses JSON inside a Markdown fence or surrounding prose', () => {
   assertEquals(parseModelJson('Here it is: {"a": 1} Done.'), { a: 1 });
   assertEquals(parseModelJson('{"a": '), undefined);
   assertEquals(parseModelJson('no json'), undefined);
+});
+
+// The same cases as exercise_catalog.test.sql and exercise_name_test.dart.
+Deno.test('normalizeExerciseName matches the database and app rules', () => {
+  assertEquals(normalizeExerciseName('  Clean   &  Jerk '), 'clean & jerk');
+  assertEquals(normalizeExerciseName('BACK\tSquat\n'), 'back squat');
+  assertEquals(normalizeExerciseName('Pull-Up'), 'pull-up');
+  assertEquals(normalizeExerciseName('   '), '');
+});
+
+Deno.test('an official exercise is found by its alias, as written or as a suggestion', () => {
+  const catalog = [{ id: 'cj', name: 'Clean & Jerk', aliases: ['C&J'], is_predefined: true }];
+  const named = normalizeResult(workout([{ sets: 1, reps: 1, percent: 90 }], { name: 'c&j' }), catalog);
+  if (named.kind !== 'ok') throw new Error(named.kind);
+  assertEquals(firstExercise(named.result).match, {
+    exerciseId: 'cj',
+    name: 'Clean & Jerk',
+    confidence: 'exact',
+  });
+
+  const suggested = normalizeResult(
+    workout([{ sets: 1, reps: 1, percent: 90 }], { name: 'CJ', match: 'C&J', confidence: 'high' }),
+    catalog,
+  );
+  if (suggested.kind !== 'ok') throw new Error(suggested.kind);
+  assertEquals(firstExercise(suggested.result).match?.exerciseId, 'cj');
+});
+
+Deno.test('one name: active official, then retired official, then the oldest custom', () => {
+  const custom = { id: 'mine', name: 'C&J', is_predefined: false, created_at: '2024-01-01' };
+  const retired = {
+    id: 'old',
+    name: 'C&J Old',
+    aliases: ['C&J'],
+    is_predefined: true,
+    retired_at: '2026-01-01',
+  };
+  const active = { id: 'cj', name: 'Clean & Jerk', aliases: ['C&J'], is_predefined: true };
+  const newerCustom = { id: 'mine2', name: 'c&j', is_predefined: false, created_at: '2025-01-01' };
+  const pick = (catalog: CatalogExercise[]) => {
+    const out = normalizeResult(workout([{ sets: 1, reps: 1, percent: 90 }], { name: 'C&J' }), catalog);
+    if (out.kind !== 'ok') throw new Error(out.kind);
+    return firstExercise(out.result).match?.exerciseId;
+  };
+  assertEquals(pick([custom, retired, active]), 'cj');
+  assertEquals(pick([custom, retired]), 'old');
+  assertEquals(pick([newerCustom, custom]), 'mine');
 });

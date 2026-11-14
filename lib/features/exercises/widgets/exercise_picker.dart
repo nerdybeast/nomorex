@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/exercise.dart';
+import '../utils/exercise_match.dart';
 
 /// Autocomplete-style exercise picker with an "Add custom" fallback.
 class ExercisePicker extends StatefulWidget {
@@ -40,11 +41,11 @@ class _ExercisePickerState extends State<ExercisePicker> {
           ? const TextEditingValue()
           : TextEditingValue(text: widget.selected!.name),
       optionsBuilder: (textEditingValue) {
-        final matches = textEditingValue.text.isEmpty
-            ? widget.exercises
-            : widget.exercises.where(
-                (e) => e.name.toLowerCase().contains(textEditingValue.text.toLowerCase()),
-              );
+        // Retired official exercises aren't offered for new work; see
+        // ExercisePickerPanel.
+        final matches = widget.exercises.where(
+          (e) => !e.isRetired && exerciseMatchesQuery(e, textEditingValue.text),
+        );
         return [...matches, _keepOverlayOpenSentinel];
       },
       fieldViewBuilder: (context, controller, focusNode, onSubmit) {

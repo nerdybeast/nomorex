@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { type Ai, callModel } from '../genkit.ts';
 import { requireUserContext } from '../auth.ts';
 import { detectFileType, isEncryptedPdf, toBase64 } from '../ai_import/file_check.ts';
-import { buildUserPrompt, type ImportType, SYSTEM_PROMPT } from '../ai_import/prompt.ts';
+import { buildUserPrompt, catalogLines, type ImportType, SYSTEM_PROMPT } from '../ai_import/prompt.ts';
 import { type CatalogExercise, normalizeResult, parseModelJson } from '../ai_import/normalize.ts';
 
 const BUCKET = 'ai-imports';
@@ -173,7 +173,7 @@ async function loadCatalog(supabase: SupabaseClient, uid: string): Promise<Catal
   // users' public workouts, which aren't part of this user's catalog.
   const { data, error } = await supabase
     .from('exercises')
-    .select('id, name')
+    .select('id, name, aliases, is_predefined, retired_at, created_at')
     .or(`is_predefined.eq.true,user_id.eq.${uid}`)
     .order('name');
   if (error) throw new Error(`reading the exercise catalog failed: ${error.message}`);
@@ -227,7 +227,7 @@ async function runJob({ jobId, importId, requestedType, uid, supabase, ai, model
       ai.generate({
         model,
         system: SYSTEM_PROMPT,
-        prompt: [...labelPages(media), { text: buildUserPrompt(catalog.map((e) => e.name), requestedType) }],
+        prompt: [...labelPages(media), { text: buildUserPrompt(catalogLines(catalog), requestedType) }],
         config: { maxOutputTokens: MAX_OUTPUT_TOKENS },
         abortSignal: controller.signal,
         // Capped so retries can't outlast the deadline.
