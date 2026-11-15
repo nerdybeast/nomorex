@@ -70,7 +70,7 @@ GoRouter _router(Widget destination) => GoRouter(
     ),
     GoRoute(path: '/w1/finish', builder: (_, _) => destination),
     GoRoute(
-      path: '/shell/workouts',
+      path: '/shell/training/workouts',
       builder: (_, _) => const Text('destination:list'),
     ),
   ],

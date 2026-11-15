@@ -19,9 +19,7 @@ Widget _app({bool importEnabled = true}) {
         branches: [
           for (final (path, label) in [
             ('/shell/home', 'Home'),
-            ('/shell/programs', 'Programs'),
-            ('/shell/workouts', 'Workouts'),
-            ('/shell/prs', 'PRs'),
+            ('/shell/training', 'Training'),
             ('/shell/community', 'Community'),
           ])
             StatefulShellBranch(routes: [GoRoute(path: path, builder: (_, _) => page(label))]),
@@ -81,7 +79,7 @@ void main() {
     expect(find.byKey(const Key('ai_import_entry')), findsNothing);
   });
 
-  testWidgets('New is a sixth item in the bottom bar, with no FAB over the page', (tester) async {
+  testWidgets('the bottom bar is Home, Training, Community and New, with no FAB over the page', (tester) async {
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -89,7 +87,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(FloatingActionButton), findsNothing);
-    for (final label in ['Home', 'Programs', 'Workouts', 'My PRs', 'Community', 'New']) {
+    for (final label in ['Home', 'Training', 'Community', 'New']) {
       expect(find.bySemanticsLabel(label), findsOneWidget, reason: '$label in the bar');
     }
     // Same row as the tabs.
@@ -99,7 +97,7 @@ void main() {
     );
   });
 
-  testWidgets('the six items fit a narrow phone without overflowing', (tester) async {
+  testWidgets('the bar fits a narrow phone without overflowing', (tester) async {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);

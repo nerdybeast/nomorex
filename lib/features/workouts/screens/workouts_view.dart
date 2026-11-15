@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_formatter.dart';
-import '../../../shared/widgets/active_archived_tabs.dart';
+import '../../../shared/widgets/archived_toggle.dart';
 import '../../../shared/widgets/archived_row_actions.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/dashboard_empty_state_card.dart';
@@ -15,92 +15,72 @@ import '../providers/workouts_provider.dart';
 import '../utils/can_archive_workout.dart';
 import '../utils/confirm_delete_workout_permanently.dart';
 
-class WorkoutsScreen extends ConsumerStatefulWidget {
-  const WorkoutsScreen({super.key});
+/// Training's Workouts view: search, the Archived toggle and the list. It has
+/// no app bar of its own; `TrainingScreen` supplies one, calling [refresh] and
+/// [isRefreshing] for its Refresh action.
+class WorkoutsView extends ConsumerStatefulWidget {
+  const WorkoutsView({super.key});
+
+  static bool isRefreshing(WidgetRef ref) =>
+      ref.watch(workoutsProvider).isRefreshing || ref.watch(archivedWorkoutsProvider).isRefreshing;
+
+  static void refresh(WidgetRef ref) {
+    ref.read(workoutsProvider.notifier).refresh();
+    ref.read(archivedWorkoutsProvider.notifier).refresh();
+  }
 
   @override
-  ConsumerState<WorkoutsScreen> createState() => _WorkoutsScreenState();
+  ConsumerState<WorkoutsView> createState() => _WorkoutsViewState();
 }
 
-class _WorkoutsScreenState extends ConsumerState<WorkoutsScreen> {
+class _WorkoutsViewState extends ConsumerState<WorkoutsView> {
   String _searchQuery = '';
+  bool _showArchived = false;
 
   @override
   Widget build(BuildContext context) {
     final activeAsync = ref.watch(workoutsProvider);
     final archivedAsync = ref.watch(archivedWorkoutsProvider);
-    final isRefreshing = activeAsync.isRefreshing || archivedAsync.isRefreshing;
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Workouts'),
-          actions: [
-            IconButton(
-              icon: isRefreshing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.refresh),
-              tooltip: 'Refresh',
-              onPressed: isRefreshing
-                  ? null
-                  : () {
-                      ref.read(workoutsProvider.notifier).refresh();
-                      ref.read(archivedWorkoutsProvider.notifier).refresh();
-                    },
-            ),
-            IconButton(
-              icon: const Icon(Icons.history),
-              tooltip: 'Workout history',
-              onPressed: () => context.push(AppConstants.routeWorkoutHistory),
-            ),
-            // On wide layouts the sidebar's account card opens Profile.
-            if (isMobile(context))
-              IconButton(
-                icon: const Icon(Icons.person_outline),
-                tooltip: 'Profile',
-                onPressed: () => context.push(AppConstants.routeProfile),
+    return Column(
+      children: [
+        Padding(
+          padding: contentPadding(context, top: 12, bottom: 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: const Key('workouts_search'),
+                  decoration: InputDecoration(
+                    hintText: _showArchived ? 'Search archived workouts...' : 'Search workouts...',
+                    prefixIcon: const Icon(Icons.search),
+                    isDense: true,
+                  ),
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                ),
               ),
-          ],
-          bottom: ActiveArchivedTabs(
-            activeCount: activeAsync.asData?.value.length,
-            archivedCount: archivedAsync.asData?.value.length,
+              const SizedBox(width: 8),
+              ArchivedToggle(
+                key: const Key('archived_toggle'),
+                selected: _showArchived,
+                count: archivedAsync.asData?.value.length,
+                onChanged: (v) => setState(() => _showArchived = v),
+              ),
+            ],
           ),
         ),
-        body: Column(
-          children: [
-            Padding(
-              padding: contentPadding(context, top: 12, bottom: 0),
-              child: TextField(
-                decoration: const InputDecoration(
-                  hintText: 'Search workouts...',
-                  prefixIcon: Icon(Icons.search),
-                  isDense: true,
-                ),
-                onChanged: (v) => setState(() => _searchQuery = v),
-              ),
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _WorkoutList(workoutsAsync: activeAsync, archived: false, query: _searchQuery),
-                  _WorkoutList(workoutsAsync: archivedAsync, archived: true, query: _searchQuery),
-                ],
-              ),
-            ),
-          ],
+        Expanded(
+          child: _showArchived
+              ? _WorkoutList(key: const ValueKey('archived'), workoutsAsync: archivedAsync, archived: true, query: _searchQuery)
+              : _WorkoutList(key: const ValueKey('active'), workoutsAsync: activeAsync, archived: false, query: _searchQuery),
         ),
-      ),
+      ],
     );
   }
 }
 
 class _WorkoutList extends StatelessWidget {
-  const _WorkoutList({required this.workoutsAsync, required this.archived, required this.query});
+  const _WorkoutList({super.key, required this.workoutsAsync, required this.archived, required this.query});
 
   final AsyncValue<List<Workout>> workoutsAsync;
   final bool archived;

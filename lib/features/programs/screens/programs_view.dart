@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../shared/widgets/active_archived_tabs.dart';
+import '../../../shared/widgets/archived_toggle.dart';
 import '../../../shared/widgets/archived_row_actions.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
@@ -19,92 +19,72 @@ import '../providers/program_instances_list_provider.dart';
 import '../providers/programs_provider.dart';
 import '../utils/program_progress.dart';
 
-class ProgramsScreen extends ConsumerStatefulWidget {
-  const ProgramsScreen({super.key});
+/// Training's Programs view: search, the Archived toggle and the list. It has
+/// no app bar of its own; `TrainingScreen` supplies one, calling [refresh] and
+/// [isRefreshing] for its Refresh action.
+class ProgramsView extends ConsumerStatefulWidget {
+  const ProgramsView({super.key});
+
+  static bool isRefreshing(WidgetRef ref) =>
+      ref.watch(programsProvider).isRefreshing || ref.watch(archivedProgramsProvider).isRefreshing;
+
+  static void refresh(WidgetRef ref) {
+    ref.read(programsProvider.notifier).refresh();
+    ref.read(archivedProgramsProvider.notifier).refresh();
+  }
 
   @override
-  ConsumerState<ProgramsScreen> createState() => _ProgramsScreenState();
+  ConsumerState<ProgramsView> createState() => _ProgramsViewState();
 }
 
-class _ProgramsScreenState extends ConsumerState<ProgramsScreen> {
+class _ProgramsViewState extends ConsumerState<ProgramsView> {
   String _searchQuery = '';
+  bool _showArchived = false;
 
   @override
   Widget build(BuildContext context) {
     final activeAsync = ref.watch(programsProvider);
     final archivedAsync = ref.watch(archivedProgramsProvider);
-    final isRefreshing = activeAsync.isRefreshing || archivedAsync.isRefreshing;
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Programs'),
-          actions: [
-            IconButton(
-              icon: isRefreshing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.refresh),
-              tooltip: 'Refresh',
-              onPressed: isRefreshing
-                  ? null
-                  : () {
-                      ref.read(programsProvider.notifier).refresh();
-                      ref.read(archivedProgramsProvider.notifier).refresh();
-                    },
-            ),
-            IconButton(
-              icon: const Icon(Icons.history),
-              tooltip: 'Program history',
-              onPressed: () => context.push(AppConstants.routeProgramHistory),
-            ),
-            // On wide layouts the sidebar's account card opens Profile.
-            if (isMobile(context))
-              IconButton(
-                icon: const Icon(Icons.person_outline),
-                tooltip: 'Profile',
-                onPressed: () => context.push(AppConstants.routeProfile),
+    return Column(
+      children: [
+        Padding(
+          padding: contentPadding(context, top: 12, bottom: 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: const Key('programs_search'),
+                  decoration: InputDecoration(
+                    hintText: _showArchived ? 'Search archived programs...' : 'Search programs...',
+                    prefixIcon: const Icon(Icons.search),
+                    isDense: true,
+                  ),
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                ),
               ),
-          ],
-          bottom: ActiveArchivedTabs(
-            activeCount: activeAsync.asData?.value.length,
-            archivedCount: archivedAsync.asData?.value.length,
+              const SizedBox(width: 8),
+              ArchivedToggle(
+                key: const Key('archived_toggle'),
+                selected: _showArchived,
+                count: archivedAsync.asData?.value.length,
+                onChanged: (v) => setState(() => _showArchived = v),
+              ),
+            ],
           ),
         ),
-        body: Column(
-          children: [
-            Padding(
-              padding: contentPadding(context, top: 12, bottom: 0),
-              child: TextField(
-                decoration: const InputDecoration(
-                  hintText: 'Search programs...',
-                  prefixIcon: Icon(Icons.search),
-                  isDense: true,
-                ),
-                onChanged: (v) => setState(() => _searchQuery = v),
-              ),
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _ProgramList(programsAsync: activeAsync, archived: false, query: _searchQuery),
-                  _ProgramList(programsAsync: archivedAsync, archived: true, query: _searchQuery),
-                ],
-              ),
-            ),
-          ],
+        Expanded(
+          child: _showArchived
+              ? _ProgramList(key: const ValueKey('archived'), programsAsync: archivedAsync, archived: true, query: _searchQuery)
+              : _ProgramList(key: const ValueKey('active'), programsAsync: activeAsync, archived: false, query: _searchQuery),
         ),
-      ),
+      ],
     );
   }
 }
 
 class _ProgramList extends StatelessWidget {
-  const _ProgramList({required this.programsAsync, required this.archived, required this.query});
+  const _ProgramList({super.key, required this.programsAsync, required this.archived, required this.query});
 
   final AsyncValue<List<Program>> programsAsync;
   final bool archived;

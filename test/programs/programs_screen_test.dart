@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomorex/features/shell/nav_section.dart';
+import 'package:nomorex/features/training/screens/training_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nomorex/core/constants/app_constants.dart';
 import 'package:nomorex/features/programs/models/program.dart';
@@ -10,7 +12,7 @@ import 'package:nomorex/features/programs/models/program_instance.dart';
 import 'package:nomorex/features/programs/providers/program_instances_list_provider.dart';
 import 'package:nomorex/features/programs/utils/program_stats.dart';
 import 'package:nomorex/features/programs/providers/programs_provider.dart';
-import 'package:nomorex/features/programs/screens/programs_screen.dart';
+import 'package:nomorex/features/programs/screens/programs_view.dart';
 import 'package:nomorex/shared/widgets/archived_pill.dart';
 import 'package:nomorex/shared/widgets/dashboard_empty_state_card.dart';
 
@@ -105,7 +107,7 @@ void main() {
               () => _EmptyProgramInstancesNotifier(),
             ),
           ],
-          child: const MaterialApp(home: ProgramsScreen()),
+          child: const MaterialApp(home: Scaffold(body: ProgramsView())),
         ),
       );
       await tester.pumpAndSettle();
@@ -148,7 +150,7 @@ void main() {
           programsProvider.overrideWith(() => _StubProgramsNotifier([program])),
           currentProgramInstancesProvider.overrideWith(() => _StubRunsNotifier([run])),
         ],
-        child: const MaterialApp(home: ProgramsScreen()),
+        child: const MaterialApp(home: Scaffold(body: ProgramsView())),
       ),
     );
     await tester.pumpAndSettle();
@@ -172,7 +174,7 @@ void main() {
             () => _EmptyProgramInstancesNotifier(),
           ),
         ],
-        child: const MaterialApp(home: ProgramsScreen()),
+        child: const MaterialApp(home: Scaffold(body: ProgramsView())),
       ),
     );
     await tester.pumpAndSettle();
@@ -187,7 +189,7 @@ void main() {
   ) async {
     final router = GoRouter(
       routes: [
-        GoRoute(path: '/', builder: (_, _) => const ProgramsScreen()),
+        GoRoute(path: '/', builder: (_, _) => const Scaffold(body: ProgramsView())),
         GoRoute(
           path: AppConstants.routeProgramNew,
           builder: (_, _) => const Text('new-program-screen'),
@@ -221,7 +223,7 @@ void main() {
   testWidgets('the history icon opens the program history route', (tester) async {
     final router = GoRouter(
       routes: [
-        GoRoute(path: '/', builder: (_, _) => const ProgramsScreen()),
+        GoRoute(path: '/', builder: (_, _) => const TrainingScreen(view: TrainingView.programs)),
         GoRoute(
           path: AppConstants.routeProgramHistory,
           builder: (_, _) => const Text('program-history-screen'),
@@ -264,12 +266,12 @@ void main() {
             () => _EmptyProgramInstancesNotifier(),
           ),
         ],
-        child: const MaterialApp(home: ProgramsScreen()),
+        child: const MaterialApp(home: Scaffold(body: ProgramsView())),
       ),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('tab_archived')));
+    await tester.tap(find.byKey(const Key('archived_toggle')));
     await tester.pumpAndSettle();
 
     expect(find.byType(DashboardEmptyStateCard), findsOneWidget);
@@ -299,22 +301,18 @@ void main() {
             () => _EmptyProgramInstancesNotifier(),
           ),
         ],
-        child: const MaterialApp(home: ProgramsScreen()),
+        child: const MaterialApp(home: Scaffold(body: ProgramsView())),
       ),
     );
     await tester.pumpAndSettle();
 
-    // Both tabs carry their counts.
+    // The Archived toggle carries the count.
     expect(
-      find.descendant(of: find.byKey(const Key('tab_active')), matching: find.text('1')),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: find.byKey(const Key('tab_archived')), matching: find.text('1')),
+      find.descendant(of: find.byKey(const Key('archived_toggle')), matching: find.text('1')),
       findsOneWidget,
     );
 
-    await tester.tap(find.byKey(const Key('tab_archived')));
+    await tester.tap(find.byKey(const Key('archived_toggle')));
     await tester.pumpAndSettle();
 
     expect(find.byType(ArchivedPill), findsOneWidget);
@@ -343,7 +341,7 @@ void main() {
               () => _EmptyProgramInstancesNotifier(),
             ),
           ],
-          child: const MaterialApp(home: ProgramsScreen()),
+          child: const MaterialApp(home: Scaffold(body: ProgramsView())),
         ),
       );
       await tester.pumpAndSettle();
@@ -371,7 +369,7 @@ void main() {
               () => _EmptyProgramInstancesNotifier(),
             ),
           ],
-          child: const MaterialApp(home: ProgramsScreen()),
+          child: const MaterialApp(home: Scaffold(body: ProgramsView())),
         ),
       );
       await tester.pumpAndSettle();
@@ -410,7 +408,7 @@ void main() {
             () => _EmptyProgramInstancesNotifier(),
           ),
         ],
-        child: const MaterialApp(home: ProgramsScreen()),
+        child: const MaterialApp(home: Scaffold(body: ProgramsView())),
       ),
     );
     await tester.pumpAndSettle();
@@ -456,7 +454,7 @@ void main() {
             () => _EmptyProgramInstancesNotifier(),
           ),
         ],
-        child: const MaterialApp(home: ProgramsScreen()),
+        child: const MaterialApp(home: TrainingScreen(view: TrainingView.programs)),
       ),
     );
     await tester.pumpAndSettle();

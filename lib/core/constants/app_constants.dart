@@ -35,7 +35,16 @@ class AppConstants {
   static String routeAiImportReview(String jobId) => '/ai-import/review/$jobId';
   static const String routeShell = '/shell';
   static const String routeHome = '/shell/home';
-  static const String routePrs = '/shell/prs';
+  // Training: one shell tab whose switcher shows programs, workouts or PRs,
+  // each at its own path so links and back land on the right view. The bare
+  // path reopens the view used last (TrainingViewNotifier).
+  static const String routeTraining = '/shell/training';
+  static const String routePrs = '/shell/training/prs';
+  // Where the three lists lived before Training; they redirect to the paths
+  // above so old links and bookmarks still work.
+  static const String legacyRoutePrograms = '/shell/programs';
+  static const String legacyRouteWorkouts = '/shell/workouts';
+  static const String legacyRoutePrs = '/shell/prs';
   static const String routeAddPr = '/prs/add';
   static String routeAddPrForExercise(
     String exerciseId, {
@@ -49,7 +58,7 @@ class AppConstants {
   }
   static String routePrHistory(String exerciseId) => '/prs/$exerciseId/history';
 
-  static const String routeWorkouts = '/shell/workouts';
+  static const String routeWorkouts = '/shell/training/workouts';
   // new: /workouts/new ; detail: /workouts/:id ; edit: /workouts/:id/edit
   // history (all workouts, or filtered by ?groupId=): /workouts/history
   static const String routeWorkoutNew = '/workouts/new';
@@ -64,7 +73,7 @@ class AppConstants {
   static String routeCommunityWorkoutDetail(String id) => '/community/$id';
   static String routeCommunityProgramDetail(String id) => '/community/programs/$id';
 
-  static const String routePrograms = '/shell/programs';
+  static const String routePrograms = '/shell/training/programs';
   // new: /programs/new ; detail: /programs/:id ; edit: /programs/:id/edit
   // day preview: /programs/:id/days/:dayId ; running instance: /program-instances/:id
   static const String routeProgramNew = '/programs/new';

@@ -33,10 +33,20 @@ class ShellPage {
   }
 
   Future<void> goToHome() => goToTab('Home');
-  Future<void> goToMyPrs() => goToTab('My PRs');
-  Future<void> goToWorkouts() => goToTab('Workouts');
-  Future<void> goToPrograms() => goToTab('Programs');
+  Future<void> goToMyPrs() => goToTraining('prs');
+  Future<void> goToWorkouts() => goToTraining('workouts');
+  Future<void> goToPrograms() => goToTraining('programs');
   Future<void> goToCommunity() => goToTab('Community');
+
+  /// Opens Training, then one of its views: 'programs', 'workouts' or 'prs'.
+  /// Training reopens the view used last, so the view is always tapped.
+  Future<void> goToTraining(String view) async {
+    await goToTab('Training');
+    final segment = find.byKey(Key('training_view_$view'));
+    await waitFor(tester, segment);
+    await tester.tap(segment);
+    await tester.pumpAndSettle();
+  }
 
   /// Opens the sidebar's "New" menu and picks one of its entries:
   /// "New personal best", "New workout", "New program".

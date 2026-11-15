@@ -13,14 +13,21 @@ import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../profile/providers/profile_provider.dart';
 
-class MyPrsScreen extends ConsumerStatefulWidget {
-  const MyPrsScreen({super.key});
+/// Training's PRs view: search and a card per lift. It has no app bar of its
+/// own; `TrainingScreen` supplies one, calling [refresh] and [isRefreshing]
+/// for its Refresh action.
+class PrsView extends ConsumerStatefulWidget {
+  const PrsView({super.key});
+
+  static bool isRefreshing(WidgetRef ref) => ref.watch(personalBestsProvider).isRefreshing;
+
+  static void refresh(WidgetRef ref) => ref.read(personalBestsProvider.notifier).refresh();
 
   @override
-  ConsumerState<MyPrsScreen> createState() => _MyPrsScreenState();
+  ConsumerState<PrsView> createState() => _PrsViewState();
 }
 
-class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
+class _PrsViewState extends ConsumerState<PrsView> {
   String _searchQuery = '';
 
   @override
@@ -39,39 +46,14 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
             ),
           );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My PRs'),
-        actions: [
-          IconButton(
-            icon: prsAsync.isRefreshing
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: prsAsync.isRefreshing
-                ? null
-                : () => ref.read(personalBestsProvider.notifier).refresh(),
-          ),
-          // On wide layouts the sidebar's account card opens Profile.
-          if (isMobile(context))
-            IconButton(
-              icon: const Icon(Icons.person_outline),
-              tooltip: 'Profile',
-              onPressed: () => context.push(AppConstants.routeProfile),
-            ),
-        ],
-      ),
-      body: Column(
+    return Column(
         children: [
           Padding(
             padding: contentPadding(context, top: 12, bottom: 0),
             child: TextField(
+              key: const Key('prs_search'),
               decoration: const InputDecoration(
-                hintText: 'Search exercises...',
+                hintText: 'Search lifts...',
                 prefixIcon: Icon(Icons.search),
                 isDense: true,
               ),
@@ -153,7 +135,6 @@ class _MyPrsScreenState extends ConsumerState<MyPrsScreen> {
             ),
           ),
         ],
-      ),
     );
   }
 }

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/features/workouts/models/workout.dart';
 import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
-import 'package:nomorex/features/workouts/screens/workouts_screen.dart';
+import 'package:nomorex/features/workouts/screens/workouts_view.dart';
 import 'package:nomorex/shared/widgets/archived_pill.dart';
 
 class _RecordingWorkoutsNotifier extends WorkoutsNotifier {
@@ -55,17 +55,17 @@ Widget _app({
       workoutsProvider.overrideWith(() => _RecordingWorkoutsNotifier(active, calls: calls)),
       archivedWorkoutsProvider.overrideWith(() => _ArchivedWorkoutsNotifier(archived)),
     ],
-    child: const MaterialApp(home: WorkoutsScreen()),
+    child: const MaterialApp(home: Scaffold(body: WorkoutsView())),
   );
 }
 
-Future<void> _openArchivedTab(WidgetTester tester) async {
-  await tester.tap(find.byKey(const Key('tab_archived')));
+Future<void> _openArchived(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('archived_toggle')));
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('tabs show the active and archived counts', (tester) async {
+  testWidgets('the Archived toggle shows how many are archived', (tester) async {
     await tester.pumpWidget(_app(
       active: [_workout('a'), _workout('b')],
       archived: [_workout('c', archived: true)],
@@ -73,11 +73,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.descendant(of: find.byKey(const Key('tab_active')), matching: find.text('2')),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: find.byKey(const Key('tab_archived')), matching: find.text('1')),
+      find.descendant(of: find.byKey(const Key('archived_toggle')), matching: find.text('1')),
       findsOneWidget,
     );
   });
@@ -110,7 +106,7 @@ void main() {
     final calls = <String>[];
     await tester.pumpWidget(_app(archived: [_workout('c', archived: true)], calls: calls));
     await tester.pumpAndSettle();
-    await _openArchivedTab(tester);
+    await _openArchived(tester);
 
     expect(find.byType(ArchivedPill), findsOneWidget);
     expect(find.text('Archived Oct 26, 2026'), findsOneWidget);
@@ -125,7 +121,7 @@ void main() {
     final calls = <String>[];
     await tester.pumpWidget(_app(archived: [_workout('c', archived: true)], calls: calls));
     await tester.pumpAndSettle();
-    await _openArchivedTab(tester);
+    await _openArchived(tester);
 
     await tester.tap(find.byKey(const Key('archived_menu')));
     await tester.pumpAndSettle();
@@ -154,7 +150,7 @@ void main() {
   testWidgets('an empty Archived tab invites archiving', (tester) async {
     await tester.pumpWidget(_app(active: [_workout('a')]));
     await tester.pumpAndSettle();
-    await _openArchivedTab(tester);
+    await _openArchived(tester);
 
     expect(find.text('No archived workouts'), findsOneWidget);
     expect(find.text('Workouts you archive show up here.'), findsOneWidget);

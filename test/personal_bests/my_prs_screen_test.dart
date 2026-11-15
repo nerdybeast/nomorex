@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomorex/features/shell/nav_section.dart';
+import 'package:nomorex/features/training/screens/training_screen.dart';
 import 'package:nomorex/features/personal_bests/models/personal_best.dart';
 import 'package:nomorex/features/personal_bests/providers/personal_bests_provider.dart';
-import 'package:nomorex/features/personal_bests/screens/my_prs_screen.dart';
+import 'package:nomorex/features/personal_bests/screens/prs_view.dart';
 import 'package:nomorex/shared/widgets/dashboard_empty_state_card.dart';
 import 'package:nomorex/shared/widgets/pr_card.dart';
 
@@ -50,7 +52,7 @@ void main() {
         overrides: [
           personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier(const [])),
         ],
-        child: const MaterialApp(home: MyPrsScreen()),
+        child: const MaterialApp(home: Scaffold(body: PrsView())),
       ),
     );
     await tester.pumpAndSettle();
@@ -66,7 +68,7 @@ void main() {
         overrides: [
           personalBestsProvider.overrideWith(() => _StubPersonalBestsNotifier(_prs)),
         ],
-        child: const MaterialApp(home: MyPrsScreen()),
+        child: const MaterialApp(home: Scaffold(body: PrsView())),
       ),
     );
     await tester.pumpAndSettle();
@@ -87,7 +89,7 @@ void main() {
         overrides: [
           personalBestsProvider.overrideWith(() => notifier),
         ],
-        child: const MaterialApp(home: MyPrsScreen()),
+        child: const MaterialApp(home: TrainingScreen(view: TrainingView.prs)),
       ),
     );
     await tester.pumpAndSettle();
@@ -107,12 +109,12 @@ void main() {
             () => _RecordingPersonalBestsNotifier(() {}),
           ),
         ],
-        child: const MaterialApp(home: MyPrsScreen()),
+        child: const MaterialApp(home: TrainingScreen(view: TrainingView.prs)),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('My PRs'), findsOneWidget);
+    expect(find.text('Training'), findsOneWidget);
     expect(find.text('Back Squat'), findsOneWidget);
     expect(find.byIcon(Icons.refresh), findsOneWidget);
   });
@@ -125,7 +127,7 @@ void main() {
             () => _RecordingPersonalBestsNotifier(() {}),
           ),
         ],
-        child: const MaterialApp(home: MyPrsScreen()),
+        child: const MaterialApp(home: Scaffold(body: PrsView())),
       ),
     );
     await tester.pumpAndSettle();
@@ -161,7 +163,7 @@ void main() {
             ]),
           ),
         ],
-        child: const MaterialApp(home: MyPrsScreen()),
+        child: const MaterialApp(home: Scaffold(body: PrsView())),
       ),
     );
     await tester.pumpAndSettle();

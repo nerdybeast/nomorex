@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomorex/features/shell/nav_section.dart';
+import 'package:nomorex/features/training/screens/training_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nomorex/core/constants/app_constants.dart';
 import 'package:nomorex/features/workouts/models/workout.dart';
 import 'package:nomorex/features/workouts/models/workout_exercise.dart';
 import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
-import 'package:nomorex/features/workouts/screens/workouts_screen.dart';
+import 'package:nomorex/features/workouts/screens/workouts_view.dart';
 import 'package:nomorex/shared/widgets/dashboard_empty_state_card.dart';
 
 class _StubWorkoutsNotifier extends WorkoutsNotifier {
@@ -64,7 +66,7 @@ void main() {
               () => _StubWorkoutsNotifier([workout]),
             ),
           ],
-          child: const MaterialApp(home: WorkoutsScreen()),
+          child: const MaterialApp(home: Scaffold(body: WorkoutsView())),
         ),
       );
       await tester.pumpAndSettle();
@@ -83,7 +85,7 @@ void main() {
         overrides: [
           workoutsProvider.overrideWith(() => _StubWorkoutsNotifier(const [])),
         ],
-        child: const MaterialApp(home: WorkoutsScreen()),
+        child: const MaterialApp(home: Scaffold(body: WorkoutsView())),
       ),
     );
     await tester.pumpAndSettle();
@@ -98,7 +100,7 @@ void main() {
   ) async {
     final router = GoRouter(
       routes: [
-        GoRoute(path: '/', builder: (_, _) => const WorkoutsScreen()),
+        GoRoute(path: '/', builder: (_, _) => const Scaffold(body: WorkoutsView())),
         GoRoute(
           path: AppConstants.routeWorkoutNew,
           builder: (_, _) => const Text('new-workout-screen'),
@@ -147,7 +149,7 @@ void main() {
               () => _StubWorkoutsNotifier(workouts),
             ),
           ],
-          child: const MaterialApp(home: WorkoutsScreen()),
+          child: const MaterialApp(home: Scaffold(body: WorkoutsView())),
         ),
       );
       await tester.pumpAndSettle();
@@ -195,7 +197,7 @@ void main() {
         overrides: [
           workoutsProvider.overrideWith(() => _StubWorkoutsNotifier(workouts)),
         ],
-        child: const MaterialApp(home: WorkoutsScreen()),
+        child: const MaterialApp(home: Scaffold(body: WorkoutsView())),
       ),
     );
     await tester.pumpAndSettle();
@@ -231,7 +233,7 @@ void main() {
         overrides: [
           workoutsProvider.overrideWith(() => _StubWorkoutsNotifier(workouts)),
         ],
-        child: const MaterialApp(home: WorkoutsScreen()),
+        child: const MaterialApp(home: Scaffold(body: WorkoutsView())),
       ),
     );
     await tester.pumpAndSettle();
@@ -258,7 +260,7 @@ void main() {
             () => _RecordingArchivedWorkoutsNotifier(() => archivedRefreshed = true),
           ),
         ],
-        child: const MaterialApp(home: WorkoutsScreen()),
+        child: const MaterialApp(home: TrainingScreen(view: TrainingView.workouts)),
       ),
     );
     await tester.pumpAndSettle();
@@ -276,7 +278,7 @@ void main() {
       final router = GoRouter(
         initialLocation: '/workouts',
         routes: [
-          GoRoute(path: '/workouts', builder: (_, _) => const WorkoutsScreen()),
+          GoRoute(path: '/workouts', builder: (_, _) => const TrainingScreen(view: TrainingView.workouts)),
           GoRoute(
             path: '/workouts/history',
             builder: (_, state) =>

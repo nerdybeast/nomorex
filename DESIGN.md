@@ -246,11 +246,6 @@ components:
     typography: "{typography.caption}"
     rounded: "{rounded.full}"
     padding: "2px 8px"
-  fab:
-    backgroundColor: "{colors.primary-dark}"
-    textColor: "{colors.on-primary}"
-    rounded: "{rounded.full}"
-    size: "52px"
   app-bar:
     backgroundColor: "{colors.bg-0-dark}"
     textColor: "{colors.fg-1-dark}"
@@ -293,7 +288,7 @@ The world is literal and functional. The gym is in how the app is used, not in h
 Near-neutral grays with a single toned-down orange and two information hues that are never used as fills except red for destructive actions. Every color comes in a dark and a light value (suffix `-dark` / `-light`); both themes are built from one set of component rules in `lib/core/theme/app_theme.dart` (`NomorexPalette`).
 
 ### Primary
-- **Chalk-line Orange** (`primary`): fills the one main button on a screen, the FAB, the stepper's + and the switch's on track, always edged in `primary-border`. Labels on it are `on-primary` white in both themes.
+- **Chalk-line Orange** (`primary`): fills the one main button on a screen, the stepper's + and the switch's on track, always edged in `primary-border`. Labels on it are `on-primary` white in both themes.
 - **Pressed Orange** (`primary-hover`): a shade *darker* than the fill, never lighter, so the white label keeps its contrast on hover and press.
 - **Orange Ink** (`primary-text`): orange as text: links, snackbar actions, the selected nav icon, today's date in the picker.
 - **Orange Wash** (`primary-subtle`): a faint translucent wash behind `primary-text`: the selected unit, a selected segment, today's program day, the header band of a program day's main lift or an editor's exercise card. A band or row tint, never a whole-card fill.
@@ -316,7 +311,7 @@ Near-neutral grays with a single toned-down orange and two information hues that
 - **Ink 1 / 2 / 3** (`fg-1`, `fg-2`, `fg-3`): titles and values / body and descriptions / dates, captions, chevrons, inactive nav. All three pass 4.5:1 on every surface, `bg-3` included.
 
 ### Named Rules
-**The One Mark Rule.** Orange fills appear on one main action per screen plus the current-place indicators (FAB, selected nav icon). Everything else is neutral. If two orange buttons are visible, one of them is the secondary style.
+**The One Mark Rule.** Orange fills appear on one main action per screen plus the current-place indicator (the selected nav icon). Everything else is neutral. If two orange buttons are visible, one of them is the secondary style.
 
 **The Secondary Is Orange Trap Rule.** `ColorScheme.secondary`, `tertiary` and every `*Container` role are pinned to orange so stock Material widgets never fall back to purple or teal. Reaching for `colorScheme.secondary` to get "another color" gets orange. Anything without a stock slot is read from `NomorexTokens.of(context)`.
 
@@ -355,16 +350,16 @@ Near-neutral grays with a single toned-down orange and two information hues that
 
 A 4px grid with a 2px half-step. List rows pad 12px × 16px; cards pad 16px; dialogs pad 20px (actions 20px sides, 16px bottom). Mobile screens use 16px side gutters and 24px between sections.
 
-Sizes are touch-first: primary, secondary and danger buttons are full width by default at 44px (`control-height-lg`), every control keeps a 48px hit area, stepper buttons are 40px squares beside an 80px value. Outlined and text buttons use 36px (`control-height`). App bar 52px, nav bar 56px, FAB 52px.
+Sizes are touch-first: primary, secondary and danger buttons are full width by default at 44px (`control-height-lg`), every control keeps a 48px hit area, stepper buttons are 40px squares beside an 80px value. Outlined and text buttons use 36px (`control-height`). App bar 52px, nav bar 56px.
 
-Below 600px (`kMobileBreakpoint`) the shell is a bottom app bar with a centered FAB; at 600px and above every signed-in page sits beside a sidebar on `bg-1`, which collapses to a rail. Both carry Home, Programs, Workouts, My PRs and Community, in that order. Phone and desktop are equal citizens: the desktop layout gets more room, not more density. List and detail screens cap their content at 840px (`kContentMaxWidth`), centered, via `contentPadding()` / `shellListPadding()` in `responsive_layout.dart`. The cap is scroll-view padding, not a `ConstrainedBox`, so scrolling still works across the whole window. Forms cap at 520px.
+Below 600px (`kMobileBreakpoint`) the shell is a bottom bar of Home, Training, Community and New, with nothing floating over the page; at 600px and above every signed-in page sits beside a sidebar on `bg-1`, which collapses to a rail. Both carry Home, Training and Community, in that order. Phone and desktop are equal citizens: the desktop layout gets more room, not more density. List and detail screens cap their content at 840px (`kContentMaxWidth`), centered, via `contentPadding()` / `shellListPadding()` in `responsive_layout.dart`. The cap is scroll-view padding, not a `ConstrainedBox`, so scrolling still works across the whole window. Forms cap at 520px.
 
 ### Named Rules
 **The Arm's-Length Rule.** Anything done mid-session must be operable with one thumb at arm's length: 44px controls, 48px hit areas, no target packed tighter to fit another row.
 
 ## Elevation & Depth
 
-Flat by default. Depth comes from the four surface steps and hairline borders, not shadows. Every in-flow surface (cards, app bar, buttons, FAB) has elevation 0 and a transparent surface tint. Only overlays (dialogs, bottom sheets, menus, snackbars) cast a shadow, in `overlayShadow`: strong in dark (`rgba(0,0,0,0.55)`), soft in light (`rgba(0,0,0,0.08)`), at Material elevation 8 (menus, snackbars) or 12 (dialogs, sheets).
+Flat by default. Depth comes from the four surface steps and hairline borders, not shadows. Every in-flow surface (cards, app bar, buttons) has elevation 0 and a transparent surface tint. Only overlays (dialogs, bottom sheets, menus, snackbars) cast a shadow, in `overlayShadow`: strong in dark (`rgba(0,0,0,0.55)`), soft in light (`rgba(0,0,0,0.08)`), at Material elevation 8 (menus, snackbars) or 12 (dialogs, sheets).
 
 ### Named Rules
 **The Floor Stays Flat Rule.** If it scrolls with the page, it has no shadow. Shadows mean "this is above the page."
@@ -376,7 +371,7 @@ Gently squared. Small radii keep the hairline look crisp.
 - **Medium** (6px): buttons, fields, stepper buttons, icon tiles, snackbars, list tiles, tooltips, the selected nav indicator.
 - **Large** (10px): cards and list containers.
 - **Extra large** (14px): dialogs and bottom-sheet tops.
-- **Full**: badges and pills, the switch, the FAB (a true circle with a `primary-border` edge).
+- **Full**: badges and pills, the switch.
 
 Borders are always 1px, except focused fields (1.5px) and checkbox edges (1.5px).
 
@@ -461,7 +456,8 @@ Each exercise in the workout and program editors is a `bg-1` card whose header b
 
 ### Navigation
 - **App bar:** `bg-0`, 52px, hairline bottom border, left-aligned 15/600 title, `fg-2` icons, no elevation.
-- **Mobile:** bottom app bar on `bg-0` with a centered 52px orange FAB. Any FAB on a shell screen sets its own `heroTag`.
+- **Mobile:** a 56px bottom bar on `bg-0` with four equal items: Home, Training, Community and New. New opens a bottom sheet of the same entries as the sidebar's New menu. Each item is a 20px icon over an 11px nav label; selected, the icon is filled `primary-text` and the label `fg-1`; otherwise both are `fg-3`. No FAB: nothing floats over page content.
+- **Training:** one destination for the user's programs, workouts and PRs. Under its app bar, a full-width segmented switcher (Programs / Workouts / PRs, capped at 420px wide) picks the view; it reopens on the view used last. The app bar's History action follows the view (none on PRs). Breadcrumbs on detail screens name the view, "Programs › ZT 6 Week Program".
 - **Desktop / tablet: the sidebar** (`AppSidebar`), on `bg-1` with a hairline right edge, beside every signed-in page, detail and edit screens included. 232px expanded; 76px collapsed to a rail. Tablets (600–1023px, `kSidebarExpandedBreakpoint`) open collapsed and wider windows open expanded. The toggle beside the wordmark (or `[`) switches it, the choice is saved on the device per side of 1024px, and expanding always pushes the page over rather than covering it. Top to bottom:
   - **Header**, 52px like the app bar: the "NoMoreX" wordmark (title-3, the X in `primary-text`) and the collapse toggle; collapsed, "NX" and the expand toggle.
   - **New**: a secondary-style button, not an orange fill, so each page's own main action stays the one orange fill. It opens a menu: new personal best, workout, program, then "Import from photos or PDFs" while imports are on. `N` opens it. On the rail it opens to the button's right.
@@ -470,7 +466,8 @@ Each exercise in the workout and program editors is a `bg-1` card whose header b
   - **Footer**: Admin (admins only), then the account card: a 36px avatar, the display name or email, and the role pill plus plan label ("Free" in `info`). It opens Profile.
 - **Breadcrumbs:** beside the sidebar, detail screens lead their app-bar title with the section in `fg-2` ("Programs › ZT 6 Week Program"), which goes back to the section's list. The back arrow stays, because it returns to wherever the page was opened from. Phones keep the plain title.
 - **Phone program editor:** below 600px, editing a program goes one level per screen: the program (a details row, then a card per week, dragged by the handle at its left to reorder, listing each day in full over its first two lifts with a "+N" that never truncates), a week (a card per day, also dragged by its handle, listing every exercise as "4 × 3 · 20 kg"), then a day (a drag-to-reorder list; tapping an exercise opens it in a bottom sheet with Done pinned under its list). The week and day screens title themselves with the level above in 12px `fg-3` over the name, and a **selector strip** under the app bar switches weeks (W1 W2 …) or days (Day 1 with "6 ex" under it) in place: 36px-tall bordered buttons, the selected one `bg-3` with a `border-control` edge, and a + at the end. In the exercise sheet, sets are **set groups**: one row per run of identical sets, a drag handle, "10 × 1" (title-small, tabular) over its prescription ("80% of Clean · RPE 7", a fixed load in `weight`, open load in `fg-3`), the load it resolves to in `info` on the right, and ⋯. Tapping a group reopens the sets sheet filled in, reading "Save 10 sets". Each card and row is announced as a button; ⋯ menus are bottom sheets of actions, the destructive one in `danger-text`.
-- **Tabs:** sentence-case 14/500 labels, `fg-1` selected / `fg-2` unselected, a 2px `fg-2` underline (not orange). `ActiveArchivedTabs` uses them on Workouts and Programs.
+- **Tabs:** sentence-case 14/500 labels, `fg-1` selected / `fg-2` unselected, a 2px `fg-2` underline (not orange).
+- **Archived toggle** (`ArchivedToggle`): beside the search field on Training's Programs and Workouts views, a 48px-tall bordered button, "Archived" in 13/500 with the archive icon and the count in a mono eyebrow. On, it takes `primary-subtle` with a `primary-border` edge and `primary-text`, and the list shows archived items ("Search archived programs..."). It replaces a second row of tabs under the switcher.
 
 ### Overlays
 Dialogs and sheets on `bg-2` with a `border-default` edge and 14px radius (sheets round the top only, with a 36×4 drag handle); menus `bg-2` at 10px; snackbars floating, `bg-3`, 6px radius, `primary-text` action. Tooltips invert: `fg-1` fill, `bg-0` text.
