@@ -10,10 +10,14 @@ import '../../shell/nav_section.dart';
 import '../../shell/providers/training_view_provider.dart';
 import '../../workouts/screens/workouts_view.dart';
 
-/// The Training tab: the user's programs, workouts and PRs behind one switcher.
+/// The Training tab: the user's programs, workouts and PRs behind a tab bar,
+/// styled like Community's.
 ///
-/// [view] comes from the path (`/shell/training/:view`), so the switcher
+/// [view] comes from the path (`/shell/training/:view`), so a tab tap
 /// navigates rather than holding state: back and links land on the right view.
+/// The [TabController] only follows the route; the body is an [IndexedStack]
+/// rather than a `TabBarView`, so there's no swipe that would change the view
+/// without changing the URL.
 /// The route keeps one page for every view, so this widget stays mounted
 /// across a switch and the [IndexedStack] keeps each view's search and scroll.
 /// A view is built the first time it's shown, so opening Training doesn't
@@ -27,8 +31,14 @@ class TrainingScreen extends ConsumerStatefulWidget {
   ConsumerState<TrainingScreen> createState() => _TrainingScreenState();
 }
 
-class _TrainingScreenState extends ConsumerState<TrainingScreen> {
+class _TrainingScreenState extends ConsumerState<TrainingScreen>
+    with SingleTickerProviderStateMixin {
   final _opened = <TrainingView>{};
+  late final TabController _tabController = TabController(
+    length: TrainingView.values.length,
+    initialIndex: widget.view.index,
+    vsync: this,
+  );
 
   @override
   void initState() {
@@ -39,7 +49,19 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
   @override
   void didUpdateWidget(TrainingScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.view != widget.view) _remember();
+    if (oldWidget.view != widget.view) {
+      // Back, a link or the saved view moved the route: move the tab with it.
+      if (_tabController.index != widget.view.index) {
+        _tabController.animateTo(widget.view.index);
+      }
+      _remember();
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   // After the frame: providers can't change while widgets are building.
@@ -96,32 +118,17 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               onPressed: () => context.push(AppConstants.routeProfile),
             ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(52),
-          // Lined up with the list's left edge; full width on a phone, capped
-          // at 420px on wider screens so the three segments stay compact.
-          child: Padding(
-            padding: contentPadding(context, top: 0, bottom: 12),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: SegmentedButton<TrainingView>(
-                key: const Key('training_view_switcher'),
-                showSelectedIcon: false,
-                segments: [
-                  for (final v in TrainingView.values)
-                    ButtonSegment(value: v, label: Text(v.label, key: Key('training_view_${v.segment}'))),
-                ],
-                selected: {view},
-                    onSelectionChanged: (s) => context.go(s.first.route),
-                  ),
-                ),
-              ),
-            ),
-          ),
+        bottom: TabBar(
+          key: const Key('training_view_switcher'),
+          controller: _tabController,
+          tabs: [
+            for (final v in TrainingView.values)
+              Tab(key: Key('training_view_${v.segment}'), text: v.label),
+          ],
+          onTap: (i) {
+            final next = TrainingView.values[i];
+            if (next != view) context.go(next.route);
+          },
         ),
       ),
       body: IndexedStack(

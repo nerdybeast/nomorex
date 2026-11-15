@@ -137,6 +137,18 @@ void main() {
     expect(find.text('Snatch'), findsOneWidget);
   });
 
+  testWidgets('the selected tab follows the route, not just taps', (tester) async {
+    final router = await _pump(tester, '/shell/training/programs');
+    TabController controller() =>
+        tester.widget<TabBar>(find.byKey(const Key('training_view_switcher'))).controller!;
+    expect(controller().index, TrainingView.programs.index);
+
+    router.go('/shell/training/prs');
+    await tester.pumpAndSettle();
+    expect(controller().index, TrainingView.prs.index);
+    expect(find.text('Snatch'), findsOneWidget);
+  });
+
   testWidgets('a view keeps its search when you switch away and back', (tester) async {
     await _pump(tester, '/shell/training/programs');
     await tester.enterText(find.byKey(const Key('programs_search')), 'zzz');
