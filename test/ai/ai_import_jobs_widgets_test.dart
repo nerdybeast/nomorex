@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nomorex/features/ai/providers/ai_import_jobs_provider.dart';
 import 'package:nomorex/features/ai/widgets/ai_import_job_alerts.dart';
 import 'package:nomorex/features/ai/widgets/ai_import_jobs_section.dart';
@@ -33,6 +34,33 @@ void main() {
     await tester.pump();
     await tester.pump();
     return ProviderScope.containerOf(tester.element(find.byType(AiImportJobsSection)));
+  }
+
+  /// Like [pump], but at phone width with a real router, so Home's Review
+  /// button can navigate.
+  Future<void> pumpPhone(WidgetTester tester, List<dynamic> jobs) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    server.jobs['u1'] = [...jobs.cast()];
+    final router = GoRouter(routes: [
+      GoRoute(
+        path: '/',
+        builder: (_, _) => const Scaffold(body: SingleChildScrollView(child: AiImportJobsSection())),
+      ),
+      GoRoute(path: '/ai-import/review/:id', builder: (_, _) => const Scaffold(body: Text('Review page'))),
+    ]);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: jobOverrides(server, subscriber),
+        child: MaterialApp.router(
+          routerConfig: router,
+          builder: (context, child) => AiImportJobAlerts(navigate: navigatedTo.add, child: child!),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
   }
 
   /// Simulates the job changing on the server and a Realtime event arriving.
@@ -112,6 +140,28 @@ void main() {
       container.invalidate(aiImportJobsProvider);
       await tester.pump();
       await tester.pump();
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('an alert closes itself after a few seconds', (tester) async {
+      await pump(tester, [testJob('a', 'processing')]);
+      await serverChanges(tester, [testJob('a', 'ready')]);
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsOneWidget);
+
+      await tester.pumpAndSettle(const Duration(seconds: 9));
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('opening the review from Home closes the alert', (tester) async {
+      await pumpPhone(tester, [testJob('a', 'processing')]);
+      await serverChanges(tester, [testJob('a', 'ready')]);
+      await tester.pumpAndSettle();
+      expect(find.byType(SnackBar), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('ai_import_job_review_a')));
+      await tester.pumpAndSettle();
+      expect(find.text('Review page'), findsOneWidget);
       expect(find.byType(SnackBar), findsNothing);
     });
 

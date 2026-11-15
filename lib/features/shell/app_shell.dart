@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
+import '../ai/providers/ai_import_intake_provider.dart';
 import 'nav_section.dart';
 
 class AppShell extends ConsumerWidget {
@@ -10,25 +11,32 @@ class AppShell extends ConsumerWidget {
 
   final StatefulNavigationShell shell;
 
-  void _showAddMenu(BuildContext context) {
+  void _showAddMenu(BuildContext context, {required bool importEnabled}) {
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final action in kNewItemActions)
-              ListTile(
-                leading: Icon(action.icon),
-                title: Text(action.label),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  context.push(action.route);
-                },
-              ),
-          ],
-        ),
-      ),
+      builder: (ctx) {
+        Widget item(NewItemAction action, {Key? key}) => ListTile(
+              key: key,
+              leading: Icon(action.icon),
+              title: Text(action.label),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push(action.route);
+              },
+            );
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final action in kNewItemActions) item(action),
+              if (importEnabled) ...[
+                const Divider(height: 9),
+                item(kAiImportAction, key: const Key('ai_import_entry')),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -36,6 +44,9 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isMobile = MediaQuery.sizeOf(context).width < AppConstants.kMobileBreakpoint;
     final colorScheme = Theme.of(context).colorScheme;
+    // Watched rather than read on tap: the limits load lazily, so a read at
+    // tap time could still be loading and leave import out.
+    final importEnabled = ref.watch(aiImportLimitsProvider.select((l) => l.value?.enabled ?? false));
 
     if (isMobile) {
       return Scaffold(
@@ -61,19 +72,23 @@ class AppShell extends ConsumerWidget {
                         onTap: () => shell.goBranch(i),
                       ),
                     ),
+                  // "New" sits in the bar as a sixth item rather than a FAB, so
+                  // nothing floats over page content.
+                  Expanded(
+                    child: _NavItem(
+                      key: const Key('shell_new'),
+                      icon: Icons.add,
+                      selectedIcon: Icons.add,
+                      label: 'New',
+                      selected: false,
+                      onTap: () => _showAddMenu(context, importEnabled: importEnabled),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          key: const Key('shell_add_fab'),
-          heroTag: 'shellAddFab',
-          onPressed: () => _showAddMenu(context),
-          tooltip: 'Add',
-          child: const Icon(Icons.add, size: 26),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       );
     }
 
@@ -84,6 +99,7 @@ class AppShell extends ConsumerWidget {
 
 class _NavItem extends StatelessWidget {
   const _NavItem({
+    super.key,
     required this.icon,
     required this.selectedIcon,
     required this.label,
@@ -124,10 +140,19 @@ class _NavItem extends StatelessWidget {
               color: selected ? palette.primaryText : palette.fg3,
             ),
             const SizedBox(height: 4),
-            Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: selected ? palette.fg1 : palette.fg3,
+            // Six items share the bar: on a narrow phone "Community" would
+            // wrap and overflow, so a label shrinks to one line instead.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: selected ? palette.fg1 : palette.fg3,
+                  ),
+                ),
               ),
             ),
           ],

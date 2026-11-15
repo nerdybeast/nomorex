@@ -14,10 +14,10 @@ class AdminAiImportsNotifier extends _$AdminAiImportsNotifier {
   @override
   FutureOr<void> build() {}
 
-  /// Turns imports on or off for everyone, then re-reads the limits so
-  /// `AiImportButton` shows or hides on this device straight away. Other
-  /// devices pick it up on their next launch or resume. Rethrows on failure,
-  /// after leaving the error in [state].
+  /// Turns imports on or off for everyone, then re-reads the limits so the
+  /// "New" menus' import entry shows or hides on this device straight away.
+  /// Other devices pick it up on their next launch or resume. Rethrows on
+  /// failure, after leaving the error in [state].
   Future<void> setEnabled(bool enabled) async {
     state = const AsyncLoading();
     try {

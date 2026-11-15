@@ -11,7 +11,7 @@ class AiImportPage {
 
   final WidgetTester tester;
 
-  static final newButton = find.byKey(const Key('shell_add_fab'));
+  static final newButton = find.byKey(const Key('shell_new'));
   static final entry = find.byKey(const Key('ai_import_entry'));
   static final notice = find.byKey(const Key('ai_import_notice'));
   static final chooseImages = find.byKey(const Key('ai_import_choose_images'));

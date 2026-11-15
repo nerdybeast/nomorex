@@ -12,8 +12,8 @@ import '../utils/import_file_check.dart';
 import '../utils/import_messages.dart';
 
 /// Choose the photos, images or PDFs for an AI import, upload them and start
-/// the import. Reached from the Workouts and Programs app bars
-/// ([AiImportButton]).
+/// the import. Reached from the "New" menus: the sidebar's, and the phone's +
+/// sheet (`kAiImportAction`).
 ///
 /// It checks first ([aiImportGateProvider]): before the first import it shows
 /// the notice naming Anthropic, and when the user can't import right now it

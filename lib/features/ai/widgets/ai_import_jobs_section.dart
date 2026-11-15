@@ -6,6 +6,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../models/ai_import_job.dart';
+import '../providers/ai_import_alerts_provider.dart';
 import '../providers/ai_import_intake_provider.dart';
 import '../providers/ai_import_jobs_provider.dart';
 
@@ -85,7 +86,7 @@ class _AiImportJobsSectionState extends ConsumerState<AiImportJobsSection> {
 
 /// One import. Its button sits in a `Row` beside the text, not in a tile's
 /// trailing slot, so it stays its own semantics node.
-class _JobRow extends StatelessWidget {
+class _JobRow extends ConsumerWidget {
   const _JobRow({
     required this.job,
     required this.state,
@@ -101,7 +102,7 @@ class _JobRow extends StatelessWidget {
   final VoidCallback? onDismiss;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final tokens = NomorexTokens.of(context);
     final muted = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
@@ -133,7 +134,11 @@ class _JobRow extends StatelessWidget {
       AiImportJobState.ready => FilledButton(
         key: Key('ai_import_job_review_${job.id}'),
         style: const ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(0, NomorexSizes.controlHeight))),
-        onPressed: () => context.push(AppConstants.routeAiImportReview(job.id)),
+        onPressed: () {
+          // The finished-import toast for this job has done its job.
+          ref.read(importAlertSnackBarsProvider).dismiss(job.id);
+          context.push(AppConstants.routeAiImportReview(job.id));
+        },
         child: const Text('Review'),
       ),
       AiImportJobState.failed when onDismiss != null => FilledButton(

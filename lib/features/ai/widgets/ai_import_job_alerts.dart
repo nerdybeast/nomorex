@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../models/ai_import_job.dart';
+import '../providers/ai_import_alerts_provider.dart';
 import '../providers/ai_import_intake_provider.dart';
 import '../providers/ai_import_jobs_provider.dart';
 import '../utils/import_alert_tracker.dart';
@@ -15,9 +16,10 @@ import '../utils/import_alert_tracker.dart';
 ///   while a job is processing.
 /// - Re-reads the jobs and limits when the app resumes, since nothing reaches
 ///   a backgrounded app.
-/// - Shows one floating snackbar per job that becomes ready or failed.
-///   Floating, so it sits above the shell's FAB and bottom bar rather than
-///   pushing them.
+/// - Shows one snackbar per job that becomes ready or failed. It closes
+///   itself after a few seconds, when its action is tapped, or when the job's
+///   review is opened from Home ([ImportAlertSnackBars]). Floating: full
+///   width just above the bottom bar on a phone, a card on wider screens.
 ///
 /// It sits above the app's `Router`, so it can't use `context.push`;
 /// [navigate] does that instead.
@@ -67,13 +69,15 @@ class _AiImportJobAlertsState extends ConsumerState<AiImportJobAlerts> {
         'workout' => 'workout',
         _ => 'import',
       };
-      messenger.showSnackBar(
+      final wide = MediaQuery.sizeOf(context).width >= AppConstants.kMobileBreakpoint;
+      final controller = messenger.showSnackBar(
         SnackBar(
           key: Key('ai_import_alert_${job.id}'),
           behavior: SnackBarBehavior.floating,
-          // Full width on phones; a card-sized toast beside the rail on wider screens.
-          width: MediaQuery.sizeOf(context).width >= AppConstants.kMobileBreakpoint ? 480 : null,
+          width: wide ? 480 : null,
           duration: const Duration(seconds: 8),
+          // A snackbar with an action otherwise stays until it's tapped.
+          persist: false,
           content: Text(
             ready
                 ? 'Your imported $thing is ready to review.'
@@ -85,6 +89,7 @@ class _AiImportJobAlertsState extends ConsumerState<AiImportJobAlerts> {
           ),
         ),
       );
+      ref.read(importAlertSnackBarsProvider).add(job.id, controller);
     }
   }
 

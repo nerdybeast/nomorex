@@ -28,8 +28,8 @@ class AppConstants {
   static const String routeAdminAiImports = '/admin/ai-imports';
   static const String routeAdminExercises = '/admin/exercises';
   static const String routeAdminAuditLog = '/admin/audit-log';
-  // AI import: choose and upload files. Linked from the Workouts and Programs
-  // app bars (AiImportButton).
+  // AI import: choose and upload files. Linked from both "New" menus
+  // (kAiImportAction).
   static const String routeAiImport = '/ai-import';
   // Review one finished import job.
   static String routeAiImportReview(String jobId) => '/ai-import/review/$jobId';

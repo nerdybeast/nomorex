@@ -188,7 +188,7 @@ void main() {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('shell_add_fab')));
+    await tester.tap(find.byKey(const Key('shell_new')));
     await tester.pumpAndSettle();
     for (final entry in ['New personal best', 'New workout', 'New program']) {
       expect(find.widgetWithText(MenuItemButton, entry), findsOneWidget);
@@ -205,7 +205,7 @@ void main() {
     await tester.pumpWidget(_app(importEnabled: false));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('shell_add_fab')));
+    await tester.tap(find.byKey(const Key('shell_new')));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(MenuItemButton, 'New program'), findsOneWidget);
     expect(find.byKey(const Key('ai_import_entry')), findsNothing);

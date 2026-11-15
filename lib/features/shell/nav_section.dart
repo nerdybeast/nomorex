@@ -44,7 +44,7 @@ NavSection? navSectionFor(String location) {
   return null;
 }
 
-/// Something "New" (the phone FAB's sheet, the sidebar's menu) can start.
+/// Something "New" (the phone bar's New sheet, the sidebar's menu) can start.
 class NewItemAction {
   const NewItemAction(this.label, this.icon, this.route);
 
@@ -53,10 +53,19 @@ class NewItemAction {
   final String route;
 }
 
-/// What "New" offers, in order. The sidebar's menu adds AI import after these
-/// while imports are switched on.
+/// What "New" offers, in order. Both menus (the sidebar's and the phone bar's
+/// New sheet) add [kAiImportAction] after these while imports are switched on.
 const kNewItemActions = [
   NewItemAction('New personal best', Icons.emoji_events_outlined, AppConstants.routeAddPr),
   NewItemAction('New workout', Icons.fitness_center_outlined, AppConstants.routeWorkoutNew),
   NewItemAction('New program', Icons.checklist_outlined, AppConstants.routeProgramNew),
 ];
+
+/// The AI import entry at the end of both "New" menus. Shown only while
+/// `ai_import_limits.enabled` is true, so the admin off switch also takes the
+/// feature out of the app.
+const kAiImportAction = NewItemAction(
+  'Import from photos or PDFs',
+  Icons.document_scanner_outlined,
+  AppConstants.routeAiImport,
+);
