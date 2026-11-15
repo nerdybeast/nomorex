@@ -53,9 +53,9 @@ Widget _app({
         routes: [
           for (final (path, label) in [
             ('/shell/home', 'Home'),
-            ('/shell/programs', 'Programs'),
-            ('/shell/workouts', 'Workouts'),
-            ('/shell/prs', 'PRs'),
+            ('/shell/training/programs', 'Programs'),
+            ('/shell/training/workouts', 'Workouts'),
+            ('/shell/training/prs', 'PRs'),
             ('/shell/community', 'Community'),
             ('/admin', 'Admin'),
             ('/prs/add', 'Add PR'),
@@ -64,6 +64,8 @@ Widget _app({
             ('/ai-import', 'Import'),
           ])
             GoRoute(path: path, builder: (_, _) => _page(label)),
+          // As in the app, the bare Training tab opens a view.
+          GoRoute(path: '/shell/training', redirect: (_, _) => '/shell/training/programs'),
           GoRoute(
             path: '/programs/:id',
             builder: (_, _) => _page(
@@ -126,12 +128,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.getSize(_sidebar).width, 232);
-    for (final label in ['Home', 'Programs', 'Workouts', 'My PRs', 'Community']) {
+    for (final label in ['Home', 'Training', 'Community']) {
       expect(_inSidebar(label), findsOneWidget);
+    }
+    // Programs, workouts and PRs live under Training now.
+    for (final label in ['Programs', 'Workouts', 'My PRs']) {
+      expect(_inSidebar(label), findsNothing);
     }
     expect(find.byTooltip('Collapse sidebar'), findsOneWidget);
 
-    await tester.tap(_inSidebar('Programs'));
+    await tester.tap(_inSidebar('Training'));
     await tester.pumpAndSettle();
     expect(find.text('Programs page'), findsOneWidget);
   });
@@ -144,7 +150,7 @@ void main() {
 
     // Each page's route barrier would otherwise hide the sidebar, which is
     // painted before it.
-    expect(find.bySemanticsLabel('Workouts'), findsOneWidget);
+    expect(find.bySemanticsLabel('Training'), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('^Profile, Pat Lifter')), findsOneWidget);
     semantics.dispose();
   });
@@ -228,7 +234,7 @@ void main() {
 
   testWidgets('Profile opened from the sidebar keeps a way back after the window narrows', (tester) async {
     _setWidth(tester, 1280);
-    await tester.pumpWidget(_app(initial: '/shell/programs'));
+    await tester.pumpWidget(_app(initial: '/shell/training/programs'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('sidebar_account')));
@@ -313,13 +319,16 @@ void main() {
     expect(find.text('Run page'), findsOneWidget);
   });
 
-  testWidgets('a detail page keeps its section selected and leads its title with the section', (tester) async {
+  testWidgets('a detail page under Training leads its title with the view, not the tab', (tester) async {
     _setWidth(tester, 1280);
     await tester.pumpWidget(_app(initial: '/programs/p1'));
     await tester.pumpAndSettle();
 
     expect(_sidebar, findsOneWidget);
-    expect(find.byKey(const Key('breadcrumb_section')), findsOneWidget);
+    expect(
+      find.descendant(of: find.byKey(const Key('breadcrumb_section')), matching: find.text('Programs')),
+      findsOneWidget,
+    );
     expect(find.text('ZT 6 Week Program'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('breadcrumb_section')));

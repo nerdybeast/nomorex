@@ -24,14 +24,14 @@ import 'features/auth/screens/landing_screen.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/shell/app_frame.dart';
 import 'features/shell/app_shell.dart';
+import 'features/shell/providers/training_view_provider.dart';
+import 'features/training/training_routes.dart';
 import 'shared/widgets/haptic_tap_scope.dart';
 import 'shared/widgets/keyboard_dismiss_scope.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
-import 'features/personal_bests/screens/my_prs_screen.dart';
 import 'features/personal_bests/screens/add_pr_screen.dart';
 import 'features/personal_bests/screens/pr_history_screen.dart';
-import 'features/workouts/screens/workouts_screen.dart';
 import 'features/workouts/screens/new_workout_screen.dart';
 import 'features/workouts/screens/edit_workout_screen.dart';
 import 'features/workouts/screens/workout_detail_screen.dart';
@@ -40,7 +40,6 @@ import 'features/workouts/screens/workout_history_screen.dart';
 import 'features/community/screens/community_screen.dart';
 import 'features/community/screens/community_program_detail_screen.dart';
 import 'features/community/screens/community_workout_detail_screen.dart';
-import 'features/programs/screens/programs_screen.dart';
 import 'features/programs/screens/new_program_screen.dart';
 import 'features/programs/screens/program_history_screen.dart';
 import 'features/programs/screens/edit/program_day_edit_screen.dart';
@@ -93,6 +92,7 @@ GoRouter router(Ref ref) {
         path: AppConstants.routeLogin,
         builder: (_, _) => const LoginScreen(),
       ),
+      ...legacyTrainingRedirects,
       // Every signed-in page. On wide layouts AppFrame keeps the sidebar
       // beside whichever of them is showing; on a phone it adds nothing.
       ShellRoute(
@@ -107,24 +107,7 @@ GoRouter router(Ref ref) {
                   builder: (_, _) => const DashboardScreen(),
                 ),
               ]),
-              StatefulShellBranch(routes: [
-                GoRoute(
-                  path: AppConstants.routePrograms,
-                  builder: (_, _) => const ProgramsScreen(),
-                ),
-              ]),
-              StatefulShellBranch(routes: [
-                GoRoute(
-                  path: AppConstants.routeWorkouts,
-                  builder: (_, _) => const WorkoutsScreen(),
-                ),
-              ]),
-              StatefulShellBranch(routes: [
-                GoRoute(
-                  path: AppConstants.routePrs,
-                  builder: (_, _) => const MyPrsScreen(),
-                ),
-              ]),
+              StatefulShellBranch(routes: trainingBranchRoutes(() => ref.read(trainingViewProvider.notifier).lastUsed())),
               StatefulShellBranch(routes: [
                 GoRoute(
                   path: AppConstants.routeCommunity,

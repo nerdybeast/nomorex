@@ -14,7 +14,7 @@ import 'package:nomorex/features/workouts/providers/workout_detail_provider.dart
 import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
 import 'package:nomorex/features/workouts/screens/edit_workout_screen.dart';
 import 'package:nomorex/features/workouts/screens/workout_detail_screen.dart';
-import 'package:nomorex/features/workouts/screens/workouts_screen.dart';
+import 'package:nomorex/features/workouts/screens/workouts_view.dart';
 import 'package:nomorex/shared/models/one_rep_max.dart';
 
 class _StubWorkoutsNotifier extends WorkoutsNotifier {
@@ -111,7 +111,7 @@ void main() {
             () => _StubWorkoutsNotifier([_copiedWorkout(isImported: true)]),
           ),
         ],
-        child: const MaterialApp(home: WorkoutsScreen()),
+        child: const MaterialApp(home: Scaffold(body: WorkoutsView())),
       ),
     );
     await tester.pumpAndSettle();
@@ -145,7 +145,7 @@ void main() {
         overrides: [
           workoutsProvider.overrideWith(() => _StubWorkoutsNotifier([_copiedWorkout()])),
         ],
-        child: const MaterialApp(home: WorkoutsScreen()),
+        child: const MaterialApp(home: Scaffold(body: WorkoutsView())),
       ),
     );
     await tester.pumpAndSettle();
@@ -162,7 +162,7 @@ void main() {
             () => _StubWorkoutsNotifier([_copiedWorkout(isCopy: false)]),
           ),
         ],
-        child: const MaterialApp(home: WorkoutsScreen()),
+        child: const MaterialApp(home: Scaffold(body: WorkoutsView())),
       ),
     );
     await tester.pumpAndSettle();

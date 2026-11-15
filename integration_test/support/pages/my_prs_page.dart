@@ -4,15 +4,16 @@ import 'package:nomorex/shared/widgets/pr_card.dart';
 
 import '../harness.dart';
 
-/// The "My PRs" tab at `/shell/prs`.
+/// Training's PRs view at `/shell/training/prs`.
 class MyPrsPage {
   MyPrsPage(this.tester);
 
   final WidgetTester tester;
 
-  static final title = find.descendant(of: find.byType(AppBar), matching: find.text('My PRs'));
+  /// The PRs view's search field, which only it has.
+  static final search = find.byKey(const Key('prs_search'));
 
-  Future<void> waitUntilLoaded() => waitFor(tester, title);
+  Future<void> waitUntilLoaded() => waitFor(tester, search);
 
   /// Asserts the authenticated PR query actually resolved.
   ///

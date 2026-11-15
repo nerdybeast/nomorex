@@ -6,8 +6,8 @@ import '../../../shared/widgets/responsive_layout.dart';
 import '../nav_section.dart';
 
 /// An app-bar title for a page inside a section ("Programs › ZT 6 Week
-/// Program"). Beside the sidebar it leads with the section, which goes back to
-/// the section's list, and names the page by [current] (its own name, once
+/// Program"). Beside the sidebar it leads with the section, or inside Training
+/// with the Training view, which goes back to that list, and names the page by [current] (its own name, once
 /// loaded). On a phone, where there's no sidebar to say where you are, it's
 /// just [title], as before.
 ///
@@ -27,8 +27,13 @@ class BreadcrumbTitle extends StatelessWidget {
     final here = Text(current ?? title, maxLines: 1, overflow: TextOverflow.ellipsis);
     if (isMobile(context) || !SidebarInset.isPresent(context)) return Text(title, overflow: TextOverflow.ellipsis);
 
-    final section = navSectionFor(GoRouterState.of(context).uri.path);
+    final path = GoRouterState.of(context).uri.path;
+    final section = navSectionFor(path);
     if (section == null) return here;
+    // Inside Training, lead with the view ("Programs"), which says exactly
+    // where the crumb goes back to.
+    final view = section == NavSection.training ? trainingViewFor(path) : null;
+    final (label, route) = view != null ? (view.label, view.route) : (section.label, section.route);
 
     final palette = NomorexTokens.of(context).palette;
     return Row(
@@ -41,8 +46,8 @@ class BreadcrumbTitle extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6),
             textStyle: Theme.of(context).appBarTheme.titleTextStyle,
           ),
-          onPressed: () => context.go(section.route),
-          child: Text(section.label),
+          onPressed: () => context.go(route),
+          child: Text(label),
         ),
         Icon(Icons.chevron_right, size: 18, color: palette.fg3),
         const SizedBox(width: 4),

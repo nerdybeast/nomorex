@@ -620,7 +620,7 @@ void main() {
             builder: (_, _) => const WorkoutDetailScreen(workoutId: 'w1'),
           ),
           GoRoute(
-            path: '/shell/workouts',
+            path: '/shell/training/workouts',
             builder: (_, _) => const Text('destination:workouts'),
           ),
         ],

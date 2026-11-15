@@ -16,7 +16,7 @@ import 'package:nomorex/features/programs/providers/programs_provider.dart';
 import 'package:nomorex/features/programs/screens/program_detail_screen.dart';
 import 'package:nomorex/features/programs/screens/program_edit_screen.dart';
 import 'package:nomorex/features/programs/screens/program_instance_detail_screen.dart';
-import 'package:nomorex/features/programs/screens/programs_screen.dart';
+import 'package:nomorex/features/programs/screens/programs_view.dart';
 
 class _StubProgramsNotifier extends ProgramsNotifier {
   _StubProgramsNotifier(this._programs);
@@ -108,7 +108,7 @@ void main() {
           programsProvider.overrideWith(() => _StubProgramsNotifier([_copiedProgram()])),
           currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
         ],
-        child: const MaterialApp(home: ProgramsScreen()),
+        child: const MaterialApp(home: Scaffold(body: ProgramsView())),
       ),
     );
     await tester.pumpAndSettle();
@@ -126,7 +126,7 @@ void main() {
           ),
           currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
         ],
-        child: const MaterialApp(home: ProgramsScreen()),
+        child: const MaterialApp(home: Scaffold(body: ProgramsView())),
       ),
     );
     await tester.pumpAndSettle();
