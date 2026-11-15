@@ -202,7 +202,7 @@ class _NewButton extends ConsumerWidget {
       builder: (context, controller, _) {
         void toggle() => controller.isOpen ? controller.close() : controller.open();
         final button = FilledButton(
-          key: const Key('shell_add_fab'),
+          key: const Key('shell_new'),
           style: tokens.secondaryButtonStyle.copyWith(
             minimumSize: const WidgetStatePropertyAll(Size.fromHeight(NomorexSizes.controlHeightLg)),
             padding: WidgetStatePropertyAll(

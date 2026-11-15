@@ -7,15 +7,6 @@ import '../../core/constants/app_constants.dart';
 bool isMobile(BuildContext context) =>
     MediaQuery.sizeOf(context).width < AppConstants.kMobileBreakpoint;
 
-/// Vertical space the shell's centered "+" FAB occupies on mobile: the 56px
-/// button, its 16px float margin, and 16px of breathing room.
-const double kShellFabClearance = 88;
-
-/// Extra bottom padding a shell-tab scrollable needs so its last item can
-/// scroll clear of the shell FAB. Zero on wide layouts, where "New" lives in
-/// the sidebar instead of floating over the content.
-double shellFabClearance(BuildContext context) => isMobile(context) ? kShellFabClearance : 0;
-
 /// The widest a list or detail screen's content gets. Wider windows get more
 /// margin, not longer rows: past this a row's title and chevron drift too far
 /// apart to read as one line.
@@ -76,6 +67,6 @@ EdgeInsets contentPadding(
 }
 
 /// Standard list padding on a shell tab, centered at [kContentMaxWidth] on
-/// wide layouts, plus [shellFabClearance] at the bottom.
-EdgeInsets shellListPadding(BuildContext context) =>
-    contentPadding(context, bottom: 16 + shellFabClearance(context));
+/// wide layouts. Nothing floats over a tab ("New" is in the bottom bar or the
+/// sidebar), so it needs no extra bottom clearance.
+EdgeInsets shellListPadding(BuildContext context) => contentPadding(context);

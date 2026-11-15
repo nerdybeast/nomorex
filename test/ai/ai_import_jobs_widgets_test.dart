@@ -36,8 +36,8 @@ void main() {
     return ProviderScope.containerOf(tester.element(find.byType(AiImportJobsSection)));
   }
 
-  /// Like [pump], but at phone width with the shell's FAB and a real router,
-  /// so Home's Review button can navigate.
+  /// Like [pump], but at phone width with a real router, so Home's Review
+  /// button can navigate.
   Future<void> pumpPhone(WidgetTester tester, List<dynamic> jobs) async {
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1;
@@ -46,11 +46,7 @@ void main() {
     final router = GoRouter(routes: [
       GoRoute(
         path: '/',
-        builder: (_, _) => Scaffold(
-          body: const SingleChildScrollView(child: AiImportJobsSection()),
-          floatingActionButton: FloatingActionButton(key: const Key('fab'), onPressed: () {}),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        ),
+        builder: (_, _) => const Scaffold(body: SingleChildScrollView(child: AiImportJobsSection())),
       ),
       GoRoute(path: '/ai-import/review/:id', builder: (_, _) => const Scaffold(body: Text('Review page'))),
     ]);
@@ -155,16 +151,6 @@ void main() {
 
       await tester.pumpAndSettle(const Duration(seconds: 9));
       expect(find.byType(SnackBar), findsNothing);
-    });
-
-    testWidgets('on a phone the alert sits below the FAB, not over the page above it', (tester) async {
-      await pumpPhone(tester, [testJob('a', 'processing')]);
-      await serverChanges(tester, [testJob('a', 'ready')]);
-      await tester.pumpAndSettle();
-
-      final snackTop = tester.getTopLeft(find.byType(SnackBar)).dy;
-      final fabBottom = tester.getBottomLeft(find.byKey(const Key('fab'))).dy;
-      expect(snackTop, greaterThanOrEqualTo(fabBottom));
     });
 
     testWidgets('opening the review from Home closes the alert', (tester) async {

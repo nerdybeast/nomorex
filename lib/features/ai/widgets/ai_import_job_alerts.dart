@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../models/ai_import_job.dart';
 import '../providers/ai_import_alerts_provider.dart';
@@ -19,10 +18,8 @@ import '../utils/import_alert_tracker.dart';
 ///   a backgrounded app.
 /// - Shows one snackbar per job that becomes ready or failed. It closes
 ///   itself after a few seconds, when its action is tapped, or when the job's
-///   review is opened from Home ([ImportAlertSnackBars]). On a phone it's
-///   fixed above the bottom bar, so the shell's FAB moves up above it rather
-///   than the toast landing over the page above the FAB; wider, it's a
-///   floating card.
+///   review is opened from Home ([ImportAlertSnackBars]). Floating: full
+///   width just above the bottom bar on a phone, a card on wider screens.
 ///
 /// It sits above the app's `Router`, so it can't use `context.push`;
 /// [navigate] does that instead.
@@ -76,9 +73,7 @@ class _AiImportJobAlertsState extends ConsumerState<AiImportJobAlerts> {
       final controller = messenger.showSnackBar(
         SnackBar(
           key: Key('ai_import_alert_${job.id}'),
-          behavior: wide ? SnackBarBehavior.floating : SnackBarBehavior.fixed,
-          // Edge to edge on a phone, so the theme's rounded card shape becomes a top rule.
-          shape: wide ? null : Border(top: BorderSide(color: NomorexTokens.of(context).palette.borderDefault)),
+          behavior: SnackBarBehavior.floating,
           width: wide ? 480 : null,
           duration: const Duration(seconds: 8),
           // A snackbar with an action otherwise stays until it's tapped.

@@ -7,7 +7,8 @@ import 'package:nomorex/features/ai/models/ai_import_limits.dart';
 import 'package:nomorex/features/ai/providers/ai_import_intake_provider.dart';
 import 'package:nomorex/features/shell/app_shell.dart';
 
-/// The phone shell's + sheet. The sidebar's New menu is in app_sidebar_test.
+/// The phone shell's bottom bar and its New sheet. The sidebar's New menu is in
+/// app_sidebar_test.
 Widget _app({bool importEnabled = true}) {
   Widget page(String label) => Scaffold(body: Text('$label page'));
   final router = GoRouter(
@@ -58,11 +59,11 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(_app(importEnabled: importEnabled));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('shell_add_fab')));
+    await tester.tap(find.byKey(const Key('shell_new')));
     await tester.pumpAndSettle();
   }
 
-  testWidgets('the + sheet offers import while it is on, and opens it', (tester) async {
+  testWidgets('the New sheet offers import while it is on, and opens it', (tester) async {
     await openSheet(tester);
     for (final entry in ['New personal best', 'New workout', 'New program']) {
       expect(find.widgetWithText(ListTile, entry), findsOneWidget);
@@ -74,9 +75,37 @@ void main() {
     expect(find.text('Import page'), findsOneWidget);
   });
 
-  testWidgets('the + sheet leaves out import while imports are switched off', (tester) async {
+  testWidgets('the New sheet leaves out import while imports are switched off', (tester) async {
     await openSheet(tester, importEnabled: false);
     expect(find.widgetWithText(ListTile, 'New program'), findsOneWidget);
     expect(find.byKey(const Key('ai_import_entry')), findsNothing);
+  });
+
+  testWidgets('New is a sixth item in the bottom bar, with no FAB over the page', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FloatingActionButton), findsNothing);
+    for (final label in ['Home', 'Programs', 'Workouts', 'My PRs', 'Community', 'New']) {
+      expect(find.bySemanticsLabel(label), findsOneWidget, reason: '$label in the bar');
+    }
+    // Same row as the tabs.
+    expect(
+      tester.getCenter(find.byKey(const Key('shell_new'))).dy,
+      tester.getCenter(find.bySemanticsLabel('Home')).dy,
+    );
+  });
+
+  testWidgets('the six items fit a narrow phone without overflowing', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.bySemanticsLabel('Community'), findsOneWidget);
   });
 }
