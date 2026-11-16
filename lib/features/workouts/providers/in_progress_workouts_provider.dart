@@ -22,7 +22,7 @@ class InProgressWorkoutsNotifier extends _$InProgressWorkoutsNotifier {
 
     final data = await _db
         .from('workouts')
-        .select('*, workout_exercises(*, exercises(name))')
+        .select('*, workout_exercises(*, exercises(name)), program_instances(programs(name))')
         .eq('user_id', userId)
         .inFilter('status', ['in_progress', 'paused'])
         .order('started_at');

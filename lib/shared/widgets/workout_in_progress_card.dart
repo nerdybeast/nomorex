@@ -14,6 +14,8 @@ class WorkoutInProgressCard extends StatelessWidget {
     required this.statusDisplay,
     this.statusTrailing,
     this.isLive = true,
+    this.programLabel,
+    this.isStandalone = false,
     this.onTap,
   });
 
@@ -24,6 +26,11 @@ class WorkoutInProgressCard extends StatelessWidget {
   /// Running (true) or paused (false): drives the status dot, which is the
   /// only orange on the row while a workout is live.
   final bool isLive;
+
+  /// Which program the workout belongs to, shown under the title; null hides
+  /// the line. When [isStandalone] it reads "Standalone" instead, dimmer.
+  final String? programLabel;
+  final bool isStandalone;
   final VoidCallback? onTap;
 
   @override
@@ -53,6 +60,30 @@ class WorkoutInProgressCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: theme.textTheme.titleSmall),
+                if (programLabel != null) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    key: const Key('workout_program_label'),
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isStandalone ? Icons.fitness_center : Icons.checklist_outlined,
+                        size: 14,
+                        color: isStandalone ? palette.fg3 : palette.fg2,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          programLabel!,
+                          style: statusStyle?.copyWith(
+                            color: isStandalone ? palette.fg3 : palette.fg2,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 2),
                 Row(
                   mainAxisSize: MainAxisSize.min,

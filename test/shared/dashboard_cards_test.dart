@@ -59,6 +59,38 @@ void main() {
   });
 
   group('WorkoutInProgressCard', () {
+    testWidgets('shows the program name, or Standalone, under the title', (tester) async {
+      await pump(
+        tester,
+        const WorkoutInProgressCard(
+          title: 'Day 4',
+          statusDisplay: 'In progress',
+          programLabel: 'STRONG LIKE BULL',
+        ),
+      );
+      expect(find.text('STRONG LIKE BULL'), findsOneWidget);
+
+      await pump(
+        tester,
+        const WorkoutInProgressCard(
+          title: 'Push Day',
+          statusDisplay: 'In progress',
+          programLabel: 'Standalone',
+          isStandalone: true,
+        ),
+      );
+      expect(find.text('Standalone'), findsOneWidget);
+      expect(find.text('STRONG LIKE BULL'), findsNothing);
+    });
+
+    testWidgets('no program line when programLabel is omitted', (tester) async {
+      await pump(
+        tester,
+        const WorkoutInProgressCard(title: 'Push Day', statusDisplay: 'In progress'),
+      );
+      expect(find.byKey(const Key('workout_program_label')), findsNothing);
+    });
+
     testWidgets('hides the chevron when onTap is not provided', (tester) async {
       await pump(
         tester,
