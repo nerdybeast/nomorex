@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../core/theme/app_theme.dart';
 import '../utils/workout_timer.dart';
 import '../../../core/utils/duration_formatter.dart';

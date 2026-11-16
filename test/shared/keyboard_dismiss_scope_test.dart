@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/shared/widgets/haptic_tap_scope.dart';
 import 'package:nomorex/shared/widgets/keyboard_dismiss_scope.dart';

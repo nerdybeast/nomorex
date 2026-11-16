@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 // Tabbing or clicking away doesn't fire onFieldSubmitted (that only fires on
 // Enter/"done"), so a typed value would otherwise be silently dropped —

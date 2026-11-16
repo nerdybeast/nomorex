@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/core/utils/one_rep_max_formula.dart';
 import 'package:nomorex/features/personal_bests/models/personal_best.dart';

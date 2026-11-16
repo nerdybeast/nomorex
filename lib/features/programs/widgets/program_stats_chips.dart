@@ -1,5 +1,5 @@
 import '../../../shared/widgets/summary_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../utils/program_stats.dart';
 
 /// The weeks / days / workouts facts for a program, as chips. A running (or
