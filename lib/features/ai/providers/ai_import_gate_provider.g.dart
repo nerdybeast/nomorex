@@ -65,7 +65,7 @@ abstract class _$AiImportGateNotifier extends $AsyncNotifier<AiImportCheck> {
   FutureOr<AiImportCheck> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<AiImportCheck>, AiImportCheck>;
     final element =
         ref.element
@@ -75,6 +75,6 @@ abstract class _$AiImportGateNotifier extends $AsyncNotifier<AiImportCheck> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/core/utils/weight_converter.dart';
@@ -22,15 +22,15 @@ class _StubExercisesNotifier extends ExercisesNotifier {
   Future<List<Exercise>> build() async => const [_otherExercise];
 }
 
-Widget _wrap(Widget child, {Map<String, OneRepMax> oneRepMaxes = const {}}) =>
-    ProviderScope(
+Future<void> _pump(WidgetTester tester, Widget child, {Map<String, OneRepMax> oneRepMaxes = const {}}) =>
+    tester.pumpWidget(ProviderScope(
       overrides: [
         exercisesProvider.overrideWith(() => _StubExercisesNotifier()),
         oneRepMaxProvider.overrideWith((ref) async => oneRepMaxes),
         oneRepMaxByNameProvider.overrideWith((ref) async => const {}),
       ],
       child: MaterialApp(home: Scaffold(body: child)),
-    );
+    ));
 
 /// The editor under test, keyed to exercise 'e1' / 'Back Squat'.
 SetEditor _editor() => SetEditor(
@@ -64,18 +64,17 @@ void main() {
   ) async {
     List<ParsedSet>? added;
 
-    await tester.pumpWidget(
-      _wrap(
-        SetEditor(
-          sets: const [],
-          unit: 'kg',
-          currentExerciseId: 'e1',
-          currentExerciseName: 'Front Squat',
-          onAddPercentageSets: (parsed) => added = parsed,
-          onAddAbsoluteSets: (_) {},
-          onDeleteSet: (_) {},
-          onReorderSets: (_) {},
-        ),
+    await _pump(
+      tester,
+      SetEditor(
+        sets: const [],
+        unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Front Squat',
+        onAddPercentageSets: (parsed) => added = parsed,
+        onAddAbsoluteSets: (_) {},
+        onDeleteSet: (_) {},
+        onReorderSets: (_) {},
       ),
     );
     await tester.pumpAndSettle();
@@ -116,18 +115,17 @@ void main() {
     (tester) async {
       List<ParsedSet>? added;
 
-      await tester.pumpWidget(
-        _wrap(
-          SetEditor(
-            sets: const [],
-            unit: 'kg',
-            currentExerciseId: 'e1',
-            currentExerciseName: 'Front Squat',
-            onAddPercentageSets: (parsed) => added = parsed,
-            onAddAbsoluteSets: (_) {},
-            onDeleteSet: (_) {},
-            onReorderSets: (_) {},
-          ),
+      await _pump(
+        tester,
+        SetEditor(
+          sets: const [],
+          unit: 'kg',
+          currentExerciseId: 'e1',
+          currentExerciseName: 'Front Squat',
+          onAddPercentageSets: (parsed) => added = parsed,
+          onAddAbsoluteSets: (_) {},
+          onDeleteSet: (_) {},
+          onReorderSets: (_) {},
         ),
       );
       await tester.pumpAndSettle();
@@ -157,22 +155,21 @@ void main() {
       int? capturedReps;
       double? capturedWeightKg;
 
-      await tester.pumpWidget(
-        _wrap(
-          SetEditor(
-            sets: const [],
-            unit: 'lbs',
-            currentExerciseId: 'e1',
-            currentExerciseName: 'Front Squat',
-            onAddPercentageSets: (_) {},
-            onAddAbsoluteSets: (batch) {
-              capturedSets = batch.sets;
-              capturedReps = batch.reps;
-              capturedWeightKg = batch.weightKg;
-            },
-            onDeleteSet: (_) {},
-            onReorderSets: (_) {},
-          ),
+      await _pump(
+        tester,
+        SetEditor(
+          sets: const [],
+          unit: 'lbs',
+          currentExerciseId: 'e1',
+          currentExerciseName: 'Front Squat',
+          onAddPercentageSets: (_) {},
+          onAddAbsoluteSets: (batch) {
+            capturedSets = batch.sets;
+            capturedReps = batch.reps;
+            capturedWeightKg = batch.weightKg;
+          },
+          onDeleteSet: (_) {},
+          onReorderSets: (_) {},
         ),
       );
       await tester.pumpAndSettle();
@@ -206,18 +203,17 @@ void main() {
     'Add sets (weight) shows a static unit chip, not a toggle, when the '
     'profile preference is fixed to lbs',
     (tester) async {
-      await tester.pumpWidget(
-        _wrap(
-          SetEditor(
-            sets: const [],
-            unit: 'lbs',
-            currentExerciseId: 'e1',
-            currentExerciseName: 'Front Squat',
-            onAddPercentageSets: (_) {},
-            onAddAbsoluteSets: (_) {},
-            onDeleteSet: (_) {},
-            onReorderSets: (_) {},
-          ),
+      await _pump(
+        tester,
+        SetEditor(
+          sets: const [],
+          unit: 'lbs',
+          currentExerciseId: 'e1',
+          currentExerciseName: 'Front Squat',
+          onAddPercentageSets: (_) {},
+          onAddAbsoluteSets: (_) {},
+          onDeleteSet: (_) {},
+          onReorderSets: (_) {},
         ),
       );
       await tester.pumpAndSettle();
@@ -238,18 +234,17 @@ void main() {
     (tester) async {
       double? capturedWeightKg;
 
-      await tester.pumpWidget(
-        _wrap(
-          SetEditor(
-            sets: const [],
-            unit: 'both',
-            currentExerciseId: 'e1',
-            currentExerciseName: 'Front Squat',
-            onAddPercentageSets: (_) {},
-            onAddAbsoluteSets: (batch) => capturedWeightKg = batch.weightKg,
-            onDeleteSet: (_) {},
-            onReorderSets: (_) {},
-          ),
+      await _pump(
+        tester,
+        SetEditor(
+          sets: const [],
+          unit: 'both',
+          currentExerciseId: 'e1',
+          currentExerciseName: 'Front Squat',
+          onAddPercentageSets: (_) {},
+          onAddAbsoluteSets: (batch) => capturedWeightKg = batch.weightKg,
+          onDeleteSet: (_) {},
+          onReorderSets: (_) {},
         ),
       );
       await tester.pumpAndSettle();
@@ -291,18 +286,17 @@ void main() {
       'without pressing enter', (tester) async {
     double? capturedWeightKg;
 
-    await tester.pumpWidget(
-      _wrap(
-        SetEditor(
-          sets: const [],
-          unit: 'kg',
-          currentExerciseId: 'e1',
-          currentExerciseName: 'Front Squat',
-          onAddPercentageSets: (_) {},
-          onAddAbsoluteSets: (batch) => capturedWeightKg = batch.weightKg,
-          onDeleteSet: (_) {},
-          onReorderSets: (_) {},
-        ),
+    await _pump(
+      tester,
+      SetEditor(
+        sets: const [],
+        unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Front Squat',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (batch) => capturedWeightKg = batch.weightKg,
+        onDeleteSet: (_) {},
+        onReorderSets: (_) {},
       ),
     );
     await tester.pumpAndSettle();
@@ -330,18 +324,17 @@ void main() {
   });
 
   testWidgets('sets stepper cannot go below 1', (tester) async {
-    await tester.pumpWidget(
-      _wrap(
-        SetEditor(
-          sets: const [],
-          unit: 'kg',
-          currentExerciseId: 'e1',
-          currentExerciseName: 'Front Squat',
-          onAddPercentageSets: (_) {},
-          onAddAbsoluteSets: (_) {},
-          onDeleteSet: (_) {},
-          onReorderSets: (_) {},
-        ),
+    await _pump(
+      tester,
+      SetEditor(
+        sets: const [],
+        unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Front Squat',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (_) {},
+        onDeleteSet: (_) {},
+        onReorderSets: (_) {},
       ),
     );
     await tester.pumpAndSettle();
@@ -366,27 +359,26 @@ void main() {
   testWidgets('renders "% of <basis>" when a set has a basis exercise', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      _wrap(
-        SetEditor(
-          sets: const [
-            EditableSetRow(
-              id: 's1',
-              weightMode: 'percentage',
-              targetReps: 5,
-              percentage: 85,
-              basisExerciseId: 'e2',
-              basisExerciseName: 'Front Squat',
-            ),
-          ],
-          unit: 'kg',
-          currentExerciseId: 'e1',
-          currentExerciseName: 'Front Squat',
-          onAddPercentageSets: (_) {},
-          onAddAbsoluteSets: (_) {},
-          onDeleteSet: (_) {},
-          onReorderSets: (_) {},
-        ),
+    await _pump(
+      tester,
+      SetEditor(
+        sets: const [
+          EditableSetRow(
+            id: 's1',
+            weightMode: 'percentage',
+            targetReps: 5,
+            percentage: 85,
+            basisExerciseId: 'e2',
+            basisExerciseName: 'Front Squat',
+          ),
+        ],
+        unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Front Squat',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (_) {},
+        onDeleteSet: (_) {},
+        onReorderSets: (_) {},
       ),
     );
     await tester.pumpAndSettle();
@@ -396,9 +388,7 @@ void main() {
 
   group('Add sets (%) shows the 1RM the percentages resolve against', () {
     testWidgets('a measured single renders plainly', (tester) async {
-      await tester.pumpWidget(
-        _wrap(_editor(), oneRepMaxes: const {'e1': OneRepMax.measured(165)}),
-      );
+      await _pump(tester, _editor(), oneRepMaxes: const {'e1': OneRepMax.measured(165)});
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add sets (%)'));
@@ -408,9 +398,7 @@ void main() {
     });
 
     testWidgets('an inferred max is labelled as an estimate', (tester) async {
-      await tester.pumpWidget(
-        _wrap(_editor(), oneRepMaxes: const {'e1': OneRepMax.estimated(112.5)}),
-      );
+      await _pump(tester, _editor(), oneRepMaxes: const {'e1': OneRepMax.estimated(112.5)});
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add sets (%)'));
@@ -420,7 +408,7 @@ void main() {
     });
 
     testWidgets('says so when the lift has no 1RM at all', (tester) async {
-      await tester.pumpWidget(_wrap(_editor()));
+      await _pump(tester, _editor());
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add sets (%)'));
@@ -432,14 +420,13 @@ void main() {
     testWidgets('follows the basis exercise chosen in the dropdown', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        _wrap(
-          _editor(),
-          oneRepMaxes: const {
-            'e1': OneRepMax.measured(165),
-            'e2': OneRepMax.measured(90),
-          },
-        ),
+      await _pump(
+        tester,
+        _editor(),
+        oneRepMaxes: const {
+          'e1': OneRepMax.measured(165),
+          'e2': OneRepMax.measured(90),
+        },
       );
       await tester.pumpAndSettle();
 
@@ -462,37 +449,36 @@ void main() {
       'with the new id order', (tester) async {
     List<String>? reordered;
 
-    await tester.pumpWidget(
-      _wrap(
-        SetEditor(
-          sets: const [
-            EditableSetRow(
-              id: 's1',
-              weightMode: 'absolute',
-              targetReps: 14,
-              absoluteWeightKg: 50,
-            ),
-            EditableSetRow(
-              id: 's2',
-              weightMode: 'absolute',
-              targetReps: 15,
-              absoluteWeightKg: 45,
-            ),
-            EditableSetRow(
-              id: 's3',
-              weightMode: 'absolute',
-              targetReps: 16,
-              absoluteWeightKg: 40,
-            ),
-          ],
-          unit: 'kg',
-          currentExerciseId: 'e1',
-          currentExerciseName: 'Back Squat',
-          onAddPercentageSets: (_) {},
-          onAddAbsoluteSets: (_) {},
-          onDeleteSet: (_) {},
-          onReorderSets: (ids) => reordered = ids,
-        ),
+    await _pump(
+      tester,
+      SetEditor(
+        sets: const [
+          EditableSetRow(
+            id: 's1',
+            weightMode: 'absolute',
+            targetReps: 14,
+            absoluteWeightKg: 50,
+          ),
+          EditableSetRow(
+            id: 's2',
+            weightMode: 'absolute',
+            targetReps: 15,
+            absoluteWeightKg: 45,
+          ),
+          EditableSetRow(
+            id: 's3',
+            weightMode: 'absolute',
+            targetReps: 16,
+            absoluteWeightKg: 40,
+          ),
+        ],
+        unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Back Squat',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (_) {},
+        onDeleteSet: (_) {},
+        onReorderSets: (ids) => reordered = ids,
       ),
     );
     await tester.pumpAndSettle();
@@ -516,31 +502,30 @@ void main() {
   ) async {
     String? deletedId;
 
-    await tester.pumpWidget(
-      _wrap(
-        SetEditor(
-          sets: const [
-            EditableSetRow(
-              id: 's1',
-              weightMode: 'absolute',
-              targetReps: 14,
-              absoluteWeightKg: 50,
-            ),
-            EditableSetRow(
-              id: 's2',
-              weightMode: 'absolute',
-              targetReps: 15,
-              absoluteWeightKg: 45,
-            ),
-          ],
-          unit: 'kg',
-          currentExerciseId: 'e1',
-          currentExerciseName: 'Back Squat',
-          onAddPercentageSets: (_) {},
-          onAddAbsoluteSets: (_) {},
-          onDeleteSet: (id) => deletedId = id,
-          onReorderSets: (_) {},
-        ),
+    await _pump(
+      tester,
+      SetEditor(
+        sets: const [
+          EditableSetRow(
+            id: 's1',
+            weightMode: 'absolute',
+            targetReps: 14,
+            absoluteWeightKg: 50,
+          ),
+          EditableSetRow(
+            id: 's2',
+            weightMode: 'absolute',
+            targetReps: 15,
+            absoluteWeightKg: 45,
+          ),
+        ],
+        unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Back Squat',
+        onAddPercentageSets: (_) {},
+        onAddAbsoluteSets: (_) {},
+        onDeleteSet: (id) => deletedId = id,
+        onReorderSets: (_) {},
       ),
     );
     await tester.pumpAndSettle();

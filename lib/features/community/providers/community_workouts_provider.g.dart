@@ -13,7 +13,11 @@ part of 'community_workouts_provider.dart';
 final communityWorkoutsProvider = CommunityWorkoutsNotifierProvider._();
 
 final class CommunityWorkoutsNotifierProvider
-    extends $AsyncNotifierProvider<CommunityWorkoutsNotifier, List<Workout>> {
+    extends
+        $AsyncNotifierProvider<
+          CommunityWorkoutsNotifier,
+          CommunityPage<Workout>
+        > {
   CommunityWorkoutsNotifierProvider._()
     : super(
         from: null,
@@ -34,23 +38,28 @@ final class CommunityWorkoutsNotifierProvider
 }
 
 String _$communityWorkoutsNotifierHash() =>
-    r'd88e7f62630cee5a936622b965a0e528d5b6d69b';
+    r'665923a3ee3f283a6c198c62b18459009bccdd36';
 
 abstract class _$CommunityWorkoutsNotifier
-    extends $AsyncNotifier<List<Workout>> {
-  FutureOr<List<Workout>> build();
+    extends $AsyncNotifier<CommunityPage<Workout>> {
+  FutureOr<CommunityPage<Workout>> build();
   @$mustCallSuper
   @override
-  void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<List<Workout>>, List<Workout>>;
+  WhenComplete runBuild() {
+    final ref =
+        this.ref
+            as $Ref<AsyncValue<CommunityPage<Workout>>, CommunityPage<Workout>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<List<Workout>>, List<Workout>>,
-              AsyncValue<List<Workout>>,
+              AnyNotifier<
+                AsyncValue<CommunityPage<Workout>>,
+                CommunityPage<Workout>
+              >,
+              AsyncValue<CommunityPage<Workout>>,
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

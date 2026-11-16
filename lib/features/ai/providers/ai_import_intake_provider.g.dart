@@ -166,7 +166,7 @@ abstract class _$AiImportIntakeNotifier extends $Notifier<ImportIntakeState> {
   ImportIntakeState build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<ImportIntakeState, ImportIntakeState>;
     final element =
         ref.element
@@ -176,6 +176,6 @@ abstract class _$AiImportIntakeNotifier extends $Notifier<ImportIntakeState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

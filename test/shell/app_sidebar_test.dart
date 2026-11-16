@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,7 +38,7 @@ Widget _page(String label, {Widget? title}) => Scaffold(
       body: Text('$label page'),
     );
 
-Widget _app({
+Future<void> _pump(WidgetTester tester, {
   String initial = '/shell/home',
   Set<String> roles = const {},
   bool importEnabled = true,
@@ -89,7 +89,7 @@ Widget _app({
       ),
     ],
   );
-  return ProviderScope(
+  return tester.pumpWidget(ProviderScope(
     overrides: [
       inProgressWorkoutsProvider.overrideWith(() => _Workouts(workouts)),
       currentProgramInstancesProvider.overrideWith(() => _Instances(instances)),
@@ -107,7 +107,7 @@ Widget _app({
       displayNameProvider.overrideWithValue('Pat Lifter'),
     ],
     child: MaterialApp.router(theme: AppTheme.dark(), routerConfig: router),
-  );
+  ));
 }
 
 void _setWidth(WidgetTester tester, double width) {
@@ -124,7 +124,7 @@ void main() {
 
   testWidgets('a laptop window shows the expanded sidebar, and its sections navigate', (tester) async {
     _setWidth(tester, 1280);
-    await tester.pumpWidget(_app());
+    await _pump(tester);
     await tester.pumpAndSettle();
 
     expect(tester.getSize(_sidebar).width, 232);
@@ -145,7 +145,7 @@ void main() {
   testWidgets('screen readers can reach the sidebar beside a page', (tester) async {
     final semantics = tester.ensureSemantics();
     _setWidth(tester, 1280);
-    await tester.pumpWidget(_app(initial: '/programs/p1'));
+    await _pump(tester, initial: '/programs/p1');
     await tester.pumpAndSettle();
 
     // Each page's route barrier would otherwise hide the sidebar, which is
@@ -157,7 +157,7 @@ void main() {
 
   testWidgets('a tablet window opens collapsed, and the toggle expands and collapses it', (tester) async {
     _setWidth(tester, 800);
-    await tester.pumpWidget(_app());
+    await _pump(tester);
     await tester.pumpAndSettle();
 
     expect(tester.getSize(_sidebar).width, 76);
@@ -172,7 +172,7 @@ void main() {
 
   testWidgets('a phone window has no sidebar', (tester) async {
     _setWidth(tester, 400);
-    await tester.pumpWidget(_app());
+    await _pump(tester);
     await tester.pumpAndSettle();
 
     expect(_sidebar, findsNothing);
@@ -181,7 +181,7 @@ void main() {
 
   testWidgets('[ toggles the sidebar', (tester) async {
     _setWidth(tester, 1280);
-    await tester.pumpWidget(_app());
+    await _pump(tester);
     await tester.pumpAndSettle();
 
     await tester.sendKeyEvent(LogicalKeyboardKey.bracketLeft);
@@ -191,7 +191,7 @@ void main() {
 
   testWidgets('New opens a menu of things to create, plus import while it is on', (tester) async {
     _setWidth(tester, 1280);
-    await tester.pumpWidget(_app());
+    await _pump(tester);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('shell_new')));
@@ -208,7 +208,7 @@ void main() {
 
   testWidgets('New leaves out import while imports are switched off', (tester) async {
     _setWidth(tester, 1280);
-    await tester.pumpWidget(_app(importEnabled: false));
+    await _pump(tester, importEnabled: false);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('shell_new')));
@@ -219,7 +219,7 @@ void main() {
 
   testWidgets('the account card names the user and their plan, and opens Profile', (tester) async {
     _setWidth(tester, 1280);
-    await tester.pumpWidget(_app());
+    await _pump(tester);
     await tester.pumpAndSettle();
 
     expect(_inSidebar('Pat Lifter'), findsOneWidget);
@@ -234,7 +234,7 @@ void main() {
 
   testWidgets('Profile opened from the sidebar keeps a way back after the window narrows', (tester) async {
     _setWidth(tester, 1280);
-    await tester.pumpWidget(_app(initial: '/shell/training/programs'));
+    await _pump(tester, initial: '/shell/training/programs');
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('sidebar_account')));
@@ -256,7 +256,7 @@ void main() {
 
   testWidgets('admins get the Admin row and the role pill', (tester) async {
     _setWidth(tester, 1280);
-    await tester.pumpWidget(_app(roles: {'admin'}));
+    await _pump(tester, roles: {'admin'});
     await tester.pumpAndSettle();
 
     expect(_inSidebar('ADMIN'), findsOneWidget);
@@ -267,7 +267,7 @@ void main() {
 
   testWidgets('Running says so when nothing is running', (tester) async {
     _setWidth(tester, 1280);
-    await tester.pumpWidget(_app());
+    await _pump(tester);
     await tester.pumpAndSettle();
 
     expect(_inSidebar('RUNNING'), findsOneWidget);
@@ -277,33 +277,34 @@ void main() {
   testWidgets('Running shows a live session and today in a program run, and opens them', (tester) async {
     _setWidth(tester, 1280);
     final now = DateTime.now();
-    await tester.pumpWidget(_app(
-      workouts: [
-        Workout(
-          id: 'w1',
-          userId: 'u',
-          title: 'Push day',
-          date: now,
-          updatedAt: now,
-          workoutGroupId: 'g1',
-          status: 'in_progress',
-          startedAt: now.subtract(const Duration(minutes: 5)),
-        ),
-      ],
-      instances: [
-        ProgramInstance(
-          id: 'i1',
-          programId: 'p1',
-          userId: 'u',
-          programName: 'ZT 6 Week Program',
-          startedAt: DateTime(now.year, now.month, now.day),
-          status: 'active',
-          structure: const [
-            StatsWeek([StatsDay(id: 'd1', position: 0, isRest: false)]),
-          ],
-        ),
-      ],
-    ));
+    await _pump(
+      tester,
+    workouts: [
+      Workout(
+        id: 'w1',
+        userId: 'u',
+        title: 'Push day',
+        date: now,
+        updatedAt: now,
+        workoutGroupId: 'g1',
+        status: 'in_progress',
+        startedAt: now.subtract(const Duration(minutes: 5)),
+      ),
+    ],
+    instances: [
+      ProgramInstance(
+        id: 'i1',
+        programId: 'p1',
+        userId: 'u',
+        programName: 'ZT 6 Week Program',
+        startedAt: DateTime(now.year, now.month, now.day),
+        status: 'active',
+        structure: const [
+          StatsWeek([StatsDay(id: 'd1', position: 0, isRest: false)]),
+        ],
+      ),
+    ],
+    );
     // The session clock ticks every second, so pump rather than settle.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -321,7 +322,7 @@ void main() {
 
   testWidgets('a detail page under Training leads its title with the view, not the tab', (tester) async {
     _setWidth(tester, 1280);
-    await tester.pumpWidget(_app(initial: '/programs/p1'));
+    await _pump(tester, initial: '/programs/p1');
     await tester.pumpAndSettle();
 
     expect(_sidebar, findsOneWidget);
@@ -338,7 +339,7 @@ void main() {
 
   testWidgets('on a phone the detail title is the plain title', (tester) async {
     _setWidth(tester, 400);
-    await tester.pumpWidget(_app(initial: '/programs/p1'));
+    await _pump(tester, initial: '/programs/p1');
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('breadcrumb_section')), findsNothing);

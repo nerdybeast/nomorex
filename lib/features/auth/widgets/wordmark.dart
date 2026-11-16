@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// "NoMoreX" in the display style: the product's name on the signed-out

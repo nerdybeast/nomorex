@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../shared/widgets/summary_card.dart';
 import '../utils/program_day_date.dart';

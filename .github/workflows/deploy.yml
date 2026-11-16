@@ -63,7 +63,7 @@ jobs:
           # Pinned to match pr-checks.yml: `channel: stable` floats, so an
           # unpinned deploy could publish from a different Flutter than the
           # one the PR was verified against. Bump both together.
-          flutter-version: 3.47.2
+          flutter-version: 3.50.0
           channel: stable
           cache: true
 

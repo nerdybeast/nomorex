@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../../core/theme/app_theme.dart';
 
 /// The mono caps "ARCHIVED" marker after an archived record's title: a

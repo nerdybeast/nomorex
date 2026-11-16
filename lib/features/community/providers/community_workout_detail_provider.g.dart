@@ -87,7 +87,7 @@ abstract class _$CommunityWorkoutDetailNotifier
   FutureOr<Workout> build(String workoutId);
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<Workout>, Workout>;
     final element =
         ref.element
@@ -97,6 +97,6 @@ abstract class _$CommunityWorkoutDetailNotifier
               Object?,
               Object?
             >;
-    element.handleCreate(ref, () => build(_$args));
+    return element.handleCreate(ref, () => build(_$args));
   }
 }

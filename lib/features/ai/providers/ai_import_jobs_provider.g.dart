@@ -78,7 +78,7 @@ abstract class _$AiImportJobsNotifier
   FutureOr<List<AiImportJob>> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref as $Ref<AsyncValue<List<AiImportJob>>, List<AiImportJob>>;
     final element =
@@ -89,7 +89,7 @@ abstract class _$AiImportJobsNotifier
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 

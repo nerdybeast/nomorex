@@ -54,7 +54,7 @@ jobs:
           # Pinned deliberately: `channel: stable` floats, and a Flutter
           # release landing mid-PR has broken these checks on changes that
           # touched nothing related. Bump this on purpose, not by surprise.
-          flutter-version: 3.47.2
+          flutter-version: 3.50.0
           channel: stable
           cache: true
 
@@ -99,7 +99,7 @@ jobs:
           # Pinned deliberately: `channel: stable` floats, and a Flutter
           # release landing mid-PR has broken these checks on changes that
           # touched nothing related. Bump this on purpose, not by surprise.
-          flutter-version: 3.47.2
+          flutter-version: 3.50.0
           channel: stable
           cache: true
 
@@ -146,7 +146,7 @@ jobs:
           # Pinned deliberately: `channel: stable` floats, and a Flutter
           # release landing mid-PR has broken these checks on changes that
           # touched nothing related. Bump this on purpose, not by surprise.
-          flutter-version: 3.47.2
+          flutter-version: 3.50.0
           channel: stable
           cache: true
 
@@ -190,7 +190,7 @@ jobs:
           # Pinned deliberately: `channel: stable` floats, and a Flutter
           # release landing mid-PR has broken these checks on changes that
           # touched nothing related. Bump this on purpose, not by surprise.
-          flutter-version: 3.47.2
+          flutter-version: 3.50.0
           channel: stable
           cache: true
 
@@ -292,7 +292,7 @@ jobs:
           # Pinned deliberately: `channel: stable` floats, and a Flutter
           # release landing mid-PR has broken these checks on changes that
           # touched nothing related. Bump this on purpose, not by surprise.
-          flutter-version: 3.47.2
+          flutter-version: 3.50.0
           channel: stable
           cache: true
 

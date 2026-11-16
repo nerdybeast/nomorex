@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/core/utils/owner_name.dart';
+import 'package:nomorex/features/community/models/community_page.dart';
 import 'package:nomorex/features/community/providers/community_programs_provider.dart';
 import 'package:nomorex/features/community/providers/community_workouts_provider.dart';
 import 'package:nomorex/features/community/screens/community_screen.dart';
@@ -15,14 +16,14 @@ class _StubCommunityWorkoutsNotifier extends CommunityWorkoutsNotifier {
   _StubCommunityWorkoutsNotifier(this._workouts);
   final List<Workout> _workouts;
   @override
-  Future<List<Workout>> build() async => _workouts;
+  Future<CommunityPage<Workout>> build() async => CommunityPage(_workouts, hasMore: false);
 }
 
 class _RecordingCommunityWorkoutsNotifier extends CommunityWorkoutsNotifier {
   _RecordingCommunityWorkoutsNotifier(this.onRefresh);
   final VoidCallback onRefresh;
   @override
-  Future<List<Workout>> build() async => const [];
+  Future<CommunityPage<Workout>> build() async => const CommunityPage([], hasMore: false);
   @override
   Future<void> refresh() async => onRefresh();
 }
@@ -31,33 +32,29 @@ class _StubCommunityProgramsNotifier extends CommunityProgramsNotifier {
   _StubCommunityProgramsNotifier(this._programs);
   final List<Program> _programs;
   @override
-  Future<List<Program>> build() async => _programs;
+  Future<CommunityPage<Program>> build() async => CommunityPage(_programs, hasMore: false);
 }
 
 class _RecordingCommunityProgramsNotifier extends CommunityProgramsNotifier {
   _RecordingCommunityProgramsNotifier(this.onRefresh);
   final VoidCallback onRefresh;
   @override
-  Future<List<Program>> build() async => const [];
+  Future<CommunityPage<Program>> build() async => const CommunityPage([], hasMore: false);
   @override
   Future<void> refresh() async => onRefresh();
 }
 
 class _PagedCommunityWorkoutsNotifier extends CommunityWorkoutsNotifier {
-  _PagedCommunityWorkoutsNotifier(this._first, this._next);
+  _PagedCommunityWorkoutsNotifier(this._first, this._next, {required this.onLoadMore});
   final List<Workout> _first;
   final List<Workout> _next;
-  bool _more = true;
-  int loads = 0;
+  final VoidCallback onLoadMore;
   @override
-  bool get hasMore => _more;
-  @override
-  Future<List<Workout>> build() async => _first;
+  Future<CommunityPage<Workout>> build() async => CommunityPage(_first, hasMore: true);
   @override
   Future<void> loadMore() async {
-    loads++;
-    _more = false;
-    state = AsyncData([..._first, ..._next]);
+    onLoadMore();
+    state = AsyncData(CommunityPage([..._first, ..._next], hasMore: false));
   }
 }
 
@@ -319,9 +316,11 @@ void main() {
 
   testWidgets('Community loads more workouts on demand, and says search covers only what is loaded',
       (tester) async {
+    var loads = 0;
     final paged = _PagedCommunityWorkoutsNotifier(
       [_workout(id: 'w1', title: 'Front Squat Day')],
       [_workout(id: 'w2', title: 'Old Squat Day')],
+      onLoadMore: () => loads++,
     );
     await tester.pumpWidget(
       ProviderScope(
@@ -344,7 +343,7 @@ void main() {
 
     await tester.tap(find.text('Load more'));
     await tester.pumpAndSettle();
-    expect(paged.loads, 1);
+    expect(loads, 1);
     expect(find.text('Old Squat Day'), findsOneWidget);
     expect(find.text('Load more'), findsNothing);
   });

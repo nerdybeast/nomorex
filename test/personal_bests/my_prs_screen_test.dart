@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/features/shell/nav_section.dart';
@@ -8,6 +8,8 @@ import 'package:nomorex/features/personal_bests/providers/personal_bests_provide
 import 'package:nomorex/features/personal_bests/screens/prs_view.dart';
 import 'package:nomorex/shared/widgets/dashboard_empty_state_card.dart';
 import 'package:nomorex/shared/widgets/pr_card.dart';
+
+import '../support/call_counter.dart';
 
 final _prs = [
   PersonalBest(
@@ -26,14 +28,14 @@ final _prs = [
 class _RecordingPersonalBestsNotifier extends PersonalBestsNotifier {
   _RecordingPersonalBestsNotifier(this.onRefresh);
   final VoidCallback onRefresh;
-  int refreshCount = 0;
+  final refreshes = CallCounter();
 
   @override
   Future<List<PersonalBest>> build() async => _prs;
 
   @override
   Future<void> refresh() async {
-    refreshCount++;
+    refreshes();
     onRefresh();
   }
 }
@@ -98,7 +100,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(refreshed, isTrue);
-    expect(notifier.refreshCount, 1);
+    expect(notifier.refreshes.count, 1);
   });
 
   testWidgets('renders PRs and the search field', (tester) async {

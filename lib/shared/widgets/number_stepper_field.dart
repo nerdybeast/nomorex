@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A labeled numeric input with tap-to-adjust [-] / [+] buttons, floored at
 /// [min]; the middle field also accepts direct typed entry.

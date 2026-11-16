@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
@@ -124,7 +124,8 @@ class _WorkoutsTab extends ConsumerWidget {
     return workoutsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
-      data: (workouts) {
+      data: (page) {
+        final workouts = page.items;
         if (workouts.isEmpty) {
           return ListView(
             padding: shellListPadding(context),
@@ -137,7 +138,6 @@ class _WorkoutsTab extends ConsumerWidget {
             ],
           );
         }
-        final notifier = ref.read(communityWorkoutsProvider.notifier);
         final filtered =
             workouts.where((w) => _matches(query, w.title, w.ownerDisplayName)).toList();
         return ListView(
@@ -155,13 +155,13 @@ class _WorkoutsTab extends ConsumerWidget {
                     ),
                 ],
               ),
-            if (notifier.hasMore)
+            if (page.hasMore)
               _LoadMore(
                 key: const Key('community_workouts_load_more'),
                 searching: query.isNotEmpty,
                 loadedCount: workouts.length,
                 noun: 'workouts',
-                onLoadMore: notifier.loadMore,
+                onLoadMore: ref.read(communityWorkoutsProvider.notifier).loadMore,
               ),
           ],
         );
@@ -183,7 +183,8 @@ class _ProgramsTab extends ConsumerWidget {
     return programsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
-      data: (programs) {
+      data: (page) {
+        final programs = page.items;
         if (programs.isEmpty) {
           return ListView(
             padding: shellListPadding(context),
@@ -196,7 +197,6 @@ class _ProgramsTab extends ConsumerWidget {
             ],
           );
         }
-        final notifier = ref.read(communityProgramsProvider.notifier);
         final filtered =
             programs.where((p) => _matches(query, p.name, p.ownerDisplayName)).toList();
         return ListView(
@@ -214,13 +214,13 @@ class _ProgramsTab extends ConsumerWidget {
                     ),
                 ],
               ),
-            if (notifier.hasMore)
+            if (page.hasMore)
               _LoadMore(
                 key: const Key('community_programs_load_more'),
                 searching: query.isNotEmpty,
                 loadedCount: programs.length,
                 noun: 'programs',
-                onLoadMore: notifier.loadMore,
+                onLoadMore: ref.read(communityProgramsProvider.notifier).loadMore,
               ),
           ],
         );

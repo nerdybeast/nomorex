@@ -14,7 +14,7 @@ Every `flutter` command that runs or builds app code needs the Supabase config i
 flutter run --dart-define-from-file=.env.json        # production Supabase
 flutter run --dart-define-from-file=.env.local.json  # local `supabase start` stack
 
-flutter analyze                    # lints (flutter_lints + custom_lint/riverpod_lint)
+flutter analyze                    # lints (flutter_lints + riverpod_lint, an analyzer plugin)
 flutter test                       # full suite
 flutter test test/workouts/set_editor_test.dart                  # one file
 flutter test --plain-name 'add-exercise picker shows options'    # one test

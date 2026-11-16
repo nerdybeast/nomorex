@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
@@ -12,6 +12,8 @@ import 'package:nomorex/features/ai/screens/ai_import_screen.dart';
 import 'package:nomorex/features/ai/utils/import_file_check.dart';
 import 'package:nomorex/features/ai/utils/import_file_picker.dart';
 import 'package:nomorex/features/auth/providers/auth_provider.dart';
+
+import '../support/call_counter.dart';
 
 import 'ai_import_job_fakes.dart';
 
@@ -42,17 +44,17 @@ class _StubIntake extends AiImportIntakeNotifier {
   _StubIntake(this.initial);
 
   final ImportIntakeState initial;
-  int cancels = 0;
-  int submits = 0;
+  final cancels = CallCounter();
+  final submits = CallCounter();
 
   @override
   ImportIntakeState build() => initial;
 
   @override
-  void cancel() => cancels++;
+  void cancel() => cancels();
 
   @override
-  Future<void> submit({String? requestedType}) async => submits++;
+  Future<void> submit({String? requestedType}) async => submits();
 }
 
 Future<_StubIntake> _pump(WidgetTester tester, ImportIntakeState initial, {bool canTakePhoto = false}) async {
@@ -163,7 +165,7 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('ai_import_cancel')));
     await tester.pump();
     await tester.tap(find.byKey(const Key('ai_import_cancel')));
-    expect(intake.cancels, 1);
+    expect(intake.cancels.count, 1);
   });
 
   testWidgets('starting the import can no longer be cancelled', (tester) async {
@@ -177,7 +179,7 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('ai_import_upload')));
     await tester.pump();
     await tester.tap(find.byKey(const Key('ai_import_upload')));
-    expect(intake.submits, 1);
+    expect(intake.submits.count, 1);
   });
 
   testWidgets('confirms once the import has started', (tester) async {

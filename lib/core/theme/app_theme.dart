@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The raw color values of the Sleek Orange design system (v3), one set per
 /// theme. Token names match the design system one to one; nothing outside
