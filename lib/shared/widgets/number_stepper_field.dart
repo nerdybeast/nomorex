@@ -20,6 +20,7 @@ class NumberStepperField extends StatefulWidget {
     this.valueTextStyle,
     this.valueDecoration,
     this.compact = false,
+    this.labelAction,
   });
 
   final String label;
@@ -39,6 +40,11 @@ class NumberStepperField extends StatefulWidget {
   /// shows its own label (the "Add sets" sheet). [label] still names the
   /// buttons for assistive tech ("Increase Reps").
   final bool compact;
+
+  /// A small control right after the label (e.g. a remove ✕ on an optional
+  /// field), so the stepper itself stays on the same right edge as the
+  /// fields around it. Ignored when [compact], which shows no label.
+  final Widget? labelAction;
 
   @override
   State<NumberStepperField> createState() => _NumberStepperFieldState();
@@ -132,9 +138,16 @@ class _NumberStepperFieldState extends State<NumberStepperField> {
         children: [
           if (!compact)
             Expanded(
-              child: Text(
-                widget.label,
-                style: const TextStyle(fontWeight: FontWeight.w500),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      widget.label,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  ?widget.labelAction,
+                ],
               ),
             ),
           // Named for assistive tech (and for scripts/web-shot.mjs flows,

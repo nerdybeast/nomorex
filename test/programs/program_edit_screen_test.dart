@@ -482,13 +482,14 @@ void main() {
     await tester.tap(find.text('Day 1'));
     await tester.pumpAndSettle();
 
-    final handles = find.byIcon(Icons.drag_handle);
-    // One handle for the exercise card, one per set row.
-    expect(handles, findsNWidgets(3));
+    // The exercise card drags by Icons.drag_handle; each set group by
+    // Icons.drag_indicator, as in the phone editor.
+    final handles = find.byIcon(Icons.drag_indicator);
+    expect(handles, findsNWidgets(2));
     await tester.ensureVisible(handles.last);
     await tester.pumpAndSettle();
 
-    final drag = await tester.startGesture(tester.getCenter(handles.at(1)));
+    final drag = await tester.startGesture(tester.getCenter(handles.first));
     await tester.pump(kPressTimeout);
     for (var i = 0; i < 3; i++) {
       await drag.moveBy(const Offset(0, 50));

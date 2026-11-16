@@ -217,7 +217,8 @@ void main() {
       oneRepMaxes: const {'e1': OneRepMax.measured(100)},
     );
 
-    expect(find.textContaining('5 reps · 80% 1RM · 80 kg'), findsOneWidget);
+    expect(find.text('5 × 80 kg'), findsOneWidget);
+    expect(find.text('80% of 1RM'), findsOneWidget);
     expect(find.text('set PR'), findsNothing);
 
     final accent = AppTheme.dark()
@@ -254,7 +255,8 @@ void main() {
       oneRepMaxes: const {'e1': OneRepMax.estimated(200)},
     );
 
-    expect(find.textContaining('7–9 reps · 67–72.5% 1RM · 134–145 kg (est.)'), findsOneWidget);
+    expect(find.text('7–9 × 134–145 kg (est.)'), findsOneWidget);
+    expect(find.text('67–72.5% of 1RM'), findsOneWidget);
     final accent = AppTheme.dark().extension<NomorexTokens>()!.info;
     expect(colorOfSpan(tester, '134–145 kg (est.)'), accent);
   });
@@ -263,7 +265,8 @@ void main() {
       (tester) async {
     await pumpCommunityDetail(tester, workout: _publicWorkout());
 
-    expect(find.textContaining('5 reps · 80% 1RM'), findsOneWidget);
+    expect(find.text('5 × 80%'), findsOneWidget);
+    expect(find.textContaining('No 1RM yet'), findsOneWidget);
     expect(find.text('set PR'), findsOneWidget);
     expect(
       find.ancestor(of: find.text('set PR'), matching: find.byType(InkWell)),
@@ -348,7 +351,7 @@ void main() {
     );
 
     expect(find.text('set PR'), findsNothing);
-    expect(find.textContaining('5 reps · 80% 1RM · 80 kg'), findsOneWidget);
+    expect(find.text('5 × 80 kg'), findsOneWidget);
   });
 
   testWidgets('a set programmed against another lift names that lift', (tester) async {
@@ -380,7 +383,8 @@ void main() {
     // against its own exercise 'e3'.
     await pumpCommunityDetail(tester, workout: workout, oneRepMaxes: const {'e2': OneRepMax.measured(120)});
 
-    expect(find.textContaining('3 reps · 75% of Clean & Jerk · 90 kg'), findsOneWidget);
+    expect(find.text('3 × 90 kg'), findsOneWidget);
+    expect(find.text('75% of Clean & Jerk'), findsOneWidget);
   });
 
   testWidgets('absolute sets are unchanged and keep the default color', (tester) async {
@@ -408,7 +412,7 @@ void main() {
 
     await pumpCommunityDetail(tester, workout: workout, unit: 'both');
 
-    expect(find.text('10 reps · 110 lbs / 50 kg'), findsOneWidget);
+    expect(find.text('10 × 110 lbs / 50 kg'), findsOneWidget);
   });
 
   testWidgets('an open-load set reads "choose load" with no PR link and no accent', (tester) async {
@@ -440,7 +444,8 @@ void main() {
     // the PR shortcut, never the open one.
     await pumpCommunityDetail(tester, workout: workout);
 
-    expect(find.text('7–9 reps · choose load · RPE 6–7'), findsOneWidget);
+    expect(find.text('7–9 × choose load'), findsOneWidget);
+    expect(find.text('RPE 6–7'), findsOneWidget);
     expect(find.byType(SetPrLink), findsOneWidget);
   });
 
@@ -452,7 +457,7 @@ void main() {
       unit: 'lbs',
     );
 
-    expect(find.textContaining('5 reps · 80% 1RM · 176.4 lbs'), findsOneWidget);
+    expect(find.text('5 × 176.4 lbs'), findsOneWidget);
   });
 
   group('save / start (FR-001, FR-014, FR-018)', () {

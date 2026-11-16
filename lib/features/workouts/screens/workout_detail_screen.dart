@@ -3,14 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/set_type_header.dart';
 import '../../../shared/models/set_type.dart';
-import '../../../shared/widgets/number_stepper_field.dart';
-import '../../../core/utils/rpe.dart';
-import '../../../core/utils/percent_range.dart';
-import '../../../core/utils/rep_range.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
-import '../../../core/utils/weight_converter.dart';
 import '../../../shared/widgets/archived_pill.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
 import '../../../shared/widgets/list_group.dart';
@@ -28,6 +23,7 @@ import '../utils/can_archive_workout.dart';
 import '../utils/set_resolver.dart';
 import '../../../shared/models/one_rep_max.dart';
 import '../widgets/elapsed_timer.dart';
+import '../widgets/live_set_row.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../shell/widgets/breadcrumb_title.dart';
 
@@ -131,9 +127,24 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 unit: unit,
                 interactive: workout.status == 'in_progress' || workout.status == 'paused',
                 onToggle: (setId, value) => notifier.setCompleted(setId, value),
-                onLogRpe: (setId, rpe) => notifier.logRpe(setId, rpe),
-                onLogReps: (setId, reps) => notifier.logReps(setId, reps),
-                onLogWeight: (setId, kg) => notifier.logWeight(setId, kg),
+                onLog: (setId, logged) async {
+                  try {
+                    await notifier.logSet(
+                      setId,
+                      reps: logged.reps,
+                      rpe: logged.rpe,
+                      weightKg: logged.weightKg,
+                      // Clearing the log leaves the set's done state alone.
+                      complete: !logged.cleared,
+                    );
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Couldn't save the log. Try again.")),
+                      );
+                    }
+                  }
+                },
               ),
             if (workout.status == 'in_progress' || workout.status == 'paused') ...[
               const SizedBox(height: 16),
@@ -434,9 +445,7 @@ class _ExerciseCard extends StatelessWidget {
     required this.unit,
     required this.interactive,
     required this.onToggle,
-    required this.onLogRpe,
-    required this.onLogReps,
-    required this.onLogWeight,
+    required this.onLog,
   });
 
   final WorkoutExercise exercise;
@@ -445,15 +454,10 @@ class _ExerciseCard extends StatelessWidget {
   final String unit;
   final bool interactive;
   final void Function(String setId, bool value)? onToggle;
-  /// Logs (or with null, clears) the lifter's RPE for a set. Only offered
-  /// while [interactive]; a finished session shows its logged RPE read-only.
-  final void Function(String setId, double? rpe)? onLogRpe;
-  /// Logs (or with null, clears) the reps the lifter actually got, which can
-  /// differ from the target. Same rules as [onLogRpe].
-  final void Function(String setId, int? reps)? onLogReps;
-  /// Logs (or with null, clears) the weight used on an open-load set, the
-  /// only kind with no prescribed load to go by. Same rules as [onLogRpe].
-  final void Function(String setId, double? weightKg)? onLogWeight;
+
+  /// Saves what the lifter logged on a set (or clears it). Only offered while
+  /// [interactive]; a finished session shows its logged values read-only.
+  final void Function(String setId, LoggedSet logged)? onLog;
 
   @override
   Widget build(BuildContext context) {
@@ -501,11 +505,19 @@ class _ExerciseCard extends StatelessWidget {
       ),
       // A WARM-UP / WORKING / COOL-DOWN header above each run of one type,
       // so every row's reps line up; none when all sets are working sets.
-      children: withSetTypeHeaders(exercise.sets, typeOf: (s) => s.setType, row: _setTile),
+      children: withSetTypeHeaders(exercise.sets, typeOf: (s) => s.setType, row: (s) => _setTile(s, _setLabel(s))),
     );
   }
 
-  Widget _setTile(WorkoutSet s) {
+  /// "set 2", or "warm-up set 1": numbered within its type, as the run
+  /// headers group them. Names the set's controls for screen readers.
+  String _setLabel(WorkoutSet s) {
+    final sameType = exercise.sets.where((o) => o.setType == s.setType).toList();
+    final n = sameType.indexOf(s) + 1;
+    return s.setType.isWorking ? 'set $n' : '${s.setType.label.toLowerCase()} set $n';
+  }
+
+  Widget _setTile(WorkoutSet s, String label) {
     final basisId = resolveBasisExerciseId(s, exercise);
     final basisName = s.basisExerciseName ?? exercise.exerciseName;
     return _SetTile(
@@ -520,10 +532,9 @@ class _ExerciseCard extends StatelessWidget {
       ),
       unit: unit,
       interactive: interactive,
+      setLabel: label,
       onToggle: onToggle,
-      onLogRpe: onLogRpe,
-      onLogReps: onLogReps,
-      onLogWeight: onLogWeight,
+      onLog: onLog,
     );
   }
 }
@@ -536,384 +547,63 @@ class _SetTile extends StatelessWidget {
     required this.oneRepMax,
     required this.unit,
     required this.interactive,
+    required this.setLabel,
     required this.onToggle,
-    required this.onLogRpe,
-    required this.onLogReps,
-    required this.onLogWeight,
+    required this.onLog,
   });
 
   final WorkoutSet set;
   final String basisExerciseId;
 
-  /// Display name for [basisExerciseId] — [SetPrLink] needs it to give the
+  /// Display name for [basisExerciseId]. [SetPrLink] needs it to give the
   /// viewer their own copy of the lift when this workout belongs to someone
   /// else and the basis is one of that owner's custom exercises.
   final String basisExerciseName;
   final OneRepMax? oneRepMax;
   final String unit;
   final bool interactive;
+
+  /// "set 2" or "warm-up set 1", for the controls' accessible names.
+  final String setLabel;
   final void Function(String setId, bool value)? onToggle;
-  /// Logs (or with null, clears) the lifter's RPE for a set. Only offered
-  /// while [interactive]; a finished session shows its logged RPE read-only.
-  final void Function(String setId, double? rpe)? onLogRpe;
-  /// Logs (or with null, clears) the reps the lifter actually got, which can
-  /// differ from the target. Same rules as [onLogRpe].
-  final void Function(String setId, int? reps)? onLogReps;
-  /// Logs (or with null, clears) the weight used on an open-load set, the
-  /// only kind with no prescribed load to go by. Same rules as [onLogRpe].
-  final void Function(String setId, double? weightKg)? onLogWeight;
+  final void Function(String setId, LoggedSet logged)? onLog;
 
   @override
   Widget build(BuildContext context) {
-    final resolved = resolveSetWeightRangeKg(
-      weightMode: set.weightMode,
-      percentage: set.percentage,
-      percentageMax: set.percentageMax,
-      absoluteWeightKg: set.absoluteWeightKg,
-      oneRepMaxKg: oneRepMax?.kg,
-    );
-    final pct = formatPercentTarget(set.percentage, set.percentageMax);
-    final rpeTarget = formatRpeTarget(set.rpeMin, set.rpeMax);
-    final rpeSuffix = rpeTarget == null ? '' : ' · $rpeTarget';
-
-    final basisSuffix =
-        set.basisExerciseId != null ? ' of ${set.basisExerciseName ?? '1RM'}' : '';
-    final colorScheme = Theme.of(context).colorScheme;
-    final baseStyle = Theme.of(context)
-        .textTheme
-        .bodyMedium
-        ?.copyWith(color: colorScheme.onSurfaceVariant);
-
-    final Widget subtitle;
-    if (isOpenLoad(set.weightMode)) {
-      // No load to resolve, so no "Add PR" shortcut either.
-      subtitle = Text('$kOpenLoadLabel$rpeSuffix');
-    } else if (set.weightMode == 'percentage' && resolved == null) {
-      subtitle = Text.rich(
-        TextSpan(
-          style: baseStyle,
-          children: [
-            TextSpan(text: '$pct$basisSuffix — '),
-            WidgetSpan(
-              alignment: PlaceholderAlignment.middle,
-              child: SetPrLink(
-                exerciseId: basisExerciseId,
-                exerciseName: basisExerciseName,
-                style: baseStyle,
-              ),
-            ),
-            if (rpeTarget != null) TextSpan(text: rpeSuffix),
-          ],
-        ),
-      );
-    } else {
-      final trailingText = set.weightMode == 'percentage'
-          ? '$pct$basisSuffix · ${formatResolvedWeightRange(resolved!.low, resolved.high, unit, estimated: oneRepMax?.isEstimated ?? false)}'
-          : formatWeightForPreference(resolved?.low ?? 0, unit);
-      subtitle = Text('$trailingText$rpeSuffix');
-    }
-
-    // The whole row toggles the set. A completed set's reps drop to fg-2 but
-    // the weight stays readable — no strikethrough.
-    final tile = CheckboxListTile(
-      dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-      controlAffinity: ListTileControlAffinity.leading,
-      value: set.completed,
-      onChanged: interactive ? (v) => onToggle?.call(set.id, v ?? false) : null,
-      title: Text(
-        formatTargetReps(set.targetReps, set.targetRepsMax),
-        key: ValueKey('workout_set_title_${set.id}'),
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: set.completed ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
-            ),
-      ),
-      subtitle: subtitle,
-    );
-    final rpe = _ActualRpe(set: set, interactive: interactive, onLog: onLogRpe);
-    final reps = _ActualReps(set: set, interactive: interactive, onLog: onLogReps);
-    final weight = _ActualWeight(
-      set: set,
-      unit: unit,
-      interactive: interactive,
-      onLog: onLogWeight,
-    );
-    final logs = [
-      if (weight.isVisible) weight,
-      if (reps.isVisible) reps,
-      if (rpe.isVisible) rpe,
-    ];
-    if (logs.isEmpty) return tile;
-    // Beside the tile, not its `secondary`: a ListTile merges its children
-    // into one semantics node, so a button inside it is announced as part of
-    // the checkbox and can't be activated on its own by assistive tech.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Three log buttons (an open-load set) leave a phone's set row too
-        // narrow to read, so they drop to their own line under it.
-        if (logs.length > 2 && constraints.maxWidth < 520) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              tile,
-              Padding(
-                padding: const EdgeInsets.only(right: 8, bottom: 4),
-                child: Wrap(alignment: WrapAlignment.end, children: logs),
-              ),
-            ],
-          );
-        }
-        return Row(
-          children: [
-            Expanded(child: tile),
-            ...logs,
-            const SizedBox(width: 8),
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// The effort logged for a set. While the session is live it's a button
-/// ("Log RPE", or "RPE 8" once logged) that opens [showRpeDialog]; afterwards
-/// it's plain text, and absent when nothing was logged. Never pre-filled from
-/// the set's target: an unlogged set stays unlogged.
-class _ActualRpe extends StatelessWidget {
-  const _ActualRpe({required this.set, required this.interactive, required this.onLog});
-
-  final WorkoutSet set;
-  final bool interactive;
-  final void Function(String setId, double? rpe)? onLog;
-
-  bool get _canLog => interactive && onLog != null;
-
-  /// False when there's nothing to show: not loggable and nothing logged.
-  bool get isVisible => _canLog || set.actualRpe != null;
-
-  @override
-  Widget build(BuildContext context) {
-    final logged = set.actualRpe;
-    final label = logged == null ? 'Log RPE' : 'RPE ${formatRpe(logged)}';
-    if (!_canLog) return Text(label, key: Key('set_actual_rpe_${set.id}'));
-    return TextButton(
-      key: Key('set_actual_rpe_${set.id}'),
-      onPressed: () async {
-        // Start the stepper somewhere sensible, but save nothing until Save.
-        final result = await showRpeDialog(
-          context,
-          logged: logged,
-          start: logged ?? set.rpeMin ?? 7,
-        );
-        if (result != null) onLog!(set.id, result.rpe);
-      },
-      child: Text(label),
-    );
-  }
-}
-
-/// The reps actually completed on a set, which can fall short of (or beat)
-/// the target. Like [_ActualRpe]: a button ("Log reps", or "4 reps done")
-/// while the session is live, plain text afterwards, absent when nothing was
-/// logged. Never pre-filled from the target.
-class _ActualReps extends StatelessWidget {
-  const _ActualReps({required this.set, required this.interactive, required this.onLog});
-
-  final WorkoutSet set;
-  final bool interactive;
-  final void Function(String setId, int? reps)? onLog;
-
-  bool get _canLog => interactive && onLog != null;
-
-  bool get isVisible => _canLog || set.actualReps != null;
-
-  @override
-  Widget build(BuildContext context) {
-    final logged = set.actualReps;
-    final label = logged == null ? 'Log reps' : '${pluralize(logged, 'rep')} done';
-    if (!_canLog) return Text(label, key: Key('set_actual_reps_${set.id}'));
-    return TextButton(
-      key: Key('set_actual_reps_${set.id}'),
-      onPressed: () async {
-        // Start at the target, but save nothing until Save.
-        final result = await showRepsDialog(
-          context,
-          logged: logged,
-          start: logged ?? set.targetReps ?? 1,
-        );
-        if (result != null) onLog!(set.id, result.reps);
-      },
-      child: Text(label),
-    );
-  }
-}
-
-/// The weight used on an open-load set. Like [_ActualRpe]: a button ("Log
-/// weight", or the logged weight) while the session is live, plain text
-/// afterwards, absent when nothing was logged. Other sets have a prescribed
-/// load, so they never show it.
-class _ActualWeight extends StatelessWidget {
-  const _ActualWeight({
-    required this.set,
-    required this.unit,
-    required this.interactive,
-    required this.onLog,
-  });
-
-  final WorkoutSet set;
-  final String unit;
-  final bool interactive;
-  final void Function(String setId, double? weightKg)? onLog;
-
-  bool get _canLog => interactive && onLog != null;
-
-  bool get isVisible =>
-      isOpenLoad(set.weightMode) && (_canLog || set.actualWeightKg != null);
-
-  @override
-  Widget build(BuildContext context) {
-    final logged = set.actualWeightKg;
-    final label =
-        logged == null ? 'Log weight' : formatWeightForPreference(logged, unit);
-    if (!_canLog) return Text(label, key: Key('set_actual_weight_${set.id}'));
-    return TextButton(
-      key: Key('set_actual_weight_${set.id}'),
-      onPressed: () async {
-        final result = await showWeightDialog(context, loggedKg: logged, unit: unit);
-        if (result != null) onLog!(set.id, result.weightKg);
-      },
-      child: Text(label),
-    );
-  }
-}
-
-/// Asks for the weight used on a set, in the user's unit (kg when they show
-/// both). Returns null on Cancel, `(weightKg: null)` on Clear (only offered
-/// when [loggedKg] is set), and `(weightKg: value)` on Save.
-Future<({double? weightKg})?> showWeightDialog(
-  BuildContext context, {
-  required double? loggedKg,
-  required String unit,
-}) {
-  final dialogUnit = unit == 'lbs' ? 'lbs' : 'kg';
-  var value = loggedKg == null
-      ? 0.0
-      : (dialogUnit == 'lbs' ? kgToLbs(loggedKg) : loggedKg);
-  final tokens = Theme.of(context).extension<NomorexTokens>();
-  return showDialog<({double? weightKg})>(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setState) => AlertDialog(
-        title: const Text('Log weight'),
-        content: NumberStepperField(
-          key: const Key('log_weight_value'),
-          label: 'Weight ($dialogUnit)',
-          value: value,
-          min: 0,
-          step: dialogUnit == 'lbs' ? 5.0 : 2.5,
-          decimals: 1,
-          onChanged: (v) => setState(() => value = v),
-          valueTextStyle: tokens?.stepperValue,
-          valueDecoration: tokens?.stepperValueDecoration,
-          decrementButtonStyle: tokens?.stepperDecrementStyle,
-          incrementButtonStyle: tokens?.stepperIncrementStyle,
-        ),
-        actions: [
-          if (loggedKg != null)
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, (weightKg: null)),
-              child: const Text('Clear'),
-            ),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () => Navigator.pop(
-              ctx,
-              (weightKg: dialogUnit == 'lbs' ? lbsToKg(value) : value),
-            ),
-            child: const Text('Save'),
+    final canLog = interactive && onLog != null;
+    // The checkbox and the log chip are separate controls beside the set's
+    // text, not inside a ListTile: a tile merges its children into one
+    // semantics node, so a button inside it couldn't be reached on its own.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 12, 10),
+      child: SetPrescriptionLines(
+        set: set,
+        oneRepMax: oneRepMax,
+        basisExerciseId: basisExerciseId,
+        basisExerciseName: basisExerciseName,
+        unit: unit,
+        done: set.completed,
+        leading: SizedBox(
+          width: 48,
+          height: 40,
+          child: Checkbox(
+            key: ValueKey('set_done_${set.id}'),
+            value: set.completed,
+            semanticLabel: 'Done: $setLabel',
+            onChanged: interactive ? (v) => onToggle?.call(set.id, v ?? false) : null,
           ),
-        ],
-      ),
-    ),
-  );
-}
-
-/// Asks for the reps actually completed on a set. Returns null on Cancel,
-/// `(reps: null)` on Clear (only offered when [logged] is set), and
-/// `(reps: value)` on Save.
-Future<({int? reps})?> showRepsDialog(
-  BuildContext context, {
-  required int? logged,
-  required int start,
-}) {
-  var value = start.toDouble();
-  final tokens = Theme.of(context).extension<NomorexTokens>();
-  return showDialog<({int? reps})>(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setState) => AlertDialog(
-        title: const Text('Log reps'),
-        content: NumberStepperField(
-          key: const Key('log_reps_value'),
-          label: 'Reps',
-          value: value,
-          min: 0,
-          step: 1,
-          decimals: 0,
-          onChanged: (v) => setState(() => value = v),
-          valueTextStyle: tokens?.stepperValue,
-          valueDecoration: tokens?.stepperValueDecoration,
-          decrementButtonStyle: tokens?.stepperDecrementStyle,
-          incrementButtonStyle: tokens?.stepperIncrementStyle,
         ),
-        actions: [
-          if (logged != null)
-            TextButton(onPressed: () => Navigator.pop(ctx, (reps: null)), child: const Text('Clear')),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, (reps: value.round())), child: const Text('Save')),
-        ],
+        trailing: canLog || loggedSummary(set, unit) != null
+            ? LogSetChip(
+                set: set,
+                unit: unit,
+                setLabel: setLabel,
+                onLog: canLog ? (logged) => onLog!(set.id, logged) : null,
+              )
+            : null,
       ),
-    ),
-  );
-}
-
-/// Asks for a set's RPE. Returns null on Cancel, `(rpe: null)` on Clear (only
-/// offered when [logged] is set), and `(rpe: value)` on Save.
-Future<({double? rpe})?> showRpeDialog(
-  BuildContext context, {
-  required double? logged,
-  required double start,
-}) {
-  var value = start;
-  final tokens = Theme.of(context).extension<NomorexTokens>();
-  return showDialog<({double? rpe})>(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setState) => AlertDialog(
-        title: const Text('Log RPE'),
-        content: NumberStepperField(
-          key: const Key('log_rpe_value'),
-          label: 'RPE',
-          value: value,
-          min: kRpeMin,
-          max: kRpeMax,
-          step: kRpeStep,
-          decimals: 1,
-          onChanged: (v) => setState(() => value = v),
-          valueTextStyle: tokens?.stepperValue,
-          valueDecoration: tokens?.stepperValueDecoration,
-          decrementButtonStyle: tokens?.stepperDecrementStyle,
-          incrementButtonStyle: tokens?.stepperIncrementStyle,
-        ),
-        actions: [
-          if (logged != null)
-            TextButton(onPressed: () => Navigator.pop(ctx, (rpe: null)), child: const Text('Clear')),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, (rpe: value)), child: const Text('Save')),
-        ],
-      ),
-    ),
-  );
+    );
+  }
 }
 
 /// Date, exercise count and last edit with their icons — the same facts the

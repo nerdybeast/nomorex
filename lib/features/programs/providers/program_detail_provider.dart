@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:collection/collection.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/models/set_type.dart';
 import '../models/program.dart';
@@ -224,6 +225,20 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
 
   // ---- Sets ----
 
+  /// Moves just-added [newIds], all of [type], to the end of their type's run
+  /// (warm-ups before working sets before cool-downs), so a warm-up added
+  /// after the working sets lands above them instead of at the bottom. Within
+  /// a type, order stays the lifter's. A no-op when they're already there.
+  Future<void> _placeByType(String exerciseId, List<String> newIds, SetType type) async {
+    if (newIds.isEmpty) return;
+    final current = await future;
+    final ex = current.weeks.expand((w) => w.days).expand((d) => d.exercises).firstWhere((e) => e.id == exerciseId);
+    final sorted = [...ex.sets]..sort((a, b) => a.position.compareTo(b.position));
+    final order = placeByType(sorted, idOf: (s) => s.id, typeOf: (s) => s.setType, newIds: newIds, type: type);
+    if (const ListEquality<String>().equals(order, [for (final s in sorted) s.id])) return;
+    await reorderSets(exerciseId, order);
+  }
+
   Future<void> addPercentageSets(
     String programExerciseId,
     List<ParsedProgramSet> parsed,
@@ -237,7 +252,7 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
     var pos = ex.sets.isEmpty
         ? 0
         : ex.sets.map((s) => s.position).reduce((a, b) => a > b ? a : b) + 1;
-    await _db.from('program_sets').insert([
+    final inserted = await _db.from('program_sets').insert([
       for (final p in parsed)
         {
           'program_exercise_id': programExerciseId,
@@ -253,8 +268,9 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
           'rpe_max': ?p.rpeMax,
           'set_type': p.setType.dbValue,
         },
-    ]);
+    ]).select('id');
     await _refresh();
+    await _placeByType(programExerciseId, [for (final row in inserted) row['id'] as String], parsed.first.setType);
   }
 
   Future<void> addAbsoluteSets(String programExerciseId, AbsoluteSetBatch batch) async {
@@ -267,7 +283,7 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
     var pos = ex.sets.isEmpty
         ? 0
         : ex.sets.map((s) => s.position).reduce((a, b) => a > b ? a : b) + 1;
-    await _db.from('program_sets').insert([
+    final inserted = await _db.from('program_sets').insert([
       for (var i = 0; i < batch.sets; i++)
         {
           'program_exercise_id': programExerciseId,
@@ -281,8 +297,9 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
           'rpe_max': ?batch.rpeMax,
           'set_type': batch.setType.dbValue,
         },
-    ]);
+    ]).select('id');
     await _refresh();
+    await _placeByType(programExerciseId, [for (final row in inserted) row['id'] as String], batch.setType);
   }
 
   Future<void> deleteSet(String setId) async {
@@ -290,12 +307,6 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
     await _refresh();
   }
 
-  /// Marks a set as a warm-up, working set or cool-down. Nothing outside this
-  /// provider renders a set's type, so refreshing this one is enough.
-  Future<void> setSetType(String setId, SetType type) async {
-    await _db.from('program_sets').update({'set_type': type.dbValue}).eq('id', setId);
-    await _refresh();
-  }
 
   /// Replaces a run of identical consecutive sets ([setIds], all of one
   /// exercise) with [count] sets of [prescription], in the same place. A

@@ -38,10 +38,10 @@ SetEditor _editor() => SetEditor(
   unit: 'kg',
   currentExerciseId: 'e1',
   currentExerciseName: 'Back Squat',
-  onAddPercentageSets: (_) {},
-  onAddAbsoluteSets: (_) {},
-  onDeleteSet: (_) {},
-  onReorderSets: (_) {},
+  onAddPercentageSets: (_) async {},
+  onAddAbsoluteSets: (_) async {},
+  onReplaceGroup: (_, _, _) async {},
+  onReorderSets: (_) async {},
 );
 
 Future<void> _tapStepper(
@@ -71,10 +71,10 @@ void main() {
         unit: 'kg',
         currentExerciseId: 'e1',
         currentExerciseName: 'Front Squat',
-        onAddPercentageSets: (parsed) => added = parsed,
-        onAddAbsoluteSets: (_) {},
-        onDeleteSet: (_) {},
-        onReorderSets: (_) {},
+        onAddPercentageSets: (parsed) async => added = parsed,
+        onAddAbsoluteSets: (_) async {},
+        onReplaceGroup: (_, _, _) async {},
+        onReorderSets: (_) async {},
       ),
     );
     await tester.pumpAndSettle();
@@ -122,10 +122,10 @@ void main() {
           unit: 'kg',
           currentExerciseId: 'e1',
           currentExerciseName: 'Front Squat',
-          onAddPercentageSets: (parsed) => added = parsed,
-          onAddAbsoluteSets: (_) {},
-          onDeleteSet: (_) {},
-          onReorderSets: (_) {},
+          onAddPercentageSets: (parsed) async => added = parsed,
+          onAddAbsoluteSets: (_) async {},
+          onReplaceGroup: (_, _, _) async {},
+          onReorderSets: (_) async {},
         ),
       );
       await tester.pumpAndSettle();
@@ -162,14 +162,14 @@ void main() {
           unit: 'lbs',
           currentExerciseId: 'e1',
           currentExerciseName: 'Front Squat',
-          onAddPercentageSets: (_) {},
-          onAddAbsoluteSets: (batch) {
+          onAddPercentageSets: (_) async {},
+          onAddAbsoluteSets: (batch) async {
             capturedSets = batch.sets;
             capturedReps = batch.reps;
             capturedWeightKg = batch.weightKg;
           },
-          onDeleteSet: (_) {},
-          onReorderSets: (_) {},
+          onReplaceGroup: (_, _, _) async {},
+          onReorderSets: (_) async {},
         ),
       );
       await tester.pumpAndSettle();
@@ -210,10 +210,10 @@ void main() {
           unit: 'lbs',
           currentExerciseId: 'e1',
           currentExerciseName: 'Front Squat',
-          onAddPercentageSets: (_) {},
-          onAddAbsoluteSets: (_) {},
-          onDeleteSet: (_) {},
-          onReorderSets: (_) {},
+          onAddPercentageSets: (_) async {},
+          onAddAbsoluteSets: (_) async {},
+          onReplaceGroup: (_, _, _) async {},
+          onReorderSets: (_) async {},
         ),
       );
       await tester.pumpAndSettle();
@@ -241,10 +241,10 @@ void main() {
           unit: 'both',
           currentExerciseId: 'e1',
           currentExerciseName: 'Front Squat',
-          onAddPercentageSets: (_) {},
-          onAddAbsoluteSets: (batch) => capturedWeightKg = batch.weightKg,
-          onDeleteSet: (_) {},
-          onReorderSets: (_) {},
+          onAddPercentageSets: (_) async {},
+          onAddAbsoluteSets: (batch) async => capturedWeightKg = batch.weightKg,
+          onReplaceGroup: (_, _, _) async {},
+          onReorderSets: (_) async {},
         ),
       );
       await tester.pumpAndSettle();
@@ -293,10 +293,10 @@ void main() {
         unit: 'kg',
         currentExerciseId: 'e1',
         currentExerciseName: 'Front Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (batch) => capturedWeightKg = batch.weightKg,
-        onDeleteSet: (_) {},
-        onReorderSets: (_) {},
+        onAddPercentageSets: (_) async {},
+        onAddAbsoluteSets: (batch) async => capturedWeightKg = batch.weightKg,
+        onReplaceGroup: (_, _, _) async {},
+        onReorderSets: (_) async {},
       ),
     );
     await tester.pumpAndSettle();
@@ -331,10 +331,10 @@ void main() {
         unit: 'kg',
         currentExerciseId: 'e1',
         currentExerciseName: 'Front Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (_) {},
-        onDeleteSet: (_) {},
-        onReorderSets: (_) {},
+        onAddPercentageSets: (_) async {},
+        onAddAbsoluteSets: (_) async {},
+        onReplaceGroup: (_, _, _) async {},
+        onReorderSets: (_) async {},
       ),
     );
     await tester.pumpAndSettle();
@@ -375,10 +375,10 @@ void main() {
         unit: 'kg',
         currentExerciseId: 'e1',
         currentExerciseName: 'Front Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (_) {},
-        onDeleteSet: (_) {},
-        onReorderSets: (_) {},
+        onAddPercentageSets: (_) async {},
+        onAddAbsoluteSets: (_) async {},
+        onReplaceGroup: (_, _, _) async {},
+        onReorderSets: (_) async {},
       ),
     );
     await tester.pumpAndSettle();
@@ -475,21 +475,25 @@ void main() {
         unit: 'kg',
         currentExerciseId: 'e1',
         currentExerciseName: 'Back Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (_) {},
-        onDeleteSet: (_) {},
-        onReorderSets: (ids) => reordered = ids,
+        onAddPercentageSets: (_) async {},
+        onAddAbsoluteSets: (_) async {},
+        onReplaceGroup: (_, _, _) async {},
+        onReorderSets: (ids) async => reordered = ids,
       ),
     );
     await tester.pumpAndSettle();
 
-    final handles = find.byIcon(Icons.drag_handle);
+    // Three different sets, so three groups, each with its own handle.
+    final handles = find.byIcon(Icons.drag_indicator);
     expect(handles, findsNWidgets(3));
 
+    // Rows are 48px: about one row down puts s1 after s2 but before s3.
     final drag = await tester.startGesture(tester.getCenter(handles.first));
     await tester.pump(kPressTimeout);
-    await drag.moveBy(const Offset(0, 100));
-    await tester.pump();
+    for (var i = 0; i < 3; i++) {
+      await drag.moveBy(const Offset(0, 20));
+      await tester.pump();
+    }
     await drag.up();
     await tester.pumpAndSettle();
 
@@ -497,42 +501,69 @@ void main() {
     expect(reordered, ['s2', 's1', 's3']);
   });
 
-  testWidgets('deleting a set still works once rows are draggable', (
-    tester,
-  ) async {
-    String? deletedId;
+  testWidgets('a single set is removed from its menu without a confirm', (tester) async {
+    final replaced = <(List<String>, int)>[];
 
     await _pump(
       tester,
       SetEditor(
         sets: const [
-          EditableSetRow(
-            id: 's1',
-            weightMode: 'absolute',
-            targetReps: 14,
-            absoluteWeightKg: 50,
-          ),
-          EditableSetRow(
-            id: 's2',
-            weightMode: 'absolute',
-            targetReps: 15,
-            absoluteWeightKg: 45,
-          ),
+          EditableSetRow(id: 's1', weightMode: 'absolute', targetReps: 14, absoluteWeightKg: 50),
+          EditableSetRow(id: 's2', weightMode: 'absolute', targetReps: 15, absoluteWeightKg: 45),
         ],
         unit: 'kg',
         currentExerciseId: 'e1',
         currentExerciseName: 'Back Squat',
-        onAddPercentageSets: (_) {},
-        onAddAbsoluteSets: (_) {},
-        onDeleteSet: (id) => deletedId = id,
-        onReorderSets: (_) {},
+        onAddPercentageSets: (_) async {},
+        onAddAbsoluteSets: (_) async {},
+        onReplaceGroup: (ids, count, _) async => replaced.add((ids, count)),
+        onReorderSets: (_) async {},
       ),
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.close).first);
+    await tester.tap(find.byKey(const ValueKey('set_group_more_s1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove set'));
     await tester.pumpAndSettle();
 
-    expect(deletedId, 's1');
+    expect(replaced.single.$1, ['s1']);
+    expect(replaced.single.$2, 0);
+  });
+
+  testWidgets('removing a group of several sets asks first', (tester) async {
+    final replaced = <(List<String>, int)>[];
+
+    await _pump(
+      tester,
+      SetEditor(
+        sets: const [
+          EditableSetRow(id: 's1', weightMode: 'absolute', targetReps: 3, absoluteWeightKg: 50),
+          EditableSetRow(id: 's2', weightMode: 'absolute', targetReps: 3, absoluteWeightKg: 50),
+          EditableSetRow(id: 's3', weightMode: 'absolute', targetReps: 3, absoluteWeightKg: 50),
+        ],
+        unit: 'kg',
+        currentExerciseId: 'e1',
+        currentExerciseName: 'Back Squat',
+        onAddPercentageSets: (_) async {},
+        onAddAbsoluteSets: (_) async {},
+        onReplaceGroup: (ids, count, _) async => replaced.add((ids, count)),
+        onReorderSets: (_) async {},
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('3 × 3'), findsOneWidget, reason: 'identical sets read as one group');
+    await tester.tap(find.byKey(const ValueKey('set_group_more_s1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove 3 sets'));
+    await tester.pumpAndSettle();
+    expect(find.text('Remove 3 sets?'), findsOneWidget);
+    expect(replaced, isEmpty, reason: 'nothing is removed before confirming');
+
+    await tester.tap(find.text('Remove'));
+    await tester.pumpAndSettle();
+    expect(replaced.single.$1, ['s1', 's2', 's3']);
+    expect(replaced.single.$2, 0);
   });
 }

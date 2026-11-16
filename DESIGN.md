@@ -269,7 +269,7 @@ components:
 
 **Creative North Star: "The Chalk Line"**
 
-NoMoreX is used on the gym floor: chalky hands, a minute between sets, the phone propped on a bench, read at arm's length. The Chalk Line is that floor made into an interface. It's plain and sturdy. Gray surfaces separated by hairlines stay out of the way, and one orange mark says what to do next. Every common action is a tap: steppers instead of text fields, a "Log RPE" button instead of a form, one obvious primary button per screen. The same system has to hold up at a desk, where coaches and athletes author multi-week programs on a wider screen, so it scales by layout (bottom bar below 600px, a sidebar above) rather than by changing character.
+NoMoreX is used on the gym floor: chalky hands, a minute between sets, the phone propped on a bench, read at arm's length. The Chalk Line is that floor made into an interface. It's plain and sturdy. Gray surfaces separated by hairlines stay out of the way, and one orange mark says what to do next. Every common action is a tap: steppers instead of text fields, a checkbox and a "Log" chip instead of a form, one obvious primary button per screen. The same system has to hold up at a desk, where coaches and athletes author multi-week programs on a wider screen, so it scales by layout (bottom bar below 600px, a sidebar above) rather than by changing character.
 
 Inside that, the rule is **quiet chrome, loud data**. Loads, reps, percentages and PRs are what you see first: weights are set in mono so they line up down a list, counts and timers use tabular figures so digits don't jump. Precision shows up in alignment and exact numbers, never in density: when a bigger tap target and one more row on screen compete, the tap target wins.
 
@@ -434,7 +434,20 @@ Adding an exercise to a workout or program day opens one shared picker (`showExe
 - **Footer:** Cancel (secondary) and "Add 3 sets" (primary, twice as wide) on `bg-0`, pinned below the scrolling fields.
 
 ### Exercise Editor Card
-Each exercise in the workout and program editors is a `bg-1` card whose header band is `primary-subtle`, holding the drag handle, the orange mono position number, the name in title-3 and delete. The body holds the notes field and the set ledger: reps in `fg-2`, the prescription (percentages and "Choose load" in Inter, fixed loads in mono), and, for a percentage set with a 1RM, the resolved load right-aligned in `info` blue mono. "Add sets (%)" and "Add sets (weight)" are compact secondary buttons. A just-added card is scrolled to and edged in `primary-border` for 1.6s before fading back. This is the one place every card carries the band: in an editor, each card is where the work happens.
+Each exercise in the workout and program editors is a `bg-1` card whose header band is `primary-subtle`, holding the drag handle, the orange mono position number, the name in title-3 and delete. The body holds the notes field and the set ledger, one row per run of identical sets, under a WARM-UP / WORKING / COOL-DOWN eyebrow per run of one type (none when every set is working):
+- a `drag_indicator` handle (40×48) and a ⋯ button, both aligned with the row's first line;
+- "3 × 3" (count by reps, title-small `fg-1` tabular) in a fixed 64px column, then the prescription (percentages and "Choose load" in Inter, fixed loads in mono);
+- for a percentage group with a 1RM, the resolved load in `info` blue mono, ending the line when it fits and dropping under the prescription, indented to the same edge, when it doesn't.
+
+Tapping the row reopens the sets sheet filled in ("Save 3 sets"); the sheet stays open with a spinner on its button until the save lands, and a failure shows in `danger-text` above the buttons with everything still entered. A percentage group with no 1RM says "No 1RM yet · set PR" in `fg-3` under its prescription. The ⋯ menu is a bottom sheet of actions in sections divided by hairlines: edit (and edit the last set only, which hides the Sets stepper), mark as another type, move up or down, then Remove in `danger-text`, which asks first for more than one set and offers Undo afterwards. Groups drag within their type, and type runs stay in order: a new or retyped group joins the end of its type's run. The list sits in the page's centered content column. "Add sets (%)" and "Add sets (weight)" are compact secondary buttons. A just-added card is scrolled to and edged in `primary-border` for 1.6s before fading back. This is the one place every card carries the band: in an editor, each card is where the work happens.
+
+### Live Set Row
+A set on the workout screen reads the way the bar gets loaded (`SetPrescriptionLines`):
+- **Main line, read first:** "3 × 165 lbs / 75 kg", reps in `stat` (20/600 tabular) and the load in `weight-lg` mono, `info` blue when it's resolved from a %1RM and `fg-1` when fixed. An open-load set reads "3 × choose load" in `fg-3`; a percentage with no 1RM reads "3 × 75%".
+- **Second line:** the prescription in body-small `fg-2` ("75% of 1RM · RPE 8", or "No 1RM yet · set PR" with the inline link).
+- **Checkbox:** a standalone 48px control before the main line, centered on it. Ticking marks the set done as prescribed. A done set dims its reps to `fg-2`; the load stays readable, never struck through.
+- **Log chip:** a compact secondary button (32px to look at, 48px to hit): "Log" in button-small `fg-2`, then what was logged in `weight-sm` ("3/3 · RPE 7", the weight on an open-load set). It opens one "Log set" sheet: Reps, the weight on an open-load set, and RPE behind "Add RPE", over Cancel and "Save and mark done". On a phone the chip ends the second line; from 520px it ends the main line. A finished session shows the logged values as plain `weight-sm` text.
+- **Run headers:** a mono eyebrow above each run of one type, never inside a row, so every row's reps line up. Community shows the same lines without the checkbox or chip.
 
 ### Cards / Containers
 - **Corner Style:** 10px.
@@ -475,7 +488,7 @@ Dialogs and sheets on `bg-2` with a `border-default` edge and 14px radius (sheet
 ## Do's and Don'ts
 
 ### Do:
-- **Do** make every mid-session action a tap: a stepper, switch or single-purpose button ("Log reps", "Log RPE", "Log weight"). Typing is the fallback.
+- **Do** make every mid-session action a tap: a stepper, switch, checkbox or single-purpose button (the "Log" chip). Typing is the fallback.
 - **Do** keep small controls' hit areas at 48px even when they look smaller (the unit toggle, the inline "set PR" link's padded target).
 - **Do** keep controls 44px tall with a 48px hit area, and give every icon-only control a tooltip or semantics label.
 - **Do** read colors from `NomorexTokens.of(context)` / the theme; add a new token to `NomorexPalette` rather than hardcoding a `Color`.

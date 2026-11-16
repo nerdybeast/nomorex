@@ -332,8 +332,7 @@ class _DayCard extends ConsumerWidget {
                             ],
                           ),
                           onAddAbsoluteSets: (batch) => notifier.addAbsoluteSets(ex.id, batch),
-                          onDeleteSet: notifier.deleteSet,
-                          onChangeSetType: notifier.setSetType,
+                          onReplaceGroup: notifier.replaceSetGroup,
                           onReorderSets: (orderedIds) =>
                               notifier.reorderSets(ex.id, orderedIds),
                         ),

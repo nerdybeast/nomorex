@@ -36,10 +36,10 @@ SetEditor _editor({
       unit: 'kg',
       currentExerciseId: 'e1',
       currentExerciseName: 'Back Squat',
-      onAddPercentageSets: onPct ?? (_) {},
-      onAddAbsoluteSets: (_) {},
-      onDeleteSet: (_) {},
-      onReorderSets: (_) {},
+      onAddPercentageSets: (x) async => (onPct ?? (_) {})(x),
+      onAddAbsoluteSets: (_) async {},
+      onReplaceGroup: (_, _, _) async {},
+      onReorderSets: (_) async {},
     );
 
 Future<void> _tapIn(WidgetTester tester, String key, IconData icon, {int times = 1}) async {
