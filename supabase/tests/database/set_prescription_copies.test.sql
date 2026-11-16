@@ -6,7 +6,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(22);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser so ids are known up front.
@@ -33,25 +33,29 @@ insert into public.program_exercises (id, program_day_id, user_id, exercise_id, 
 select '00000000-0000-4000-8000-000000000004'::uuid, '00000000-0000-4000-8000-000000000003'::uuid, author, squat, 0 from t
 union all
 select '00000000-0000-4000-8000-000000000005'::uuid, '00000000-0000-4000-8000-000000000003'::uuid, author, pullup, 1 from t;
--- "Squat 7-9 @ 67-72.5% RPE 6-7" and "Pull-Up 7-9, choose load, RPE 6-7".
+-- "Squat 7-9 @ 67-72.5% RPE 6-7" (a warm-up) and "Pull-Up 7-9, choose load,
+-- RPE 6-7" (a working set, by default).
+insert into public.program_sets (
+  program_exercise_id, user_id, position, target_reps, target_reps_max,
+  weight_mode, percentage, percentage_max, rpe_min, rpe_max, set_type
+)
+select '00000000-0000-4000-8000-000000000004'::uuid, author, 0, 7, 9, 'percentage', 67, 72.5, 6, 7, 'warmup' from t;
 insert into public.program_sets (
   program_exercise_id, user_id, position, target_reps, target_reps_max,
   weight_mode, percentage, percentage_max, rpe_min, rpe_max
 )
-select '00000000-0000-4000-8000-000000000004'::uuid, author, 0, 7, 9, 'percentage', 67, 72.5, 6, 7 from t
-union all
 select '00000000-0000-4000-8000-000000000005'::uuid, author, 0, 7, 9, 'open', null, null, 6, 7 from t;
 
--- A public standalone workout with a logged open set.
+-- A public standalone workout with a logged open set, a cool-down.
 insert into public.workouts (id, user_id, title, date, is_public)
 select '00000000-0000-4000-8000-000000000006'::uuid, author, 'pgTAP prescription workout', current_date, true from t;
 insert into public.workout_exercises (id, workout_id, user_id, exercise_id, position)
 select '00000000-0000-4000-8000-000000000007'::uuid, '00000000-0000-4000-8000-000000000006'::uuid, author, pullup, 0 from t;
 insert into public.workout_sets (
   workout_exercise_id, user_id, position, target_reps, target_reps_max,
-  weight_mode, rpe_min, rpe_max, actual_rpe, actual_reps, completed
+  weight_mode, rpe_min, rpe_max, actual_rpe, actual_reps, completed, set_type
 )
-select '00000000-0000-4000-8000-000000000007'::uuid, author, 0, 5, 8, 'open', 8, 9, 8.5, 7, true from t;
+select '00000000-0000-4000-8000-000000000007'::uuid, author, 0, 5, 8, 'open', 8, 9, 8.5, 7, true, 'cooldown' from t;
 
 -- ---------------------------------------------------------------------------
 -- start_program (as the author)
@@ -75,6 +79,17 @@ select results_eq(
   $$ values (7, 9, 'percentage', 67::numeric, 72.5::numeric, 6.0::numeric, 7.0::numeric),
             (7, 9, 'open', null, null, 6.0, 7.0) $$,
   'start_program carries rep/percentage ranges, RPE and open mode onto workout sets'
+);
+
+select results_eq(
+  $$ select ws.set_type
+     from public.workout_sets ws
+     join public.workout_exercises we on we.id = ws.workout_exercise_id
+     join public.workouts w on w.id = we.workout_id
+     where w.program_instance_id = (select instance_id from author_run)
+     order by we.position $$,
+  $$ values ('warmup'), ('working') $$,
+  'start_program carries each set''s type onto workout sets'
 );
 
 -- ---------------------------------------------------------------------------
@@ -103,6 +118,17 @@ select results_eq(
 );
 
 select results_eq(
+  $$ select ps.set_type
+     from public.program_sets ps
+     join public.program_exercises pe on pe.id = ps.program_exercise_id
+     join public.program_days pd on pd.id = pe.program_day_id
+     where pd.program_id = ((select result from viewer_copy) ->> 'program_id')::uuid
+     order by pe.position $$,
+  $$ values ('warmup'), ('working') $$,
+  'copy_program carries each set''s type onto the copied template'
+);
+
+select results_eq(
   $$ select ws.target_reps_max, ws.weight_mode, ws.percentage_max, ws.rpe_min, ws.rpe_max
      from public.workout_sets ws
      join public.workout_exercises we on we.id = ws.workout_exercise_id
@@ -112,6 +138,17 @@ select results_eq(
   $$ values (9, 'percentage', 72.5::numeric, 6.0::numeric, 7.0::numeric),
             (9, 'open', null, 6.0, 7.0) $$,
   'starting the copied program carries the prescription onto workout sets'
+);
+
+select results_eq(
+  $$ select ws.set_type
+     from public.workout_sets ws
+     join public.workout_exercises we on we.id = ws.workout_exercise_id
+     join public.workouts w on w.id = we.workout_id
+     where w.program_instance_id = ((select result from viewer_copy) ->> 'instance_id')::uuid
+     order by we.position $$,
+  $$ values ('warmup'), ('working') $$,
+  'starting the copied program carries each set''s type onto workout sets'
 );
 
 create temp table viewer_workout on commit drop as
@@ -125,6 +162,13 @@ select results_eq(
   $$ values (5, 8, 'open', 8.0::numeric, 9.0::numeric) $$,
   'copy_workout carries the prescription'
 );
+
+select is(
+  (select ws.set_type
+   from public.workout_sets ws
+   join public.workout_exercises we on we.id = ws.workout_exercise_id
+   where we.workout_id = (select id from viewer_workout)),
+  'cooldown', 'copy_workout carries the set''s type');
 
 select results_eq(
   $$ select ws.actual_rpe, ws.actual_reps, ws.completed
