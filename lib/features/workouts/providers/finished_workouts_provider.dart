@@ -23,7 +23,7 @@ class FinishedWorkoutsNotifier extends _$FinishedWorkoutsNotifier {
 
     final data = await _db
         .from('workouts')
-        .select('*, workout_exercises(*, exercises(name))')
+        .select('*, workout_exercises(*, exercises(name)), program_instances(programs(name))')
         .eq('user_id', userId)
         .eq('status', 'finished')
         .order('finished_at', ascending: false);

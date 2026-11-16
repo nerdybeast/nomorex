@@ -301,6 +301,8 @@ class DashboardScreen extends ConsumerWidget {
                         title: workout.title,
                         completedDisplay:
                             'Completed ${formatDate(workout.finishedAt!.toLocal())}',
+                        programLabel: workout.programName ?? 'Standalone',
+                        isStandalone: workout.programName == null,
                         onTap: () => context.push(
                           AppConstants.routeWorkoutDetail(workout.id),
                         ),

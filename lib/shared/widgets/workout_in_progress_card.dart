@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import '../../core/theme/app_theme.dart';
 import 'list_group.dart';
+import 'workout_program_label.dart';
 
 /// Dashboard card for one in-progress (or paused) workout. [statusDisplay] is
 /// pre-formatted (e.g. "In progress" or "Paused") and [statusTrailing] is an
@@ -62,27 +63,7 @@ class WorkoutInProgressCard extends StatelessWidget {
                 Text(title, style: theme.textTheme.titleSmall),
                 if (programLabel != null) ...[
                   const SizedBox(height: 2),
-                  Row(
-                    key: const Key('workout_program_label'),
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isStandalone ? Icons.fitness_center : Icons.checklist_outlined,
-                        size: 14,
-                        color: isStandalone ? palette.fg3 : palette.fg2,
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          programLabel!,
-                          style: statusStyle?.copyWith(
-                            color: isStandalone ? palette.fg3 : palette.fg2,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
+                  WorkoutProgramLabel(label: programLabel!, isStandalone: isStandalone),
                 ],
                 const SizedBox(height: 2),
                 Row(
