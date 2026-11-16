@@ -421,7 +421,10 @@ class _Running extends ConsumerWidget {
           decoration: BoxDecoration(border: Border(top: BorderSide(color: tokens.palette.borderSubtle))),
           child: Padding(
             padding: const EdgeInsets.only(top: 10),
-            child: Column(children: items),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [for (final item in items) ...[item, const SizedBox(height: 2)]],
+            ),
           ),
         ),
       );
@@ -530,13 +533,23 @@ class _RunningItem extends StatelessWidget {
     final Widget content;
     if (collapsed) {
       content = SizedBox(
-        height: 52,
+        height: 56,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             dot,
             const SizedBox(height: 6),
-            Text(railLabel, style: theme.textTheme.labelSmall?.copyWith(color: palette.fg2)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  railLabel,
+                  maxLines: 1,
+                  style: theme.textTheme.labelSmall?.copyWith(color: palette.fg2),
+                ),
+              ),
+            ),
           ],
         ),
       );
