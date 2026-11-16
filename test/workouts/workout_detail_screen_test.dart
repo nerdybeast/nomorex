@@ -393,7 +393,7 @@ void main() {
       expect(find.text('Do this workout again'), findsNothing);
       expect(find.text('View history'), findsNothing);
 
-      await tester.tap(find.byType(CheckboxListTile));
+      await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
       expect(toggled, isFalse);
     },
@@ -466,7 +466,7 @@ void main() {
 
       // pump(), not pumpAndSettle(): the running ElapsedTimer's real ticker
       // never stops on its own within this stub (see the note in _pump above).
-      await tester.tap(find.byType(CheckboxListTile));
+      await tester.tap(find.byType(Checkbox));
       await tester.pump();
       expect(toggled, isTrue);
 
@@ -497,7 +497,7 @@ void main() {
       expect(find.text('Resume'), findsOneWidget);
       expect(find.text('Finish'), findsOneWidget);
 
-      await tester.tap(find.byType(CheckboxListTile));
+      await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
       expect(toggled, isTrue);
 
@@ -528,7 +528,7 @@ void main() {
       expect(find.text('Start workout'), findsNothing);
       expect(find.text('Pause'), findsNothing);
 
-      await tester.tap(find.byType(CheckboxListTile));
+      await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
       expect(toggled, isFalse);
     },
@@ -887,12 +887,13 @@ void main() {
       expect(find.text('WARM-UP'), findsOneWidget);
       expect(find.text('WORKING'), findsOneWidget);
       expect(find.text('COOL-DOWN'), findsOneWidget);
-      // The type is never part of a row, so warm-up and working reps line up.
+      // The type is never part of a row, so warm-up and working sets read
+      // the same way and start in the same place.
       for (final id in ['w0', 's0', 'c0']) {
-        expect(tester.widget<Text>(find.byKey(ValueKey('workout_set_title_$id'))).data, '3 reps');
+        expect(tester.widget<Text>(find.byKey(ValueKey('set_main_$id'))).textSpan!.toPlainText(), '3 × 220 lbs / 100 kg');
       }
-      final warmupX = tester.getTopLeft(find.byKey(const ValueKey('workout_set_title_w0'))).dx;
-      final workingX = tester.getTopLeft(find.byKey(const ValueKey('workout_set_title_s0'))).dx;
+      final warmupX = tester.getTopLeft(find.byKey(const ValueKey('set_main_w0'))).dx;
+      final workingX = tester.getTopLeft(find.byKey(const ValueKey('set_main_s0'))).dx;
       expect(warmupX, workingX);
     });
 

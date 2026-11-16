@@ -88,5 +88,6 @@ class WorkoutSet {
         absoluteWeightKg: absoluteWeightKg,
         basisExerciseId: basisExerciseId,
         basisExerciseName: basisExerciseName,
+        note: note,
       );
 }

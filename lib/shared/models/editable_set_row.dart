@@ -19,6 +19,7 @@ class EditableSetRow {
     this.absoluteWeightKg,
     this.basisExerciseId,
     this.basisExerciseName,
+    this.note,
   });
 
   final String id;
@@ -37,4 +38,9 @@ class EditableSetRow {
   final double? absoluteWeightKg;
   final String? basisExerciseId;
   final String? basisExerciseName;
+
+  /// A per-set note. Part of what makes two sets identical: the editor
+  /// rewrites a group as copies of its first set, so a differing note would
+  /// be overwritten.
+  final String? note;
 }

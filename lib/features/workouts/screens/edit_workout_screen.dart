@@ -131,7 +131,10 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen>
               ),
               if (workout.exercises.isNotEmpty)
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  // The same centered column as the fields above, so the cards
+                  // line up with them and a set's load stays near its
+                  // prescription on a wide screen.
+                  padding: contentPadding(context, top: 0, bottom: 0),
                   sliver: SliverReorderableList(
                     itemCount: workout.exercises.length,
                     itemBuilder: (context, i) {
@@ -162,8 +165,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen>
                                   notifier.addPercentageSets(ex.id, parsed),
                               onAddAbsoluteSets: (batch) =>
                                   notifier.addAbsoluteSets(ex.id, batch),
-                              onDeleteSet: notifier.deleteSet,
-                              onChangeSetType: notifier.setSetType,
+                              onReplaceGroup: notifier.replaceSetGroup,
                               onReorderSets: (orderedIds) =>
                                   notifier.reorderSets(ex.id, orderedIds),
                             ),
@@ -180,7 +182,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen>
                   ),
                 ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                padding: contentPadding(context, top: 0, bottom: 24),
                 sliver: SliverToBoxAdapter(
                   child: FilledButton.icon(
                     key: const Key('edit_workout_add_exercise'),

@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:collection/collection.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/models/set_type.dart';
 import '../models/workout.dart';
@@ -102,6 +103,20 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     await _refresh();
   }
 
+  /// Moves just-added [newIds], all of [type], to the end of their type's run
+  /// (warm-ups before working sets before cool-downs), so a warm-up added
+  /// after the working sets lands above them instead of at the bottom. Within
+  /// a type, order stays the lifter's. A no-op when they're already there.
+  Future<void> _placeByType(String exerciseId, List<String> newIds, SetType type) async {
+    if (newIds.isEmpty) return;
+    final current = await future;
+    final ex = current.exercises.firstWhere((e) => e.id == exerciseId);
+    final sorted = [...ex.sets]..sort((a, b) => a.position.compareTo(b.position));
+    final order = placeByType(sorted, idOf: (s) => s.id, typeOf: (s) => s.setType, newIds: newIds, type: type);
+    if (const ListEquality<String>().equals(order, [for (final s in sorted) s.id])) return;
+    await reorderSets(exerciseId, order);
+  }
+
   Future<void> addPercentageSets(
       String workoutExerciseId, List<ParsedSet> parsed) async {
     if (parsed.isEmpty) return;
@@ -110,7 +125,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     var pos = ex.sets.isEmpty
         ? 0
         : ex.sets.map((s) => s.position).reduce((a, b) => a > b ? a : b) + 1;
-    await _db.from('workout_sets').insert([
+    final inserted = await _db.from('workout_sets').insert([
       for (final p in parsed)
         {
           'workout_exercise_id': workoutExerciseId,
@@ -126,8 +141,9 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
           'rpe_max': ?p.rpeMax,
           'set_type': p.setType.dbValue,
         },
-    ]);
+    ]).select('id');
     await _refresh();
+    await _placeByType(workoutExerciseId, [for (final row in inserted) row['id'] as String], parsed.first.setType);
   }
 
   Future<void> addAbsoluteSets(String workoutExerciseId, AbsoluteSetBatch batch) async {
@@ -137,7 +153,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     var pos = ex.sets.isEmpty
         ? 0
         : ex.sets.map((s) => s.position).reduce((a, b) => a > b ? a : b) + 1;
-    await _db.from('workout_sets').insert([
+    final inserted = await _db.from('workout_sets').insert([
       for (var i = 0; i < batch.sets; i++)
         {
           'workout_exercise_id': workoutExerciseId,
@@ -151,8 +167,9 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
           'rpe_max': ?batch.rpeMax,
           'set_type': batch.setType.dbValue,
         },
-    ]);
+    ]).select('id');
     await _refresh();
+    await _placeByType(workoutExerciseId, [for (final row in inserted) row['id'] as String], batch.setType);
   }
 
   Future<void> updateSet(String setId, Map<String, dynamic> values) async {
@@ -165,12 +182,6 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     await _refresh();
   }
 
-  /// Marks a set as a warm-up, working set or cool-down. Nothing outside this
-  /// provider renders a set's type, so refreshing this one is enough.
-  Future<void> setSetType(String setId, SetType type) async {
-    await _db.from('workout_sets').update({'set_type': type.dbValue}).eq('id', setId);
-    await _refresh();
-  }
 
   Future<void> setCompleted(String setId, bool completed) async {
     await _db.from('workout_sets').update({'completed': completed}).eq('id', setId);
@@ -185,25 +196,38 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
     await _refresh();
   }
 
-  /// Records (or with null, clears) the weight the lifter actually used. Only
-  /// offered for open-load sets, where there's no prescribed load to go by.
-  /// Logging-only, like [logRpe].
-  Future<void> logWeight(String setId, double? weightKg) async {
-    await _db.from('workout_sets').update({'actual_weight_kg': weightKg}).eq('id', setId);
+  /// Records what the lifter actually did on a set in one update: the reps,
+  /// the RPE and, on an open-load set (the only kind without a prescribed
+  /// load), the weight used. Null clears a value. Logging-only: never copied
+  /// when the workout is duplicated or shared. [complete] also ticks the set,
+  /// since logging it means it was done.
+  Future<void> logSet(
+    String setId, {
+    required int? reps,
+    required double? rpe,
+    double? weightKg,
+    bool complete = true,
+  }) async {
+    await _db.from('workout_sets').update({
+      'actual_reps': reps,
+      'actual_rpe': rpe,
+      'actual_weight_kg': weightKg,
+      if (complete) 'completed': true,
+    }).eq('id', setId);
     await _refresh();
   }
 
-  /// Records (or with null, clears) the reps the lifter actually completed,
-  /// leaving any logged weight alone. Logging-only, like [logRpe].
-  Future<void> logReps(String setId, int? reps) async {
-    await _db.from('workout_sets').update({'actual_reps': reps}).eq('id', setId);
-    await _refresh();
-  }
-
-  /// Records (or with null, clears) the effort the lifter reports for a set.
-  /// Logging-only: never copied when the workout is duplicated or shared.
-  Future<void> logRpe(String setId, double? rpe) async {
-    await _db.from('workout_sets').update({'actual_rpe': rpe}).eq('id', setId);
+  /// Replaces a run of identical consecutive sets ([setIds], all of one
+  /// exercise) with [count] sets of [prescription], in the same place, in one
+  /// transaction. A count of 0 removes the group. [prescription] uses the
+  /// column names (`target_reps`, `weight_mode`, `absolute_weight_kg` in kg,
+  /// `set_type`, …); see `replace_workout_set_group`.
+  Future<void> replaceSetGroup(List<String> setIds, int count, Map<String, Object?> prescription) async {
+    await _db.rpc('replace_workout_set_group', params: {
+      'p_set_ids': setIds,
+      'p_count': count,
+      'p_set': prescription,
+    });
     await _refresh();
   }
 

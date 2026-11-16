@@ -1,17 +1,13 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/utils/rpe.dart';
-import '../../../core/utils/percent_range.dart';
-import '../../../core/utils/rep_range.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/copy_errors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/owner_name.dart';
-import '../../../core/utils/weight_converter.dart';
 import '../../../shared/widgets/set_type_header.dart';
-import '../../../shared/widgets/set_pr_link.dart';
+import '../../workouts/widgets/live_set_row.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../workouts/models/workout_exercise.dart';
@@ -306,6 +302,10 @@ class _ExerciseCard extends StatelessWidget {
   }
 }
 
+/// One set as the viewer would do it: the shared [SetPrescriptionLines], with
+/// percentage loads resolved against the viewer's own 1RM (blue, because it's
+/// personal) and fixed loads plain, since they're the same for everyone. Read
+/// only: no checkbox or log chip on someone else's workout.
 class _SetRow extends StatelessWidget {
   const _SetRow({
     required this.set,
@@ -323,73 +323,24 @@ class _SetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reps = formatTargetReps(set.targetReps, set.targetRepsMax);
-    final rpeTarget = formatRpeTarget(set.rpeMin, set.rpeMax);
-    final rpeSuffix = rpeTarget == null ? '' : ' · $rpeTarget';
-
-    // Absolute sets are the same load for everyone, so they render plainly —
-    // the accent color below is reserved for weights derived from the
-    // viewer's own 1RM, which is what makes this a personalized preview.
-    if (set.weightMode != 'percentage') {
-      final load = isOpenLoad(set.weightMode)
-          ? kOpenLoadLabel
-          : formatWeightForPreference(set.absoluteWeightKg ?? 0, unit);
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Text('$reps · $load$rpeSuffix'),
-      );
-    }
-
     final basisId = resolveBasisExerciseId(set, exercise);
     final basisName = set.basisExerciseName ?? exercise.exerciseName;
-    final oneRepMax = lookupOneRepMax(
-      basisExerciseId: basisId,
-      basisExerciseName: basisName,
-      byExerciseId: oneRepMaxes,
-      byExerciseName: oneRepMaxesByName,
-    );
-    final resolved = resolveSetWeightRangeKg(
-      weightMode: set.weightMode,
-      percentage: set.percentage,
-      percentageMax: set.percentageMax,
-      absoluteWeightKg: set.absoluteWeightKg,
-      oneRepMaxKg: oneRepMax?.kg,
-    );
-
-    // "70% 1RM" normally, but "75% of Clean & Jerk" when the set is programmed
-    // against a different lift — otherwise the resolved weight beside it looks
-    // wrong for the exercise it's filed under.
-    final basisLabel = set.basisExerciseId != null ? 'of $basisName' : '1RM';
-    final target = '$reps · ${formatPercentTarget(set.percentage, set.percentageMax)} $basisLabel · ';
-
-    final baseStyle = DefaultTextStyle.of(context).style;
-    final accent = Theme.of(context).extension<NomorexTokens>()?.info;
-
+    final oneRepMax = set.weightMode == 'percentage'
+        ? lookupOneRepMax(
+            basisExerciseId: basisId,
+            basisExerciseName: basisName,
+            byExerciseId: oneRepMaxes,
+            byExerciseName: oneRepMaxesByName,
+          )
+        : null;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text.rich(
-        TextSpan(
-          style: baseStyle,
-          children: [
-            TextSpan(text: target),
-            if (resolved != null)
-              TextSpan(
-                text: formatResolvedWeightRange(resolved.low, resolved.high, unit,
-                    estimated: oneRepMax?.isEstimated ?? false),
-                style: baseStyle.copyWith(color: accent),
-              )
-            else
-              WidgetSpan(
-                alignment: PlaceholderAlignment.middle,
-                child: SetPrLink(
-                  exerciseId: basisId,
-                  exerciseName: basisName,
-                  style: baseStyle,
-                ),
-              ),
-            if (rpeTarget != null) TextSpan(text: rpeSuffix),
-          ],
-        ),
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: SetPrescriptionLines(
+        set: set,
+        oneRepMax: oneRepMax,
+        basisExerciseId: basisId,
+        basisExerciseName: basisName,
+        unit: unit,
       ),
     );
   }

@@ -35,10 +35,10 @@ SetEditor _editor({
       unit: 'kg',
       currentExerciseId: 'e1',
       currentExerciseName: 'Back Squat',
-      onAddPercentageSets: onPct ?? (_) {},
-      onAddAbsoluteSets: onAbs ?? (_) {},
-      onDeleteSet: (_) {},
-      onReorderSets: (_) {},
+      onAddPercentageSets: (x) async => (onPct ?? (_) {})(x),
+      onAddAbsoluteSets: (x) async => (onAbs ?? (_) {})(x),
+      onReplaceGroup: (_, _, _) async {},
+      onReorderSets: (_) async {},
     );
 
 Future<void> _tapIn(WidgetTester tester, String key, IconData icon, {int times = 1}) async {
@@ -201,8 +201,9 @@ void main() {
       ]));
       await tester.pumpAndSettle();
 
-      expect(find.text('7–9 reps'), findsOneWidget);
-      expect(find.text('5 reps'), findsOneWidget);
+      // Each group reads as count × reps: one set of 7–9, one of 5.
+      expect(find.text('1 × 7–9'), findsOneWidget);
+      expect(find.text('1 × 5'), findsOneWidget);
     });
   });
 }

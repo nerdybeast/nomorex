@@ -37,3 +37,21 @@ List<T> countedSets<T>(List<T> sets, SetType Function(T set) typeOf) {
   final working = sets.where((s) => typeOf(s).isWorking).toList();
   return working.isEmpty ? sets : working;
 }
+
+/// The set-id order with just-added [newIds], all of [type], moved to the end
+/// of their type's run: after every set of the same or an earlier type
+/// (warm-ups, then working sets, then cool-downs), and before the rest. A
+/// warm-up added after the working sets lands above them; within a type the
+/// lifter's order is kept. [sorted] is the exercise's sets in position order,
+/// the new ones included.
+List<String> placeByType<T>(
+  List<T> sorted, {
+  required String Function(T set) idOf,
+  required SetType Function(T set) typeOf,
+  required List<String> newIds,
+  required SetType type,
+}) {
+  final others = [for (final s in sorted) if (!newIds.contains(idOf(s))) s];
+  final at = others.lastIndexWhere((s) => typeOf(s).index <= type.index) + 1;
+  return [for (final s in others) idOf(s)]..insertAll(at, newIds);
+}

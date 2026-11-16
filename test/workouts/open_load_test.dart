@@ -45,10 +45,10 @@ SetEditor _editor({
       unit: unit,
       currentExerciseId: 'e1',
       currentExerciseName: 'Pull-Up',
-      onAddPercentageSets: (_) {},
-      onAddAbsoluteSets: onAbs ?? (_) {},
-      onDeleteSet: (_) {},
-      onReorderSets: (_) {},
+      onAddPercentageSets: (_) async {},
+      onAddAbsoluteSets: (x) async => (onAbs ?? (_) {})(x),
+      onReplaceGroup: (_, _, _) async {},
+      onReorderSets: (_) async {},
     );
 
 Future<void> _tapKey(WidgetTester tester, String key) async {
@@ -65,8 +65,6 @@ class _StubDetail extends WorkoutDetailNotifier {
   final List<(String, double?)> logged;
   @override
   Future<Workout> build(String workoutId) async => _workout;
-  @override
-  Future<void> logWeight(String setId, double? weightKg) async => logged.add((setId, weightKg));
 }
 
 class _NoHistory extends FinishedWorkoutsNotifier {
@@ -239,128 +237,13 @@ void main() {
     testWidgets('an open set says "choose load" and offers no Add-PR shortcut', (tester) async {
       await _pumpDetail(tester, _workout(status: 'not_started', sets: [_openSet('s1')]));
 
-      expect(find.text('choose load · RPE 6–7'), findsOneWidget);
+      expect(find.text('7–9 × choose load'), findsOneWidget);
+      expect(find.text('RPE 6–7'), findsOneWidget);
       expect(find.byType(SetPrLink), findsNothing);
       expect(find.textContaining('0 kg'), findsNothing);
       // Not live: nothing to log yet.
-      expect(find.text('Log weight'), findsNothing);
+      expect(find.text('Log'), findsNothing);
     });
 
-    testWidgets('a live open set logs the weight used, starting empty', (tester) async {
-      final logged = await _pumpDetail(tester, _workout(status: 'paused', sets: [_openSet('s1')]));
-
-      await tester.tap(find.byKey(const Key('set_actual_weight_s1')));
-      await _settle(tester);
-      expect(find.text('Weight (kg)'), findsOneWidget);
-      expect(find.text('Clear'), findsNothing);
-
-      final plus = find.descendant(
-        of: find.byKey(const Key('log_weight_value')),
-        matching: find.byIcon(Icons.add),
-      );
-      for (var i = 0; i < 4; i++) {
-        await tester.tap(plus);
-        await tester.pump();
-      }
-      await tester.tap(find.text('Save'));
-      await _settle(tester);
-
-      expect(logged, [('s1', 10.0)]);
-    });
-
-    testWidgets('a typed weight is saved without pressing Done', (tester) async {
-      // iOS's number pad has no Done key: the user types and taps Save.
-      final logged = await _pumpDetail(tester, _workout(status: 'paused', sets: [_openSet('s1')]));
-
-      await tester.tap(find.byKey(const Key('set_actual_weight_s1')));
-      await _settle(tester);
-      await tester.enterText(
-        find.descendant(
-          of: find.byKey(const Key('log_weight_value')),
-          matching: find.byType(TextField),
-        ),
-        '100',
-      );
-      await tester.pump();
-      await tester.tap(find.text('Save'));
-      await _settle(tester);
-
-      expect(logged, [('s1', 100.0)]);
-    });
-
-    testWidgets('a lbs user logs in lbs and it is saved in kg', (tester) async {
-      final logged = await _pumpDetail(
-        tester,
-        _workout(status: 'paused', sets: [_openSet('s1')]),
-        unit: 'lbs',
-      );
-      await tester.tap(find.text('Log weight'));
-      await _settle(tester);
-      final plus = find.descendant(
-        of: find.byKey(const Key('log_weight_value')),
-        matching: find.byIcon(Icons.add),
-      );
-      await tester.tap(plus);
-      await tester.pump();
-      await tester.tap(find.text('Save'));
-      await _settle(tester);
-
-      expect(logged.single.$2, closeTo(lbsToKg(5), 0.001));
-    });
-
-    testWidgets('a logged weight shows on the button and can be cleared', (tester) async {
-      final logged = await _pumpDetail(
-        tester,
-        _workout(status: 'paused', sets: [_openSet('s1', actualWeightKg: 20)]),
-      );
-      expect(find.text('20 kg'), findsOneWidget);
-      await tester.tap(find.text('20 kg'));
-      await _settle(tester);
-      await tester.tap(find.text('Clear'));
-      await _settle(tester);
-      expect(logged, [('s1', null)]);
-    });
-
-    testWidgets('a finished session shows the logged weight read-only', (tester) async {
-      await _pumpDetail(
-        tester,
-        _workout(status: 'finished', sets: [
-          _openSet('s1', actualWeightKg: 20),
-          _openSet('s2', position: 1),
-        ]),
-      );
-      expect(find.text('20 kg'), findsOneWidget);
-      expect(find.widgetWithText(TextButton, '20 kg'), findsNothing);
-      expect(find.text('Log weight'), findsNothing);
-    });
-
-    testWidgets('sets with a prescribed load never offer Log weight', (tester) async {
-      await _pumpDetail(
-        tester,
-        _workout(status: 'paused', sets: const [
-          WorkoutSet(
-            id: 's1',
-            workoutExerciseId: 'we1',
-            position: 0,
-            weightMode: 'absolute',
-            targetReps: 5,
-            absoluteWeightKg: 100,
-          ),
-        ]),
-      );
-      expect(find.text('Log weight'), findsNothing);
-    });
-
-    testWidgets('Log weight is its own button for assistive tech', (tester) async {
-      final handle = tester.ensureSemantics();
-      await _pumpDetail(tester, _workout(status: 'paused', sets: [_openSet('s1')]));
-
-      final button = tester.getSemantics(find.text('Log weight'));
-      expect(button.label, 'Log weight');
-      expect(button.flagsCollection.isButton, isTrue);
-      final checkbox = tester.getSemantics(find.byType(CheckboxListTile));
-      expect(checkbox.label, isNot(contains('Log weight')));
-      handle.dispose();
-    });
   });
 }

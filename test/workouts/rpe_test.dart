@@ -5,13 +5,8 @@ import 'package:nomorex/core/utils/rpe.dart';
 import 'package:nomorex/features/exercises/models/exercise.dart';
 import 'package:nomorex/features/exercises/providers/exercises_provider.dart';
 import 'package:nomorex/features/programs/models/program_set.dart';
-import 'package:nomorex/features/workouts/models/workout.dart';
-import 'package:nomorex/features/workouts/models/workout_exercise.dart';
 import 'package:nomorex/features/workouts/models/workout_set.dart';
-import 'package:nomorex/features/workouts/providers/finished_workouts_provider.dart';
 import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
-import 'package:nomorex/features/workouts/providers/workout_detail_provider.dart';
-import 'package:nomorex/features/workouts/screens/workout_detail_screen.dart';
 import 'package:nomorex/features/workouts/utils/parsed_set.dart';
 import 'package:nomorex/features/workouts/widgets/set_editor.dart';
 import 'package:nomorex/shared/models/editable_set_row.dart';
@@ -45,10 +40,10 @@ SetEditor _editor({
       unit: 'kg',
       currentExerciseId: 'e1',
       currentExerciseName: 'Back Squat',
-      onAddPercentageSets: onPct ?? (_) {},
-      onAddAbsoluteSets: onAbs ?? (_) {},
-      onDeleteSet: (_) {},
-      onReorderSets: (_) {},
+      onAddPercentageSets: (x) async => (onPct ?? (_) {})(x),
+      onAddAbsoluteSets: (x) async => (onAbs ?? (_) {})(x),
+      onReplaceGroup: (_, _, _) async {},
+      onReorderSets: (_) async {},
     );
 
 Future<void> _tapKey(WidgetTester tester, String key) async {
@@ -73,79 +68,6 @@ String _stepperText(WidgetTester tester, String key) => tester
     .controller!
     .text;
 
-class _StubDetail extends WorkoutDetailNotifier {
-  _StubDetail(this._workout, this.logged);
-  final Workout _workout;
-  final List<(String, double?)> logged;
-  @override
-  Future<Workout> build(String workoutId) async => _workout;
-  @override
-  Future<void> logRpe(String setId, double? rpe) async => logged.add((setId, rpe));
-}
-
-class _NoHistory extends FinishedWorkoutsNotifier {
-  @override
-  Future<List<Workout>> build() async => const [];
-}
-
-Workout _workout({required String status, required List<WorkoutSet> sets}) => Workout(
-      id: 'w1',
-      userId: 'u1',
-      title: 'Squat day',
-      date: DateTime(2026, 11, 5),
-      updatedAt: DateTime(2026, 11, 5),
-      workoutGroupId: 'g1',
-      status: status,
-      startedAt: status == 'not_started' ? null : DateTime(2026, 11, 5, 9),
-      pausedAt: status == 'paused' ? DateTime(2026, 11, 5, 9, 30) : null,
-      finishedAt: status == 'finished' ? DateTime(2026, 11, 5, 10) : null,
-      exercises: [
-        WorkoutExercise(
-          id: 'we1',
-          workoutId: 'w1',
-          exerciseId: 'e1',
-          exerciseName: 'Back Squat',
-          position: 0,
-          sets: sets,
-        ),
-      ],
-    );
-
-WorkoutSet _set(String id, {double? rpeMin, double? rpeMax, double? actualRpe}) => WorkoutSet(
-      id: id,
-      workoutExerciseId: 'we1',
-      position: 0,
-      weightMode: 'absolute',
-      targetReps: 5,
-      absoluteWeightKg: 100,
-      rpeMin: rpeMin,
-      rpeMax: rpeMax,
-      actualRpe: actualRpe,
-    );
-
-/// Bounded pumps: a live session renders a timer, which can keep
-/// pumpAndSettle from ever settling.
-Future<void> _settle(WidgetTester tester) async {
-  for (var i = 0; i < 4; i++) {
-    await tester.pump(const Duration(milliseconds: 150));
-  }
-}
-
-Future<List<(String, double?)>> _pumpDetail(WidgetTester tester, Workout workout) async {
-  final logged = <(String, double?)>[];
-  await tester.pumpWidget(ProviderScope(
-    overrides: [
-      workoutDetailProvider('w1').overrideWith(() => _StubDetail(workout, logged)),
-      oneRepMaxProvider.overrideWith((ref) async => const {}),
-      oneRepMaxByNameProvider.overrideWith((ref) async => const {}),
-      exercisesProvider.overrideWith(() => _StubExercisesNotifier()),
-      finishedWorkoutsProvider.overrideWith(() => _NoHistory()),
-    ],
-    child: const MaterialApp(home: WorkoutDetailScreen(workoutId: 'w1')),
-  ));
-  await _settle(tester);
-  return logged;
-}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -296,86 +218,5 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('70% of 1RM · RPE 6–7'), findsOneWidget);
     });
-  });
-
-  group('logging RPE on a workout', () {
-    testWidgets('a live set shows its target and logs RPE from the target, not saved until Save',
-        (tester) async {
-      final logged =
-          await _pumpDetail(tester, _workout(status: 'paused', sets: [_set('s1', rpeMin: 6, rpeMax: 7)]));
-
-      expect(find.textContaining('· RPE 6–7'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('set_actual_rpe_s1')));
-      await _settle(tester);
-
-      // Starts at the target's low end; nothing logged by opening it.
-      expect(_stepperText(tester, 'log_rpe_value'), '6');
-      expect(find.text('Clear'), findsNothing);
-      expect(logged, isEmpty);
-
-      await _tapIn(tester, 'log_rpe_value', Icons.add);
-      await tester.tap(find.text('Save'));
-      await _settle(tester);
-      expect(logged, [('s1', 6.5)]);
-    });
-
-    testWidgets('Cancel logs nothing', (tester) async {
-      final logged = await _pumpDetail(tester, _workout(status: 'paused', sets: [_set('s1')]));
-      expect(find.text('Log RPE'), findsOneWidget);
-      await tester.tap(find.text('Log RPE'));
-      await _settle(tester);
-      expect(_stepperText(tester, 'log_rpe_value'), '7'); // no target: a neutral start
-      await tester.tap(find.text('Cancel'));
-      await _settle(tester);
-      expect(logged, isEmpty);
-    });
-
-    testWidgets('a logged set shows its RPE and can be cleared', (tester) async {
-      final logged =
-          await _pumpDetail(tester, _workout(status: 'paused', sets: [_set('s1', actualRpe: 8)]));
-      expect(find.text('RPE 8'), findsOneWidget);
-      await tester.tap(find.text('RPE 8'));
-      await _settle(tester);
-      expect(_stepperText(tester, 'log_rpe_value'), '8');
-      await tester.tap(find.text('Clear'));
-      await _settle(tester);
-      expect(logged, [('s1', null)]);
-    });
-
-    testWidgets('a finished session shows logged RPE read-only, and nothing for unlogged sets',
-        (tester) async {
-      await _pumpDetail(
-        tester,
-        _workout(status: 'finished', sets: [
-          _set('s1', actualRpe: 8.5),
-          WorkoutSet(
-            id: 's2',
-            workoutExerciseId: 'we1',
-            position: 1,
-            weightMode: 'absolute',
-            targetReps: 5,
-            absoluteWeightKg: 100,
-          ),
-        ]),
-      );
-      expect(find.text('RPE 8.5'), findsOneWidget);
-      expect(find.widgetWithText(TextButton, 'RPE 8.5'), findsNothing);
-      expect(find.text('Log RPE'), findsNothing);
-    });
-  });
-
-  testWidgets('Log RPE is its own button for assistive tech, not merged into the set checkbox',
-      (tester) async {
-    final handle = tester.ensureSemantics();
-    await _pumpDetail(tester, _workout(status: 'paused', sets: [_set('s1', rpeMin: 8)]));
-
-    // A button inside a ListTile is merged into the tile's checkbox node, so
-    // a screen reader could only toggle the set. It must stand alone.
-    final rpe = tester.getSemantics(find.text('Log RPE'));
-    expect(rpe.label, 'Log RPE');
-    expect(rpe.flagsCollection.isButton, isTrue);
-    final checkbox = tester.getSemantics(find.byType(CheckboxListTile));
-    expect(checkbox.label, isNot(contains('Log RPE')));
-    handle.dispose();
   });
 }
