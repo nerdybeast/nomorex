@@ -3,29 +3,69 @@
 # Runs the integration_test E2E suite against the local Supabase stack.
 #
 # Usage:
-#   ./scripts/e2e.sh            # macOS desktop (default)
-#   ./scripts/e2e.sh linux      # Linux desktop, as CI runs it
-#   E2E_FILE_TIMEOUT=900 ./scripts/e2e.sh   # per-file limit in seconds (default 600)
+#   ./scripts/e2e.sh                     # macOS desktop, stack as it is
+#   ./scripts/e2e.sh linux               # Linux desktop, as CI runs it
+#   ./scripts/e2e.sh --reset             # reset the local DB to the seed first
+#   ./scripts/e2e.sh --file integration_test/app_test.dart   # just one file
+#   E2E_TIMEOUT=1200 ./scripts/e2e.sh    # time limit in seconds (default 900)
+#
+# The app is built and launched once for the whole suite (every file is listed
+# in integration_test/all_tests.dart). The suite signs in as its own seeded user,
+# e2e@e2e.com, so it doesn't need a fresh database and doesn't touch a@a.com's
+# data. That's why the DB is only reset with --reset: CI and verify.sh pass it,
+# so they start from a known state; locally, a reset would wipe your own test data.
 #
 # The app cannot reach Supabase without the compile-time dart-defines (see
 # docs/build.md), so always launch the suite through this script rather than
 # calling `flutter test integration_test` directly.
 #
-# WARNING: this runs `supabase db reset`, which drops and recreates the LOCAL
+# WARNING: --reset runs `supabase db reset`, which drops and recreates the LOCAL
 # database. It never passes --linked; never point it at the production project.
 
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-DEVICE="${1:-macos}"
+DEVICE="macos"
+RESET=0
+TARGET="integration_test/all_tests.dart"
 ENV_FILE=".env.local.json"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --reset) RESET=1 ;;
+    --file)
+      shift
+      TARGET="${1:?--file needs a path}"
+      ;;
+    --file=*) TARGET="${1#--file=}" ;;
+    -*)
+      echo "error: unknown option $1" >&2
+      exit 2
+      ;;
+    *) DEVICE="$1" ;;
+  esac
+  shift
+done
+
+# Every test file must be in all_tests.dart, or the full run would skip it.
+missing=()
+for test_file in integration_test/*_test.dart; do
+  grep -q "$(basename "$test_file")" integration_test/all_tests.dart || missing+=("$test_file")
+done
+if [[ ${#missing[@]} -gt 0 ]]; then
+  echo "error: not listed in integration_test/all_tests.dart: ${missing[*]}" >&2
+  echo "       Import each one there and call its main(), or the full run skips it." >&2
+  exit 1
+fi
 
 echo "==> Starting local Supabase stack"
 supabase start
 
-echo "==> Resetting local database (replays migrations + seed.sql)"
-supabase db reset
+if [[ "$RESET" == 1 ]]; then
+  echo "==> Resetting local database (replays migrations + seed.sql)"
+  supabase db reset
+fi
 
 # Locally, use the same .env.local.json the app is normally run with. In CI
 # that file doesn't exist (it's gitignored and created per machine), so read
@@ -48,71 +88,61 @@ else
   )
 fi
 
-echo "==> Running integration tests on $DEVICE"
+# Without --reset the stack may predate the e2e user (seed.sql only runs on a
+# reset), and every test would fail at sign-in with a confusing auth error.
+if [[ "$RESET" == 0 ]]; then
+  # Only block when the DB could be read and the user is really absent.
+  if has_user="$(docker exec supabase_db_nomorex psql -U postgres -tAc \
+    "select count(*) from auth.users where email = 'e2e@e2e.com'" 2>/dev/null)" \
+    && [[ "$has_user" == "0" ]]; then
+    echo "error: the local database has no e2e@e2e.com user (seed.sql adds it)." >&2
+    echo "       Run ./scripts/e2e.sh --reset once. That replaces your local data with the seed." >&2
+    exit 1
+  fi
+fi
 
-# One `flutter test` invocation per file, rather than pointing it at the whole
-# directory. On desktop the suite launches a real app window per file, and the
-# second launch inside a single invocation fails with "Failed to foreground
-# app; open returned 1" / "Unable to start the app on the device" because the
-# previous instance hasn't fully released. Separate invocations avoid that.
-#
-# The same "Failed to foreground app" also shows up when macOS can't bring a
-# window forward at all (screen locked, display asleep). Then every test fails
-# within seconds or the run hangs, which has nothing to do with the code under
-# test. So each file gets a time limit, and that message gets a hint.
-FILE_TIMEOUT="${E2E_FILE_TIMEOUT:-600}"
+echo "==> Running $TARGET on $DEVICE"
+
+# On desktop the suite launches a real app window. When macOS can't bring a
+# window forward at all (screen locked, display asleep), the run fails within
+# seconds or hangs with "Failed to foreground app", which says nothing about
+# the code under test. So the run gets a time limit, and that message a hint.
+TIMEOUT="${E2E_TIMEOUT:-900}"
 FOREGROUND_ERROR="Failed to foreground app"
-log_dir="$(mktemp -d)"
-trap 'rm -rf "$log_dir"' EXIT
+log="$(mktemp)"
+trap 'rm -f "$log"' EXIT
 
-# Runs one test file with output shown and saved to $2. Stops it after
-# $FILE_TIMEOUT seconds. Returns flutter's status, or 124 on a timeout.
-run_with_timeout() {
-  local test_file="$1" log="$2"
-  flutter test "$test_file" -d "$DEVICE" "${DART_DEFINES[@]}" > >(tee "$log") 2>&1 &
-  local pid=$!
-  (
-    sleep "$FILE_TIMEOUT"
-    echo "" >> "$log"
-    echo "==> TIMEOUT after ${FILE_TIMEOUT}s" | tee -a "$log"
-    pkill -TERM -P "$pid" 2>/dev/null || true
-    kill -TERM "$pid" 2>/dev/null || true
-  ) &
-  local watchdog=$!
-  local status=0
-  wait "$pid" || status=$?
-  kill "$watchdog" 2>/dev/null || true
-  wait "$watchdog" 2>/dev/null || true
-  if grep -q "==> TIMEOUT" "$log"; then
-    return 124
-  fi
-  return "$status"
-}
+flutter test "$TARGET" -d "$DEVICE" "${DART_DEFINES[@]}" > >(tee "$log") 2>&1 &
+pid=$!
+(
+  sleep "$TIMEOUT"
+  echo "" >> "$log"
+  echo "==> TIMEOUT after ${TIMEOUT}s" | tee -a "$log"
+  pkill -TERM -P "$pid" 2>/dev/null || true
+  kill -TERM "$pid" 2>/dev/null || true
+) &
+watchdog=$!
+status=0
+wait "$pid" || status=$?
+kill "$watchdog" 2>/dev/null || true
+wait "$watchdog" 2>/dev/null || true
+# tee finishes writing after flutter exits; give it a moment before grepping.
+sleep 1
 
-failed=()
-foreground_failures=0
-for test_file in integration_test/*_test.dart; do
-  echo ""
-  echo "--- $test_file"
-  log="$log_dir/$(basename "$test_file").log"
-  if ! run_with_timeout "$test_file" "$log"; then
-    failed+=("$test_file")
-    if grep -q "$FOREGROUND_ERROR" "$log"; then
-      foreground_failures=$((foreground_failures + 1))
-    fi
-  fi
-done
+if grep -q "==> TIMEOUT" "$log"; then
+  status=124
+fi
 
 echo ""
-if [[ ${#failed[@]} -gt 0 ]]; then
-  echo "==> FAILED: ${failed[*]}"
-  if [[ $foreground_failures -gt 0 ]]; then
+if [[ "$status" -ne 0 ]]; then
+  echo "==> FAILED ($TARGET, exit $status)"
+  if grep -q "$FOREGROUND_ERROR" "$log"; then
     echo ""
-    echo "==> WARNING: $foreground_failures failing file(s) logged \"$FOREGROUND_ERROR\"."
-    echo "    The desktop couldn't bring the test app forward, so these failures may"
+    echo "==> WARNING: the run logged \"$FOREGROUND_ERROR\"."
+    echo "    The desktop couldn't bring the test app forward, so this failure may"
     echo "    say nothing about the code. Unlock the screen, keep the display awake,"
     echo "    close any leftover nomorex window, and run again."
-    echo "    (Set E2E_FILE_TIMEOUT to change the ${FILE_TIMEOUT}s per-file limit.)"
+    echo "    (Set E2E_TIMEOUT to change the ${TIMEOUT}s limit.)"
   fi
   exit 1
 fi

@@ -34,7 +34,7 @@ jobs:
       - uses: supabase/setup-cli@v3
         with:
           # Same pin as pr-checks.yml, so they move together.
-          version: 2.116.0
+          version: 3.2.0
 
       # JWT verification stays on: this deliberately doesn't pass
       # --no-verify-jwt. --yes because a workflow can't answer the CLI's

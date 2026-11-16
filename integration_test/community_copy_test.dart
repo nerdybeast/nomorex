@@ -73,7 +73,8 @@ void main() {
       await community.startOpenWorkout();
 
       expect(find.byKey(const Key('copied_from_badge')), findsOneWidget);
-      expect(find.text('Pause'), findsOneWidget);
+      expect(find.text('In progress'), findsOneWidget);
+      expect(find.byKey(const Key('workout_pause_toggle')), findsOneWidget);
     });
 
     testWidgets('saving the 12-week program finishes within 5 seconds (SC-003)', (tester) async {

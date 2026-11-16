@@ -457,6 +457,11 @@ abstract final class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      // Flutter defaults to compact density on web/desktop, which shrinks
+      // text fields ~8px below the 48px controls beside them (e.g. the
+      // Archived toggle next to a search field). Keep every platform at the
+      // phone density the design is drawn for.
+      visualDensity: VisualDensity.standard,
       brightness: p.brightness,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: p.bg0,

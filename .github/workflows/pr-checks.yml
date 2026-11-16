@@ -221,7 +221,7 @@ jobs:
           # Pinned for the same reason as flutter-version above: `latest`
           # floats, and a CLI release changing what the local stack ships
           # has broken db-validate and e2e on unrelated changes.
-          version: 2.116.0
+          version: 3.2.0
 
       - name: Start local Supabase stack
         run: supabase start
@@ -285,7 +285,7 @@ jobs:
           # Pinned for the same reason as flutter-version above: `latest`
           # floats, and a CLI release changing what the local stack ships
           # has broken db-validate and e2e on unrelated changes.
-          version: 2.116.0
+          version: 3.2.0
 
       - uses: subosito/flutter-action@v2
         with:
@@ -311,8 +311,9 @@ jobs:
       - name: Enable Linux desktop
         run: flutter config --enable-linux-desktop
 
-      # scripts/e2e.sh starts Supabase, resets the DB, and reads the API URL
-      # and publishable key off the running stack (there's no .env.local.json
-      # in CI). xvfb provides the display the desktop app needs.
+      # scripts/e2e.sh starts Supabase, resets the DB (--reset, so CI always
+      # starts from the seed), and reads the API URL and publishable key off
+      # the running stack (there's no .env.local.json in CI). The whole suite is
+      # one build and launch. xvfb provides the display the desktop app needs.
       - name: Run E2E suite
-        run: xvfb-run -a ./scripts/e2e.sh linux
+        run: xvfb-run -a ./scripts/e2e.sh linux --reset

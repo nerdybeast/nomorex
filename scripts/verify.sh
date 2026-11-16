@@ -73,7 +73,7 @@ fi
 if [[ "$RUN_E2E" == true ]]; then
   if need_docker; then
     # Linux desktop needs a display; xvfb provides it (as in CI).
-    stage "E2E (integration_test)" xvfb-run -a ./scripts/e2e.sh linux
+    stage "E2E (integration_test)" xvfb-run -a ./scripts/e2e.sh linux --reset
   else
     skip "E2E" "Docker unavailable — NOT proven"
   fi

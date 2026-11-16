@@ -710,14 +710,20 @@ stack, so it needs the same compile-time dart-defines as a normal run. Use the
 runner rather than invoking `flutter test` directly:
 
 ```bash
-./scripts/e2e.sh          # macOS desktop
+./scripts/e2e.sh          # macOS desktop, stack as it is
 ./scripts/e2e.sh linux    # Linux desktop, how CI runs it
+./scripts/e2e.sh --reset  # reset the local DB to the seed first
+./scripts/e2e.sh --file integration_test/app_test.dart   # one file
 ```
 
-It starts the stack, runs `supabase db reset` (local only), and passes the
-config through. Locally it reads `.env.local.json`; in CI, where that file
-doesn't exist, it reads `API_URL` and `PUBLISHABLE_KEY` off the running stack
-via `supabase status -o env`.
+It starts the stack and builds and launches the app once to run every file in
+`integration_test/all_tests.dart`. The suite signs in as its own seeded user
+(`e2e@e2e.com`), so it doesn't need a fresh database and leaves `a@a.com`'s data
+alone. `--reset` runs `supabase db reset` (local only); CI and `verify.sh` pass
+it, and you need it once if your local stack was seeded before that user
+existed. Locally it reads `.env.local.json`; in CI, where that file doesn't
+exist, it reads `API_URL` and `PUBLISHABLE_KEY` off the running stack via
+`supabase status -o env`.
 
 If the suite is ever pointed at an Android emulator, the URL must be
 `http://10.0.2.2:54321` rather than `127.0.0.1`, for the same reason described

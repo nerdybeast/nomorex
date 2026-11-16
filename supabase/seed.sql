@@ -9,6 +9,9 @@
 -- project — it writes real auth records with a known, shared password.
 -- c@c.com deliberately has no seeded data below (a@a.com/b@b.com do) — it's
 -- the "brand new user" account for testing empty/first-run states.
+-- e2e@e2e.com is the integration_test suite's own account (integration_test/
+-- support/harness.dart). The suite writes to it every run, so nothing else
+-- should rely on its data; a@a.com stays untouched by E2E.
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
@@ -22,15 +25,18 @@ insert into auth.users (
    '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated', 'c@c.com',
    extensions.crypt('123456', extensions.gen_salt('bf')), now(),
+   '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated', 'e2e@e2e.com',
+   extensions.crypt('123456', extensions.gen_salt('bf')), now(),
    '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '');
 
 insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
 select gen_random_uuid(), id, id::text, jsonb_build_object('sub', id::text, 'email', email),
   'email', now(), now(), now()
 from auth.users
-where email in ('a@a.com', 'b@b.com', 'c@c.com');
+where email in ('a@a.com', 'b@b.com', 'c@c.com', 'e2e@e2e.com');
 
--- a@a.com is the local admin; b@b.com and c@c.com are ordinary users.
+-- a@a.com is the local admin; b@b.com, c@c.com and e2e@e2e.com are ordinary users.
 -- Production's first admin is created by hand (docs/build.md, "Admins").
 insert into public.user_roles (user_id, role)
 select id, 'admin' from auth.users where email = 'a@a.com';

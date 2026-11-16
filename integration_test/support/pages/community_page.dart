@@ -65,7 +65,10 @@ class CommunityPage {
   /// Starts the open workout; lands in the copy's in-progress session.
   Future<void> startOpenWorkout() async {
     await _tap(startWorkout);
-    await waitFor(tester, find.text('Pause'));
+    // The status line sits at the top of the screen, so it is always built.
+    // The Pause button is the last child of a lazy ListView and isn't built
+    // until it's near the viewport.
+    await waitFor(tester, find.text('In progress'));
   }
 
   /// Saves the open program and waits for the confirmation SnackBar.
