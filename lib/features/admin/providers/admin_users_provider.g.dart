@@ -110,7 +110,7 @@ abstract class _$AdminUsersNotifier
   });
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref
             as $Ref<AsyncValue<AdminPage<AdminUser>>, AdminPage<AdminUser>>;
@@ -125,7 +125,7 @@ abstract class _$AdminUsersNotifier
               Object?,
               Object?
             >;
-    element.handleCreate(
+    return element.handleCreate(
       ref,
       () => build(search: _$args.search, page: _$args.page),
     );
@@ -223,7 +223,7 @@ abstract class _$AdminAuditLogNotifier
   FutureOr<AdminPage<AdminAuditEntry>> build({required int page});
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref
             as $Ref<
@@ -241,7 +241,7 @@ abstract class _$AdminAuditLogNotifier
               Object?,
               Object?
             >;
-    element.handleCreate(ref, () => build(page: _$args));
+    return element.handleCreate(ref, () => build(page: _$args));
   }
 }
 
@@ -333,7 +333,7 @@ abstract class _$AdminRolesNotifier extends $AsyncNotifier<void> {
   FutureOr<void> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<void>, void>;
     final element =
         ref.element
@@ -343,6 +343,6 @@ abstract class _$AdminRolesNotifier extends $AsyncNotifier<void> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

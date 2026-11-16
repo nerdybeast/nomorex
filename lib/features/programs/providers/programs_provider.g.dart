@@ -39,7 +39,7 @@ abstract class _$ProgramsNotifier extends $AsyncNotifier<List<Program>> {
   FutureOr<List<Program>> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<List<Program>>, List<Program>>;
     final element =
         ref.element
@@ -49,7 +49,7 @@ abstract class _$ProgramsNotifier extends $AsyncNotifier<List<Program>> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 
@@ -99,7 +99,7 @@ abstract class _$ArchivedProgramsNotifier
   FutureOr<List<Program>> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<List<Program>>, List<Program>>;
     final element =
         ref.element
@@ -109,7 +109,7 @@ abstract class _$ArchivedProgramsNotifier
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 

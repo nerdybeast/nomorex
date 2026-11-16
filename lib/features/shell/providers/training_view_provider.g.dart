@@ -77,7 +77,7 @@ abstract class _$TrainingViewNotifier extends $Notifier<TrainingView> {
   TrainingView build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<TrainingView, TrainingView>;
     final element =
         ref.element
@@ -87,6 +87,6 @@ abstract class _$TrainingViewNotifier extends $Notifier<TrainingView> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

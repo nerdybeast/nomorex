@@ -113,7 +113,7 @@ void main() {
       overrides: [
         currentAuthUserProvider.overrideWithValue(kSignedInAdmin),
         currentUserRolesProvider.overrideWith((ref) async => {AppRoles.admin}),
-        adminExercisesProvider.overrideWith(() => _FakeList(server)),
+        adminExercisesProvider.overrideWith2((_) => _FakeList(server)),
         adminExerciseActionsProvider.overrideWith(() => _FakeActions(server)),
       ],
       // The app theme, not a bare MaterialApp: its full-width buttons once crashed this screen.

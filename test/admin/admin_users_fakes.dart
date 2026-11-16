@@ -49,8 +49,8 @@ List<Override> adminUsersOverrides(FakeAdminServer server) => [
       availableRolesProvider.overrideWith(
         (ref) async => const [RoleInfo(name: AppRoles.admin, description: 'Manages users, their roles and app settings.')],
       ),
-      adminUsersProvider.overrideWith(() => _FakeAdminUsersNotifier(server)),
-      adminAuditLogProvider.overrideWith(() => _FakeAdminAuditLogNotifier(server)),
+      adminUsersProvider.overrideWith2((_) => _FakeAdminUsersNotifier(server)),
+      adminAuditLogProvider.overrideWith2((_) => _FakeAdminAuditLogNotifier(server)),
       adminRolesProvider.overrideWith(() => _FakeAdminRolesNotifier(server)),
     ];
 

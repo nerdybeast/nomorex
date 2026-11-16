@@ -60,7 +60,7 @@ abstract class _$FinishedProgramInstancesNotifier
   FutureOr<List<ProgramInstance>> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref
             as $Ref<AsyncValue<List<ProgramInstance>>, List<ProgramInstance>>;
@@ -75,6 +75,6 @@ abstract class _$FinishedProgramInstancesNotifier
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
