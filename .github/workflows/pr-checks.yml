@@ -221,7 +221,7 @@ jobs:
           # Pinned for the same reason as flutter-version above: `latest`
           # floats, and a CLI release changing what the local stack ships
           # has broken db-validate and e2e on unrelated changes.
-          version: 2.116.0
+          version: 3.2.0
 
       - name: Start local Supabase stack
         run: supabase start
@@ -285,7 +285,7 @@ jobs:
           # Pinned for the same reason as flutter-version above: `latest`
           # floats, and a CLI release changing what the local stack ships
           # has broken db-validate and e2e on unrelated changes.
-          version: 2.116.0
+          version: 3.2.0
 
       - uses: subosito/flutter-action@v2
         with:
