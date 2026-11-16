@@ -1,15 +1,15 @@
+import 'dart:ui' show Size;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/app.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'pages/landing_page.dart';
-import 'pages/login_page.dart';
-
-/// Seeded local test user. Created directly in `auth.users` by
-/// `supabase/seed.sql`, already email-confirmed. Owns the four ZT programs and
-/// the ~100 predefined exercises, but no personal bests or workouts.
-const kTestEmail = 'a@a.com';
+/// Seeded local test user, dedicated to this suite. Created directly in
+/// `auth.users` by `supabase/seed.sql`, already email-confirmed, with no data
+/// of its own. The suite writes to it (copies, a PR, the AI consent), so it
+/// never signs in as a@a.com, whose data people use by hand.
+const kTestEmail = 'e2e@e2e.com';
 const kTestPassword = '123456';
 
 /// `Supabase.initialize` throws if called twice, and every test in a file runs
@@ -56,6 +56,7 @@ Future<void> _ensureSupabase() async {
 /// `auth.currentSession` directly (lib/app.dart), so a leftover session from a
 /// previous run would redirect straight past the landing screen.
 Future<void> bootSignedOut(WidgetTester tester) async {
+  _pinViewport(tester);
   await _ensureSupabase();
   if (Supabase.instance.client.auth.currentSession != null) {
     await Supabase.instance.client.auth.signOut();
@@ -64,11 +65,31 @@ Future<void> bootSignedOut(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-/// [bootSignedOut] followed by signing in through the real UI.
+/// Boots the real app already signed in as [kTestEmail].
+///
+/// Signs in through the auth API before the app starts, so the router lands
+/// straight in the shell. Only the auth test goes through the landing and login
+/// screens (`bootSignedOut`, then `LoginPage.signIn`); everything else would
+/// just repeat those screens' time on every test.
 Future<void> bootSignedIn(WidgetTester tester) async {
-  await bootSignedOut(tester);
-  await LandingPage(tester).tapLogIn();
-  await LoginPage(tester).signIn(kTestEmail, kTestPassword);
+  _pinViewport(tester);
+  await _ensureSupabase();
+  final auth = Supabase.instance.client.auth;
+  if (auth.currentSession != null) await auth.signOut();
+  await auth.signInWithPassword(email: kTestEmail, password: kTestPassword);
+  await tester.pumpWidget(const ProviderScope(child: NomorexApp()));
+  await tester.pumpAndSettle();
+}
+
+/// Every test renders at the same size, whatever window the OS gave the app:
+/// 1280x800 at 1x is wide enough for the expanded sidebar (the phone layout
+/// below 600px has none) and tall enough that a screen's controls are built
+/// without scrolling to them. Linux under xvfb and a macOS window restored at
+/// some saved size would otherwise lay the app out differently.
+void _pinViewport(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1280, 800);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
 }
 
 /// Polls until [finder] matches, pumping frames as it goes.

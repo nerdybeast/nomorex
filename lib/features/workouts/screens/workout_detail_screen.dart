@@ -281,6 +281,7 @@ class _StatusActions extends StatelessWidget {
       children: [
         Expanded(
           child: FilledButton(
+            key: const Key('workout_pause_toggle'),
             style: tokens?.secondaryButtonStyle,
             onPressed: isBusy
                 ? null
