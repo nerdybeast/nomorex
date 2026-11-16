@@ -3,12 +3,20 @@ import 'package:nomorex/features/programs/models/program_exercise.dart';
 import 'package:nomorex/features/programs/models/program_set.dart';
 import 'package:nomorex/features/programs/models/program_week.dart';
 import 'package:nomorex/features/programs/utils/program_edit_summary.dart';
+import 'package:nomorex/shared/models/set_type.dart';
 
 ProgramExercise _ex(List<ProgramSet> sets, {String name = 'Snatch Pull'}) =>
     ProgramExercise(id: 'pe', programDayId: 'd', exerciseId: 'e', exerciseName: name, position: 0, sets: sets);
 
-ProgramSet _abs(int reps, double kg) =>
-    ProgramSet(id: 's', programExerciseId: 'pe', position: 0, weightMode: 'absolute', targetReps: reps, absoluteWeightKg: kg);
+ProgramSet _abs(int reps, double kg, {SetType type = SetType.working}) => ProgramSet(
+      id: 's',
+      programExerciseId: 'pe',
+      position: 0,
+      weightMode: 'absolute',
+      targetReps: reps,
+      absoluteWeightKg: kg,
+      setType: type,
+    );
 
 ProgramSet _pct(int reps, double pct, {double? max, String? basisId, String? basisName}) => ProgramSet(
       id: 's',
@@ -26,6 +34,32 @@ ProgramSet _open(int reps) =>
     ProgramSet(id: 's', programExerciseId: 'pe', position: 0, weightMode: 'open', targetReps: reps);
 
 void main() {
+  group('warm-ups and cool-downs', () {
+    final warmupsThenWork = _ex([
+      _abs(5, 40, type: SetType.warmup),
+      _abs(3, 60, type: SetType.warmup),
+      _abs(3, 100),
+      _abs(3, 100),
+      _abs(3, 100),
+      _abs(8, 50, type: SetType.cooldown),
+    ]);
+
+    test('the summary describes the working sets and lists the others after', () {
+      expect(exerciseSetsSummary(warmupsThenWork), '3 × 3 · 2 warm-up · 1 cool-down');
+      expect(exerciseLine(warmupsThenWork, 'kg'), '3 × 3 · 100 kg · 2 warm-up · 1 cool-down');
+    });
+
+    test('lighter warm-ups do not widen the load', () {
+      expect(exerciseLoadSummary(warmupsThenWork, 'kg'), '100 kg');
+    });
+
+    test('an exercise of only warm-ups describes them all, with nothing listed after', () {
+      final allWarmup = _ex([_abs(5, 40, type: SetType.warmup), _abs(5, 40, type: SetType.warmup)]);
+      expect(exerciseSetsSummary(allWarmup), '2 × 5');
+      expect(exerciseLine(allWarmup, 'kg'), '2 × 5 · 40 kg');
+    });
+  });
+
   test('sets read "N × reps" when every set shares its reps, else "N sets"', () {
     expect(exerciseSetsSummary(_ex([_abs(3, 20), _abs(3, 20), _abs(3, 20), _abs(3, 20)])), '4 × 3');
     expect(exerciseSetsSummary(_ex([_abs(5, 20), _abs(3, 20)])), '2 sets');

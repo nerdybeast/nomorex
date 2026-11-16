@@ -10,6 +10,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/owner_name.dart';
 import '../../../core/utils/weight_converter.dart';
+import '../../../shared/widgets/set_type_header.dart';
 import '../../../shared/widgets/set_pr_link.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -286,14 +287,18 @@ class _ExerciseCard extends StatelessWidget {
                 child: Text(exercise.notes!, style: Theme.of(context).textTheme.bodySmall),
               ),
             const SizedBox(height: 4),
-            for (final s in exercise.sets)
-              _SetRow(
+            ...withSetTypeHeaders(
+              exercise.sets,
+              typeOf: (s) => s.setType,
+              header: (type) => SetTypeHeader(type: type, padding: const EdgeInsets.only(top: 8, bottom: 2)),
+              row: (s) => _SetRow(
                 set: s,
                 exercise: exercise,
                 oneRepMaxes: oneRepMaxes,
                 oneRepMaxesByName: oneRepMaxesByName,
                 unit: unit,
               ),
+            ),
           ],
         ),
       ),

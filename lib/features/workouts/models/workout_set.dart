@@ -1,4 +1,5 @@
 import '../../../shared/models/editable_set_row.dart';
+import '../../../shared/models/set_type.dart';
 
 class WorkoutSet {
   const WorkoutSet({
@@ -6,6 +7,7 @@ class WorkoutSet {
     required this.workoutExerciseId,
     required this.position,
     required this.weightMode,
+    this.setType = SetType.working,
     this.targetReps,
     this.targetRepsMax,
     this.percentage,
@@ -26,6 +28,8 @@ class WorkoutSet {
   final String workoutExerciseId;
   final int position;
   final String weightMode; // 'percentage' | 'absolute' | 'open' (no set load)
+  /// Warm-up, working or cool-down; a working set unless marked otherwise.
+  final SetType setType;
   final int? targetReps;
   /// Top of a rep range; null means a single rep count ([targetReps]).
   final int? targetRepsMax;
@@ -53,6 +57,7 @@ class WorkoutSet {
       workoutExerciseId: json['workout_exercise_id'] as String,
       position: json['position'] as int,
       weightMode: json['weight_mode'] as String,
+      setType: SetType.fromDb(json['set_type']),
       targetReps: json['target_reps'] as int?,
       targetRepsMax: json['target_reps_max'] as int?,
       percentage: (json['percentage'] as num?)?.toDouble(),
@@ -75,6 +80,7 @@ class WorkoutSet {
         targetReps: targetReps,
         targetRepsMax: targetRepsMax,
         weightMode: weightMode,
+        setType: setType,
         percentage: percentage,
         percentageMax: percentageMax,
         rpeMin: rpeMin,

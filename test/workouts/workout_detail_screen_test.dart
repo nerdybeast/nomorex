@@ -11,6 +11,7 @@ import 'package:nomorex/features/workouts/providers/finished_workouts_provider.d
 import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
 import 'package:nomorex/features/workouts/providers/workouts_provider.dart';
 import 'package:nomorex/shared/models/one_rep_max.dart';
+import 'package:nomorex/shared/models/set_type.dart';
 import 'package:nomorex/features/workouts/providers/workout_detail_provider.dart';
 import 'package:nomorex/features/workouts/screens/workout_detail_screen.dart';
 
@@ -803,4 +804,102 @@ void main() {
       expect(find.text('Do this workout again'), findsOneWidget);
     },
   );
+
+  group('set types', () {
+    WorkoutSet set(String id, int pos, {SetType type = SetType.working, bool done = false}) => WorkoutSet(
+          id: id,
+          workoutExerciseId: 'we1',
+          position: pos,
+          weightMode: 'absolute',
+          targetReps: 3,
+          absoluteWeightKg: 100,
+          completed: done,
+          setType: type,
+        );
+
+    Workout workout(List<WorkoutSet> sets) => Workout(
+          id: 'w1',
+          userId: 'u1',
+          title: 'Workout 1',
+          date: DateTime(2026, 8, 10),
+          updatedAt: DateTime(2026, 8, 10),
+          workoutGroupId: 'g1',
+          status: 'in_progress',
+          startedAt: DateTime.now(),
+          exercises: [
+            WorkoutExercise(
+              id: 'we1',
+              workoutId: 'w1',
+              exerciseId: 'e1',
+              exerciseName: 'Sumo Deadlift',
+              position: 0,
+              sets: sets,
+            ),
+          ],
+        );
+
+    Future<void> pump(WidgetTester tester, Workout w) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            workoutDetailProvider('w1').overrideWith(() => _StubWorkoutDetailNotifier(w)),
+            oneRepMaxProvider.overrideWith((ref) async => {}),
+            oneRepMaxByNameProvider.overrideWith((ref) async => {}),
+            exercisesProvider.overrideWith(() => _StubExercisesNotifier([_sumoDeadlift])),
+            finishedWorkoutsProvider.overrideWith(() => _StubFinishedWorkoutsNotifier(const [])),
+          ],
+          child: const MaterialApp(home: WorkoutDetailScreen(workoutId: 'w1')),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('the sets count covers working sets only', (tester) async {
+      await pump(tester, workout([
+        set('w0', 0, type: SetType.warmup, done: true),
+        set('w1', 1, type: SetType.warmup, done: true),
+        set('s0', 2, done: true),
+        set('s1', 3),
+        set('s2', 4),
+        set('c0', 5, type: SetType.cooldown),
+      ]));
+
+      expect(find.text('1/3 sets'), findsOneWidget);
+    });
+
+    testWidgets('an exercise of only warm-ups counts them all', (tester) async {
+      await pump(tester, workout([
+        set('w0', 0, type: SetType.warmup, done: true),
+        set('w1', 1, type: SetType.warmup),
+      ]));
+
+      expect(find.text('1/2 sets'), findsOneWidget);
+    });
+
+    testWidgets('each run of one type gets a header, and every row starts with its reps', (tester) async {
+      await pump(tester, workout([
+        set('w0', 0, type: SetType.warmup),
+        set('w1', 1, type: SetType.warmup),
+        set('s0', 2),
+        set('c0', 3, type: SetType.cooldown),
+      ]));
+
+      expect(find.text('WARM-UP'), findsOneWidget);
+      expect(find.text('WORKING'), findsOneWidget);
+      expect(find.text('COOL-DOWN'), findsOneWidget);
+      // The type is never part of a row, so warm-up and working reps line up.
+      for (final id in ['w0', 's0', 'c0']) {
+        expect(tester.widget<Text>(find.byKey(ValueKey('workout_set_title_$id'))).data, '3 reps');
+      }
+      final warmupX = tester.getTopLeft(find.byKey(const ValueKey('workout_set_title_w0'))).dx;
+      final workingX = tester.getTopLeft(find.byKey(const ValueKey('workout_set_title_s0'))).dx;
+      expect(warmupX, workingX);
+    });
+
+    testWidgets('an exercise of only working sets has no type headers', (tester) async {
+      await pump(tester, workout([set('s0', 0), set('s1', 1)]));
+
+      expect(find.text('WORKING'), findsNothing);
+    });
+  });
 }

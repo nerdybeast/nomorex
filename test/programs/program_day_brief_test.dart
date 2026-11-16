@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomorex/features/programs/models/program_set.dart';
 import 'package:nomorex/features/programs/utils/program_day_brief.dart';
+import 'package:nomorex/shared/models/set_type.dart';
 
-ProgramSet _set(int i, {int reps = 3, double? pct, String mode = 'percentage', String? basis}) => ProgramSet(
+ProgramSet _set(int i, {int reps = 3, double? pct, String mode = 'percentage', String? basis, SetType type = SetType.working}) =>
+    ProgramSet(
       id: 's$i',
       programExerciseId: 'pe',
       position: i,
@@ -10,6 +12,7 @@ ProgramSet _set(int i, {int reps = 3, double? pct, String mode = 'percentage', S
       targetReps: reps,
       percentage: pct,
       basisExerciseId: basis,
+      setType: type,
     );
 
 void main() {
@@ -26,6 +29,20 @@ void main() {
       _set(3, mode: 'open', pct: null), _set(4, mode: 'open', pct: null),
     ]);
     expect(groups.map((g) => g.count), [1, 1, 1, 2]);
+  });
+
+  test('a warm-up never joins the identical working sets after it', () {
+    final groups = groupConsecutiveSets([
+      _set(0, pct: 70, type: SetType.warmup),
+      _set(1, pct: 70),
+      _set(2, pct: 70),
+      _set(3, pct: 70, type: SetType.cooldown),
+    ]);
+    expect(groups.map((g) => (g.first.setType, g.count)), [
+      (SetType.warmup, 1),
+      (SetType.working, 2),
+      (SetType.cooldown, 1),
+    ]);
   });
 
   test('rep ranges read as a range', () {

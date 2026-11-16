@@ -1,3 +1,5 @@
+import 'set_type.dart';
+
 /// Presentation-only view of a set for authoring UIs (add/remove sets,
 /// pick a percentage basis). Both `WorkoutSet` and `ProgramSet` map to this
 /// so `SetEditor` can be shared between editing a logged workout and
@@ -7,6 +9,7 @@ class EditableSetRow {
   const EditableSetRow({
     required this.id,
     required this.weightMode,
+    this.setType = SetType.working,
     this.targetReps,
     this.targetRepsMax,
     this.percentage,
@@ -23,6 +26,7 @@ class EditableSetRow {
   /// Top of a rep range; null means a single rep count ([targetReps]).
   final int? targetRepsMax;
   final String weightMode; // 'percentage' | 'absolute' | 'open' (no set load)
+  final SetType setType;
   final double? percentage;
   /// Top of a %1RM range; null means a single percentage.
   final double? percentageMax;
