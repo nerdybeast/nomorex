@@ -1186,6 +1186,17 @@ class _BasisRow extends ConsumerWidget {
               '${oneRepMax.isEstimated ? 'Est. 1RM' : '1RM'} ${formatWeightForPreference(oneRepMax.kg, unit)}',
               style: tokens.weightSm.copyWith(color: oneRepMax.isEstimated ? palette.info : palette.fg2),
             ),
+          ] else ...[
+            // No 1RM for the basis lift: offer the PR entry right here so it
+            // can be set before the sets are saved. Saving a PR invalidates
+            // the 1RM providers, so the preview resolves when the user returns.
+            const SizedBox(width: 8),
+            SetPrLink(
+              key: const Key('set_editor_basis_set_pr'),
+              exerciseId: basisExerciseId,
+              exerciseName: basisExerciseName,
+              style: tokens.bodySmall,
+            ),
           ],
         ],
       ),
