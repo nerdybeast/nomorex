@@ -45,18 +45,18 @@ Workout _workout(String id, {String status = 'not_started', bool archived = fals
       archivedAt: archived ? DateTime(2026, 10, 26) : null,
     );
 
-Widget _app({
+Future<void> _pump(WidgetTester tester, {
   List<Workout> active = const [],
   List<Workout> archived = const [],
   List<String>? calls,
 }) {
-  return ProviderScope(
+  return tester.pumpWidget(ProviderScope(
     overrides: [
       workoutsProvider.overrideWith(() => _RecordingWorkoutsNotifier(active, calls: calls)),
       archivedWorkoutsProvider.overrideWith(() => _ArchivedWorkoutsNotifier(archived)),
     ],
     child: const MaterialApp(home: Scaffold(body: WorkoutsView())),
-  );
+  ));
 }
 
 Future<void> _openArchived(WidgetTester tester) async {
@@ -66,10 +66,11 @@ Future<void> _openArchived(WidgetTester tester) async {
 
 void main() {
   testWidgets('the Archived toggle shows how many are archived', (tester) async {
-    await tester.pumpWidget(_app(
-      active: [_workout('a'), _workout('b')],
-      archived: [_workout('c', archived: true)],
-    ));
+    await _pump(
+      tester,
+    active: [_workout('a'), _workout('b')],
+    archived: [_workout('c', archived: true)],
+    );
     await tester.pumpAndSettle();
 
     expect(
@@ -80,7 +81,7 @@ void main() {
 
   testWidgets('the active row menu offers Archive instead of Delete', (tester) async {
     final calls = <String>[];
-    await tester.pumpWidget(_app(active: [_workout('a')], calls: calls));
+    await _pump(tester, active: [_workout('a')], calls: calls);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(PopupMenuButton<String>));
@@ -93,7 +94,7 @@ void main() {
   });
 
   testWidgets('a workout mid-session cannot be archived', (tester) async {
-    await tester.pumpWidget(_app(active: [_workout('a', status: 'in_progress')]));
+    await _pump(tester, active: [_workout('a', status: 'in_progress')]);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byType(PopupMenuButton<String>));
@@ -104,7 +105,7 @@ void main() {
 
   testWidgets('an archived row shows the pill, its date and a Restore button', (tester) async {
     final calls = <String>[];
-    await tester.pumpWidget(_app(archived: [_workout('c', archived: true)], calls: calls));
+    await _pump(tester, archived: [_workout('c', archived: true)], calls: calls);
     await tester.pumpAndSettle();
     await _openArchived(tester);
 
@@ -119,7 +120,7 @@ void main() {
 
   testWidgets('Delete permanently confirms before deleting', (tester) async {
     final calls = <String>[];
-    await tester.pumpWidget(_app(archived: [_workout('c', archived: true)], calls: calls));
+    await _pump(tester, archived: [_workout('c', archived: true)], calls: calls);
     await tester.pumpAndSettle();
     await _openArchived(tester);
 
@@ -148,7 +149,7 @@ void main() {
   });
 
   testWidgets('an empty Archived tab invites archiving', (tester) async {
-    await tester.pumpWidget(_app(active: [_workout('a')]));
+    await _pump(tester, active: [_workout('a')]);
     await tester.pumpAndSettle();
     await _openArchived(tester);
 

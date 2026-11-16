@@ -18,14 +18,14 @@ class _StubExercisesNotifier extends ExercisesNotifier {
   Future<List<Exercise>> build() async => const [];
 }
 
-Widget _wrap(Widget child) => ProviderScope(
+Future<void> _pump(WidgetTester tester, Widget child) => tester.pumpWidget(ProviderScope(
       overrides: [
         exercisesProvider.overrideWith(() => _StubExercisesNotifier()),
         oneRepMaxProvider.overrideWith((ref) async => const {}),
         oneRepMaxByNameProvider.overrideWith((ref) async => const {}),
       ],
       child: MaterialApp(home: Scaffold(body: child)),
-    );
+    ));
 
 SetEditor _editor({
   List<EditableSetRow> sets = const [],
@@ -164,7 +164,7 @@ void main() {
   group('SetEditor %1RM range', () {
     testWidgets('the batch gets the range; the top starts 5 above the bottom', (tester) async {
       List<ParsedSet>? added;
-      await tester.pumpWidget(_wrap(_editor(onPct: (p) => added = p)));
+      await _pump(tester, _editor(onPct: (p) => added = p));
       await tester.pumpAndSettle();
       await _openPctDialogWithRange(tester);
 
@@ -179,7 +179,7 @@ void main() {
 
     testWidgets('a half-percent top can be typed (67–72.5%)', (tester) async {
       List<ParsedSet>? added;
-      await tester.pumpWidget(_wrap(_editor(onPct: (p) => added = p)));
+      await _pump(tester, _editor(onPct: (p) => added = p));
       await tester.pumpAndSettle();
       await _openPctDialogWithRange(tester);
 
@@ -199,7 +199,7 @@ void main() {
     testWidgets('raising the bottom past the top drags it along; a collapsed range saves as one',
         (tester) async {
       List<ParsedSet>? added;
-      await tester.pumpWidget(_wrap(_editor(onPct: (p) => added = p)));
+      await _pump(tester, _editor(onPct: (p) => added = p));
       await tester.pumpAndSettle();
       await _openPctDialogWithRange(tester);
 
@@ -215,7 +215,7 @@ void main() {
     testWidgets('typed percentages are held to the bounds the database accepts (#36)',
         (tester) async {
       List<ParsedSet>? added;
-      await tester.pumpWidget(_wrap(_editor(onPct: (p) => added = p)));
+      await _pump(tester, _editor(onPct: (p) => added = p));
       await tester.pumpAndSettle();
       await _openPctDialogWithRange(tester);
 
@@ -236,10 +236,10 @@ void main() {
     });
 
     testWidgets('set rows label ranges and half percents', (tester) async {
-      await tester.pumpWidget(_wrap(_editor(sets: const [
+      await _pump(tester, _editor(sets: const [
         EditableSetRow(id: 'a', weightMode: 'percentage', targetReps: 7, percentage: 67, percentageMax: 72.5),
         EditableSetRow(id: 'b', weightMode: 'percentage', targetReps: 3, percentage: 82.5),
-      ])));
+      ]));
       await tester.pumpAndSettle();
 
       expect(find.text('67–72.5% of 1RM'), findsOneWidget);

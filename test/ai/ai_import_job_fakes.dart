@@ -8,6 +8,8 @@ import 'package:nomorex/features/ai/providers/ai_import_jobs_provider.dart';
 import 'package:nomorex/features/auth/providers/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../support/call_counter.dart';
+
 User testUser(String id) => User(
   id: id,
   appMetadata: const {},
@@ -123,26 +125,26 @@ List<Override> jobOverrides(
   aiImportLimitsProvider.overrideWith((ref) async => limits),
 ];
 
-/// The import screen's up-front check, answering [check] until the notice is
+/// The import screen's up-front check, answering the given check until the notice is
 /// accepted (which records it and then allows the import).
 class FakeGate extends AiImportGateNotifier {
-  FakeGate(this.check, {this.consentError});
+  FakeGate(AiImportCheck check, {this.consentError}) : _check = check;
 
-  AiImportCheck check;
+  AiImportCheck _check;
   final Object? consentError;
-  int consents = 0;
+  final consents = CallCounter();
 
   /// Answers without looking up the user, so screens tested signed out work.
   @override
   Future<AiImportCheck> build() => fetchCheck();
 
   @override
-  Future<AiImportCheck> fetchCheck() async => check;
+  Future<AiImportCheck> fetchCheck() async => _check;
 
   @override
   Future<void> recordConsent(String userId) async {
     if (consentError case final e?) throw e;
-    consents++;
-    check = const AiImportCheck(allowed: true);
+    consents();
+    _check = const AiImportCheck(allowed: true);
   }
 }

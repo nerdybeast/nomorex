@@ -99,7 +99,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Workouts screen'), findsOneWidget);
-      expect(gate.consents, 0);
+      expect(gate.consents.count, 0);
     });
 
     testWidgets('accepting records it and goes on to choosing files', (tester) async {
@@ -109,7 +109,7 @@ void main() {
       await tester.tap(find.byKey(const Key('ai_import_notice_accept')));
       await tester.pumpAndSettle();
 
-      expect(gate.consents, 1);
+      expect(gate.consents.count, 1);
       expect(find.byKey(const Key('ai_import_notice')), findsNothing);
       expect(find.byKey(const Key('ai_import_choose_images')), findsOneWidget);
     });

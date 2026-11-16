@@ -16,6 +16,8 @@ import 'package:nomorex/features/profile/providers/profile_provider.dart';
 import 'package:nomorex/features/profile/screens/profile_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../support/call_counter.dart';
+
 const _testUser = User(
   id: 'u1',
   appMetadata: {},
@@ -87,16 +89,17 @@ class _TestProfileNotifier extends ProfileNotifier {
 class _FakeAiSmokeTestNotifier extends AiSmokeTestNotifier {
   _FakeAiSmokeTestNotifier(this._callFlow);
   final Future<SmokeTestResult> Function() _callFlow;
-  int calls = 0;
+  final calls = CallCounter();
 
   @override
   Future<SmokeTestResult> callFlow() {
-    calls++;
+    calls();
     return _callFlow();
   }
 }
 
-Widget _wrap(
+Future<void> _pump(
+  WidgetTester tester,
   Profile profile, {
   void Function(String)? onSetUnitPreference,
   void Function(String)? onSetDisplayName,
@@ -107,7 +110,7 @@ Widget _wrap(
   Future<bool> Function(Uri)? openLink,
   Set<String> roles = const {},
 }) =>
-    ProviderScope(
+    tester.pumpWidget(ProviderScope(
       overrides: [
         currentUserRolesProvider.overrideWith((ref) async => roles),
         if (openLink != null) externalLinkOpenerProvider.overrideWithValue(openLink),
@@ -124,21 +127,21 @@ Widget _wrap(
         if (onSignOut != null) authProvider.overrideWith(() => _RecordingAuthNotifier(onSignOut)),
       ],
       child: const MaterialApp(home: ProfileScreen()),
-    );
+    ));
 
 void main() {
   group('admin entry point', () {
     const profile = Profile(id: 'u1', unitPreference: 'both', oneRepMaxFormula: OneRepMaxFormula.brzycki);
 
     testWidgets('is hidden from users who are not admins', (tester) async {
-      await tester.pumpWidget(_wrap(profile));
+      await _pump(tester, profile);
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('profile_admin_button')), findsNothing);
       expect(find.text('ADMIN'), findsNothing);
     });
 
     testWidgets('is shown to admins', (tester) async {
-      await tester.pumpWidget(_wrap(profile, roles: const {AppRoles.admin}));
+      await _pump(tester, profile, roles: const {AppRoles.admin});
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('profile_admin_button')));
       expect(find.byKey(const Key('profile_admin_button')), findsOneWidget);
@@ -146,10 +149,10 @@ void main() {
   });
 
   testWidgets('shows the user id, email, and member-since date', (tester) async {
-    await tester.pumpWidget(_wrap(const Profile(
+    await _pump(tester, const Profile(
         id: 'u1',
         unitPreference: 'both',
-        oneRepMaxFormula: OneRepMaxFormula.brzycki)));
+        oneRepMaxFormula: OneRepMaxFormula.brzycki));
     await tester.pumpAndSettle();
 
     expect(find.text('u1'), findsOneWidget);
@@ -158,10 +161,10 @@ void main() {
   });
 
   testWidgets('preselects the segmented button to the current preference', (tester) async {
-    await tester.pumpWidget(_wrap(const Profile(
+    await _pump(tester, const Profile(
         id: 'u1',
         unitPreference: 'lbs',
-        oneRepMaxFormula: OneRepMaxFormula.brzycki)));
+        oneRepMaxFormula: OneRepMaxFormula.brzycki));
     await tester.pumpAndSettle();
 
     final button = tester.widget<SegmentedButton<String>>(find.byType(SegmentedButton<String>));
@@ -171,14 +174,13 @@ void main() {
   testWidgets('selecting a unit calls setUnitPreference', (tester) async {
     String? captured;
 
-    await tester.pumpWidget(
-      _wrap(
-        const Profile(
-        id: 'u1',
-        unitPreference: 'both',
-        oneRepMaxFormula: OneRepMaxFormula.brzycki),
-        onSetUnitPreference: (u) => captured = u,
-      ),
+    await _pump(
+      tester,
+      const Profile(
+      id: 'u1',
+      unitPreference: 'both',
+      oneRepMaxFormula: OneRepMaxFormula.brzycki),
+      onSetUnitPreference: (u) => captured = u,
     );
     await tester.pumpAndSettle();
 
@@ -193,12 +195,10 @@ void main() {
   });
 
   testWidgets('seeds the display-name field from the profile', (tester) async {
-    await tester.pumpWidget(
-      _wrap(const Profile(
+    await _pump(tester, const Profile(
         id: 'u1',
         unitPreference: 'both',
-        oneRepMaxFormula: OneRepMaxFormula.brzycki, displayName: 'BeastModeB')),
-    );
+        oneRepMaxFormula: OneRepMaxFormula.brzycki, displayName: 'BeastModeB'));
     await tester.pumpAndSettle();
 
     final field = tester.widget<TextField>(find.byKey(const Key('profile_display_name')));
@@ -206,10 +206,10 @@ void main() {
   });
 
   testWidgets('leaves the display-name field empty when none is set', (tester) async {
-    await tester.pumpWidget(_wrap(const Profile(
+    await _pump(tester, const Profile(
         id: 'u1',
         unitPreference: 'both',
-        oneRepMaxFormula: OneRepMaxFormula.brzycki)));
+        oneRepMaxFormula: OneRepMaxFormula.brzycki));
     await tester.pumpAndSettle();
 
     final field = tester.widget<TextField>(find.byKey(const Key('profile_display_name')));
@@ -219,14 +219,13 @@ void main() {
   testWidgets('saving the display name calls setDisplayName', (tester) async {
     String? captured;
 
-    await tester.pumpWidget(
-      _wrap(
-        const Profile(
-        id: 'u1',
-        unitPreference: 'both',
-        oneRepMaxFormula: OneRepMaxFormula.brzycki),
-        onSetDisplayName: (n) => captured = n,
-      ),
+    await _pump(
+      tester,
+      const Profile(
+      id: 'u1',
+      unitPreference: 'both',
+      oneRepMaxFormula: OneRepMaxFormula.brzycki),
+      onSetDisplayName: (n) => captured = n,
     );
     await tester.pumpAndSettle();
 
@@ -243,12 +242,10 @@ void main() {
   });
 
   testWidgets('shows the full user id without truncation', (tester) async {
-    await tester.pumpWidget(
-      _wrap(const Profile(
+    await _pump(tester, const Profile(
         id: _longUuid,
         unitPreference: 'both',
-        oneRepMaxFormula: OneRepMaxFormula.brzycki), user: _longIdUser),
-    );
+        oneRepMaxFormula: OneRepMaxFormula.brzycki), user: _longIdUser);
     await tester.pumpAndSettle();
 
     expect(find.text(_longUuid), findsOneWidget);
@@ -274,12 +271,10 @@ void main() {
     addTearDown(() =>
         tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
 
-    await tester.pumpWidget(
-      _wrap(const Profile(
+    await _pump(tester, const Profile(
         id: _longUuid,
         unitPreference: 'both',
-        oneRepMaxFormula: OneRepMaxFormula.brzycki), user: _longIdUser),
-    );
+        oneRepMaxFormula: OneRepMaxFormula.brzycki), user: _longIdUser);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.copy_rounded));
@@ -290,10 +285,10 @@ void main() {
   });
 
   testWidgets('tapping the sign-out icon shows a confirmation dialog', (tester) async {
-    await tester.pumpWidget(_wrap(const Profile(
+    await _pump(tester, const Profile(
         id: 'u1',
         unitPreference: 'both',
-        oneRepMaxFormula: OneRepMaxFormula.brzycki)));
+        oneRepMaxFormula: OneRepMaxFormula.brzycki));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.logout));
@@ -306,12 +301,10 @@ void main() {
 
   testWidgets('cancelling the confirmation dialog does not sign out', (tester) async {
     var signedOut = false;
-    await tester.pumpWidget(
-      _wrap(const Profile(
+    await _pump(tester, const Profile(
         id: 'u1',
         unitPreference: 'both',
-        oneRepMaxFormula: OneRepMaxFormula.brzycki), onSignOut: () => signedOut = true),
-    );
+        oneRepMaxFormula: OneRepMaxFormula.brzycki), onSignOut: () => signedOut = true);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.logout));
@@ -325,12 +318,10 @@ void main() {
 
   testWidgets('confirming Log Out signs the user out', (tester) async {
     var signedOut = false;
-    await tester.pumpWidget(
-      _wrap(const Profile(
+    await _pump(tester, const Profile(
         id: 'u1',
         unitPreference: 'both',
-        oneRepMaxFormula: OneRepMaxFormula.brzycki), onSignOut: () => signedOut = true),
-    );
+        oneRepMaxFormula: OneRepMaxFormula.brzycki), onSignOut: () => signedOut = true);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.logout));
@@ -342,13 +333,11 @@ void main() {
   });
 
   testWidgets('reflects the saved 1RM formula', (tester) async {
-    await tester.pumpWidget(
-      _wrap(const Profile(
+    await _pump(tester, const Profile(
         id: 'u1',
         unitPreference: 'kg',
         oneRepMaxFormula: OneRepMaxFormula.lander,
-      )),
-    );
+      ));
     await tester.pumpAndSettle();
 
     final button = tester.widget<SegmentedButton<OneRepMaxFormula>>(
@@ -360,15 +349,14 @@ void main() {
   testWidgets('selecting a formula calls setOneRepMaxFormula', (tester) async {
     OneRepMaxFormula? captured;
 
-    await tester.pumpWidget(
-      _wrap(
-        const Profile(
-          id: 'u1',
-          unitPreference: 'kg',
-          oneRepMaxFormula: OneRepMaxFormula.brzycki,
-        ),
-        onSetOneRepMaxFormula: (f) => captured = f,
+    await _pump(
+      tester,
+      const Profile(
+        id: 'u1',
+        unitPreference: 'kg',
+        oneRepMaxFormula: OneRepMaxFormula.brzycki,
       ),
+      onSetOneRepMaxFormula: (f) => captured = f,
     );
     await tester.pumpAndSettle();
 
@@ -390,20 +378,20 @@ void main() {
       final fake = _FakeAiSmokeTestNotifier(
         () async => const SmokeTestResult(uid: 'u1', exerciseCount: 1, message: 'unused'),
       );
-      await tester.pumpWidget(_wrap(profile, aiSmokeTest: fake));
+      await _pump(tester, profile, aiSmokeTest: fake);
       await tester.pumpAndSettle();
 
       await tester.ensureVisible(button);
       expect(find.text('Test AI connection'), findsOneWidget);
       expect(find.byKey(const Key('profile_ai_smoke_test_result')), findsNothing);
-      expect(fake.calls, 0);
+      expect(fake.calls.count, 0);
     });
 
     testWidgets('tapping runs the flow and shows the reply and exercise count', (tester) async {
       final fake = _FakeAiSmokeTestNotifier(
         () async => const SmokeTestResult(uid: 'u1', exerciseCount: 42, message: 'You are connected!'),
       );
-      await tester.pumpWidget(_wrap(profile, aiSmokeTest: fake));
+      await _pump(tester, profile, aiSmokeTest: fake);
       await tester.pumpAndSettle();
 
       await tester.ensureVisible(button);
@@ -411,7 +399,7 @@ void main() {
       await tester.tap(button);
       await tester.pumpAndSettle();
 
-      expect(fake.calls, 1);
+      expect(fake.calls.count, 1);
       final result = tester.widget<Text>(find.byKey(const Key('profile_ai_smoke_test_result')));
       expect(result.data, contains('You are connected!'));
       expect(result.data, contains('42 exercises visible to you.'));
@@ -425,7 +413,7 @@ void main() {
           httpStatus: 503,
         ),
       );
-      await tester.pumpWidget(_wrap(profile, aiSmokeTest: fake));
+      await _pump(tester, profile, aiSmokeTest: fake);
       await tester.pumpAndSettle();
 
       await tester.ensureVisible(button);
@@ -446,10 +434,10 @@ void main() {
 
     testWidgets('opens the published policy', (tester) async {
       final opened = <Uri>[];
-      await tester.pumpWidget(_wrap(profile, openLink: (uri) async {
+      await _pump(tester, profile, openLink: (uri) async {
         opened.add(uri);
         return true;
-      }));
+      });
       await tester.pumpAndSettle();
 
       final link = find.byKey(const Key('profile_privacy_policy'));
@@ -463,7 +451,7 @@ void main() {
     });
 
     testWidgets('gives the address when nothing can open it', (tester) async {
-      await tester.pumpWidget(_wrap(profile, openLink: (_) async => false));
+      await _pump(tester, profile, openLink: (_) async => false);
       await tester.pumpAndSettle();
 
       final link = find.byKey(const Key('profile_privacy_policy'));
@@ -477,7 +465,7 @@ void main() {
 
     testWidgets('is a button with a name, for screen readers and role locators', (tester) async {
       final handle = tester.ensureSemantics();
-      await tester.pumpWidget(_wrap(profile, openLink: (_) async => true));
+      await _pump(tester, profile, openLink: (_) async => true);
       await tester.pumpAndSettle();
 
       final node = tester.getSemantics(find.byKey(const Key('profile_privacy_policy')));

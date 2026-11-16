@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../programs/models/program.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../models/community_page.dart';
 
 part 'community_programs_provider.g.dart';
 
@@ -17,21 +18,15 @@ class CommunityProgramsNotifier extends _$CommunityProgramsNotifier {
   /// loads a page at a time instead of everything public at once.
   static const pageSize = 30;
 
-  bool _hasMore = false;
   bool _loadingMore = false;
 
-  /// Whether another page may exist past what's loaded.
-  bool get hasMore => _hasMore;
-
   @override
-  Future<List<Program>> build() async {
+  Future<CommunityPage<Program>> build() async {
     ref.watch(authStateProvider);
-    _hasMore = false;
     final userId = _db.auth.currentUser?.id;
-    if (userId == null) return [];
+    if (userId == null) return const CommunityPage([], hasMore: false);
     final page = await _fetch(userId, 0);
-    _hasMore = page.length == pageSize;
-    return page;
+    return CommunityPage(page, hasMore: page.length == pageSize);
   }
 
   /// Appends the next page. A no-op while one is already loading or when
@@ -39,12 +34,11 @@ class CommunityProgramsNotifier extends _$CommunityProgramsNotifier {
   Future<void> loadMore() async {
     final current = state.asData?.value;
     final userId = _db.auth.currentUser?.id;
-    if (current == null || userId == null || !_hasMore || _loadingMore) return;
+    if (current == null || userId == null || !current.hasMore || _loadingMore) return;
     _loadingMore = true;
     try {
-      final page = await _fetch(userId, current.length);
-      _hasMore = page.length == pageSize;
-      state = AsyncData([...current, ...page]);
+      final page = await _fetch(userId, current.items.length);
+      state = AsyncData(CommunityPage([...current.items, ...page], hasMore: page.length == pageSize));
     } finally {
       _loadingMore = false;
     }

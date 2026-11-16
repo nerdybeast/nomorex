@@ -9,7 +9,7 @@ import 'package:nomorex/features/shell/app_shell.dart';
 
 /// The phone shell's bottom bar and its New sheet. The sidebar's New menu is in
 /// app_sidebar_test.
-Widget _app({bool importEnabled = true}) {
+Future<void> _pump(WidgetTester tester, {bool importEnabled = true}) {
   Widget page(String label) => Scaffold(body: Text('$label page'));
   final router = GoRouter(
     initialLocation: '/shell/home',
@@ -34,7 +34,7 @@ Widget _app({bool importEnabled = true}) {
         GoRoute(path: path, builder: (_, _) => page(label)),
     ],
   );
-  return ProviderScope(
+  return tester.pumpWidget(ProviderScope(
     overrides: [
       aiImportLimitsProvider.overrideWith(
         (ref) async => AiImportLimits(
@@ -47,7 +47,7 @@ Widget _app({bool importEnabled = true}) {
       ),
     ],
     child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
-  );
+  ));
 }
 
 void main() {
@@ -55,7 +55,7 @@ void main() {
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(_app(importEnabled: importEnabled));
+    await _pump(tester, importEnabled: importEnabled);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('shell_new')));
     await tester.pumpAndSettle();
@@ -83,7 +83,7 @@ void main() {
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(_app());
+    await _pump(tester);
     await tester.pumpAndSettle();
 
     expect(find.byType(FloatingActionButton), findsNothing);
@@ -101,7 +101,7 @@ void main() {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(_app());
+    await _pump(tester);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.bySemanticsLabel('Community'), findsOneWidget);

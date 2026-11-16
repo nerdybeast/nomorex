@@ -82,12 +82,13 @@ class _ExerciseCapturingPersonalBestsNotifier extends PersonalBestsNotifier {
   }
 }
 
-Widget _wrap(
+Future<void> _pump(
+  WidgetTester tester,
   String preference,
   void Function(double) onAddPr, {
   OneRepMaxFormula formula = OneRepMaxFormula.brzycki,
 }) =>
-    ProviderScope(
+    tester.pumpWidget(ProviderScope(
       overrides: [
         exercisesProvider.overrideWith(() => _StubExercisesNotifier([_backSquat])),
         personalBestsProvider.overrideWith(() => _RecordingPersonalBestsNotifier(onAddPr)),
@@ -95,7 +96,7 @@ Widget _wrap(
         oneRepMaxFormulaProvider.overrideWithValue(formula),
       ],
       child: const MaterialApp(home: AddPrScreen()),
-    );
+    ));
 
 /// Sets the weight and reps steppers. Both target their keyed widget rather
 /// than the displayed value, so they work on a screen that already has
@@ -136,7 +137,7 @@ Future<void> _selectExercise(WidgetTester tester) async {
 void main() {
   testWidgets('shows a static kg chip, not a toggle, when preference is fixed to kg',
       (tester) async {
-    await tester.pumpWidget(_wrap('kg', (_) {}));
+    await _pump(tester, 'kg', (_) {});
     await tester.pumpAndSettle();
 
     expect(find.text('WEIGHT (KG)'), findsOneWidget);
@@ -146,7 +147,7 @@ void main() {
   testWidgets(
       "toggling kg/lbs when preference is 'both' only affects this entry, "
       'never persists to the profile', (tester) async {
-    await tester.pumpWidget(_wrap('both', (_) {}));
+    await _pump(tester, 'both', (_) {});
     await tester.pumpAndSettle();
 
     // Defaults to kg when the preference is 'both'.
@@ -164,7 +165,7 @@ void main() {
 
   testWidgets('submits the entered weight converted to kg', (tester) async {
     double? captured;
-    await tester.pumpWidget(_wrap('kg', (kg) => captured = kg));
+    await _pump(tester, 'kg', (kg) => captured = kg);
     await tester.pumpAndSettle();
 
     await _selectExercise(tester);
@@ -182,7 +183,7 @@ void main() {
   testWidgets('a 0 weight cannot be saved, since the database refuses it (#36)',
       (tester) async {
     var saved = false;
-    await tester.pumpWidget(_wrap('kg', (_) => saved = true));
+    await _pump(tester, 'kg', (_) => saved = true);
     await tester.pumpAndSettle();
     await _selectExercise(tester);
 
@@ -244,7 +245,7 @@ void main() {
 
   testWidgets('shows an estimated 1RM once the entry is a multi-rep set',
       (tester) async {
-    await tester.pumpWidget(_wrap('kg', (_) {}));
+    await _pump(tester, 'kg', (_) {});
     await tester.pumpAndSettle();
 
     // A single needs no estimate — the formulas return the lifted weight.
@@ -259,9 +260,7 @@ void main() {
   });
 
   testWidgets('the estimate follows the profile formula', (tester) async {
-    await tester.pumpWidget(
-      _wrap('kg', (_) {}, formula: OneRepMaxFormula.epley),
-    );
+    await _pump(tester, 'kg', (_) {}, formula: OneRepMaxFormula.epley);
     await tester.pumpAndSettle();
 
     await _enterLift(tester, weight: '100', reps: 5);
@@ -270,7 +269,7 @@ void main() {
   });
 
   testWidgets('no estimate past the usable rep range', (tester) async {
-    await tester.pumpWidget(_wrap('kg', (_) {}));
+    await _pump(tester, 'kg', (_) {});
     await tester.pumpAndSettle();
 
     await _enterLift(tester, weight: '100', reps: kMaxEstimableReps + 1);
@@ -280,7 +279,7 @@ void main() {
 
   testWidgets('the estimate is expressed in the unit being typed in',
       (tester) async {
-    await tester.pumpWidget(_wrap('both', (_) {}));
+    await _pump(tester, 'both', (_) {});
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('lbs'));
@@ -398,7 +397,7 @@ void main() {
   group('info panel', () {
     testWidgets('refers to the selected exercise generically when none is picked',
         (tester) async {
-      await tester.pumpWidget(_wrap('kg', (_) {}));
+      await _pump(tester, 'kg', (_) {});
       await tester.pumpAndSettle();
 
       final tips = find.byKey(const Key('add_pr_tips'));

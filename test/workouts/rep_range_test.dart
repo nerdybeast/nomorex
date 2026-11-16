@@ -16,14 +16,14 @@ class _StubExercisesNotifier extends ExercisesNotifier {
   Future<List<Exercise>> build() async => const [];
 }
 
-Widget _wrap(Widget child) => ProviderScope(
+Future<void> _pump(WidgetTester tester, Widget child) => tester.pumpWidget(ProviderScope(
       overrides: [
         exercisesProvider.overrideWith(() => _StubExercisesNotifier()),
         oneRepMaxProvider.overrideWith((ref) async => const {}),
         oneRepMaxByNameProvider.overrideWith((ref) async => const {}),
       ],
       child: MaterialApp(home: Scaffold(body: child)),
-    );
+    ));
 
 SetEditor _editor({
   List<EditableSetRow> sets = const [],
@@ -114,7 +114,7 @@ void main() {
   group('SetEditor rep range', () {
     testWidgets('Add sets (%) passes the range top on every set in the batch', (tester) async {
       List<ParsedSet>? added;
-      await tester.pumpWidget(_wrap(_editor(onPct: (p) => added = p)));
+      await _pump(tester, _editor(onPct: (p) => added = p));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add sets (%)'));
@@ -146,7 +146,7 @@ void main() {
     });
 
     testWidgets('raising the minimum past the top drags the top along', (tester) async {
-      await tester.pumpWidget(_wrap(_editor()));
+      await _pump(tester, _editor());
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add sets (%)'));
       await tester.pumpAndSettle();
@@ -160,7 +160,7 @@ void main() {
 
     testWidgets('a range narrowed to one number is saved as a single count', (tester) async {
       List<ParsedSet>? added;
-      await tester.pumpWidget(_wrap(_editor(onPct: (p) => added = p)));
+      await _pump(tester, _editor(onPct: (p) => added = p));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add sets (%)'));
       await tester.pumpAndSettle();
@@ -176,7 +176,7 @@ void main() {
 
     testWidgets('Add sets (weight) passes the range top, and null with the range off', (tester) async {
       final calls = <int?>[];
-      await tester.pumpWidget(_wrap(_editor(onAbs: (b) => calls.add(b.repsMax))));
+      await _pump(tester, _editor(onAbs: (b) => calls.add(b.repsMax)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add sets (weight)'));
@@ -195,10 +195,10 @@ void main() {
     });
 
     testWidgets('set rows label ranges and single counts', (tester) async {
-      await tester.pumpWidget(_wrap(_editor(sets: const [
+      await _pump(tester, _editor(sets: const [
         EditableSetRow(id: 'a', weightMode: 'percentage', targetReps: 7, targetRepsMax: 9, percentage: 70),
         EditableSetRow(id: 'b', weightMode: 'absolute', targetReps: 5, absoluteWeightKg: 100),
-      ])));
+      ]));
       await tester.pumpAndSettle();
 
       expect(find.text('7–9 reps'), findsOneWidget);

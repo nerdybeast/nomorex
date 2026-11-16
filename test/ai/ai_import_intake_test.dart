@@ -62,16 +62,23 @@ class _FakePicker implements ImportFilePicker {
   }
 }
 
-/// Records every network call, and fails or blocks on demand.
-class _FakeIntake extends AiImportIntakeNotifier {
+/// How a test makes [_FakeIntake] answer: refuse the check, fail or block an
+/// upload, or fail the start. Kept off the notifier itself, which may expose
+/// only final fields (riverpod_lint's `avoid_public_notifier_properties`).
+class _IntakeScript {
   AiImportCheck check = const AiImportCheck(allowed: true);
-  final List<String> calls = [];
-  final List<(String, String)> uploads = [];
-  final List<List<String>> removed = [];
   int? failUploadAt;
   Completer<void>? holdFirstUpload;
   Object? startError;
-  String? startedImportId;
+}
+
+/// Records every network call, and fails or blocks on demand.
+class _FakeIntake extends AiImportIntakeNotifier {
+  final script = _IntakeScript();
+  final List<String> calls = [];
+  final List<(String, String)> uploads = [];
+  final List<List<String>> removed = [];
+  final List<String> startedImportIds = [];
 
   @override
   String? currentUserId() => 'u1';
@@ -79,14 +86,14 @@ class _FakeIntake extends AiImportIntakeNotifier {
   @override
   Future<AiImportCheck> checkImport() async {
     calls.add('check');
-    return check;
+    return script.check;
   }
 
   @override
   Future<void> uploadFile(String path, Uint8List bytes, String contentType) async {
     calls.add('upload');
-    if (uploads.isEmpty && holdFirstUpload != null) await holdFirstUpload!.future;
-    if (failUploadAt == uploads.length) throw const StorageException('network down');
+    if (uploads.isEmpty && script.holdFirstUpload != null) await script.holdFirstUpload!.future;
+    if (script.failUploadAt == uploads.length) throw const StorageException('network down');
     uploads.add((path, contentType));
   }
 
@@ -99,8 +106,8 @@ class _FakeIntake extends AiImportIntakeNotifier {
   @override
   Future<String> startImport(String importId, {String? requestedType}) async {
     calls.add('start');
-    startedImportId = importId;
-    if (startError != null) throw startError!;
+    startedImportIds.add(importId);
+    if (script.startError != null) throw script.startError!;
     return 'job-1';
   }
 }
@@ -279,7 +286,7 @@ void main() {
       await notifier().addPdfs([_pdf('week 2.pdf', ''), _pdf('week 1.pdf', '')]);
       await notifier().submit();
 
-      final importId = intake.startedImportId!;
+      final importId = intake.startedImportIds.single;
       expect(intake.uploads, [
         ('u1/$importId/page-1.pdf', 'application/pdf'),
         ('u1/$importId/page-2.pdf', 'application/pdf'),
@@ -291,7 +298,7 @@ void main() {
       await notifier().submit();
 
       expect(intake.calls, ['check', 'upload', 'upload', 'start']);
-      final importId = intake.startedImportId!;
+      final importId = intake.startedImportIds.single;
       expect(importId, matches(_uuid));
       expect(intake.uploads, [('u1/$importId/page-1.png', 'image/png'), ('u1/$importId/page-2.png', 'image/png')]);
       expect(state().phase, ImportIntakePhase.started);
@@ -300,7 +307,7 @@ void main() {
     });
 
     test('uploads nothing when the check refuses, and says why', () async {
-      intake.check = const AiImportCheck(allowed: false, reason: 'active_import');
+      intake.script.check = const AiImportCheck(allowed: false, reason: 'active_import');
       await notifier().addImages([_png('a.png')]);
       await notifier().submit();
 
@@ -310,7 +317,7 @@ void main() {
     });
 
     test('names the cap and when it resets', () async {
-      intake.check = AiImportCheck(
+      intake.script.check = AiImportCheck(
         allowed: false,
         reason: 'daily_limit',
         dailyLimit: 5,
@@ -322,7 +329,7 @@ void main() {
     });
 
     test('a failed upload deletes the pages already uploaded', () async {
-      intake.failUploadAt = 1;
+      intake.script.failUploadAt = 1;
       await notifier().addImages([_png('a.png'), _png('b.png'), _png('c.png')]);
       await notifier().submit();
 
@@ -334,7 +341,7 @@ void main() {
     });
 
     test('cancelling stops after the current file and deletes what was uploaded', () async {
-      intake.holdFirstUpload = Completer<void>();
+      intake.script.holdFirstUpload = Completer<void>();
       await notifier().addImages([_png('a.png'), _png('b.png')]);
       final done = notifier().submit();
       await Future<void>.delayed(Duration.zero);
@@ -342,7 +349,7 @@ void main() {
       expect(state().canCancel, isTrue);
 
       notifier().cancel();
-      intake.holdFirstUpload!.complete();
+      intake.script.holdFirstUpload!.complete();
       await done;
 
       expect(intake.calls, ['check', 'upload', 'remove']);
@@ -352,7 +359,7 @@ void main() {
     });
 
     test('a refused start deletes the uploads and explains', () async {
-      intake.startError = const GenkitFlowException('RESOURCE_EXHAUSTED', 'monthly_limit');
+      intake.script.startError = const GenkitFlowException('RESOURCE_EXHAUSTED', 'monthly_limit');
       await notifier().addImages([_png('a.png')]);
       await notifier().submit();
 
@@ -361,7 +368,7 @@ void main() {
     });
 
     test('a start with an unknown outcome leaves the uploads for the import to read', () async {
-      intake.startError = const GenkitFlowException('NETWORK', "Couldn't reach the AI service.");
+      intake.script.startError = const GenkitFlowException('NETWORK', "Couldn't reach the AI service.");
       await notifier().addImages([_png('a.png')]);
       await notifier().submit();
 

@@ -10,6 +10,8 @@ import 'package:nomorex/features/programs/providers/program_detail_provider.dart
 import 'package:nomorex/features/programs/providers/program_instances_list_provider.dart';
 import 'package:nomorex/features/programs/screens/program_detail_screen.dart';
 
+import '../support/call_counter.dart';
+
 class _Detail extends ProgramDetailNotifier {
   _Detail(this._program);
   final Program _program;
@@ -18,10 +20,10 @@ class _Detail extends ProgramDetailNotifier {
 }
 
 class _FailingDetail extends ProgramDetailNotifier {
-  int builds = 0;
+  final builds = CallCounter();
   @override
   Future<Program> build(String programId) async {
-    builds++;
+    builds();
     throw Exception('PostgrestException(message: boom)');
   }
 }
@@ -171,9 +173,9 @@ void main() {
     await _pump(tester, failing);
     expect(find.text("Couldn't load this program"), findsOneWidget);
     expect(find.textContaining('Postgrest'), findsNothing);
-    final before = failing.builds;
+    final before = failing.builds.count;
     await tester.tap(find.byKey(const Key('program_detail_retry')));
     await tester.pumpAndSettle();
-    expect(failing.builds, greaterThan(before));
+    expect(failing.builds.count, greaterThan(before));
   });
 }

@@ -26,14 +26,14 @@ class _StubExercisesNotifier extends ExercisesNotifier {
   Future<List<Exercise>> build() async => const [];
 }
 
-Widget _wrapEditor(Widget child) => ProviderScope(
+Future<void> _pump(WidgetTester tester, Widget child) => tester.pumpWidget(ProviderScope(
       overrides: [
         exercisesProvider.overrideWith(() => _StubExercisesNotifier()),
         oneRepMaxProvider.overrideWith((ref) async => const {}),
         oneRepMaxByNameProvider.overrideWith((ref) async => const {}),
       ],
       child: MaterialApp(home: Scaffold(body: child)),
-    );
+    ));
 
 SetEditor _editor({
   List<EditableSetRow> sets = const [],
@@ -223,7 +223,7 @@ void main() {
   group('SetEditor target RPE', () {
     testWidgets('off by default: a batch has no RPE', (tester) async {
       List<ParsedSet>? added;
-      await tester.pumpWidget(_wrapEditor(_editor(onPct: (p) => added = p)));
+      await _pump(tester, _editor(onPct: (p) => added = p));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add sets (%)'));
       await tester.pumpAndSettle();
@@ -237,7 +237,7 @@ void main() {
 
     testWidgets('Add sets (%): RPE starts at 7, a range starts one above', (tester) async {
       List<ParsedSet>? added;
-      await tester.pumpWidget(_wrapEditor(_editor(onPct: (p) => added = p)));
+      await _pump(tester, _editor(onPct: (p) => added = p));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add sets (%)'));
       await tester.pumpAndSettle();
@@ -257,7 +257,7 @@ void main() {
 
     testWidgets('Add sets (weight) passes the RPE in its batch', (tester) async {
       AbsoluteSetBatch? batch;
-      await tester.pumpWidget(_wrapEditor(_editor(onAbs: (b) => batch = b)));
+      await _pump(tester, _editor(onAbs: (b) => batch = b));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add sets (weight)'));
       await tester.pumpAndSettle();
@@ -272,7 +272,7 @@ void main() {
 
     testWidgets('the RPE range never starts or goes past 10', (tester) async {
       List<ParsedSet>? added;
-      await tester.pumpWidget(_wrapEditor(_editor(onPct: (p) => added = p)));
+      await _pump(tester, _editor(onPct: (p) => added = p));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add sets (%)'));
       await tester.pumpAndSettle();
@@ -289,10 +289,10 @@ void main() {
     });
 
     testWidgets('set rows show the RPE target', (tester) async {
-      await tester.pumpWidget(_wrapEditor(_editor(sets: const [
+      await _pump(tester, _editor(sets: const [
         EditableSetRow(
             id: 'a', weightMode: 'percentage', targetReps: 7, percentage: 70, rpeMin: 6, rpeMax: 7),
-      ])));
+      ]));
       await tester.pumpAndSettle();
       expect(find.text('70% of 1RM · RPE 6–7'), findsOneWidget);
     });

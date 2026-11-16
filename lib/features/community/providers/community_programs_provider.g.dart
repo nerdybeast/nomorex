@@ -21,7 +21,11 @@ final communityProgramsProvider = CommunityProgramsNotifierProvider._();
 /// their day rows only (no exercises or sets), so the list can show week and
 /// training-day counts cheaply.
 final class CommunityProgramsNotifierProvider
-    extends $AsyncNotifierProvider<CommunityProgramsNotifier, List<Program>> {
+    extends
+        $AsyncNotifierProvider<
+          CommunityProgramsNotifier,
+          CommunityPage<Program>
+        > {
   /// Public programs authored by *other* users, mirroring
   /// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks and
   /// their day rows only (no exercises or sets), so the list can show week and
@@ -46,7 +50,7 @@ final class CommunityProgramsNotifierProvider
 }
 
 String _$communityProgramsNotifierHash() =>
-    r'63c06a3ebe28becaec4338e310006bb0e554af5a';
+    r'0e1db506a999bebcdf76db6677223cff133ad42f';
 
 /// Public programs authored by *other* users, mirroring
 /// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks and
@@ -54,20 +58,25 @@ String _$communityProgramsNotifierHash() =>
 /// training-day counts cheaply.
 
 abstract class _$CommunityProgramsNotifier
-    extends $AsyncNotifier<List<Program>> {
-  FutureOr<List<Program>> build();
+    extends $AsyncNotifier<CommunityPage<Program>> {
+  FutureOr<CommunityPage<Program>> build();
   @$mustCallSuper
   @override
-  void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<List<Program>>, List<Program>>;
+  WhenComplete runBuild() {
+    final ref =
+        this.ref
+            as $Ref<AsyncValue<CommunityPage<Program>>, CommunityPage<Program>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<List<Program>>, List<Program>>,
-              AsyncValue<List<Program>>,
+              AnyNotifier<
+                AsyncValue<CommunityPage<Program>>,
+                CommunityPage<Program>
+              >,
+              AsyncValue<CommunityPage<Program>>,
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

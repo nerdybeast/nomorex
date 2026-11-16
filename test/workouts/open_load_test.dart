@@ -26,14 +26,14 @@ class _StubExercisesNotifier extends ExercisesNotifier {
   Future<List<Exercise>> build() async => const [];
 }
 
-Widget _wrapEditor(Widget child) => ProviderScope(
+Future<void> _pump(WidgetTester tester, Widget child) => tester.pumpWidget(ProviderScope(
       overrides: [
         exercisesProvider.overrideWith(() => _StubExercisesNotifier()),
         oneRepMaxProvider.overrideWith((ref) async => const {}),
         oneRepMaxByNameProvider.overrideWith((ref) async => const {}),
       ],
       child: MaterialApp(home: Scaffold(body: child)),
-    );
+    ));
 
 SetEditor _editor({
   List<EditableSetRow> sets = const [],
@@ -176,7 +176,7 @@ void main() {
   group('SetEditor', () {
     testWidgets('"No set load" hides the weight and adds an open batch', (tester) async {
       AbsoluteSetBatch? batch;
-      await tester.pumpWidget(_wrapEditor(_editor(onAbs: (b) => batch = b)));
+      await _pump(tester, _editor(onAbs: (b) => batch = b));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add sets (weight)'));
       await tester.pumpAndSettle();
@@ -198,7 +198,7 @@ void main() {
 
     testWidgets('switching it back off adds a normal weighted batch', (tester) async {
       AbsoluteSetBatch? batch;
-      await tester.pumpWidget(_wrapEditor(_editor(unit: 'lbs', onAbs: (b) => batch = b)));
+      await _pump(tester, _editor(unit: 'lbs', onAbs: (b) => batch = b));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add sets (weight)'));
       await tester.pumpAndSettle();
@@ -218,7 +218,7 @@ void main() {
     });
 
     testWidgets('an open set row reads "Choose load", not "0 kg"', (tester) async {
-      await tester.pumpWidget(_wrapEditor(_editor(sets: const [
+      await _pump(tester, _editor(sets: const [
         EditableSetRow(
           id: 's1',
           weightMode: 'open',
@@ -227,7 +227,7 @@ void main() {
           rpeMin: 6,
           rpeMax: 7,
         ),
-      ])));
+      ]));
       await tester.pumpAndSettle();
 
       expect(find.text('Choose load · RPE 6–7'), findsOneWidget);
