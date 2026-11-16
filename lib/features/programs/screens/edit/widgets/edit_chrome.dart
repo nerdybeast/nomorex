@@ -1,6 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 import '../../../../../core/theme/app_theme.dart';
 
+// The ⋯ menu moved to shared widgets; re-exported so existing imports keep working.
+export '../../../../../shared/widgets/action_sheet.dart';
+
 /// An app bar title with the level above in small type over it:
 /// "ZT Strong Like Bull" over "Week 1 · Meso 1/4".
 class StackedTitle extends StatelessWidget {
@@ -178,52 +181,6 @@ class _StripButton extends StatelessWidget {
 }
 
 /// A row of a [showActionSheet].
-class SheetAction<T> {
-  const SheetAction(this.value, this.label, this.icon, {this.danger = false});
-
-  final T value;
-  final String label;
-  final IconData icon;
-  final bool danger;
-}
-
-/// A bottom sheet of actions under a title, the editor's ⋯ menu. Returns the
-/// chosen action's value, or null when dismissed.
-Future<T?> showActionSheet<T>(
-  BuildContext context, {
-  required String title,
-  required List<SheetAction<T>> actions,
-}) {
-  return showModalBottomSheet<T>(
-    context: context,
-    useSafeArea: true,
-    showDragHandle: true,
-    builder: (ctx) {
-      final tokens = NomorexTokens.of(ctx);
-      return SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-              child: Text(title, style: Theme.of(ctx).textTheme.titleMedium),
-            ),
-            for (final a in actions)
-              ListTile(
-                key: ValueKey('action_${a.label}'),
-                leading: Icon(a.icon, color: a.danger ? tokens.palette.dangerText : tokens.fg2),
-                title: Text(a.label, style: a.danger ? TextStyle(color: tokens.palette.dangerText) : null),
-                onTap: () => Navigator.pop(ctx, a.value),
-              ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      );
-    },
-  );
-}
-
 /// Asks for a new name. Returns the trimmed text, or null when cancelled.
 /// An empty result is returned as '' so callers can clear an optional label.
 Future<String?> showRenameDialog(
