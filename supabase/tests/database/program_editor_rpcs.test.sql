@@ -7,13 +7,14 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(33);
+select plan(38);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser with fixed ids.
 --
 -- Program P: Week 1 "Meso 1/4" (Day 1, Day 2), Week 2 (Day 3), Week 3 (empty).
--- Day 1 holds Back Squat with an absolute, a percentage-range and an open set.
+-- Day 1 holds Back Squat with an absolute warm-up, a percentage-range working
+-- set and an open cool-down.
 -- Program Q: one week, for the cross-program refusal.
 -- ---------------------------------------------------------------------------
 
@@ -53,21 +54,21 @@ union all select e2, d3, a, squat, 0, null from t
 union all select e3, d3, a, pullup, 1, null from t;
 insert into public.program_sets (
   program_exercise_id, user_id, position, target_reps, target_reps_max, weight_mode,
-  percentage, percentage_max, absolute_weight_kg, rpe_min, rpe_max, basis_exercise_id, note
+  percentage, percentage_max, absolute_weight_kg, rpe_min, rpe_max, basis_exercise_id, note, set_type
 )
-select e1, a, 0, 5, null, 'absolute', null, null, 100, null, null, null, null from t
-union all select e1, a, 1, 7, 9, 'percentage', 67, 72.5, null, 6, 7, pullup, 'smooth' from t
-union all select e1, a, 2, 10, null, 'open', null, null, null, null, null, null, null from t
+select e1, a, 0, 5, null, 'absolute', null, null, 100, null, null, null, null, 'warmup' from t
+union all select e1, a, 1, 7, 9, 'percentage', 67, 72.5, null, 6, 7, pullup, 'smooth', 'working' from t
+union all select e1, a, 2, 10, null, 'open', null, null, null, null, null, null, null, 'cooldown' from t
 -- e2: three 3 × 50 kg, then two 1 @ 80%.
-union all select e2, a, 0, 3, null, 'absolute', null, null, 50, null, null, null, null from t
-union all select e2, a, 1, 3, null, 'absolute', null, null, 50, null, null, null, null from t
-union all select e2, a, 2, 3, null, 'absolute', null, null, 50, null, null, null, null from t
-union all select e2, a, 3, 1, null, 'percentage', 80, null, null, null, null, null, null from t
-union all select e2, a, 4, 1, null, 'percentage', 80, null, null, null, null, null, null from t
+union all select e2, a, 0, 3, null, 'absolute', null, null, 50, null, null, null, null, 'working' from t
+union all select e2, a, 1, 3, null, 'absolute', null, null, 50, null, null, null, null, 'working' from t
+union all select e2, a, 2, 3, null, 'absolute', null, null, 50, null, null, null, null, 'working' from t
+union all select e2, a, 3, 1, null, 'percentage', 80, null, null, null, null, null, null, 'working' from t
+union all select e2, a, 4, 1, null, 'percentage', 80, null, null, null, null, null, null, 'working' from t
 -- e3: three sets for the "not next to each other" refusal.
-union all select e3, a, 0, 8, null, 'open', null, null, null, null, null, null, null from t
-union all select e3, a, 1, 8, null, 'open', null, null, null, null, null, null, null from t
-union all select e3, a, 2, 8, null, 'open', null, null, null, null, null, null, null from t;
+union all select e3, a, 0, 8, null, 'open', null, null, null, null, null, null, null, 'working' from t
+union all select e3, a, 1, 8, null, 'open', null, null, null, null, null, null, null, 'working' from t
+union all select e3, a, 2, 8, null, 'open', null, null, null, null, null, null, null, 'working' from t;
 
 -- Every day of P in order: "week_number:title", so one comparison checks both
 -- the global day order and which week each day is in.
@@ -81,7 +82,7 @@ grant select on day_order to authenticated;
 create temp view set_rx as
 select s.program_exercise_id, s.position, s.id,
        row(s.target_reps, s.target_reps_max, s.weight_mode, s.percentage, s.percentage_max,
-           s.absolute_weight_kg, s.rpe_min, s.rpe_max, s.basis_exercise_id, s.note)::text as rx
+           s.absolute_weight_kg, s.rpe_min, s.rpe_max, s.basis_exercise_id, s.note, s.set_type)::text as rx
 from public.program_sets s;
 grant select on set_rx to authenticated;
 
@@ -152,6 +153,11 @@ select is(
    join public.program_exercises pe on pe.id = s.program_exercise_id
    where pe.program_day_id = (select ids[1] from cp)), 3,
   'the day''s exercises and sets are copied');
+select is(
+  (select array_agg(s.set_type order by s.position) from public.program_sets s
+   join public.program_exercises pe on pe.id = s.program_exercise_id
+   where pe.program_day_id = (select ids[1] from cp)),
+  array['warmup', 'working', 'cooldown'], 'each copied set keeps its type');
 select throws_like(
   $$ select public.copy_program_day((select d1 from t), array[(select qw from t)]) $$,
   'not_found:%', 'refuses a week of another program');
@@ -182,6 +188,10 @@ select is(
   array['5@60', '5@60', '5@60', '5@60', '5@60', '1@80%', '1@80%'],
   'the new group takes the old one''s place and later sets keep their order');
 select is(
+  (select array_agg(distinct set_type) from public.program_sets
+   where program_exercise_id = (select e2 from t) and target_reps = 5),
+  array['working'], 'a prescription that names no set type makes working sets');
+select is(
   (select count(distinct position)::int from public.program_sets where program_exercise_id = (select e2 from t)), 7,
   'set positions stay distinct');
 select lives_ok(
@@ -209,6 +219,18 @@ select throws_ok(
 select is(
   (select count(*)::int from public.program_sets where program_exercise_id = (select e3 from t)), 3,
   'a failed call leaves the group as it was');
+select throws_like(
+  $$ select public.replace_program_set_group((select pulls from g), 3,
+       '{"target_reps": 8, "weight_mode": "open", "set_type": "dropset"}'::jsonb) $$,
+  '%program_sets_set_type_check%', 'an unknown set type fails the whole call');
+select lives_ok(
+  $$ select public.replace_program_set_group((select pulls from g), 2,
+       '{"target_reps": 10, "weight_mode": "open", "set_type": "warmup"}'::jsonb) $$,
+  'replaces the three pull-up sets with two warm-ups');
+select is(
+  (select array_agg(set_type || ':' || target_reps order by position) from public.program_sets
+   where program_exercise_id = (select e3 from t)),
+  array['warmup:10', 'warmup:10'], 'the replaced group takes the prescription''s set type');
 
 -- ---------------------------------------------------------------------------
 -- reorder_program_weeks

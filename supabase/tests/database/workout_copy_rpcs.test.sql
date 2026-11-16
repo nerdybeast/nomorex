@@ -68,23 +68,25 @@ select '00000000-0000-4000-8000-00000000e011'::uuid, own, a, squat, 0, 'pause 2s
 union all select '00000000-0000-4000-8000-00000000e012'::uuid, own, a, pullup, 1, null from t
 union all select '00000000-0000-4000-8000-00000000e041'::uuid, live, a, squat, 0, null from t
 union all select '00000000-0000-4000-8000-00000000e071'::uuid, boom, a, squat, 0, null from t;
+-- "own" also has one set of each type: a working squat set, then a cool-down,
+-- and a warm-up pull-up, so the prescription comparisons cover set_type.
 insert into public.workout_sets (
   workout_exercise_id, user_id, position, target_reps, target_reps_max, weight_mode,
   percentage, percentage_max, absolute_weight_kg, rpe_min, rpe_max, basis_exercise_id, note,
-  completed, actual_reps, actual_weight_kg, actual_rpe
+  completed, actual_reps, actual_weight_kg, actual_rpe, set_type
 )
 select '00000000-0000-4000-8000-00000000e011'::uuid, a, 0, 7, 9, 'percentage',
-       67, 72.5, null::numeric, 6, 7, pullup, 'smooth', true, 8, null::numeric, 7.5 from t
+       67, 72.5, null::numeric, 6, 7, pullup, 'smooth', true, 8, null::numeric, 7.5, 'working' from t
 union all select '00000000-0000-4000-8000-00000000e011'::uuid, a, 1, 5, null, 'absolute',
-       null, null, 100, null, null, null, null, false, null, null, null from t
+       null, null, 100, null, null, null, null, false, null, null, null, 'cooldown' from t
 union all select '00000000-0000-4000-8000-00000000e012'::uuid, a, 0, 8, 10, 'open',
-       null, null, null, 8, null, null, null, true, 9, 40, 8 from t
+       null, null, null, 8, null, null, null, true, 9, 40, 8, 'warmup' from t
 union all select '00000000-0000-4000-8000-00000000e041'::uuid, a, 0, 5, null, 'absolute',
-       null, null, 80, null, null, null, null, true, 5, 80, null from t
+       null, null, 80, null, null, null, null, true, 5, 80, null, 'working' from t
 union all select '00000000-0000-4000-8000-00000000e071'::uuid, a, 0, 5, null, 'absolute',
-       null, null, 80, null, null, null, null, false, null, null, null from t
+       null, null, 80, null, null, null, null, false, null, null, null, 'working' from t
 union all select '00000000-0000-4000-8000-00000000e071'::uuid, a, 1, 5, null, 'absolute',
-       null, null, 80, null, null, null, 'boom', false, null, null, null from t;
+       null, null, 80, null, null, null, 'boom', false, null, null, null, 'working' from t;
 
 -- Makes copying "boom"'s second set fail, after its workout row and first set
 -- have already been inserted, so a partial copy would be visible.
@@ -103,7 +105,7 @@ create trigger fail_on_boom before insert on public.workout_sets
 create function pg_temp.prescription(p_workout_id uuid) returns setof text language sql as $$
   select row(we.position, we.exercise_id, we.notes, ws.position, ws.target_reps, ws.target_reps_max,
              ws.weight_mode, ws.percentage, ws.percentage_max, ws.absolute_weight_kg,
-             ws.rpe_min, ws.rpe_max, ws.basis_exercise_id, ws.note)::text
+             ws.rpe_min, ws.rpe_max, ws.basis_exercise_id, ws.note, ws.set_type)::text
   from public.workout_exercises we
   join public.workout_sets ws on ws.workout_exercise_id = we.id
   where we.workout_id = p_workout_id

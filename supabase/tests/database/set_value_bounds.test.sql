@@ -7,7 +7,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(31);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser so ids are known up front.
@@ -146,6 +146,34 @@ select throws_like(
 
 -- ---------------------------------------------------------------------------
 -- The constraints are validated, not left NOT VALID (which would skip old rows).
+-- ---------------------------------------------------------------------------
+-- set_type (#146): warm-up, working or cool-down, working by default
+-- ---------------------------------------------------------------------------
+
+select throws_like(
+  $$ insert into public.program_sets (program_exercise_id, user_id, position, target_reps, weight_mode, absolute_weight_kg, set_type)
+     select pe_id, auth.uid(), 20, 5, 'absolute', 100, 'dropset' from t $$,
+  '%program_sets_set_type_check%', 'program set: an unknown set type is rejected');
+select throws_like(
+  $$ insert into public.workout_sets (workout_exercise_id, user_id, position, target_reps, weight_mode, absolute_weight_kg, set_type)
+     select we_id, auth.uid(), 20, 5, 'absolute', 100, 'dropset' from t $$,
+  '%workout_sets_set_type_check%', 'workout set: an unknown set type is rejected');
+select lives_ok(
+  $$ insert into public.program_sets (program_exercise_id, user_id, position, target_reps, weight_mode, absolute_weight_kg, set_type)
+     select pe_id, auth.uid(), 21, 5, 'absolute', 60, 'warmup' from t $$,
+  'program set: a warm-up is accepted');
+select lives_ok(
+  $$ insert into public.workout_sets (workout_exercise_id, user_id, position, target_reps, weight_mode, absolute_weight_kg, set_type)
+     select we_id, auth.uid(), 21, 10, 'absolute', 40, 'cooldown' from t $$,
+  'workout set: a cool-down is accepted');
+select lives_ok(
+  $$ insert into public.workout_sets (workout_exercise_id, user_id, position, target_reps, weight_mode, absolute_weight_kg)
+     select we_id, auth.uid(), 22, 5, 'absolute', 100 from t $$,
+  'workout set: a set that names no type is accepted');
+select is(
+  (select set_type from public.workout_sets where workout_exercise_id = (select we_id from t) and position = 22),
+  'working', 'a set that names no type is a working set');
+
 -- ---------------------------------------------------------------------------
 
 reset role;
