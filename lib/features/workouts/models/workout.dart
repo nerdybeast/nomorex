@@ -13,6 +13,7 @@ class Workout {
     this.isPublic = false,
     this.programInstanceId,
     this.programDayId,
+    this.programName,
     this.status = 'not_started',
     this.startedAt,
     this.pausedAt,
@@ -46,6 +47,11 @@ class Workout {
   final DateTime updatedAt;
   final String? programInstanceId;
   final String? programDayId;
+
+  /// Name of the program this workout was materialized from, when the query
+  /// embedded `program_instances(programs(name))` (the dashboard's in-progress
+  /// list does). Null for a standalone workout and for queries that don't embed it.
+  final String? programName;
 
   /// Shared across every completion of "the same" workout — set fresh on
   /// creation, carried forward when repeating a finished workout so history
@@ -105,6 +111,8 @@ class Workout {
       isPublic: (json['is_public'] as bool?) ?? false,
       programInstanceId: json['program_instance_id'] as String?,
       programDayId: json['program_day_id'] as String?,
+      programName: ((json['program_instances'] as Map<String, dynamic>?)?['programs']
+          as Map<String, dynamic>?)?['name'] as String?,
       status: json['status'] as String? ?? 'not_started',
       startedAt: json['started_at'] != null ? DateTime.parse(json['started_at'] as String) : null,
       pausedAt: json['paused_at'] != null ? DateTime.parse(json['paused_at'] as String) : null,

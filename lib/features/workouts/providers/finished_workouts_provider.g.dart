@@ -52,7 +52,7 @@ final class FinishedWorkoutsNotifierProvider
 }
 
 String _$finishedWorkoutsNotifierHash() =>
-    r'e836b01f160676a2ae52836e5ebafc198c04c160';
+    r'd7c17958ea0f5dc5ff86b2bff67cf49eeee64fe4';
 
 /// Every finished workout for the current user, newest completion first —
 /// backs both the dashboard's "Recent Workouts" section and the Workout

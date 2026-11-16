@@ -62,6 +62,26 @@ void main() {
     expect(w.isPublic, isFalse);
   });
 
+  test('Workout.fromJson reads the embedded program name, null when standalone', () {
+    Map<String, dynamic> base() => {
+          'id': 'w1',
+          'user_id': 'u1',
+          'workout_group_id': 'g1',
+          'title': 'Day 4',
+          'date': '2026-06-28',
+          'updated_at': '2026-06-28T00:00:00Z',
+        };
+    final inProgram = Workout.fromJson({
+      ...base(),
+      'program_instances': {
+        'programs': {'name': 'STRONG LIKE BULL'},
+      },
+    });
+    expect(inProgram.programName, 'STRONG LIKE BULL');
+    expect(Workout.fromJson({...base(), 'program_instances': null}).programName, isNull);
+    expect(Workout.fromJson(base()).programName, isNull);
+  });
+
   test('Workout.fromJson parses is_archived and archived_at', () {
     final w = Workout.fromJson({
       'id': 'w1',

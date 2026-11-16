@@ -146,6 +146,8 @@ class DashboardScreen extends ConsumerWidget {
                             ? 'Paused'
                             : 'In progress',
                         isLive: workout.status != 'paused',
+                        programLabel: workout.programName ?? 'Standalone',
+                        isStandalone: workout.programName == null,
                         // Ticks live for an in-progress workout and renders
                         // frozen for a paused one — ElapsedTimer handles both.
                         statusTrailing: ElapsedTimer(
@@ -299,6 +301,8 @@ class DashboardScreen extends ConsumerWidget {
                         title: workout.title,
                         completedDisplay:
                             'Completed ${formatDate(workout.finishedAt!.toLocal())}',
+                        programLabel: workout.programName ?? 'Standalone',
+                        isStandalone: workout.programName == null,
                         onTap: () => context.push(
                           AppConstants.routeWorkoutDetail(workout.id),
                         ),

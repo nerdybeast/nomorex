@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import '../../core/theme/app_theme.dart';
 import 'list_group.dart';
+import 'workout_program_label.dart';
 
 /// Dashboard card for one in-progress (or paused) workout. [statusDisplay] is
 /// pre-formatted (e.g. "In progress" or "Paused") and [statusTrailing] is an
@@ -14,6 +15,8 @@ class WorkoutInProgressCard extends StatelessWidget {
     required this.statusDisplay,
     this.statusTrailing,
     this.isLive = true,
+    this.programLabel,
+    this.isStandalone = false,
     this.onTap,
   });
 
@@ -24,6 +27,11 @@ class WorkoutInProgressCard extends StatelessWidget {
   /// Running (true) or paused (false): drives the status dot, which is the
   /// only orange on the row while a workout is live.
   final bool isLive;
+
+  /// Which program the workout belongs to, shown under the title; null hides
+  /// the line. When [isStandalone] it reads "Standalone" instead, dimmer.
+  final String? programLabel;
+  final bool isStandalone;
   final VoidCallback? onTap;
 
   @override
@@ -53,6 +61,10 @@ class WorkoutInProgressCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: theme.textTheme.titleSmall),
+                if (programLabel != null) ...[
+                  const SizedBox(height: 2),
+                  WorkoutProgramLabel(label: programLabel!, isStandalone: isStandalone),
+                ],
                 const SizedBox(height: 2),
                 Row(
                   mainAxisSize: MainAxisSize.min,
