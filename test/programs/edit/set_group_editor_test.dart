@@ -10,6 +10,7 @@ import 'package:nomorex/features/programs/providers/program_detail_provider.dart
 import 'package:nomorex/features/programs/widgets/set_group_editor.dart';
 import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
 import 'package:nomorex/shared/models/one_rep_max.dart';
+import 'package:nomorex/shared/models/set_type.dart';
 
 class _Notifier extends ProgramDetailNotifier {
   _Notifier(this.calls);
@@ -39,8 +40,15 @@ class _Exercises extends ExercisesNotifier {
       ];
 }
 
-ProgramSet _abs(String id, int pos, double kg, {int reps = 3}) => ProgramSet(
-      id: id, programExerciseId: 'pe1', position: pos, weightMode: 'absolute', targetReps: reps, absoluteWeightKg: kg);
+ProgramSet _abs(String id, int pos, double kg, {int reps = 3, SetType type = SetType.working}) => ProgramSet(
+      id: id,
+      programExerciseId: 'pe1',
+      position: pos,
+      weightMode: 'absolute',
+      targetReps: reps,
+      absoluteWeightKg: kg,
+      setType: type,
+    );
 
 ProgramSet _pct(String id, int pos, double pct, {String? basisId, String? basisName}) => ProgramSet(
       id: id,
@@ -54,14 +62,15 @@ ProgramSet _pct(String id, int pos, double pct, {String? basisId, String? basisN
       note: 'fast',
     );
 
-/// Back Squat: three 3 × 50 kg, then two singles at 80% of Clean.
-ProgramExercise _exercise() => ProgramExercise(
+/// Back Squat: three 3 × 50 kg, then two singles at 80% of Clean, unless
+/// [sets] says otherwise.
+ProgramExercise _exercise([List<ProgramSet>? sets]) => ProgramExercise(
       id: 'pe1',
       programDayId: 'd1',
       exerciseId: 'squat',
       exerciseName: 'Back Squat',
       position: 0,
-      sets: [
+      sets: sets ?? [
         _abs('a0', 0, 50),
         _abs('a1', 1, 50),
         _abs('a2', 2, 50),
@@ -70,7 +79,11 @@ ProgramExercise _exercise() => ProgramExercise(
       ],
     );
 
-Future<List<(List<String>, int, Map<String, Object?>)>> _pump(WidgetTester tester, {String unit = 'kg'}) async {
+Future<List<(List<String>, int, Map<String, Object?>)>> _pump(
+  WidgetTester tester, {
+  String unit = 'kg',
+  List<ProgramSet>? sets,
+}) async {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -86,7 +99,7 @@ Future<List<(List<String>, int, Map<String, Object?>)>> _pump(WidgetTester teste
       child: MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
-            child: SetGroupEditor(programId: 'p1', exercise: _exercise(), unit: unit),
+            child: SetGroupEditor(programId: 'p1', exercise: _exercise(sets), unit: unit),
           ),
         ),
       ),
@@ -127,6 +140,33 @@ void main() {
     expect(rx['weight_mode'], 'absolute');
     expect(rx['target_reps'], 3);
     expect(rx['absolute_weight_kg'], 50.0);
+  });
+
+  testWidgets('a warm-up group is labelled, keeps its type, and can become working sets', (tester) async {
+    final calls = await _pump(tester, sets: [
+      _abs('w0', 0, 40, reps: 5, type: SetType.warmup),
+      _abs('w1', 1, 40, reps: 5, type: SetType.warmup),
+      _abs('a0', 2, 50),
+    ]);
+
+    // Two groups: the warm-ups don't merge into the working set.
+    expect(find.byKey(const ValueKey('set_group_type_w0')), findsOneWidget);
+    expect(find.text('WARM-UP'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('set_group_w0')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save 2 sets'));
+    await tester.pumpAndSettle();
+    expect(calls.single.$3['set_type'], 'warmup', reason: 'saving the group unchanged keeps it a warm-up');
+
+    await tester.tap(find.byKey(const ValueKey('set_group_w0')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('set_editor_set_type_working')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save 2 sets'));
+    await tester.pumpAndSettle();
+    expect(calls.last.$1, ['w0', 'w1']);
+    expect(calls.last.$3['set_type'], 'working');
   });
 
   testWidgets('a percentage group keeps its basis lift and note', (tester) async {

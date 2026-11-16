@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/percent_range.dart';
 import '../../../core/utils/rpe.dart';
 import '../../../core/utils/weight_converter.dart';
+import '../../../shared/widgets/set_type_header.dart';
 import '../../../shared/models/one_rep_max.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/responsive_layout.dart';
@@ -388,7 +389,12 @@ class _LiftCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    for (final g in groups) _GroupRow(group: g, exercise: exercise, loads: loads),
+                    ...withSetTypeHeaders(
+                      groups,
+                      typeOf: (g) => g.first.setType,
+                      header: (type) => SetTypeHeader(type: type, padding: const EdgeInsets.only(top: 10, bottom: 2)),
+                      row: (g) => _GroupRow(group: g, exercise: exercise, loads: loads),
+                    ),
                   ],
                 ),
               ),

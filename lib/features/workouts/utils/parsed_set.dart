@@ -1,3 +1,5 @@
+import '../../../shared/models/set_type.dart';
+
 /// One percentage-mode set staged for insert by [SetEditor]'s "Add sets (%)"
 /// dialog, before `WorkoutDetailNotifier.addPercentageSets` writes it.
 /// Every optional field is null for "not prescribed" / "a single value".
@@ -10,6 +12,7 @@ class ParsedSet {
     this.percentageMax,
     this.rpeMin,
     this.rpeMax,
+    this.setType = SetType.working,
   });
   final int targetReps;
   /// Top of a rep range; null means a single rep count ([targetReps]).
@@ -22,6 +25,7 @@ class ParsedSet {
   final double? rpeMin;
   /// Top of an RPE range; null means a single RPE ([rpeMin]).
   final double? rpeMax;
+  final SetType setType;
 }
 
 /// One "Add sets (weight)" batch, before `addAbsoluteSets` writes it as
@@ -36,6 +40,7 @@ class AbsoluteSetBatch {
     required this.weightKg,
     this.rpeMin,
     this.rpeMax,
+    this.setType = SetType.working,
   });
   final int sets;
   final int reps;
@@ -43,4 +48,5 @@ class AbsoluteSetBatch {
   final double? weightKg;
   final double? rpeMin;
   final double? rpeMax;
+  final SetType setType;
 }

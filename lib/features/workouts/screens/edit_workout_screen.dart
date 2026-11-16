@@ -163,6 +163,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen>
                               onAddAbsoluteSets: (batch) =>
                                   notifier.addAbsoluteSets(ex.id, batch),
                               onDeleteSet: notifier.deleteSet,
+                              onChangeSetType: notifier.setSetType,
                               onReorderSets: (orderedIds) =>
                                   notifier.reorderSets(ex.id, orderedIds),
                             ),

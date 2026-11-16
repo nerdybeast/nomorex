@@ -6,6 +6,7 @@ import '../../../core/utils/rep_range.dart';
 import '../../../core/utils/rpe.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../shared/models/editable_set_row.dart';
+import '../../../shared/models/set_type.dart';
 import '../../../shared/widgets/number_stepper_field.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/unit_toggle.dart';
@@ -30,6 +31,7 @@ class SetEditor extends ConsumerWidget {
     required this.onAddAbsoluteSets,
     required this.onDeleteSet,
     required this.onReorderSets,
+    this.onChangeSetType,
   });
 
   final List<EditableSetRow> sets;
@@ -45,6 +47,10 @@ class SetEditor extends ConsumerWidget {
   final void Function(AbsoluteSetBatch batch) onAddAbsoluteSets;
   final void Function(String setId) onDeleteSet;
   final void Function(List<String> orderedSetIds) onReorderSets;
+
+  /// Marks an existing set as a warm-up, working set or cool-down. Without
+  /// it, rows show their type but offer no way to change it.
+  final void Function(String setId, SetType type)? onChangeSetType;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -83,6 +89,7 @@ class SetEditor extends ConsumerWidget {
               unit: unit,
               oneRepMax: oneRepMax,
               onDelete: () => onDeleteSet(set.id),
+              onChangeSetType: onChangeSetType == null ? null : (type) => onChangeSetType!(set.id, type),
             );
           },
         ),
@@ -166,6 +173,7 @@ class _SetRow extends StatelessWidget {
     required this.unit,
     required this.oneRepMax,
     required this.onDelete,
+    this.onChangeSetType,
   });
 
   final int index;
@@ -173,6 +181,7 @@ class _SetRow extends StatelessWidget {
   final String unit;
   final OneRepMax? oneRepMax;
   final VoidCallback onDelete;
+  final ValueChanged<SetType>? onChangeSetType;
 
   @override
   Widget build(BuildContext context) {
@@ -210,11 +219,59 @@ class _SetRow extends StatelessWidget {
           )
         : null;
 
-    // The remove button sits beside the row's content rather than inside a
-    // ListTile: a tile merges its children into one semantics node, so a
-    // button inside it couldn't be activated on its own by assistive tech.
+    final resolved = range == null
+        ? null
+        : Text(
+            formatResolvedWeightRange(range.low, range.high, unit, estimated: oneRepMax!.isEstimated),
+            key: ValueKey('set_editor_resolved_${set.id}'),
+            style: tokens.weight.copyWith(color: palette.info),
+          );
+    final reps = SizedBox(
+      width: 64,
+      child: Text(
+        formatTargetReps(set.targetReps, set.targetRepsMax),
+        style: body.copyWith(color: palette.fg2, fontFeatures: const [FontFeature.tabularFigures()]),
+      ),
+    );
+    final typeLabel = set.setType.isWorking
+        ? null
+        : Text(
+            set.setType.label.toUpperCase(),
+            key: ValueKey('set_editor_type_${set.id}'),
+            style: tokens.eyebrow.copyWith(letterSpacing: 0.4, color: palette.fg3),
+          );
+
+    // Reps sit in a fixed column so they line up row to row, with the type
+    // (when it isn't Working) above the whole line rather than beside the
+    // reps. Wide, the resolved load ends the line; narrow (a phone), it drops
+    // under the prescription so the prescription keeps room to read.
+    final content = LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 360;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ?typeLabel,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                reps,
+                Expanded(child: Text(prescription, style: prescriptionStyle)),
+                if (wide && resolved != null) ...[const SizedBox(width: 8), resolved],
+              ],
+            ),
+            if (!wide && resolved != null) Padding(padding: const EdgeInsets.only(left: 64, top: 2), child: resolved),
+          ],
+        );
+      },
+    );
+
+    // The buttons sit beside the row's content rather than inside a ListTile:
+    // a tile merges its children into one semantics node, so a button inside
+    // it couldn't be activated on its own by assistive tech.
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 44),
+      constraints: const BoxConstraints(minHeight: 48),
       child: Row(
         children: [
           ReorderableDragStartListener(
@@ -228,31 +285,91 @@ class _SetRow extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(
-            width: 72,
-            child: Text(
-              formatTargetReps(set.targetReps, set.targetRepsMax),
-              style: body.copyWith(
-                color: palette.fg2,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
+          Expanded(
+            child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: content),
           ),
-          Expanded(child: Text(prescription, style: prescriptionStyle)),
-          if (range != null) ...[
-            const SizedBox(width: 8),
-            Text(
-              formatResolvedWeightRange(range.low, range.high, unit, estimated: oneRepMax!.isEstimated),
-              key: ValueKey('set_editor_resolved_${set.id}'),
-              style: tokens.weight.copyWith(color: palette.info),
+          if (onChangeSetType != null)
+            _SetTypeMenu(
+              key: ValueKey('set_editor_type_menu_${set.id}'),
+              value: set.setType,
+              onSelected: onChangeSetType!,
             ),
-          ],
           IconButton(
             tooltip: 'Remove set',
+            // 40 wide to leave the prescription room on a phone, 48 tall to
+            // keep a full-size touch target.
+            constraints: const BoxConstraints.tightFor(width: 40, height: 48),
+            padding: EdgeInsets.zero,
             icon: Icon(Icons.close, size: 18, color: palette.fg3),
             onPressed: onDelete,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A set's type, changed from a small menu beside its row: "Set type" for
+/// screen readers, the three types with the current one checked.
+class _SetTypeMenu extends StatelessWidget {
+  const _SetTypeMenu({super.key, required this.value, required this.onSelected});
+
+  final SetType value;
+  final ValueChanged<SetType> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = NomorexTokens.of(context).palette;
+    return PopupMenuButton<SetType>(
+      tooltip: 'Set type',
+      padding: EdgeInsets.zero,
+      iconSize: 18,
+      style: const ButtonStyle(
+        fixedSize: WidgetStatePropertyAll(Size(40, 48)),
+        minimumSize: WidgetStatePropertyAll(Size(40, 48)),
+      ),
+      icon: Icon(Icons.more_vert, size: 18, color: palette.fg3),
+      initialValue: value,
+      onSelected: (type) {
+        if (type != value) onSelected(type);
+      },
+      itemBuilder: (context) => [
+        for (final type in SetType.values)
+          CheckedPopupMenuItem<SetType>(
+            value: type,
+            checked: type == value,
+            child: Text(type.label),
+          ),
+      ],
+    );
+  }
+}
+
+/// The batch's set type, Working unless chosen otherwise. Three segments
+/// announced by their labels, so a screen reader (and `getByRole`) finds
+/// "Warm-up" directly.
+class _SetTypeChoice extends StatelessWidget {
+  const _SetTypeChoice({required this.value, required this.onChanged});
+
+  final SetType value;
+  final ValueChanged<SetType> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: SegmentedButton<SetType>(
+        key: const Key('set_editor_set_type'),
+        showSelectedIcon: false,
+        segments: [
+          for (final type in SetType.values)
+            ButtonSegment<SetType>(
+              value: type,
+              label: Text(type.label, key: Key('set_editor_set_type_${type.dbValue}')),
+            ),
+        ],
+        selected: {value},
+        onSelectionChanged: (selection) => onChanged(selection.single),
       ),
     );
   }
@@ -441,6 +558,7 @@ TextSpan _sentence(
   required String? load,
   bool loadIsMono = false,
   String? rpe,
+  SetType setType = SetType.working,
 }) {
   final tokens = NomorexTokens.of(context);
   final palette = tokens.palette;
@@ -455,6 +573,11 @@ TextSpan _sentence(
   return TextSpan(
     style: base,
     children: [
+      if (!setType.isWorking)
+        TextSpan(
+          text: '${setType.label} · ',
+          style: base.copyWith(color: palette.fg2, fontWeight: FontWeight.w500),
+        ),
       TextSpan(text: '$sets × ${_repsText(reps, repsMax)}'),
       if (load == null)
         TextSpan(text: ' · choose load', style: base.copyWith(color: palette.fg3, fontWeight: FontWeight.w500))
@@ -504,6 +627,7 @@ class _PercentPreview extends ConsumerWidget {
     required this.basisExerciseId,
     required this.basisExerciseName,
     required this.unit,
+    this.setType = SetType.working,
   });
 
   final int sets;
@@ -516,6 +640,7 @@ class _PercentPreview extends ConsumerWidget {
   final String basisExerciseId;
   final String basisExerciseName;
   final String unit;
+  final SetType setType;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -562,6 +687,7 @@ class _PercentPreview extends ConsumerWidget {
         repsMax: repsMax,
         load: formatPercentTarget(percentage, top),
         rpe: formatRpeTarget(rpeMin, rpeMax),
+        setType: setType,
       ),
       detail: detail,
     );
@@ -1006,6 +1132,7 @@ const SetsSheetInitial({
   this.basisExerciseName,
   this.rpeMin,
   this.rpeMax,
+  this.setType = SetType.working,
 });
 
 final int sets;
@@ -1022,6 +1149,7 @@ final String? basisExerciseId;
 final String? basisExerciseName;
 final double? rpeMin;
 final double? rpeMax;
+final SetType setType;
 }
 
 /// The "%1RM" sets sheet. Adds a batch, or with [initial] edits an existing
@@ -1043,6 +1171,7 @@ SetsSheetInitial? initial,
   double? percentageMax = initial?.percentageMax;
   double? rpeMin = initial?.rpeMin;
   double? rpeMax = initial?.rpeMax;
+  var setType = initial?.setType ?? SetType.working;
   // The dropdown matches by identity, so the basis has to be one of its
   // entries; a basis missing from the catalog (another user's lift on a
   // copy) is added so editing doesn't silently reset it.
@@ -1075,8 +1204,10 @@ SetsSheetInitial? initial,
         basisExerciseId: basisExercise?.id ?? currentExerciseId,
         basisExerciseName: basisExercise?.name ?? currentExerciseName,
         unit: unit,
+        setType: setType,
       ),
       fields: [
+        _SetTypeChoice(value: setType, onChanged: (v) => setState(() => setType = v)),
         _BasisRow(
           exercises: pickable,
           value: basisExercise,
@@ -1141,6 +1272,7 @@ SetsSheetInitial? initial,
               percentageMax: _rangeTop(percentage, percentageMax),
               rpeMin: rpeMin,
               rpeMax: rpeMin == null ? null : _rangeTop(rpeMin!, rpeMax),
+              setType: setType,
             ),
         ]);
         Navigator.pop(ctx);
@@ -1164,6 +1296,7 @@ SetsSheetInitial? initial,
   var openLoad = initial != null && initial.weightKg == null;
   double? rpeMin = initial?.rpeMin;
   double? rpeMax = initial?.rpeMax;
+  var setType = initial?.setType ?? SetType.working;
   var dialogUnit = unit == 'both' ? 'kg' : unit;
   final initialKg = initial?.weightKg ?? 0.0;
   var weightDisplay = dialogUnit == 'lbs' ? kgToLbs(initialKg) : initialKg;
@@ -1187,12 +1320,14 @@ SetsSheetInitial? initial,
             load: openLoad ? null : '${_trimNumber(weightDisplay)} $dialogUnit',
             loadIsMono: true,
             rpe: formatRpeTarget(rpeMin, rpeMax),
+            setType: setType,
           ),
           detail: openLoad
               ? Text('The lifter picks the weight on the day', style: tokens.bodySmall)
               : null,
         ),
         fields: [
+          _SetTypeChoice(value: setType, onChanged: (v) => setState(() => setType = v)),
           _setsCountRow(sets: sets, onChanged: (v) => setState(() => sets = v)),
           _repTargetInput(
             reps: reps,
@@ -1258,6 +1393,7 @@ SetsSheetInitial? initial,
             weightKg: weightKg,
             rpeMin: rpeMin,
             rpeMax: rpeMin == null ? null : _rangeTop(rpeMin!, rpeMax),
+            setType: setType,
           ));
           Navigator.pop(ctx);
         },

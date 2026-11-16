@@ -72,6 +72,7 @@ class _SetGroupEditorState extends ConsumerState<SetGroupEditor> {
       basisExerciseName: first.basisExerciseName,
       rpeMin: first.rpeMin,
       rpeMax: first.rpeMax,
+      setType: first.setType,
     );
     if (first.weightMode == 'percentage') {
       final exercises = ref.read(exercisesProvider).asData?.value ?? const <Exercise>[];
@@ -93,6 +94,7 @@ class _SetGroupEditorState extends ConsumerState<SetGroupEditor> {
             'basis_exercise_id': p.basisExerciseId,
             'rpe_min': p.rpeMin,
             'rpe_max': p.rpeMax,
+            'set_type': p.setType.dbValue,
             'note': first.note,
           });
         },
@@ -110,6 +112,7 @@ class _SetGroupEditorState extends ConsumerState<SetGroupEditor> {
           'absolute_weight_kg': batch.weightKg,
           'rpe_min': batch.rpeMin,
           'rpe_max': batch.rpeMax,
+          'set_type': batch.setType.dbValue,
           'note': first.note,
         }),
       );
@@ -360,6 +363,12 @@ class _GroupRow extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (!set.setType.isWorking)
+                            Text(
+                              set.setType.label.toUpperCase(),
+                              key: ValueKey('set_group_type_${set.id}'),
+                              style: tokens.eyebrow.copyWith(letterSpacing: 0.4, color: palette.fg3),
+                            ),
                           Text(
                             setGroupLabel(group),
                             style: theme.textTheme.titleSmall?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
@@ -408,4 +417,5 @@ ParsedProgramSet _toParsedProgramSet(ParsedSet p) => ParsedProgramSet(
       percentageMax: p.percentageMax,
       rpeMin: p.rpeMin,
       rpeMax: p.rpeMax,
+      setType: p.setType,
     );

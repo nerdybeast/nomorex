@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../shared/widgets/set_type_header.dart';
+import '../../../shared/models/set_type.dart';
 import '../../../shared/widgets/number_stepper_field.dart';
 import '../../../core/utils/rpe.dart';
 import '../../../core/utils/percent_range.dart';
@@ -458,7 +460,10 @@ class _ExerciseCard extends StatelessWidget {
     final theme = Theme.of(context);
     final tokens = NomorexTokens.of(context);
     final notes = exercise.notes;
-    final done = exercise.sets.where((s) => s.completed).length;
+    // Working sets only, so warm-ups don't inflate "2/4 sets"; an exercise
+    // with no working sets counts them all.
+    final counted = countedSets(exercise.sets, (s) => s.setType);
+    final done = counted.where((s) => s.completed).length;
     // One list container per exercise: a bg-0 header (name, notes, a mono
     // "2/4 sets" count) over one row per set.
     return ListGroup(
@@ -487,14 +492,16 @@ class _ExerciseCard extends StatelessWidget {
               ),
               if (exercise.sets.isNotEmpty)
                 Text(
-                  '$done/${exercise.sets.length} sets',
+                  '$done/${counted.length} sets',
                   style: tokens.eyebrow.copyWith(letterSpacing: 0),
                 ),
             ],
           ),
         ),
       ),
-      children: [for (final s in exercise.sets) _setTile(s)],
+      // A WARM-UP / WORKING / COOL-DOWN header above each run of one type,
+      // so every row's reps line up; none when all sets are working sets.
+      children: withSetTypeHeaders(exercise.sets, typeOf: (s) => s.setType, row: _setTile),
     );
   }
 
@@ -616,6 +623,7 @@ class _SetTile extends StatelessWidget {
       onChanged: interactive ? (v) => onToggle?.call(set.id, v ?? false) : null,
       title: Text(
         formatTargetReps(set.targetReps, set.targetRepsMax),
+        key: ValueKey('workout_set_title_${set.id}'),
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
               color: set.completed ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
             ),

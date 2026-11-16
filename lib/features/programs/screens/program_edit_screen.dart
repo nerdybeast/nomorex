@@ -33,6 +33,7 @@ ParsedProgramSet _toParsedProgramSet(ParsedSet p) =>
       percentageMax: p.percentageMax,
       rpeMin: p.rpeMin,
       rpeMax: p.rpeMax,
+      setType: p.setType,
     );
 
 class ProgramEditScreen extends ConsumerStatefulWidget {
@@ -332,6 +333,7 @@ class _DayCard extends ConsumerWidget {
                           ),
                           onAddAbsoluteSets: (batch) => notifier.addAbsoluteSets(ex.id, batch),
                           onDeleteSet: notifier.deleteSet,
+                          onChangeSetType: notifier.setSetType,
                           onReorderSets: (orderedIds) =>
                               notifier.reorderSets(ex.id, orderedIds),
                         ),

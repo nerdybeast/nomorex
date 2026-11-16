@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../shared/models/set_type.dart';
 import '../models/workout.dart';
 import '../utils/parsed_set.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -123,6 +124,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
           'basis_exercise_id': p.basisExerciseId,
           'rpe_min': ?p.rpeMin,
           'rpe_max': ?p.rpeMax,
+          'set_type': p.setType.dbValue,
         },
     ]);
     await _refresh();
@@ -147,6 +149,7 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
           'absolute_weight_kg': batch.weightKg,
           'rpe_min': ?batch.rpeMin,
           'rpe_max': ?batch.rpeMax,
+          'set_type': batch.setType.dbValue,
         },
     ]);
     await _refresh();
@@ -159,6 +162,13 @@ class WorkoutDetailNotifier extends _$WorkoutDetailNotifier {
 
   Future<void> deleteSet(String setId) async {
     await _db.from('workout_sets').delete().eq('id', setId);
+    await _refresh();
+  }
+
+  /// Marks a set as a warm-up, working set or cool-down. Nothing outside this
+  /// provider renders a set's type, so refreshing this one is enough.
+  Future<void> setSetType(String setId, SetType type) async {
+    await _db.from('workout_sets').update({'set_type': type.dbValue}).eq('id', setId);
     await _refresh();
   }
 

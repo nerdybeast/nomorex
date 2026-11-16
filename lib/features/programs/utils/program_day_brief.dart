@@ -2,8 +2,9 @@ import '../models/program_day.dart';
 import '../models/program_set.dart';
 
 /// Consecutive sets that prescribe exactly the same thing, written the way a
-/// coach would: "3 × 3 @ 70%". A change of reps, load, percentage, basis lift
-/// or RPE starts a new group, so a wave (50, 60, 70, 70%) keeps its steps.
+/// coach would: "3 × 3 @ 70%". A change of reps, load, percentage, basis lift,
+/// RPE or set type starts a new group, so a wave (50, 60, 70, 70%) keeps its
+/// steps and a warm-up never joins the working sets after it.
 class SetGroup {
   const SetGroup(this.sets);
 
@@ -23,6 +24,7 @@ bool _samePrescription(ProgramSet a, ProgramSet b) =>
     a.rpeMin == b.rpeMin &&
     a.rpeMax == b.rpeMax &&
     a.basisExerciseId == b.basisExerciseId &&
+    a.setType == b.setType &&
     // The grouped editor rewrites a group as copies of its first set, so a
     // per-set note has to match too or it would be overwritten.
     a.note == b.note;
