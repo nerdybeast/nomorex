@@ -417,6 +417,26 @@ void main() {
       expect(find.text('No 1RM recorded for this lift'), findsOneWidget);
     });
 
+    testWidgets('offers a set-PR link beside the basis when there is no 1RM', (tester) async {
+      await _pump(tester, _editor());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add sets (%)'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('set_editor_basis_set_pr')), findsOneWidget);
+    });
+
+    testWidgets('no set-PR link once the basis lift has a 1RM', (tester) async {
+      await _pump(tester, _editor(), oneRepMaxes: const {'e1': OneRepMax.measured(165)});
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add sets (%)'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('set_editor_basis_set_pr')), findsNothing);
+    });
+
     testWidgets('follows the basis exercise chosen in the dropdown', (
       tester,
     ) async {
