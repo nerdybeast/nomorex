@@ -8,7 +8,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(28);
+select plan(30);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser with fixed ids.
@@ -29,8 +29,10 @@ insert into public.workouts (id, user_id, title, date, is_public, status, starte
 select priv_workout, a, 'pgTAP rpc private workout', current_date, false, 'not_started', null::timestamptz from u
 union all select pub_workout, a, 'pgTAP rpc public workout', current_date, true, 'not_started', null::timestamptz from u
 union all select live_workout, a, 'pgTAP rpc live workout', current_date, false, 'in_progress', now() from u;
-insert into public.workout_exercises (workout_id, user_id, exercise_id, position)
-select pub_workout, a, predefined, 0 from u;
+insert into public.workout_exercises (id, workout_id, user_id, exercise_id, position)
+select '00000000-0000-4000-8000-00000000d004'::uuid, pub_workout, a, predefined, 0 from u;
+insert into public.workout_sets (id, workout_exercise_id, user_id, position, target_reps, weight_mode)
+select '00000000-0000-4000-8000-00000000d005'::uuid, '00000000-0000-4000-8000-00000000d004'::uuid, a, 0, 5, 'open' from u;
 
 insert into public.programs (id, user_id, name, is_public)
 select priv_program, a, 'pgTAP rpc private program', false from u
@@ -95,6 +97,15 @@ select throws_like(
 select throws_like(
   $$ select public.new_workout_from((select pub_workout from u), 'stolen', current_date, null) $$,
   'not_found:%', 'new_workout_from refuses a''s workout');
+-- The workout editor's group rewrite (#151) works only on the caller's own
+-- sets, even on a's public workout, which b can read.
+select throws_like(
+  $$ select public.replace_workout_set_group(array['00000000-0000-4000-8000-00000000d005'::uuid], 3,
+       '{"target_reps": 1, "weight_mode": "open"}'::jsonb) $$,
+  'not_found:%', 'replace_workout_set_group refuses a''s sets on a public workout');
+select is(
+  (select count(*)::int from public.workout_sets where workout_exercise_id = '00000000-0000-4000-8000-00000000d004'::uuid),
+  1, 'a''s public workout keeps its one set');
 
 -- The program editor's functions (#127) work only on the caller's own
 -- programs, even where a's public program is readable.
