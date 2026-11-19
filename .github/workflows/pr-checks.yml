@@ -104,13 +104,22 @@ jobs:
             --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
 
   build-android:
-    name: Build Android APK (${{ matrix.mode }})
+    name: Build Android APK (${{ matrix.flavor }}, ${{ matrix.mode }})
     needs: version
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
+        # Every mode as the local flavor, plus a release build of each other
+        # flavor: the flavors differ in application id, name and Firebase
+        # config, not in code, so one mode each proves they build.
         mode: [release, debug, profile]
+        flavor: [local]
+        include:
+          - mode: release
+            flavor: beta
+          - mode: release
+            flavor: production
 
     # Split out of `checks` because the Gradle build dominated that job's
     # runtime. On its own runner it no longer gates analyze/test feedback.
@@ -134,9 +143,10 @@ jobs:
 
       # Release is signed with the debug keys (see android/app/build.gradle.kts),
       # so all three modes build without any signing secrets.
-      - name: Build APK (${{ matrix.mode }})
+      - name: Build APK (${{ matrix.flavor }}, ${{ matrix.mode }})
         run: |
-          flutter build apk --${{ matrix.mode }} \
+          flutter build apk --${{ matrix.mode }} --flavor ${{ matrix.flavor }} \
+            --dart-define=APP_ENV=${{ matrix.flavor }} \
             --build-name="${{ needs.version.outputs.build-name }}" \
             --build-number="${{ needs.version.outputs.build-number }}"
 

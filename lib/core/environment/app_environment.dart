@@ -31,6 +31,21 @@ enum AppEnvironment {
   }
 }
 
+/// Guards against building one environment's code with another's settings:
+/// the Android flavor (`--flavor`) and `APP_ENV` must agree, or the app would
+/// carry one environment's application id and Firebase config but talk to
+/// another's backend. [flavor] is Flutter's `appFlavor`, `null` where there is
+/// no flavor (web, desktop, a build without `--flavor`), and then there's
+/// nothing to compare.
+void assertFlavorMatchesEnvironment(String? flavor, AppEnvironment environment) {
+  if (flavor == null || flavor == environment.name) return;
+  throw StateError(
+    'This build was made with --flavor $flavor but APP_ENV=${environment.name}. '
+    'Use the define file for the same environment, e.g. '
+    '--flavor $flavor --dart-define-from-file=.env.$flavor.json.',
+  );
+}
+
 /// Opt-in for debug and profile builds (`flutter run`, E2E): collect telemetry
 /// anyway, e.g. to watch events in Firebase's DebugView. Build with
 /// `--dart-define=TELEMETRY_DEBUG=true`.

@@ -67,6 +67,30 @@ void main() {
     });
   });
 
+  group('assertFlavorMatchesEnvironment', () {
+    test('passes when the flavor and the environment agree', () {
+      for (final environment in AppEnvironment.values) {
+        assertFlavorMatchesEnvironment(environment.name, environment);
+      }
+    });
+
+    test('passes when there is no flavor to compare (web, desktop, no --flavor)', () {
+      for (final environment in AppEnvironment.values) {
+        assertFlavorMatchesEnvironment(null, environment);
+      }
+    });
+
+    test('throws when they disagree, and says how to fix it', () {
+      expect(
+        () => assertFlavorMatchesEnvironment('beta', AppEnvironment.local),
+        throwsA(
+          isA<StateError>().having((e) => e.message, 'message', allOf(contains('--flavor beta'), contains('APP_ENV=local'))),
+        ),
+      );
+      expect(() => assertFlavorMatchesEnvironment('production', AppEnvironment.beta), throwsStateError);
+    });
+  });
+
   test('widget tests run as local with no telemetry', () {
     expect(AppEnvironment.current, AppEnvironment.local);
     expect(telemetryEnabledInThisBuild, isFalse);

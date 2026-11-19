@@ -14,6 +14,7 @@ Future<void> main() async {
   // SentryFlutter.init, causes a "Zone mismatch" on web.
   Sentry.runZonedGuarded(() async {
     SentryWidgetsFlutterBinding.ensureInitialized();
+    assertFlavorMatchesEnvironment(appFlavor, AppEnvironment.current);
     _registerFontLicenses();
 
     await SentryFlutter.init(

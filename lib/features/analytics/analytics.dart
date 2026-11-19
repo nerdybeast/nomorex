@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../core/environment/app_environment.dart';
-import '../../firebase_options.dart';
+import 'firebase_environment.dart';
 
 /// Product analytics: what people use, through Google Analytics for Firebase.
 /// Errors and crashes stay in Sentry.
@@ -79,15 +79,21 @@ const firebaseInitTimeout = Duration(seconds: 5);
 /// startup. A failure is reported to Sentry and the app runs without
 /// analytics.
 ///
+/// Each environment reports to its own Firebase project ([firebaseOptionsFor]);
+/// one with none (local, and production until its project exists) starts no
+/// Firebase at all.
+///
 /// On web, Firebase is skipped entirely in builds that don't collect, so
 /// `flutter run`, cloud sessions and Playwright never contact Google. Native
 /// debug builds still initialize it: the native SDKs start on their own and
 /// have to be told to stop collecting.
 Future<void> initFirebase() async {
   if (!analyticsPlatformSupported) return;
+  final options = firebaseOptionsFor(AppEnvironment.current);
+  if (options == null) return;
   if (kIsWeb && !analyticsCollectsInThisBuild) return;
   await runFirebaseInit(() async {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(options: options);
     // The native SDKs remember this across launches, so a debug build turns
     // collection off before it can log anything automatically. The user's
     // choice is applied once it loads (AnalyticsConsentNotifier).
