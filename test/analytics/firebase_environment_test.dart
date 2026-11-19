@@ -39,6 +39,43 @@ void main() {
       expect((beta['client_info'] as Map)['mobilesdk_app_id'], DefaultFirebaseOptions.android.appId);
     });
 
+    // The same for iOS and macOS: config/beta/GoogleService-Info.plist is what
+    // a build phase copies into the beta app, and lib/firebase_options.dart is
+    // what Dart starts Firebase with. macOS shares the iOS Firebase app.
+    String plistValue(String path, String key) {
+      final text = File(path).readAsStringSync();
+      final match = RegExp('<key>$key</key>\\s*<string>(.*?)</string>').firstMatch(text);
+      expect(match, isNotNull, reason: '$key in $path');
+      return match!.group(1)!;
+    }
+
+    test('the iOS and macOS beta plists match the Dart options', () {
+      for (final (platform, options) in [
+        ('ios', DefaultFirebaseOptions.ios),
+        ('macos', DefaultFirebaseOptions.macos),
+      ]) {
+        final plist = '$platform/config/beta/GoogleService-Info.plist';
+        expect(File(plist).existsSync(), isTrue, reason: 'regenerate with `firebase apps:sdkconfig IOS <app id>`');
+        expect(plistValue(plist, 'GOOGLE_APP_ID'), options.appId, reason: platform);
+        expect(plistValue(plist, 'BUNDLE_ID'), 'com.nomorex.app.beta', reason: platform);
+        expect(options.iosBundleId, 'com.nomorex.app.beta', reason: platform);
+        expect(plistValue(plist, 'PROJECT_ID'), options.projectId, reason: platform);
+      }
+    });
+
+    test('no other iOS or macOS environment has a Firebase config', () {
+      for (final platform in ['ios', 'macos']) {
+        for (final env in ['local', 'production']) {
+          expect(File('$platform/config/$env/GoogleService-Info.plist').existsSync(), isFalse, reason: '$platform $env');
+        }
+        expect(
+          File('$platform/Runner/GoogleService-Info.plist').existsSync(),
+          isFalse,
+          reason: '$platform: a bundled plist would reach every environment',
+        );
+      }
+    });
+
     test('no other flavor has a google-services.json (local and production send nothing)', () {
       for (final flavor in ['local', 'production']) {
         expect(File('android/app/src/$flavor/google-services.json').existsSync(), isFalse, reason: flavor);

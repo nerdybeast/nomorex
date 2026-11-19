@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "2700"
-   version = "1.7">
+   LastUpgradeVersion = "1510"
+   version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
@@ -10,12 +10,12 @@
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
             <ActionContent
                title = "Run Prepare Flutter Framework Script"
-               scriptText = "/bin/sh &quot;$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh&quot; prepare&#10;">
+               scriptText = "&quot;$FLUTTER_ROOT&quot;/packages/flutter_tools/bin/macos_assemble.sh prepare&#10;">
                <EnvironmentBuildable>
                   <BuildableReference
                      BuildableIdentifier = "primary"
-                     BlueprintIdentifier = "97C146ED1CF9000F007C117D"
-                     BuildableName = "Runner.app"
+                     BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+                     BuildableName = "nomorex.app"
                      BlueprintName = "Runner"
                      ReferencedContainer = "container:Runner.xcodeproj">
                   </BuildableReference>
@@ -32,8 +32,8 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "97C146ED1CF9000F007C117D"
-               BuildableName = "Runner.app"
+               BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+               BuildableName = "nomorex.app"
                BlueprintName = "Runner"
                ReferencedContainer = "container:Runner.xcodeproj">
             </BuildableReference>
@@ -41,16 +41,15 @@
       </BuildActionEntries>
    </BuildAction>
    <TestAction
-      buildConfiguration = "Debug"
+      buildConfiguration = "Debug-beta"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      customLLDBInitFile = "$(SRCROOT)/Flutter/ephemeral/flutter_lldbinit"
       shouldUseLaunchSchemeArgsEnv = "YES">
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "97C146ED1CF9000F007C117D"
-            BuildableName = "Runner.app"
+            BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+            BuildableName = "nomorex.app"
             BlueprintName = "Runner"
             ReferencedContainer = "container:Runner.xcodeproj">
          </BuildableReference>
@@ -61,7 +60,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "331C8080294A63A400263BE5"
+               BlueprintIdentifier = "331C80D4294CF70F00263BE5"
                BuildableName = "RunnerTests.xctest"
                BlueprintName = "RunnerTests"
                ReferencedContainer = "container:Runner.xcodeproj">
@@ -70,10 +69,9 @@
       </Testables>
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Debug"
+      buildConfiguration = "Debug-beta"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      customLLDBInitFile = "$(SRCROOT)/Flutter/ephemeral/flutter_lldbinit"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"
@@ -85,18 +83,15 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "97C146ED1CF9000F007C117D"
-            BuildableName = "Runner.app"
+            BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+            BuildableName = "nomorex.app"
             BlueprintName = "Runner"
             ReferencedContainer = "container:Runner.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <MetalAPIValidationSettings
-         isEnabled = "No">
-      </MetalAPIValidationSettings>
    </LaunchAction>
    <ProfileAction
-      buildConfiguration = "Profile"
+      buildConfiguration = "Profile-beta"
       shouldUseLaunchSchemeArgsEnv = "YES"
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
@@ -105,18 +100,18 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "97C146ED1CF9000F007C117D"
-            BuildableName = "Runner.app"
+            BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+            BuildableName = "nomorex.app"
             BlueprintName = "Runner"
             ReferencedContainer = "container:Runner.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction
-      buildConfiguration = "Debug">
+      buildConfiguration = "Debug-beta">
    </AnalyzeAction>
    <ArchiveAction
-      buildConfiguration = "Release"
+      buildConfiguration = "Release-beta"
       revealArchiveInOrganizer = "YES">
    </ArchiveAction>
 </Scheme>
