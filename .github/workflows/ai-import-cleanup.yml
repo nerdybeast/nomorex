@@ -33,14 +33,14 @@ jobs:
       - name: Call ai-import-cleanup
         env:
           SECRET: ${{ secrets.AI_IMPORT_CLEANUP_SECRET }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
         run: |
           if [ -z "$SECRET" ]; then
             echo "::error::The AI_IMPORT_CLEANUP_SECRET secret is not set in the beta environment."
             exit 1
           fi
           if [ -z "$SUPABASE_URL" ]; then
-            echo "::error::The SUPABASE_URL secret is not set in the beta environment."
+            echo "::error::The SUPABASE_URL variable is not set in the beta environment."
             exit 1
           fi
           status=$(curl -sS -o response.json -w '%{http_code}' -X POST \
