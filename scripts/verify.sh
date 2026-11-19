@@ -12,7 +12,7 @@
 #   ./scripts/verify.sh --no-web        # skip the web build
 #
 # WARNING: the db stage runs `supabase db reset`, which drops and recreates the
-# LOCAL database. It never passes --linked; never point it at production.
+# LOCAL database. It never passes --linked; never point it at a hosted project.
 
 set -uo pipefail
 
@@ -61,7 +61,7 @@ if [[ "$RUN_DB" == true ]]; then
     stage "supabase db reset (local)" supabase db reset
     stage "supabase db lint" supabase db lint
     # pgTAP tests under supabase/tests/. --local is the default; spelled out
-    # because --linked would run them against production.
+    # because --linked would run them against a hosted project.
     stage "supabase test db (local)" supabase test db --local
   else
     skip "migrations" "Docker unavailable — NOT proven"

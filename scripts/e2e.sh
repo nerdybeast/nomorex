@@ -20,7 +20,7 @@
 # calling `flutter test integration_test` directly.
 #
 # WARNING: --reset runs `supabase db reset`, which drops and recreates the LOCAL
-# database. It never passes --linked; never point it at the production project.
+# database. It never passes --linked; never point it at a hosted project.
 
 set -euo pipefail
 
