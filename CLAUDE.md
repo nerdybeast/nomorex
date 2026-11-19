@@ -68,6 +68,10 @@ Where a fix goes:
 - **Local development:** `scripts/` and `docs/build.md`. Prefer a script over a written-out sequence of commands.
 - **Checks:** `scripts/verify.sh`, and `pr-checks.yml` when CI should run it too.
 
+## Environments: every external dependency is split by environment from day one
+
+There are three environments: `local` (developer machines and cloud agent sessions), `beta` (everything deployed today: TestFlight, GitHub Pages) and `production` (reserved for the official App Store, Google Play and the official website; nothing sends `production` until that launch). **Any new external dependency or third-party service (an API, a SaaS, a key, a bucket, a webhook, a workflow secret) must be set up per environment from the start**: its own project/instance/credentials for `local`, `beta` and `production` (the word "test" is not used for an environment, flavor, bundle ID or GitHub Environment), selected by the environment and never shared across them, even if `production` is only provisioned at launch. Say which per-environment values it needs and where each is configured (define files, repo/environment secrets, function secrets) in the same PR that adds it, and update this section.
+
 ## Configuration
 
 `lib/main.dart` reads `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` via `String.fromEnvironment()`. These are **compile-time** constants, not runtime env vars — OS environment variables have no effect; the values must arrive via `--dart-define` / `--dart-define-from-file`. Unset values default to empty strings with no error. `.env.json` (prod) and `.env.local.json` (local stack) are gitignored and created per machine. Android emulators reach a local stack at `10.0.2.2`, not `127.0.0.1`. `SENTRY_DSN` works the same way. So do `SENTRY_ENVIRONMENT` (defaults to `development`), `SENTRY_RELEASE` and `SENTRY_DIST`, which only the deploy workflows pass: that's what keeps deployed Sentry events (`production`) apart from local ones. Full details in `docs/build.md`.

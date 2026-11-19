@@ -21,7 +21,7 @@ samples, guidance on mobile development, and a full API reference.
 To run the app locally going forward:
 
 ```bash
-flutter run --dart-define-from-file=.env.json
+flutter run --dart-define-from-file=.env.local.json
 ```
 
 > See [build.md](./docs/build.md)
