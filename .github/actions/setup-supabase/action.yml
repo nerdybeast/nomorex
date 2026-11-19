@@ -1,0 +1,13 @@
+name: Set up Supabase CLI
+description: Installs the Supabase CLI version this repo is pinned to. Every workflow uses this, so the version lives here only.
+
+runs:
+  using: composite
+  steps:
+    - uses: supabase/setup-cli@v3
+      with:
+        # Pinned because `latest` floats, and a CLI release changing what the
+        # local stack ships has broken db-validate and e2e on unrelated
+        # changes. scripts/lib/cloud.sh (`read_pins`) reads this line for the
+        # cloud sessions, so keep the key and format.
+        version: 3.2.0

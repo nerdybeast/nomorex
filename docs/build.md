@@ -73,8 +73,9 @@ Cloud sessions run the same local stack CI does, so a change can be proven end
 to end from a phone. Provisioning is split in two:
 
 - **`scripts/cloud-setup.sh`** is the heavy, slow-changing half: Flutter, the
-  Supabase CLI and Deno at the versions pinned in `.github/workflows/pr-checks.yml`
-  (read from there, so bump them in one place), the Linux desktop build deps and
+  Supabase CLI and Deno at the versions pinned in the composite actions under
+  `.github/actions/` (`setup-flutter`, `setup-supabase`, `setup-deno`; read from
+  there, so bump them in one place), the Linux desktop build deps and
   xvfb the E2E job uses, the Supabase Docker images, and Playwright's Chromium
   (for `scripts/web-shot.mjs`, which signs in, turns on Flutter's accessibility
   tree and can run a flow from `scripts/web-flows/` that clicks widgets by role
@@ -679,7 +680,7 @@ unit tests (fake model, fake Supabase client: no network, no key). CI runs it in
 the `functions` job; `scripts/verify.sh` runs it too, through Docker if Deno
 isn't installed. Cloud sessions install Deno (see "Claude Code on the web"), so
 they don't depend on pulling the `denoland/deno` image, which Docker Hub
-rate-limits. Deno is pinned to 2.1.4 to match the edge runtime.
+rate-limits. Deno is pinned (`.github/actions/setup-deno`, currently 2.1.4) to match the edge runtime.
 
 ### Deployment
 

@@ -49,14 +49,7 @@ jobs:
         run: |
           echo "**App version:** \`${{ needs.version.outputs.semver }}\` (build ${{ needs.version.outputs.build-name }}+${{ needs.version.outputs.build-number }})" >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: subosito/flutter-action@v2
-        with:
-          # Pinned deliberately: `channel: stable` floats, and a Flutter
-          # release landing mid-PR has broken these checks on changes that
-          # touched nothing related. Bump this on purpose, not by surprise.
-          flutter-version: 3.50.0
-          channel: stable
-          cache: true
+      - uses: ./.github/actions/setup-flutter
 
       - name: Install dependencies
         run: flutter pub get
@@ -94,14 +87,7 @@ jobs:
         run: |
           echo "**App version:** \`${{ needs.version.outputs.semver }}\` (build ${{ needs.version.outputs.build-name }}+${{ needs.version.outputs.build-number }})" >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: subosito/flutter-action@v2
-        with:
-          # Pinned deliberately: `channel: stable` floats, and a Flutter
-          # release landing mid-PR has broken these checks on changes that
-          # touched nothing related. Bump this on purpose, not by surprise.
-          flutter-version: 3.50.0
-          channel: stable
-          cache: true
+      - uses: ./.github/actions/setup-flutter
 
       - name: Install dependencies
         run: flutter pub get
@@ -141,14 +127,7 @@ jobs:
           distribution: zulu
           java-version: '17'
 
-      - uses: subosito/flutter-action@v2
-        with:
-          # Pinned deliberately: `channel: stable` floats, and a Flutter
-          # release landing mid-PR has broken these checks on changes that
-          # touched nothing related. Bump this on purpose, not by surprise.
-          flutter-version: 3.50.0
-          channel: stable
-          cache: true
+      - uses: ./.github/actions/setup-flutter
 
       - name: Install dependencies
         run: flutter pub get
@@ -185,14 +164,7 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - uses: subosito/flutter-action@v2
-        with:
-          # Pinned deliberately: `channel: stable` floats, and a Flutter
-          # release landing mid-PR has broken these checks on changes that
-          # touched nothing related. Bump this on purpose, not by surprise.
-          flutter-version: 3.50.0
-          channel: stable
-          cache: true
+      - uses: ./.github/actions/setup-flutter
 
       - name: Install dependencies
         run: flutter pub get
@@ -216,12 +188,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: supabase/setup-cli@v3
-        with:
-          # Pinned for the same reason as flutter-version above: `latest`
-          # floats, and a CLI release changing what the local stack ships
-          # has broken db-validate and e2e on unrelated changes.
-          version: 3.2.0
+      - uses: ./.github/actions/setup-supabase
 
       - name: Start local Supabase stack
         run: supabase start
@@ -252,12 +219,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: denoland/setup-deno@v2
-        with:
-          # Matches the Deno the Supabase edge runtime ships (2.1.x, printed
-          # by `supabase functions serve`), so CI type-checks against what
-          # actually runs. Bump together with the runtime.
-          deno-version: 2.1.4
+      - uses: ./.github/actions/setup-deno
 
       # fmt --check, lint, type-check the entry points, run the tests.
       - name: Check & test
@@ -280,21 +242,9 @@ jobs:
         run: |
           echo "**App version:** \`${{ needs.version.outputs.semver }}\` (build ${{ needs.version.outputs.build-name }}+${{ needs.version.outputs.build-number }})" >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: supabase/setup-cli@v3
-        with:
-          # Pinned for the same reason as flutter-version above: `latest`
-          # floats, and a CLI release changing what the local stack ships
-          # has broken db-validate and e2e on unrelated changes.
-          version: 3.2.0
+      - uses: ./.github/actions/setup-supabase
 
-      - uses: subosito/flutter-action@v2
-        with:
-          # Pinned deliberately: `channel: stable` floats, and a Flutter
-          # release landing mid-PR has broken these checks on changes that
-          # touched nothing related. Bump this on purpose, not by surprise.
-          flutter-version: 3.50.0
-          channel: stable
-          cache: true
+      - uses: ./.github/actions/setup-flutter
 
       - name: Install Linux desktop build dependencies
         run: |
