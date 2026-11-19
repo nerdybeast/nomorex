@@ -20,6 +20,7 @@
     ]
   },
   "enabledMcpjsonServers": [
-    "dart"
+    "dart",
+    "sentry-spotlight"
   ]
 }
