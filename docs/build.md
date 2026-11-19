@@ -591,14 +591,42 @@ Schema is managed as code under `supabase/migrations/`.
 
 ### Deployment
 
-Migrations are applied to production by the **Supabase GitHub integration**,
-which watches `supabase/` and deploys on push to `main`. The `Deploy` workflow
-in `.github/workflows/deploy.yml` only builds and publishes the web app; it no
-longer runs `supabase db push`. The integration doesn't deploy the AI edge
-function; see "AI backend" below.
+Migrations are applied to the hosted project by the **Supabase GitHub
+integration**, which watches `supabase/` and deploys on push to `main`. The
+hosted project is **beta** today; it is the only one the integration is linked
+to. The `Deploy` workflow in `.github/workflows/deploy.yml` only builds and
+publishes the web app; it no longer runs `supabase db push`. The integration
+also deploys the `ai-import-cleanup` function (declared in `config.toml`), but
+not the `ai` edge function; see "AI backend" below.
 
 The two run independently, so a schema change and the app build that depends on
 it are not ordered. Ship additive migrations ahead of the code that needs them.
+
+### Per-environment Supabase settings
+
+Each environment has its own Supabase project, and nothing here is shared
+between them. `local` is the `supabase start` stack; `beta` is the hosted
+project the deploys use today; `production` gets its own project at launch.
+
+| What | Where it lives | Used by |
+| --- | --- | --- |
+| Project URL | `SUPABASE_URL` variable in the environment's GitHub Environment (`beta`) | the app builds (`deploy.yml`, `deploy-ios.yml`), `ai-import-cleanup.yml`, `deploy-functions.yml` (which takes the CLI's project ref from its host) |
+| Publishable key | `SUPABASE_PUBLISHABLE_KEY` secret in the same environment | the app builds |
+| Cleanup secret | `AI_IMPORT_CLEANUP_SECRET`: a secret in the GitHub Environment **and** a function secret on that project's Supabase, the same value in both and a different value per project | `ai-import-cleanup.yml` and the `ai-import-cleanup` function |
+| Anthropic key | `ANTHROPIC_API_KEY` function secret on that project (see "AI backend") | the `ai` function |
+| Migrations and the cleanup function | the Supabase GitHub integration, linked to one project | every push to `main` |
+
+A workflow only sees a GitHub Environment's values when its job declares
+`environment: <name>`, which is why `ai-import-cleanup.yml` and
+`deploy-functions.yml` say `environment: beta`.
+
+**Adding `production`:** create the project, create a `production` GitHub
+Environment with its own `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`,
+`SENTRY_DSN` and `AI_IMPORT_CLEANUP_SECRET`, set the function secrets on the new
+project, give it its own Supabase GitHub integration link, run the official
+exercise catalog SQL (see "Official exercise catalog"), and create its first
+admin by hand. Then add `production` jobs to the workflows rather than reusing
+`beta`'s.
 
 ### Admins
 
@@ -648,10 +676,13 @@ as a function secret. It never ships in the app.
 
 ### Secrets
 
-| Where      | How                                                                                     |
-| ---------- | --------------------------------------------------------------------------------------- |
-| Local      | `supabase/functions/.env` containing `ANTHROPIC_API_KEY=sk-ant-...` (gitignored by `.env`) |
-| Production | `supabase secrets set ANTHROPIC_API_KEY=sk-ant-... --project-ref <ref>`, or Dashboard → Edge Functions → Secrets |
+| Where          | How                                                                                     |
+| -------------- | --------------------------------------------------------------------------------------- |
+| Local          | `supabase/functions/.env` containing `ANTHROPIC_API_KEY=sk-ant-...` (gitignored by `.env`) |
+| Beta           | `supabase secrets set ANTHROPIC_API_KEY=sk-ant-... --project-ref <beta ref>`, or Dashboard → Edge Functions → Secrets |
+| Production     | the same, on the production project, with its own key and spend limit (not created yet) |
+
+Each Supabase project has its own key; never reuse one across environments.
 
 `SUPABASE_URL` and `SUPABASE_ANON_KEY` are injected by the edge runtime; don't
 set them. The function deliberately never uses the service-role/secret key.
@@ -667,7 +698,7 @@ How a key problem shows up in the app's "Test AI connection":
 
 Either way the real error is in the function logs: `supabase functions serve`
 output locally (or `docker logs supabase_edge_runtime_nomorex`), Dashboard →
-Edge Functions → Logs in production.
+Edge Functions → Logs on the hosted project.
 
 The worker also fails to boot with `BOOT_ERROR` if a `deno.lock` turns up in
 `supabase/functions/ai`. `deno.json` sets `"lock": false` so local `deno`
@@ -725,7 +756,7 @@ before adding npm dependencies. New flows barely change it.
 
 Setup, once per project:
 
-1. Set the production `ANTHROPIC_API_KEY` (see Secrets above).
+1. Set `ANTHROPIC_API_KEY` on the hosted project (see Secrets above).
 2. Create a Supabase access token (Dashboard → Account → Access Tokens) and add
    it as the `SUPABASE_ACCESS_TOKEN` repository secret. A scoped token needs
    `edge_functions_write`, `edge_functions_read` and `projects_read`.

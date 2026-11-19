@@ -37,7 +37,7 @@ from auth.users
 where email in ('a@a.com', 'b@b.com', 'c@c.com', 'e2e@e2e.com');
 
 -- a@a.com is the local admin; b@b.com, c@c.com and e2e@e2e.com are ordinary users.
--- Production's first admin is created by hand (docs/build.md, "Admins").
+-- A hosted project's first admin is created by hand (docs/build.md, "Admins").
 insert into public.user_roles (user_id, role)
 select id, 'admin' from auth.users where email = 'a@a.com';
 
@@ -2918,6 +2918,6 @@ update public.program_exercises
 set notes = nullif(regexp_replace(notes, ',?\s*\d+-\d+ reps', ''), '')
 where notes ~ '\d+-\d+ reps';
 
--- AI imports ship switched off in production until launch (#88). Local and CI
--- stacks run with them on.
+-- AI imports ship switched off on hosted projects until launch (#88). Local and
+-- CI stacks run with them on.
 update public.ai_import_limits set enabled = true;
