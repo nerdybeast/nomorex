@@ -141,16 +141,16 @@ else
 fi
 
 # Point the app at the local stack, exactly as a developer's machine does.
-# Never overwrite a file that is already there. SENTRY_DSN is left unset on
-# purpose: an empty DSN disables Sentry, so cloud runs add no noise to either
-# Sentry project.
+# Never overwrite a file that is already there. APP_ENV is local, which sends
+# no telemetry; SENTRY_DSN is left unset on purpose, so cloud runs add no noise
+# to Sentry or Firebase.
 ENV_LOCAL="$CLAUDE_PROJECT_DIR/.env.local.json"
 if [ "$STACK_UP" = true ] && [ ! -f "$ENV_LOCAL" ]; then
   sb_status="$(supabase status -o env)"
   api_url="$(sed -n 's/^API_URL="\(.*\)"$/\1/p' <<<"$sb_status")"
   pub_key="$(sed -n 's/^PUBLISHABLE_KEY="\(.*\)"$/\1/p' <<<"$sb_status")"
   if [ -n "$api_url" ] && [ -n "$pub_key" ]; then
-    printf '{\n  "SUPABASE_URL": "%s",\n  "SUPABASE_PUBLISHABLE_KEY": "%s"\n}\n' \
+    printf '{\n  "APP_ENV": "local",\n  "SUPABASE_URL": "%s",\n  "SUPABASE_PUBLISHABLE_KEY": "%s"\n}\n' \
       "$api_url" "$pub_key" > "$ENV_LOCAL"
     note ".env.local.json written for the local stack"
   else

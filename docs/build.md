@@ -11,25 +11,41 @@ await Supabase.initialize(
 );
 
 await SentryFlutter.init((options) {
-  options.dsn = const String.fromEnvironment('SENTRY_DSN');
+  options.dsn = telemetryEnabledInThisBuild ? const String.fromEnvironment('SENTRY_DSN') : '';
+  options.environment = telemetryEnvironmentInThisBuild.name;
 }, appRunner: () => runApp(...));
 ```
 
+`APP_ENV` (`local`, `beta` or `production`; unset means `local`) says which environment a build belongs to. Everything environment-specific derives from it (`lib/core/environment/app_environment.dart`): Sentry's environment tag and whether any telemetry is sent. An unknown value throws at startup rather than quietly behaving like `local`. See "Environments" below.
+
 These are **compile-time constants**, not runtime environment variables. The values are baked into the binary during `flutter build` — they do not exist as named variables in the finished app. If they are not supplied at build time, they default to empty strings (no error, but the app will fail to connect to Supabase; an empty `SENTRY_DSN` just disables the Sentry SDK rather than erroring).
 
-`SENTRY_DSN` deliberately points at a **different Sentry project per environment**: `.env.json` (prod) carries the `Nomorex` project's DSN, `.env.local.json` carries the `Nomorex-test` project's DSN, so local debugging noise never lands in the production Sentry project. A DSN is not a secret — see "A Note on the Publishable Key" below for why the same reasoning applies here.
+`SENTRY_DSN` is the one DSN of the single `nomorex` Sentry project, which separates environments by tag (`local`, `beta`, `production`) instead of by project. Only the `beta` define file carries it: local builds send nothing, so they need no DSN. A DSN is not a secret — see "A Note on the Publishable Key" below for why the same reasoning applies here.
+
+## Environments
+
+| Environment | Used for | Define file | Telemetry |
+|---|---|---|---|
+| `local` | developer machines, cloud agent sessions, CI builds | `.env.local.json` (local `supabase start` stack), `.env.device.json` | none |
+| `beta` | everything deployed today: TestFlight, GitHub Pages | `.env.beta.json` | release builds send Sentry events and analytics |
+| `production` | reserved for the official App Store, Google Play and website launch | none yet | release builds send them |
+
+- **Debug and profile builds never send telemetry**, whatever `APP_ENV` is: running `flutter run` against the beta backend must not put half-finished code into beta's error and usage data. To check Sentry or analytics wiring from such a build, add `--dart-define=TELEMETRY_DEBUG=true`; those events are tagged `local`, not `beta`.
+- **Release builds of `local` send nothing either.** Only `beta` and `production` builds collect.
+- The deploy workflows build with `APP_ENV=beta` and read `SUPABASE_URL` (a variable) and the Supabase and Sentry secrets from the `beta` GitHub Environment. A new external dependency is set up per environment from the start (see CLAUDE.md, "Environments").
 
 ## Local Development
 
-A `.env.json` file at the project root supplies these values locally. It is gitignored (covered by the `.env*` pattern) and must be created manually on each machine.
+A define file at the project root supplies these values locally. They are gitignored (covered by the `.env*` pattern) and must be created manually on each machine. `.env.beta.json` points at the hosted **beta** project; the next section covers the local stack.
 
-`.env.json`:
+`.env.beta.json`:
 
 ```json
 {
+  "APP_ENV": "beta",
   "SUPABASE_URL": "https://<project-ref>.supabase.co",
   "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_<your-publishable-key>",
-  "SENTRY_DSN": "<Nomorex project DSN>"
+  "SENTRY_DSN": "<nomorex project DSN>"
 }
 ```
 
@@ -37,25 +53,26 @@ Pass the file to any `flutter` command using the `--dart-define-from-file` flag:
 
 ```bash
 # Run the app
-flutter run --dart-define-from-file=.env.json
+flutter run --dart-define-from-file=.env.beta.json
 
 # Build a debug APK
-flutter build apk --debug --dart-define-from-file=.env.json
+flutter build apk --debug --dart-define-from-file=.env.beta.json
 
 # Build a release APK
-flutter build apk --release --dart-define-from-file=.env.json
+flutter build apk --release --dart-define-from-file=.env.beta.json
 ```
 
 ### Targeting the local Supabase stack
 
-`.env.json` points at **production**. To develop against the local stack from
-`supabase start`, use `.env.local.json` instead (also gitignored):
+`.env.beta.json` points at the hosted **beta** project. To develop against the
+local stack from `supabase start`, use `.env.local.json` instead (also
+gitignored). It has no `SENTRY_DSN`: local sends no telemetry.
 
 ```json
 {
+  "APP_ENV": "local",
   "SUPABASE_URL": "http://127.0.0.1:54321",
-  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_<local-key>",
-  "SENTRY_DSN": "<Nomorex-test project DSN>"
+  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_<local-key>"
 }
 ```
 
@@ -86,7 +103,7 @@ to end from a phone. Provisioning is split in two:
 - **`.claude/hooks/session-start.sh`** is the light, per-session half: `flutter
   pub get`, start Docker and `supabase start` (processes don't survive the
   environment snapshot), and write `.env.local.json` for that stack (never
-  overwritten if present; `SENTRY_DSN` stays unset, which disables Sentry). If
+  overwritten if present; `APP_ENV` is `local` and `SENTRY_DSN` stays unset, so nothing is sent). If
   the toolchain isn't on disk it runs `cloud-setup.sh` itself, so it works
   with no setup script configured, only slower. It also installs Deno on its
   own when that's the only thing missing (a snapshot from before Deno was
@@ -140,7 +157,7 @@ ready: starting". A network access change reaches running
 sessions within about a minute; no new session is needed. See
 [Network access](https://code.claude.com/docs/en/cloud-environments#access-levels).
 
-**Firebase in cloud sessions needs no setup.** Linux skips Firebase entirely (it isn't supported there), and debug web builds don't load it, so the E2E run, `verify.sh` and `web-shot.mjs` work as before with no extra hosts. To check events from a web build in a cloud session (`--dart-define=ANALYTICS_DEBUG=true`), the network must also allow `www.gstatic.com` and `www.googletagmanager.com`. Don't run `flutterfire configure` in a cloud session: it needs an interactive `firebase login`, and the generated config is committed, so nothing needs regenerating there.
+**Firebase in cloud sessions needs no setup.** Linux skips Firebase entirely (it isn't supported there), and debug web builds don't load it, so the E2E run, `verify.sh` and `web-shot.mjs` work as before with no extra hosts. To check events from a web build in a cloud session (`--dart-define=TELEMETRY_DEBUG=true`), the network must also allow `www.gstatic.com` and `www.googletagmanager.com`. Don't run `flutterfire configure` in a cloud session: it needs an interactive `firebase login`, and the generated config is committed, so nothing needs regenerating there.
 
 Cloud sessions must never `supabase link`, `db push`, or reset with `--linked`
 or `--db-url`; `.claude/settings.json` denies those.
@@ -218,22 +235,30 @@ For GitHub Actions (or any CI system), pass the values as secrets. Store `SUPABA
 `.github/workflows/deploy.yml` (the GitHub Pages web app) and
 `.github/workflows/deploy-ios.yml` (TestFlight) are the only workflows that
 build a real deployed app, so they're also the only ones that pass
-`SENTRY_DSN` — as a `SENTRY_DSN` repository secret holding the **Nomorex**
-(production) project's DSN. `pr-checks.yml` never deploys anywhere real, so it
-intentionally leaves `SENTRY_DSN` unset; an empty DSN just disables the Sentry
-SDK for that build, same as an unset Supabase secret leaves it unable to
-connect.
+`SENTRY_DSN` and `APP_ENV=beta`. Both run in the `beta` GitHub Environment: the
+`SENTRY_DSN` and `SUPABASE_PUBLISHABLE_KEY` secrets and the `SUPABASE_URL`
+variable come from there (a job only sees an environment's values when it
+declares the environment, so `deploy.yml` builds in a `beta` job and publishes
+from a separate `github-pages` job). `pr-checks.yml` never deploys anywhere
+real, so it builds as `local` and leaves `SENTRY_DSN` unset; an empty DSN just
+disables the Sentry SDK for that build, same as an unset Supabase value leaves
+it unable to connect.
 
 ### Sentry environments, releases and symbols
 
-Local development and deployed apps are kept apart in two ways:
+Local development and deployed apps are kept apart by environment, inside
+the one `nomorex` Sentry project:
 
-- **Different projects.** Local runs use the `nomorex-test` DSN from
-  `.env.local.json`. The deploy workflows use the `nomorex` (production) DSN.
-- **Different environments.** `lib/main.dart` reads `SENTRY_ENVIRONMENT`,
-  which defaults to `development`. Only `deploy.yml` and `deploy-ios.yml` pass
-  `production`. A local build that happens to use `.env.json` still reports as
-  `development`.
+- **`local` sends nothing.** No local define file carries a DSN, and
+  `lib/main.dart` drops the DSN for any build that doesn't collect telemetry
+  (`collectsTelemetry`): every debug or profile build unless it opts in with
+  `TELEMETRY_DEBUG=true`, and every `local` release build.
+- **Deployed builds are tagged by `APP_ENV`.** `lib/main.dart` sets Sentry's
+  environment from it. `deploy.yml` and `deploy-ios.yml` pass `beta`, so
+  today's TestFlight and Pages builds report as `beta`; `production` is
+  reserved for the store launch. A debug build that opted in reports as
+  `local`, never `beta`. Alert rules and dashboards should filter on the
+  environment tag.
 
 The deploy workflows also pass `SENTRY_RELEASE` (`nomorex@<version>+<build>`)
 and `SENTRY_DIST` (`<build>`), from the same `version.yml` outputs as the app
@@ -267,8 +292,8 @@ Usage analytics go to Google Analytics for Firebase, project `nomorex-13bd9308`.
 - **Config is generated, not hand-written.** `flutterfire configure` wrote `lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`, `macos/Runner/GoogleService-Info.plist` and `firebase.json`. The API keys in them identify the Firebase project and aren't secrets (the same reasoning as the publishable key below), so they're committed. To regenerate, for example after adding a platform: `flutterfire configure -p nomorex-13bd9308 --platforms=android,ios,macos,web,windows -i com.nomorex.app -m com.nomorex.app --android-package-name=com.nomorex.app`. It needs the Firebase CLI, logged in.
 - **App IDs:** Android, iOS and macOS are all `com.nomorex.app`; macOS shares the iOS Firebase app.
 - **Platforms:** Firebase is initialized on Android, iOS, macOS and web only (`analyticsPlatformSupported`). Linux and Windows run without it, which is how CI's Linux E2E run stays off Firebase.
-- **Debug builds send nothing.** Only release builds collect (`analyticsCollectsInThisBuild`). On web, a build that doesn't collect skips Firebase entirely, so `flutter run -d chrome`, `verify.sh`'s web build, Playwright and cloud sessions never contact Google. Native debug builds still initialize it, because the native SDKs start on their own and have to be told to stop collecting.
-- **Firebase never holds up startup.** On web, Firebase loads its SDK from `www.gstatic.com/firebasejs/` and never finishes if that's blocked (an ad blocker, a filtered network), which left the app on its splash screen. `initFirebase()` gives up after `firebaseInitTimeout` (5 s) and the app runs without analytics. A timeout isn't sent to Sentry. To see events in the Firebase console's DebugView, build with `--dart-define=ANALYTICS_DEBUG=true` and enable debug mode on the device (`adb shell setprop debug.firebase.analytics.app com.nomorex.app` on Android; `-FIRDebugEnabled` as a launch argument in Xcode on iOS).
+- **Debug builds send nothing.** Only release builds of `beta` and `production` collect (`analyticsCollectsInThisBuild`, from `APP_ENV`; a `local` release build sends nothing either), unless a debug build opts in with `TELEMETRY_DEBUG=true`. On web, a build that doesn't collect skips Firebase entirely, so `flutter run -d chrome`, `verify.sh`'s web build, Playwright and cloud sessions never contact Google. Native debug builds still initialize it, because the native SDKs start on their own and have to be told to stop collecting.
+- **Firebase never holds up startup.** On web, Firebase loads its SDK from `www.gstatic.com/firebasejs/` and never finishes if that's blocked (an ad blocker, a filtered network), which left the app on its splash screen. `initFirebase()` gives up after `firebaseInitTimeout` (5 s) and the app runs without analytics. A timeout isn't sent to Sentry. To see events in the Firebase console's DebugView, build with `--dart-define=TELEMETRY_DEBUG=true` and enable debug mode on the device (`adb shell setprop debug.firebase.analytics.app com.nomorex.app` on Android; `-FIRDebugEnabled` as a launch argument in Xcode on iOS).
 - **Opt-out:** Profile → "Share usage analytics", saved per device (`AnalyticsConsentNotifier`).
 - **No advertising-ID SDKs on iOS.** `firebase_analytics` bundles Google's ad-ID SDKs (`GoogleAppMeasurementIdentitySupport`, `GoogleAdsOnDeviceConversion`) unless `FIREBASE_ANALYTICS_WITHOUT_ADID` is set while Swift Package Manager resolves packages. Both iOS jobs (`build-ios` in `pr-checks.yml`, `deploy-ios.yml`) set it and then run `./scripts/check-ios-no-adid.sh`, which fails if either framework is in the app; the deploy checks the archive before anything is uploaded. **The variable only works with cold SwiftPM caches:** SwiftPM caches resolved manifests and ignores the variable once one is cached, so it can silently do nothing. CI runners start cold. Local builds don't ship, so they don't need it, but to reproduce the shipped app locally, clear this project's caches first: `rm -rf build/ios`, the `~/Library/Developer/Xcode/DerivedData/Runner-*` folder whose `info.plist` `WorkspacePath` is this repo's `ios/Runner.xcworkspace`, and `~/Library/Caches/org.swift.swiftpm/manifests`. Then run `FIREBASE_ANALYTICS_WITHOUT_ADID=true flutter build ios --release --no-codesign && ./scripts/check-ios-no-adid.sh`. `Package.resolved` is the same either way. macOS has no such switch, but macOS isn't shipped.
 - **Advertising is off.** The Android manifest removes the `AD_ID` permission and turns off ad-ID collection and ad personalization; `ios/Runner/Info.plist` turns off ad personalization. The app never calls `setUserId`, so events aren't linked to accounts. The privacy policy and store disclosures rely on all of this. In the Google Analytics property, keep Google signals off, keep ads personalization off, and keep event data retention at 14 months or less, which is what the privacy policy states.
@@ -398,8 +423,9 @@ after rotating the key.
    step fails (instead of quietly creating a new certificate). Export a fresh
    one and replace both secrets.
 
-   `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `SENTRY_DSN` are the same
-   secrets the web deploy uses. The workflow's first step fails with a clear
+   `SUPABASE_URL` (a variable), `SUPABASE_PUBLISHABLE_KEY` and `SENTRY_DSN`
+   (secrets) are the same `beta` environment values the web deploy uses; the
+   job declares `environment: beta` to see them. The workflow's first step fails with a clear
    error if any required secret is missing, or if the .p8 secret doesn't decode
    to a private key.
 
