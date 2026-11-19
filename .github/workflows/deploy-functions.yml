@@ -19,16 +19,17 @@ concurrency:
   group: deploy-functions
   cancel-in-progress: false
 
-env:
-  PROJECT_REF: tlojfeebipuobfhiknps
-
 jobs:
   deploy-ai:
     name: Deploy ai function
     runs-on: ubuntu-latest
+    # SUPABASE_URL is a beta environment secret, which a job only sees when it
+    # names the environment.
+    environment: beta
     env:
       # This env var needs to be present for the Supabase CLI to authenticate
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
     steps:
       - uses: actions/checkout@v7
 
@@ -38,12 +39,20 @@ jobs:
       # --no-verify-jwt. --yes because a workflow can't answer the CLI's
       # confirmation prompt for hosted changes.
       - name: Deploy
-        run: supabase functions deploy ai --project-ref "$PROJECT_REF" --yes
+        run: |
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::error::The SUPABASE_URL secret is not set in the beta environment."
+            exit 1
+          fi
+          # The CLI wants the project ref, which is the first label of
+          # https://<ref>.supabase.co.
+          host="${SUPABASE_URL#https://}"
+          supabase functions deploy ai --project-ref "${host%%.*}" --yes
 
       - name: Confirm the function requires a signed-in user
         run: |
           status=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
             -H 'Content-Type: application/json' -d '{"data":{}}' \
-            "https://$PROJECT_REF.supabase.co/functions/v1/ai/smokeTest")
+            "${SUPABASE_URL%/}/functions/v1/ai/smokeTest")
           echo "Unauthenticated request returned HTTP $status"
           test "$status" = "401"
