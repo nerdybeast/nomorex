@@ -6,7 +6,7 @@ name: AI import cleanup
 #
 # The function is deployed by the Supabase GitHub integration (it's declared in
 # supabase/config.toml) and refuses any caller without the shared secret:
-#   - GitHub: repository secret AI_IMPORT_CLEANUP_SECRET
+#   - GitHub: secret AI_IMPORT_CLEANUP_SECRET in the `beta` environment
 #   - Supabase: function secret AI_IMPORT_CLEANUP_SECRET (same value, 32+ chars)
 # Until both are set, the function answers 503 and this run fails.
 on:
@@ -28,6 +28,9 @@ jobs:
   cleanup:
     name: Run cleanup
     runs-on: ubuntu-latest
+    # The secret lives in the beta GitHub Environment, which a job only sees
+    # when it names it.
+    environment: beta
     timeout-minutes: 10
     steps:
       - name: Call ai-import-cleanup
@@ -35,7 +38,7 @@ jobs:
           SECRET: ${{ secrets.AI_IMPORT_CLEANUP_SECRET }}
         run: |
           if [ -z "$SECRET" ]; then
-            echo "::error::The AI_IMPORT_CLEANUP_SECRET repository secret is not set."
+            echo "::error::The AI_IMPORT_CLEANUP_SECRET secret is not set in the beta environment."
             exit 1
           fi
           status=$(curl -sS -o response.json -w '%{http_code}' -X POST \

@@ -73,12 +73,7 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - uses: subosito/flutter-action@v2
-        with:
-          # Pinned to match pr-checks.yml and deploy.yml. Bump all three together.
-          flutter-version: 3.50.0
-          channel: stable
-          cache: true
+      - uses: ./.github/actions/setup-flutter
 
       - name: Install dependencies
         run: flutter pub get

@@ -1,0 +1,17 @@
+name: Set up Flutter
+description: Installs the Flutter version this repo is pinned to. Every workflow uses this, so the version lives here only.
+
+runs:
+  using: composite
+  steps:
+    - uses: subosito/flutter-action@v2
+      with:
+        # Pinned deliberately: `channel: stable` floats, and a Flutter release
+        # landing mid-PR has broken checks on changes that touched nothing
+        # related, and an unpinned deploy could publish from a different
+        # Flutter than the one the PR was verified against. Bump this on
+        # purpose, not by surprise. scripts/lib/cloud.sh (`read_pins`) reads
+        # this line for the cloud sessions, so keep the key and format.
+        flutter-version: 3.50.0
+        channel: stable
+        cache: true

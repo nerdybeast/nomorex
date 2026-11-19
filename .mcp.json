@@ -4,6 +4,16 @@
       "type": "stdio",
       "command": "${CLAUDE_PROJECT_DIR:-.}/scripts/dart-mcp.sh",
       "args": []
+    },
+    "sentry-spotlight": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@spotlightjs/spotlight@latest",
+        "--stdio-mcp"
+      ],
+      "env": {}
     }
   }
 }

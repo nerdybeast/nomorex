@@ -84,7 +84,7 @@ fi
 # Edge functions: fmt, lint, type-check, unit tests (deno task check).
 # Same Deno version as CI and the edge runtime. Falls back to the pinned Docker
 # image when Deno isn't installed.
-DENO_VERSION="2.1.4"
+DENO_VERSION="$(grep -m1 'deno-version:' .github/actions/setup-deno/action.yml | awk '{print $2}')"
 deno_check_docker() {
   docker run --rm -v "$PWD/supabase/functions/$1:/app" -w /app \
     "denoland/deno:$DENO_VERSION" deno task check

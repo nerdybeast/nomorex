@@ -27,14 +27,12 @@ jobs:
     name: Deploy ai function
     runs-on: ubuntu-latest
     env:
+      # This env var needs to be present for the Supabase CLI to authenticate
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v7
 
-      - uses: supabase/setup-cli@v3
-        with:
-          # Same pin as pr-checks.yml, so they move together.
-          version: 3.2.0
+      - uses: ./.github/actions/setup-supabase
 
       # JWT verification stays on: this deliberately doesn't pass
       # --no-verify-jwt. --yes because a workflow can't answer the CLI's

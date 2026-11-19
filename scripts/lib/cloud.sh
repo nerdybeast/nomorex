@@ -9,16 +9,17 @@ if [ "$(id -u)" -ne 0 ]; then SUDO="sudo"; fi
 FLUTTER_DIR="/opt/flutter"
 PLAYWRIGHT_VERSION="1.55.0"
 
-# Pins live in CI so there is one place to bump them. Floating versions have
-# broken unrelated PRs before (see the comments in pr-checks.yml).
+# Pins live in CI so there is one place to bump them: one composite action per
+# tool under .github/actions/, which every workflow uses. Floating versions have
+# broken unrelated PRs before (see the comments in those files).
 # Usage: read_pins <repo root>
 read_pins() {
-  local workflow="$1/.github/workflows/pr-checks.yml"
-  FLUTTER_VERSION="$(grep -m1 'flutter-version:' "$workflow" | awk '{print $2}')"
-  SUPABASE_VERSION="$(grep -m1 -E '^[[:space:]]+version: [0-9]+\.[0-9]+\.[0-9]+$' "$workflow" | awk '{print $2}')"
-  DENO_VERSION="$(grep -m1 'deno-version:' "$workflow" | awk '{print $2}')"
+  local actions="$1/.github/actions"
+  FLUTTER_VERSION="$(grep -m1 'flutter-version:' "$actions/setup-flutter/action.yml" | awk '{print $2}')"
+  SUPABASE_VERSION="$(grep -m1 -E '^[[:space:]]+version: [0-9]+\.[0-9]+\.[0-9]+$' "$actions/setup-supabase/action.yml" | awk '{print $2}')"
+  DENO_VERSION="$(grep -m1 'deno-version:' "$actions/setup-deno/action.yml" | awk '{print $2}')"
   if [ -z "$FLUTTER_VERSION" ] || [ -z "$SUPABASE_VERSION" ] || [ -z "$DENO_VERSION" ]; then
-    echo "could not read version pins from $workflow" >&2
+    echo "could not read version pins from $actions" >&2
     return 1
   fi
 }
