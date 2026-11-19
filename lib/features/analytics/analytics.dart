@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import '../../core/environment/app_environment.dart';
 import '../../firebase_options.dart';
 
 /// Product analytics: what people use, through Google Analytics for Firebase.
@@ -65,10 +66,11 @@ bool get analyticsPlatformSupported =>
       _ => false,
     };
 
-/// Debug and profile builds (`flutter run`, E2E) don't send analytics unless
-/// built with `--dart-define=ANALYTICS_DEBUG=true`, which is how to check
-/// events in Firebase's DebugView.
-const bool analyticsCollectsInThisBuild = kReleaseMode || bool.fromEnvironment('ANALYTICS_DEBUG');
+/// Whether this build sends analytics: release builds of `beta` and
+/// `production`, and debug builds only when built with
+/// `--dart-define=TELEMETRY_DEBUG=true`, which is how to check events in
+/// Firebase's DebugView. See [collectsTelemetry].
+bool get analyticsCollectsInThisBuild => telemetryEnabledInThisBuild;
 
 /// How long startup waits for Firebase before going on without analytics.
 const firebaseInitTimeout = Duration(seconds: 5);

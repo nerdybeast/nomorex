@@ -47,6 +47,10 @@ jobs:
     # Free on a public repo; a private repo would bill these minutes at the
     # macOS multiplier.
     runs-on: macos-26
+    # beta: its SUPABASE_URL variable and its Supabase and Sentry secrets. The
+    # App Store Connect and signing secrets stay at repository level and are
+    # visible here too.
+    environment: beta
     env:
       # Builds firebase_analytics without Google's advertising-ID SDKs (no ads;
       # see web/privacy.html). Checked after the archive below.
@@ -78,12 +82,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # An unset secret expands to an empty string rather than failing the
-      # build, which would ship an app that silently cannot reach Supabase,
-      # or fail much later with an opaque signing error.
+      # An unset secret or variable expands to an empty string rather than
+      # failing the build, which would ship an app that silently cannot reach
+      # Supabase, or fail much later with an opaque signing error.
       - name: Verify build secrets
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
@@ -96,7 +100,7 @@ jobs:
             [ -n "${!name}" ] || missing+=("$name")
           done
           if [ ${#missing[@]} -ne 0 ]; then
-            echo "::error::Missing repository secrets: ${missing[*]}. Set them under Settings > Secrets and variables > Actions (see docs/build.md)."
+            echo "::error::Missing secrets or variables: ${missing[*]}. SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY and SENTRY_DSN live in the beta environment (Settings > Environments > beta); the rest are repository secrets (see docs/build.md)."
             exit 1
           fi
           case "$SUPABASE_URL" in
@@ -121,7 +125,7 @@ jobs:
       # simpler, but it can't pass the API-key auth flags through to xcodebuild.
       - name: Configure Flutter iOS build
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_RELEASE: nomorex@${{ needs.determine-version.outputs.build-name }}+${{ needs.determine-version.outputs.build-number }}
@@ -133,7 +137,7 @@ jobs:
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
             --dart-define=SENTRY_DSN="$SENTRY_DSN" \
-            --dart-define=SENTRY_ENVIRONMENT=production \
+            --dart-define=APP_ENV=beta \
             --dart-define=SENTRY_RELEASE="$SENTRY_RELEASE" \
             --dart-define=SENTRY_DIST="$SENTRY_DIST"
 

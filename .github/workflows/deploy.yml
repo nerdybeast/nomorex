@@ -48,13 +48,14 @@ jobs:
   determine-version:
     uses: ./.github/workflows/version.yml
 
-  deploy-web:
-    name: Build & deploy web
+  # Builds against the beta environment: its SUPABASE_URL variable and its
+  # secrets. A job can only name one environment, so publishing to Pages is a
+  # separate job below.
+  build-web:
+    name: Build web
     needs: determine-version
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    environment: beta
     steps:
       - uses: actions/checkout@v7
 
@@ -63,18 +64,19 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # An unset secret expands to an empty string rather than failing the build,
-      # which would publish a web app that silently cannot reach Supabase.
-      - name: Verify Supabase build secrets
+      # An unset secret or variable expands to an empty string rather than
+      # failing the build, which would publish a web app that silently cannot
+      # reach Supabase.
+      - name: Verify Supabase build settings
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
           missing=()
           [ -n "$SUPABASE_URL" ] || missing+=(SUPABASE_URL)
           [ -n "$SUPABASE_PUBLISHABLE_KEY" ] || missing+=(SUPABASE_PUBLISHABLE_KEY)
           if [ ${#missing[@]} -ne 0 ]; then
-            echo "::error::Missing repository secrets: ${missing[*]}. Set them under Settings > Secrets and variables > Actions."
+            echo "::error::Missing settings in the beta environment: ${missing[*]}. Set them under Settings > Environments > beta."
             exit 1
           fi
           case "$SUPABASE_URL" in
@@ -86,7 +88,7 @@ jobs:
       # stack traces tagged with this release (see the upload step below).
       - name: Build web
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_RELEASE: nomorex@${{ needs.determine-version.outputs.build-name }}+${{ needs.determine-version.outputs.build-number }}
@@ -99,7 +101,7 @@ jobs:
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
             --dart-define=SENTRY_DSN="$SENTRY_DSN" \
-            --dart-define=SENTRY_ENVIRONMENT=production \
+            --dart-define=APP_ENV=beta \
             --dart-define=SENTRY_RELEASE="$SENTRY_RELEASE" \
             --dart-define=SENTRY_DIST="$SENTRY_DIST"
 
@@ -128,6 +130,14 @@ jobs:
         with:
           path: build/web
 
+  deploy-web:
+    name: Deploy web
+    needs: build-web
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

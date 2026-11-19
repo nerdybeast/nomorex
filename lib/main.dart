@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
+import 'core/environment/app_environment.dart';
 import 'features/analytics/analytics.dart';
 
 Future<void> main() async {
@@ -17,11 +18,13 @@ Future<void> main() async {
 
     await SentryFlutter.init(
       (options) {
-        options.dsn = const String.fromEnvironment('SENTRY_DSN');
-        // Only the deploy workflows pass 'production'; local runs, PR builds
-        // and E2E stay 'development'.
-        options.environment =
-            const String.fromEnvironment('SENTRY_ENVIRONMENT', defaultValue: 'development');
+        // Telemetry is off for local builds and for any debug/profile build
+        // that didn't opt in (see collectsTelemetry); an empty DSN disables
+        // Sentry entirely.
+        options.dsn = telemetryEnabledInThisBuild ? const String.fromEnvironment('SENTRY_DSN') : '';
+        // local, beta or production, from APP_ENV. A debug build that opted
+        // in reports as local.
+        options.environment = telemetryEnvironmentInThisBuild.name;
         // nomorex@<version>+<build>, matching the release the deploy
         // workflows upload debug symbols and source maps under.
         const release = String.fromEnvironment('SENTRY_RELEASE');
