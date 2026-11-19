@@ -52,16 +52,29 @@ A define file at the project root supplies these values locally. They are gitign
 Pass the file to any `flutter` command using the `--dart-define-from-file` flag:
 
 ```bash
-# Run the app
+# Run the app (Android also needs --flavor, see "Android flavors" below)
 flutter run --dart-define-from-file=.env.beta.json
 
 # Build a debug APK
-flutter build apk --debug --dart-define-from-file=.env.beta.json
+flutter build apk --debug --flavor beta --dart-define-from-file=.env.beta.json
 
 # Build a release APK
-flutter build apk --release --dart-define-from-file=.env.beta.json
+flutter build apk --release --flavor beta --dart-define-from-file=.env.beta.json
 ```
 
+### Android flavors
+
+Android has one product flavor per environment, so the three can be installed side by side and each carries its own Firebase config:
+
+| Flavor | Application id | Launcher name | Firebase config |
+|---|---|---|---|
+| `local` | `com.nomorex.app.local` | NoMoreX (Local) | none |
+| `beta` | `com.nomorex.app.beta` | NoMoreX (Beta) | `android/app/src/beta/google-services.json` |
+| `production` | `com.nomorex.app` | NoMoreX | none yet (its Firebase project doesn't exist) |
+
+Always pass `--flavor` and the define file of the same environment, e.g. `flutter run --flavor local --dart-define-from-file=.env.local.json`. Android has no default flavor, so a build without `--flavor` fails, and `lib/main.dart` throws at startup if the flavor and `APP_ENV` disagree (`assertFlavorMatchesEnvironment`). The flavor is deliberately not named `test` (Gradle reserves it). Web, Windows, Linux and macOS have no flavor, so `APP_ENV` alone decides there; iOS and macOS get theirs in a later stage.
+
+The Google services Gradle plugin ignores a flavor with no `google-services.json` (`missingGoogleServicesStrategy` in `android/app/build.gradle.kts`), which is what lets `local` and `production` build. That also means a deleted beta file would build silently without Firebase, so `test/analytics/firebase_environment_test.dart` checks it exists and matches `lib/firebase_options.dart`. Never put a `google-services.json` at the `android/app` root: the plugin falls back to it for every flavor.
 ### Targeting the local Supabase stack
 
 `.env.beta.json` points at the hosted **beta** project. To develop against the
@@ -224,7 +237,7 @@ For GitHub Actions (or any CI system), pass the values as secrets. Store `SUPABA
 
 ```yaml
 - name: Build APK (debug)
-  run: flutter build apk --debug
+  run: flutter build apk --debug --flavor local --dart-define=APP_ENV=local
   env:
     SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
     SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
@@ -287,13 +300,13 @@ an event's release and stack trace in Sentry.
 
 ## Firebase (Google Analytics)
 
-Usage analytics go to Google Analytics for Firebase, project `nomorex-13bd9308`. Sentry stays the place for errors and crashes. The code lives in `lib/features/analytics/`.
+Usage analytics go to Google Analytics for Firebase. Each environment has its own Firebase project (`firebaseOptionsFor()` in `lib/features/analytics/firebase_environment.dart` picks it from `APP_ENV`): **beta** is `nomorex-13bd9308`, **local** starts no Firebase at all, and **production** has none yet, so a production build runs without analytics until its project is created and its options are added there. Sentry stays the place for errors and crashes. The code lives in `lib/features/analytics/`.
 
-- **Config is generated, not hand-written.** `flutterfire configure` wrote `lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`, `macos/Runner/GoogleService-Info.plist` and `firebase.json`. The API keys in them identify the Firebase project and aren't secrets (the same reasoning as the publishable key below), so they're committed. To regenerate, for example after adding a platform: `flutterfire configure -p nomorex-13bd9308 --platforms=android,ios,macos,web,windows -i com.nomorex.app -m com.nomorex.app --android-package-name=com.nomorex.app`. It needs the Firebase CLI, logged in.
-- **App IDs:** Android, iOS and macOS are all `com.nomorex.app`; macOS shares the iOS Firebase app.
+- **Config is generated, not hand-written.** `flutterfire configure` wrote `lib/firebase_options.dart`, `android/app/src/beta/google-services.json` (the beta flavor's; `firebase apps:sdkconfig ANDROID <app id>` regenerates it), `ios/Runner/GoogleService-Info.plist`, `macos/Runner/GoogleService-Info.plist` and `firebase.json`. The API keys in them identify the Firebase project and aren't secrets (the same reasoning as the publishable key below), so they're committed. To regenerate, for example after adding a platform: `flutterfire configure -p nomorex-13bd9308 --platforms=android,ios,macos,web,windows -i com.nomorex.app -m com.nomorex.app --android-package-name=com.nomorex.app`. It needs the Firebase CLI, logged in.
+- **App IDs:** Android is registered as `com.nomorex.app.beta` (the beta flavor). iOS and macOS are still `com.nomorex.app` until the iOS/macOS flavors land; macOS shares the iOS Firebase app. The older Android app for `com.nomorex.app` is no longer used by any flavor.
 - **Platforms:** Firebase is initialized on Android, iOS, macOS and web only (`analyticsPlatformSupported`). Linux and Windows run without it, which is how CI's Linux E2E run stays off Firebase.
 - **Debug builds send nothing.** Only release builds of `beta` and `production` collect (`analyticsCollectsInThisBuild`, from `APP_ENV`; a `local` release build sends nothing either), unless a debug build opts in with `TELEMETRY_DEBUG=true`. On web, a build that doesn't collect skips Firebase entirely, so `flutter run -d chrome`, `verify.sh`'s web build, Playwright and cloud sessions never contact Google. Native debug builds still initialize it, because the native SDKs start on their own and have to be told to stop collecting.
-- **Firebase never holds up startup.** On web, Firebase loads its SDK from `www.gstatic.com/firebasejs/` and never finishes if that's blocked (an ad blocker, a filtered network), which left the app on its splash screen. `initFirebase()` gives up after `firebaseInitTimeout` (5 s) and the app runs without analytics. A timeout isn't sent to Sentry. To see events in the Firebase console's DebugView, build with `--dart-define=TELEMETRY_DEBUG=true` and enable debug mode on the device (`adb shell setprop debug.firebase.analytics.app com.nomorex.app` on Android; `-FIRDebugEnabled` as a launch argument in Xcode on iOS).
+- **Firebase never holds up startup.** On web, Firebase loads its SDK from `www.gstatic.com/firebasejs/` and never finishes if that's blocked (an ad blocker, a filtered network), which left the app on its splash screen. `initFirebase()` gives up after `firebaseInitTimeout` (5 s) and the app runs without analytics. A timeout isn't sent to Sentry. To see events in the Firebase console's DebugView, build with `--dart-define=TELEMETRY_DEBUG=true` and enable debug mode on the device (`adb shell setprop debug.firebase.analytics.app com.nomorex.app.beta` on Android, with the beta flavor; `-FIRDebugEnabled` as a launch argument in Xcode on iOS).
 - **Opt-out:** Profile → "Share usage analytics", saved per device (`AnalyticsConsentNotifier`).
 - **No advertising-ID SDKs on iOS.** `firebase_analytics` bundles Google's ad-ID SDKs (`GoogleAppMeasurementIdentitySupport`, `GoogleAdsOnDeviceConversion`) unless `FIREBASE_ANALYTICS_WITHOUT_ADID` is set while Swift Package Manager resolves packages. Both iOS jobs (`build-ios` in `pr-checks.yml`, `deploy-ios.yml`) set it and then run `./scripts/check-ios-no-adid.sh`, which fails if either framework is in the app; the deploy checks the archive before anything is uploaded. **The variable only works with cold SwiftPM caches:** SwiftPM caches resolved manifests and ignores the variable once one is cached, so it can silently do nothing. CI runners start cold. Local builds don't ship, so they don't need it, but to reproduce the shipped app locally, clear this project's caches first: `rm -rf build/ios`, the `~/Library/Developer/Xcode/DerivedData/Runner-*` folder whose `info.plist` `WorkspacePath` is this repo's `ios/Runner.xcworkspace`, and `~/Library/Caches/org.swift.swiftpm/manifests`. Then run `FIREBASE_ANALYTICS_WITHOUT_ADID=true flutter build ios --release --no-codesign && ./scripts/check-ios-no-adid.sh`. `Package.resolved` is the same either way. macOS has no such switch, but macOS isn't shipped.
 - **Advertising is off.** The Android manifest removes the `AD_ID` permission and turns off ad-ID collection and ad personalization; `ios/Runner/Info.plist` turns off ad personalization. The app never calls `setUserId`, so events aren't linked to accounts. The privacy policy and store disclosures rely on all of this. In the Google Analytics property, keep Google signals off, keep ads personalization off, and keep event data retention at 14 months or less, which is what the privacy policy states.
