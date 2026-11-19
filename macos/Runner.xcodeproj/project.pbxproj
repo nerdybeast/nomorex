@@ -432,7 +432,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 45E1811FDC4A2686DC4D6FD4 /* AppInfo-beta.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -451,7 +450,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 6E98EFE5E4E440E194DD06F0 /* AppInfo-local.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -471,7 +469,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D526C07E5695F8F1E80C636D /* AppInfo-production.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -676,7 +673,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 6E98EFE5E4E440E194DD06F0 /* AppInfo-local.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -936,7 +932,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 45E1811FDC4A2686DC4D6FD4 /* AppInfo-beta.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -970,7 +965,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D526C07E5695F8F1E80C636D /* AppInfo-production.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -990,7 +984,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 45E1811FDC4A2686DC4D6FD4 /* AppInfo-beta.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -1037,7 +1030,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 6E98EFE5E4E440E194DD06F0 /* AppInfo-local.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Release.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -1177,7 +1169,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D526C07E5695F8F1E80C636D /* AppInfo-production.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/DebugProfile.entitlements;
 				CODE_SIGN_STYLE = Automatic;
