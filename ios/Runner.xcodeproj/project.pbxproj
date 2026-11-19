@@ -533,7 +533,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AB271E65FE7FF1BC25DD4EEA /* Profile-local.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = K6AJD8M75Q;
@@ -609,7 +608,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 14BF7D89A9062AAE25026E81 /* Release-local.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = K6AJD8M75Q;
@@ -687,7 +685,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 24A85D415A44F000F968F0DC /* Debug-beta.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = K6AJD8M75Q;
@@ -764,7 +761,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D1EEB41352556CFA39812CB0 /* Debug-local.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = K6AJD8M75Q;
@@ -843,7 +839,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = FE627BCF043FB11C316B1633 /* Release-production.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = K6AJD8M75Q;
@@ -865,7 +860,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = DC278E07D3D7CD9B903C2ECB /* Debug-production.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = K6AJD8M75Q;
@@ -998,7 +992,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 0EB1A86F471896DCA2F73B79 /* Profile-beta.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = K6AJD8M75Q;
@@ -1145,7 +1138,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 293BDF3E3D55D3C14A622BF8 /* Release-beta.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = K6AJD8M75Q;
@@ -1183,7 +1175,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F0B2A4BA46D6C08FE5847D5A /* Profile-production.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = K6AJD8M75Q;

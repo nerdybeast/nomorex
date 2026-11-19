@@ -47,7 +47,22 @@ void main() {
       expect(xcconfigValue('ios/Flutter/Environment-$name.xcconfig', 'APP_ENV_NAME'), name);
       expect(xcconfigValue('macos/Runner/Configs/Environment-$name.xcconfig', 'APP_ENV_NAME'), name);
     });
+
+    test('$name has an icon set on iOS and macOS, and beta alone has its own', () {
+      final ios = xcconfigValue('ios/Flutter/Environment-$name.xcconfig', 'ASSETCATALOG_COMPILER_APPICON_NAME');
+      final macos = xcconfigValue('macos/Runner/Configs/Environment-$name.xcconfig', 'ASSETCATALOG_COMPILER_APPICON_NAME');
+      expect(macos, ios);
+      expect(ios, name == 'beta' ? 'AppIcon-beta' : 'AppIcon');
+      expect(File('ios/Runner/Assets.xcassets/$ios.appiconset/Contents.json').existsSync(), isTrue);
+      expect(File('macos/Runner/Assets.xcassets/$macos.appiconset/Contents.json').existsSync(), isTrue);
+    });
   }
+
+  test('beta has its own Android launcher icon; local and production use the main one', () {
+    expect(File('android/app/src/beta/res/mipmap-anydpi-v26/ic_launcher.xml').existsSync(), isTrue);
+    expect(File('android/app/src/local/res').existsSync(), isFalse);
+    expect(File('android/app/src/production/res').existsSync(), isFalse);
+  });
 
   test('production keeps the plain application id', () {
     expect(gradleSuffix('production'), '');

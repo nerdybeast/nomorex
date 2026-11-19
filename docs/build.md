@@ -563,6 +563,29 @@ flutter_launcher_icons 0.14.4 rewrites
 generates (e.g. the old `@1x` files), so delete PNGs in `AppIcon.appiconset`
 that `Contents.json` no longer references.
 
+**The beta flavor has its own icon: the same artwork with a blue slash
+(`#6aa6f8`)**, so beta, local and production are told apart on a home screen.
+Its sources are `assets/icon/*-beta.svg` (same names as above with `-beta`;
+`icon-tinted` and `monochrome` are greyscale, so those two are plain copies).
+`local` and `production` keep the orange icon. After editing a `-beta` SVG:
+
+```bash
+./scripts/render-icons.sh            # renders every SVG, beta ones included
+./scripts/generate-beta-icons.sh     # beta PNGs -> platform icon sets
+```
+
+The script writes `android/app/src/beta/res/` (a flavor source set overrides
+`main/res`, so the manifest is untouched) and an `AppIcon-beta.appiconset` on
+iOS and macOS. Those flavors select it with
+`ASSETCATALOG_COMPILER_APPICON_NAME` in `Environment-beta.xcconfig`
+(`AppIcon` in the other two); the Runner target in each `project.pbxproj`
+must not set that key itself, or it would override the xcconfig. The script
+runs `flutter_launcher_icons` on a scratch copy because a
+`flutter_launcher_icons-<flavor>.yaml` in the project root makes the tool ignore
+the main config, and the tool rewrites `project.pbxproj` and, on macOS, ignores
+flavors. Config: `scripts/icons-beta.yaml`. Web, Windows and Linux have no
+flavors and keep the orange icon.
+
 The splash is the Tally mark on the app's own `bg-0` (`#FAFAFA` light,
 `#121212` dark), so the hand-off to Flutter's first frame doesn't flash.
 After step 3, check `git diff ios/Runner/Info.plist`: flutter_native_splash
