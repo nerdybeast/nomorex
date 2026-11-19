@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.nomorex.app</string>
+	<string>com.nomorex.app.beta</string>
 	<key>PROJECT_ID</key>
 	<string>nomorex-13bd9308</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:531602826330:ios:b0006164e4da8438e1a463</string>
+	<string>1:531602826330:ios:0d5a5121a1872960e1a463</string>
 </dict>
 </plist>

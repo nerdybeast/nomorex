@@ -151,8 +151,14 @@ jobs:
             --build-number="${{ needs.version.outputs.build-number }}"
 
   build-ios:
-    name: Build iOS (release, unsigned)
+    name: Build iOS (${{ matrix.flavor }}, release, unsigned)
     needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        # The flavors differ in bundle id, name and Firebase config, so each
+        # one's Xcode configuration is built before merge.
+        flavor: [local, beta, production]
     # Free on a public repo. Proves the iOS target still compiles before
     # merge, since deploy-ios.yml only runs after it.
     runs-on: macos-26
@@ -181,9 +187,10 @@ jobs:
 
       # Signing and upload happen only in deploy-ios.yml. This only needs to
       # compile, so placeholder values are enough.
-      - name: Build iOS (release, no codesign)
+      - name: Build iOS (${{ matrix.flavor }}, release, no codesign)
         run: |
-          flutter build ios --release --no-codesign \
+          flutter build ios --release --no-codesign --flavor ${{ matrix.flavor }} \
+            --dart-define=APP_ENV=${{ matrix.flavor }} \
             --build-name="${{ needs.version.outputs.build-name }}" \
             --build-number="${{ needs.version.outputs.build-number }}" \
             --dart-define=SUPABASE_URL=https://placeholder.supabase.co \

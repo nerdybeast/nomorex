@@ -112,7 +112,13 @@ FOREGROUND_ERROR="Failed to foreground app"
 log="$(mktemp)"
 trap 'rm -f "$log"' EXIT
 
-flutter test "$TARGET" -d "$DEVICE" "${DART_DEFINES[@]}" > >(tee "$log") 2>&1 &
+# macOS has a flavor per environment (like iOS and Android); the suite runs as
+# local. Linux and web have no flavors. The ${...+...} form keeps an empty array
+# from tripping `set -u` in the bash 3.2 macOS ships.
+FLAVOR_ARGS=()
+if [[ "$DEVICE" == "macos" ]]; then FLAVOR_ARGS=(--flavor local); fi
+
+flutter test "$TARGET" -d "$DEVICE" ${FLAVOR_ARGS[@]+"${FLAVOR_ARGS[@]}"} "${DART_DEFINES[@]}" > >(tee "$log") 2>&1 &
 pid=$!
 (
   sleep "$TIMEOUT"

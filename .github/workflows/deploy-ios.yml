@@ -131,7 +131,7 @@ jobs:
           SENTRY_RELEASE: nomorex@${{ needs.determine-version.outputs.build-name }}+${{ needs.determine-version.outputs.build-number }}
           SENTRY_DIST: ${{ needs.determine-version.outputs.build-number }}
         run: |
-          flutter build ios --release --config-only \
+          flutter build ios --release --config-only --flavor beta \
             --build-name="${{ needs.determine-version.outputs.build-name }}" \
             --build-number="${{ needs.determine-version.outputs.build-number }}" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
@@ -189,8 +189,8 @@ jobs:
           set -o pipefail
           xcodebuild archive \
             -workspace ios/Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
+            -scheme beta \
+            -configuration Release-beta \
             -destination 'generic/platform=iOS' \
             -archivePath "$ARCHIVE_PATH" \
             -allowProvisioningUpdates \

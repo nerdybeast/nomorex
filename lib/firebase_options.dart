@@ -59,19 +59,19 @@ class DefaultFirebaseOptions {
   );
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyC_ZEPeWoVWRZmBWDRoovIkJmukCYUFL8w',
-    appId: '1:531602826330:ios:b0006164e4da8438e1a463',
+    appId: '1:531602826330:ios:0d5a5121a1872960e1a463',
     messagingSenderId: '531602826330',
     projectId: 'nomorex-13bd9308',
     storageBucket: 'nomorex-13bd9308.firebasestorage.app',
-    iosBundleId: 'com.nomorex.app',
+    iosBundleId: 'com.nomorex.app.beta',
   );
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyC_ZEPeWoVWRZmBWDRoovIkJmukCYUFL8w',
-    appId: '1:531602826330:ios:b0006164e4da8438e1a463',
+    appId: '1:531602826330:ios:0d5a5121a1872960e1a463',
     messagingSenderId: '531602826330',
     projectId: 'nomorex-13bd9308',
     storageBucket: 'nomorex-13bd9308.firebasestorage.app',
-    iosBundleId: 'com.nomorex.app',
+    iosBundleId: 'com.nomorex.app.beta',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

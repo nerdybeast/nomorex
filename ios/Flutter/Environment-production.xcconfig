@@ -1,0 +1,5 @@
+// The production environment: its bundle id, display name and which
+// config/<name>/ folder supplies the Firebase config. See docs/build.md.
+PRODUCT_BUNDLE_IDENTIFIER = com.nomorex.app
+APP_DISPLAY_NAME = NoMoreX
+APP_ENV_NAME = production

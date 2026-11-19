@@ -62,17 +62,19 @@ flutter build apk --debug --flavor beta --dart-define-from-file=.env.beta.json
 flutter build apk --release --flavor beta --dart-define-from-file=.env.beta.json
 ```
 
-### Android flavors
+### Platform flavors (Android, iOS, macOS)
 
-Android has one product flavor per environment, so the three can be installed side by side and each carries its own Firebase config:
+Android, iOS and macOS each have one flavor per environment, so the three install side by side and each carries its own Firebase config. All three use the same application id, display name and flavor names:
 
 | Flavor | Application id | Launcher name | Firebase config |
 |---|---|---|---|
 | `local` | `com.nomorex.app.local` | NoMoreX (Local) | none |
-| `beta` | `com.nomorex.app.beta` | NoMoreX (Beta) | `android/app/src/beta/google-services.json` |
+| `beta` | `com.nomorex.app.beta` | NoMoreX (Beta) | Android: `android/app/src/beta/google-services.json`; iOS and macOS: `config/beta/GoogleService-Info.plist` under `ios/` and `macos/` |
 | `production` | `com.nomorex.app` | NoMoreX | none yet (its Firebase project doesn't exist) |
 
-Always pass `--flavor` and the define file of the same environment, e.g. `flutter run --flavor local --dart-define-from-file=.env.local.json`. Android has no default flavor, so a build without `--flavor` fails, and `lib/main.dart` throws at startup if the flavor and `APP_ENV` disagree (`assertFlavorMatchesEnvironment`). The flavor is deliberately not named `test` (Gradle reserves it). Web, Windows, Linux and macOS have no flavor, so `APP_ENV` alone decides there; iOS and macOS get theirs in a later stage.
+Always pass `--flavor` and the define file of the same environment, e.g. `flutter run --flavor local --dart-define-from-file=.env.local.json`. There is no default flavor, so a mobile or macOS build without `--flavor` fails, and `lib/main.dart` throws at startup if the flavor and `APP_ENV` disagree (`assertFlavorMatchesEnvironment`). The flavor is deliberately not named `test` (Gradle reserves it). Web, Windows and Linux have no flavor, so `APP_ENV` alone decides there.
+
+**Apple projects.** Each of `ios/Runner.xcodeproj` and `macos/Runner.xcodeproj` has a scheme per flavor (`local`, `beta`, `production`) and a build configuration per mode and flavor (`Debug-local`, `Release-beta`, `Profile-production`, ...); the old `Runner` scheme and unflavored configurations are gone. Each configuration's xcconfig includes an `Environment-<flavor>.xcconfig` (in `ios/Flutter/` and `macos/Runner/Configs/`) that sets `PRODUCT_BUNDLE_IDENTIFIER`, `APP_DISPLAY_NAME` (which `CFBundleDisplayName` reads) and `APP_ENV_NAME`. `PRODUCT_NAME` stays `Runner` on iOS (the ad-ID check and CI look for `Runner.app`) and `nomorex` on macOS. A **Copy Firebase config** build phase copies `config/<APP_ENV_NAME>/GoogleService-Info.plist` into the app when that folder exists, so only beta carries one; nothing Firebase-related is a bundled resource any more. To add a setting per environment, add it to the three `Environment-*.xcconfig` files. `test/core/environment_identity_test.dart` checks that Android, iOS and macOS agree on ids and names.
 
 The Google services Gradle plugin ignores a flavor with no `google-services.json` (`missingGoogleServicesStrategy` in `android/app/build.gradle.kts`), which is what lets `local` and `production` build. That also means a deleted beta file would build silently without Firebase, so `test/analytics/firebase_environment_test.dart` checks it exists and matches `lib/firebase_options.dart`. Never put a `google-services.json` at the `android/app` root: the plugin falls back to it for every flavor.
 ### Targeting the local Supabase stack
@@ -302,8 +304,8 @@ an event's release and stack trace in Sentry.
 
 Usage analytics go to Google Analytics for Firebase. Each environment has its own Firebase project (`firebaseOptionsFor()` in `lib/features/analytics/firebase_environment.dart` picks it from `APP_ENV`): **beta** is `nomorex-13bd9308`, **local** starts no Firebase at all, and **production** has none yet, so a production build runs without analytics until its project is created and its options are added there. Sentry stays the place for errors and crashes. The code lives in `lib/features/analytics/`.
 
-- **Config is generated, not hand-written.** `flutterfire configure` wrote `lib/firebase_options.dart`, `android/app/src/beta/google-services.json` (the beta flavor's; `firebase apps:sdkconfig ANDROID <app id>` regenerates it), `ios/Runner/GoogleService-Info.plist`, `macos/Runner/GoogleService-Info.plist` and `firebase.json`. The API keys in them identify the Firebase project and aren't secrets (the same reasoning as the publishable key below), so they're committed. To regenerate, for example after adding a platform: `flutterfire configure -p nomorex-13bd9308 --platforms=android,ios,macos,web,windows -i com.nomorex.app -m com.nomorex.app --android-package-name=com.nomorex.app`. It needs the Firebase CLI, logged in.
-- **App IDs:** Android is registered as `com.nomorex.app.beta` (the beta flavor). iOS and macOS are still `com.nomorex.app` until the iOS/macOS flavors land; macOS shares the iOS Firebase app. The older Android app for `com.nomorex.app` is no longer used by any flavor.
+- **Config is generated, not hand-written.** `flutterfire configure` wrote `lib/firebase_options.dart`, `android/app/src/beta/google-services.json` (the beta flavor's; `firebase apps:sdkconfig ANDROID <app id>` regenerates it), `ios/config/beta/GoogleService-Info.plist`, `macos/config/beta/GoogleService-Info.plist` (from `firebase apps:sdkconfig IOS <app id>`) and `firebase.json`. The API keys in them identify the Firebase project and aren't secrets (the same reasoning as the publishable key below), so they're committed. To regenerate, for example after adding a platform: `flutterfire configure -p nomorex-13bd9308 --platforms=android,ios,macos,web,windows -i com.nomorex.app -m com.nomorex.app --android-package-name=com.nomorex.app`. It needs the Firebase CLI, logged in.
+- **App IDs:** Android, iOS and macOS are each registered as `com.nomorex.app.beta` (the beta flavor); macOS shares the iOS Firebase app. The older Firebase apps for `com.nomorex.app` (Android, iOS) are no longer used by any flavor and can be deleted once testers have moved to the beta app.
 - **Platforms:** Firebase is initialized on Android, iOS, macOS and web only (`analyticsPlatformSupported`). Linux and Windows run without it, which is how CI's Linux E2E run stays off Firebase.
 - **Debug builds send nothing.** Only release builds of `beta` and `production` collect (`analyticsCollectsInThisBuild`, from `APP_ENV`; a `local` release build sends nothing either), unless a debug build opts in with `TELEMETRY_DEBUG=true`. On web, a build that doesn't collect skips Firebase entirely, so `flutter run -d chrome`, `verify.sh`'s web build, Playwright and cloud sessions never contact Google. Native debug builds still initialize it, because the native SDKs start on their own and have to be told to stop collecting.
 - **Firebase never holds up startup.** On web, Firebase loads its SDK from `www.gstatic.com/firebasejs/` and never finishes if that's blocked (an ad blocker, a filtered network), which left the app on its splash screen. `initFirebase()` gives up after `firebaseInitTimeout` (5 s) and the app runs without analytics. A timeout isn't sent to Sentry. To see events in the Firebase console's DebugView, build with `--dart-define=TELEMETRY_DEBUG=true` and enable debug mode on the device (`adb shell setprop debug.firebase.analytics.app com.nomorex.app.beta` on Android, with the beta flavor; `-FIRDebugEnabled` as a launch argument in Xcode on iOS).
@@ -318,6 +320,13 @@ Usage analytics go to Google Analytics for Firebase. Each environment has its ow
 to App Store Connect, where it shows up in TestFlight. Run it by hand from the
 Actions tab (`workflow_dispatch`) to retry or force a build. It runs on a
 GitHub-hosted `macos-26` runner, which is free because the repo is public.
+
+It builds the **beta** flavor (`flutter build ios --flavor beta`, then
+`xcodebuild archive -scheme beta -configuration Release-beta`), so it uploads to
+the `com.nomorex.app.beta` app record ("NoMoreX (Beta)" in TestFlight). The
+original `com.nomorex.app` record gets no builds; it is reserved for the
+production listing at launch, and its last TestFlight build simply expires.
+Production will get its own deploy workflow rather than reusing this one.
 
 **Versioning.** It uses the same `version.yml` outputs as the web deploy:
 `CFBundleShortVersionString` is GitVersion's MajorMinorPatch and
@@ -356,8 +365,12 @@ doesn't ask the encryption question on every build.
 
 ### One-time Apple setup
 
-Already done for this repo (Nov 2026): the app record exists (App Store Connect
-Apple ID `6829556503`) and the three `APP_STORE_CONNECT_*` secrets are set.
+Already done for this repo (Nov 2026): the beta app record `com.nomorex.app.beta`
+exists, the App IDs for `com.nomorex.app`, `.beta` and `.local` are registered
+(the original `com.nomorex.app` record, Apple ID `6829556503`, is reserved for
+production), and the three `APP_STORE_CONNECT_*` secrets are set. A `local`
+build is never uploaded, so it needs an App ID (for signing on a device) but no
+app record.
 These steps are the reference for redoing it, e.g. on a new Apple account or
 after rotating the key.
 
@@ -370,21 +383,23 @@ after rotating the key.
 
 2. **App ID.** At <https://developer.apple.com/account/resources/identifiers/list>,
    click **+**, choose **App IDs**, then **App**, and register the explicit
-   bundle ID `com.nomorex.app`. No extra capabilities are needed. Automatic
-   signing can create it on the first CI run, but registering it up front
-   avoids a confusing signing failure.
+   bundle ID of each environment: `com.nomorex.app.beta` (what the deploy
+   uses), `com.nomorex.app.local` and `com.nomorex.app`. No extra capabilities
+   are needed. Automatic signing can create them on the first CI run, but
+   registering them up front avoids a confusing signing failure.
 
 3. **App record.** At <https://appstoreconnect.apple.com/apps>, click **+**
    and choose **New App**:
    - Platform: iOS
    - Name: must be unique across the whole App Store
    - Primary language: your choice
-   - Bundle ID: `com.nomorex.app`
-   - SKU: any string, e.g. `nomorex`
+   - Bundle ID: `com.nomorex.app.beta` (the deploy builds beta)
+   - SKU: any string, e.g. `com.nomorex.app.beta`
 
-   The App Store Connect name is what the store shows. The name under the
-   icon on a device comes from `CFBundleDisplayName` in `ios/Runner/Info.plist`
-   (`NoMoreX`).
+   The App Store Connect name is what testers see in the TestFlight app. The
+   name under the icon on a device comes from `CFBundleDisplayName`, which each
+   flavor sets through `APP_DISPLAY_NAME` (`NoMoreX (Beta)` for beta; see
+   "Platform flavors").
 
 4. **App Store Connect API key** (CI uses it to sign and upload).
    - Open <https://appstoreconnect.apple.com/access/integrations/api>. To get
