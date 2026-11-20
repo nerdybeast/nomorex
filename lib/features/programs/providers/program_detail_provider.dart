@@ -34,19 +34,14 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
 
   // ---- Weeks ----
 
-  Future<void> addWeek({String? label, String? notes}) async {
-    final current = await future;
-    final nextWeekNumber = current.weeks.fold<int>(0, (max, w) => w.weekNumber > max ? w.weekNumber : max) + 1;
-    final nextPosition = current.weeks.fold<int>(0, (max, w) => w.position > max ? w.position : max) + 1;
-    await _db.from('program_weeks').insert({
-      'program_id': programId,
-      'user_id': _userId,
-      'week_number': nextWeekNumber,
-      'position': nextPosition,
-      if (label != null && label.isNotEmpty) 'label': label,
-      if (notes != null && notes.isNotEmpty) 'notes': notes,
-    });
+  /// Adds a week after the last one, holding `kMaxDaysPerWeek` rest days
+  /// titled Day 1 to Day 7 (`add_program_week`). A rest day becomes a
+  /// training day when an exercise is added to it ([addExercise]). Returns
+  /// the new week's id.
+  Future<String> addWeek() async {
+    final id = await _db.rpc('add_program_week', params: {'p_program_id': programId}) as String;
     await _refresh();
+    return id;
   }
 
   Future<void> removeWeek(String weekId) async {
@@ -97,21 +92,17 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
     return (await copyDay(dayId, [week.id])).single;
   }
 
-  Future<void> addDay(String weekId, {required String title, bool isRestDay = false}) async {
-    final current = await future;
-    final week = current.weeks.firstWhere((w) => w.id == weekId);
-    final allDays = current.weeks.expand((w) => w.days);
-    final nextPosition = allDays.fold<int>(0, (max, d) => d.position > max ? d.position : max) + 1;
-    await _db.from('program_days').insert({
-      'program_id': programId,
-      'program_week_id': weekId,
-      'user_id': _userId,
-      'day_number': week.days.length + 1,
-      'title': title,
-      'is_rest_day': isRestDay,
-      'position': nextPosition,
-    });
+  /// Adds a day at the end of a week that has fewer than `kMaxDaysPerWeek`
+  /// (`add_program_day`; the database refuses a full week with `week_full`).
+  /// Returns the new day's id.
+  Future<String> addDay(String weekId, {required String title, bool isRestDay = false}) async {
+    final id = await _db.rpc('add_program_day', params: {
+      'p_week_id': weekId,
+      'p_title': title,
+      'p_is_rest_day': isRestDay,
+    }) as String;
     await _refresh();
+    return id;
   }
 
   Future<void> removeDay(String dayId) async {
@@ -156,9 +147,15 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
 
   // ---- Exercises ----
 
+  /// Adds an exercise to the end of a day. A rest day becomes a training
+  /// day first: a new week's days start as rest days, and `start_program`
+  /// skips a rest day's exercises.
   Future<void> addExercise(String dayId, String exerciseId) async {
     final current = await future;
     final day = current.weeks.expand((w) => w.days).firstWhere((d) => d.id == dayId);
+    if (day.isRestDay) {
+      await _db.from('program_days').update({'is_rest_day': false}).eq('id', dayId);
+    }
     final nextPos = day.exercises.isEmpty
         ? 0
         : day.exercises.map((e) => e.position).reduce((a, b) => a > b ? a : b) + 1;

@@ -1,5 +1,10 @@
 import 'program_day.dart';
 
+/// The most days a week holds. A week is a calendar week: it takes 7 days of
+/// a run's schedule however many it holds. The database enforces the limit
+/// (`enforce_program_week_day_limit`).
+const kMaxDaysPerWeek = 7;
+
 /// A labeled group of days within a program (e.g. "Loading Week 2/6").
 class ProgramWeek {
   const ProgramWeek({
@@ -20,12 +25,20 @@ class ProgramWeek {
   final int position;
   final List<ProgramDay> days;
 
-  factory ProgramWeek.fromJson(Map<String, dynamic> json) {
-    final rawDays = (json['program_days'] as List?) ?? const [];
-    final days = rawDays
-        .map((e) => ProgramDay.fromJson(e as Map<String, dynamic>))
+  /// Whether the week has its [kMaxDaysPerWeek] days, so no day can be added.
+  bool get isFull => days.length >= kMaxDaysPerWeek;
+
+  /// [weekIndex] is the week's 0-based place in the program, which with each
+  /// day's place in the week sets [ProgramDay.dayOffset].
+  factory ProgramWeek.fromJson(Map<String, dynamic> json, {int weekIndex = 0}) {
+    final rawDays = ((json['program_days'] as List?) ?? const [])
+        .cast<Map<String, dynamic>>()
         .toList()
-      ..sort((a, b) => a.position.compareTo(b.position));
+      ..sort((a, b) => (a['position'] as int).compareTo(b['position'] as int));
+    final days = [
+      for (var i = 0; i < rawDays.length; i++)
+        ProgramDay.fromJson(rawDays[i], dayOffset: weekIndex * kMaxDaysPerWeek + i),
+    ];
     return ProgramWeek(
       id: json['id'] as String,
       programId: json['program_id'] as String,

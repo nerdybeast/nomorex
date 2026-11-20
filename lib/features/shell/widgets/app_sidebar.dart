@@ -464,7 +464,7 @@ class _Running extends ConsumerWidget {
     if (weeks == null) return null;
     for (var i = 0; i < weeks.length; i++) {
       for (final day in weeks[i].days) {
-        if (isProgramDayToday(instance.startedAt, day.position)) return i + 1;
+        if (isProgramDayToday(instance.startedAt, day.dayOffset)) return i + 1;
       }
     }
     return null;
@@ -473,7 +473,7 @@ class _Running extends ConsumerWidget {
   static bool _todayIsRest(ProgramInstance instance) {
     for (final week in instance.structure ?? const []) {
       for (final day in week.days) {
-        if (isProgramDayToday(instance.startedAt, day.position)) return day.isRest;
+        if (isProgramDayToday(instance.startedAt, day.dayOffset)) return day.isRest;
       }
     }
     return false;

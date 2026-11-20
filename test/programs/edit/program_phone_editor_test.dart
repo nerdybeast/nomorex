@@ -24,13 +24,15 @@ import 'package:nomorex/shared/models/one_rep_max.dart';
 /// Records what the screens ask for and applies deletes, so a screen can
 /// react to its own week or day going away.
 class _Notifier extends ProgramDetailNotifier {
-  _Notifier(this.calls);
+  _Notifier(this.calls, {this.withFullWeek = false});
 
   final List<String> calls;
+  final bool withFullWeek;
   final _removedDays = <String>{};
 
   @override
-  Future<Program> build(String programId) async => _program(removedDays: _removedDays);
+  Future<Program> build(String programId) async =>
+      _program(removedDays: _removedDays, withFullWeek: withFullWeek);
 
   @override
   Future<String> duplicateWeek(String weekId) async {
@@ -99,7 +101,8 @@ ProgramExercise _ex(String id, String day, int pos, String name, List<ProgramSet
 
 /// Week 1 "Meso 1/4": Day 1 (Muscle Snatch 4 × 3 · 20 kg, Snatch 10 × 1 ·
 /// 80%), "Day 2 (Athletic Development)" (Front Squat). Week 2: Day 3 (Clean).
-Program _program({Set<String> removedDays = const {}}) {
+/// With [withFullWeek], Week 3 holds 7 rest days, as a new week does.
+Program _program({Set<String> removedDays = const {}, bool withFullWeek = false}) {
   List<ProgramDay> keep(List<ProgramDay> days) => [for (final d in days) if (!removedDays.contains(d.id)) d];
   return Program(
     id: 'p1',
@@ -136,11 +139,35 @@ Program _program({Set<String> removedDays = const {}}) {
           ]),
         ]),
       ),
+      if (withFullWeek)
+        ProgramWeek(
+          id: 'w3',
+          programId: 'p1',
+          weekNumber: 3,
+          position: 2,
+          days: [
+            for (var i = 0; i < kMaxDaysPerWeek; i++)
+              ProgramDay(
+                id: 'r$i',
+                programWeekId: 'w3',
+                dayNumber: i + 1,
+                title: 'Day ${i + 1}',
+                position: 3 + i,
+                isRestDay: true,
+              ),
+          ],
+        ),
     ],
   );
 }
 
-Future<GoRouter> _pump(WidgetTester tester, List<String> calls, {String initial = '/programs/p1/edit', bool phone = true}) async {
+Future<GoRouter> _pump(
+  WidgetTester tester,
+  List<String> calls, {
+  String initial = '/programs/p1/edit',
+  bool phone = true,
+  bool withFullWeek = false,
+}) async {
   if (phone) {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -165,7 +192,7 @@ Future<GoRouter> _pump(WidgetTester tester, List<String> calls, {String initial 
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        programDetailProvider('p1').overrideWith(() => _Notifier(calls)),
+        programDetailProvider('p1').overrideWith(() => _Notifier(calls, withFullWeek: withFullWeek)),
         exercisesProvider.overrideWith(_Exercises.new),
         oneRepMaxProvider.overrideWith((ref) async => const <String, OneRepMax>{}),
         oneRepMaxByNameProvider.overrideWith((ref) async => const <String, OneRepMax>{}),
@@ -394,5 +421,76 @@ void main() {
     await tester.tap(find.text('Back to the program'));
     await tester.pumpAndSettle();
     expect(find.byType(ProgramWeekEditScreen), findsNothing);
+  });
+
+  group('a week holds at most 7 days', () {
+    testWidgets('a short week offers Add day with how many it holds', (tester) async {
+      await _pump(tester, [], initial: '/programs/p1/edit/weeks/w1');
+
+      expect(find.byKey(const Key('edit_week_add_day')), findsOneWidget);
+      expect(find.text('Add day · 2 of 7'), findsOneWidget);
+    });
+
+    testWidgets('a full week has no Add day, on the week or in its day tabs', (tester) async {
+      await _pump(tester, [], initial: '/programs/p1/edit/weeks/w3', withFullWeek: true);
+
+      expect(find.text('Day 7'), findsOneWidget);
+      expect(find.byKey(const Key('edit_week_add_day')), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('edit_day_card_r0')));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Add day'), findsNothing);
+    });
+
+    testWidgets('a full week offers no Duplicate day', (tester) async {
+      await _pump(tester, [], initial: '/programs/p1/edit/weeks/w3', withFullWeek: true);
+
+      await tester.tap(find.byKey(const ValueKey('edit_day_more_r0')));
+      await tester.pumpAndSettle();
+      expect(find.text('Duplicate day'), findsNothing);
+      expect(find.text('Copy to other weeks…'), findsOneWidget);
+    });
+
+    testWidgets('Copy to other weeks can\'t pick a full week', (tester) async {
+      final calls = <String>[];
+      await _pump(tester, calls, initial: '/programs/p1/edit/weeks/w1', withFullWeek: true);
+
+      await tester.tap(find.byKey(const ValueKey('edit_day_more_d1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Copy to other weeks…'));
+      await tester.pumpAndSettle();
+
+      final full = tester.widget<CheckboxListTile>(find.byKey(const ValueKey('copy_to_w3')));
+      expect(full.onChanged, isNull);
+      expect(find.textContaining('· full'), findsOneWidget);
+      final open = tester.widget<CheckboxListTile>(find.byKey(const ValueKey('copy_to_w2')));
+      expect(open.onChanged, isNotNull);
+    });
+
+    testWidgets('a rest day offers Add exercise straight away', (tester) async {
+      await _pump(tester, [], initial: '/programs/p1/edit/days/r0', withFullWeek: true);
+
+      expect(find.text('Rest day'), findsOneWidget);
+      expect(find.byKey(const Key('edit_day_rest_add_exercise')), findsOneWidget);
+    });
+
+    testWidgets('the desktop editor offers + Day only on a week with room', (tester) async {
+      await _pump(tester, [], phone: false, withFullWeek: true);
+
+      Future<void> expand(String title) async {
+        await tester.ensureVisible(find.text(title));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(title));
+        await tester.pumpAndSettle();
+      }
+
+      await expand('Week 3');
+      expect(find.text('7 of 7 days'), findsOneWidget);
+      expect(find.byKey(const ValueKey('edit_program_add_day_w3')), findsNothing);
+
+      await expand('Week 1 — Meso 1/4');
+      await tester.ensureVisible(find.byKey(const ValueKey('edit_program_add_day_w1')));
+      expect(find.byKey(const ValueKey('edit_program_add_day_w1')), findsOneWidget);
+    });
   });
 }

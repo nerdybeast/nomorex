@@ -3,7 +3,7 @@ import 'package:nomorex/features/programs/models/program_instance.dart';
 import 'package:nomorex/features/programs/utils/program_stats.dart';
 
 StatsDay _d(String id, int pos, {bool rest = false}) =>
-    StatsDay(id: id, position: pos, isRest: rest);
+    StatsDay(id: id, dayOffset: pos, isRest: rest);
 
 void main() {
   final weeks = [

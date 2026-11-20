@@ -196,8 +196,8 @@ void main() {
       status: 'active',
       structure: const [
         StatsWeek([
-          StatsDay(id: 'd1', position: 0, isRest: false),
-          StatsDay(id: 'd2', position: 1, isRest: true),
+          StatsDay(id: 'd1', dayOffset: 0, isRest: false),
+          StatsDay(id: 'd2', dayOffset: 1, isRest: true),
         ]),
       ],
       workoutStatusByDayId: const {'d1': 'finished'},

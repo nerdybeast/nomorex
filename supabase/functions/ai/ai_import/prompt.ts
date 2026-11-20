@@ -55,7 +55,7 @@ Reading rules:
 - "type" is "workout" for one session, "program" for several days or weeks, and "none" if the file has no training content.
 - Set "handwritten" to true when any exercise, set or weight in the file is written by hand, including handwriting on a printed form. Omit it for typed or printed content.
 - A workout goes in one week with one day.
-- Keep two sessions on one day as two separate day entries with the same weekday.
+- Two sessions on one day (AM and PM) are one day entry: the first session's exercises, then the second's.
 - Omit "unit" when the file prints no unit for that weight. Never guess one.
 - Consecutive identical sets are one prescription with "sets" giving the count. Sets that differ are separate prescriptions, in order. Omit "sets" for a single set.
 - A ditto mark repeats the value from the same row in the previous column. Write the repeated values out in full.
@@ -65,7 +65,7 @@ Reading rules:
 - "basisExercise" is the lift a percentage is based on, as an exercise name, when it differs from the exercise itself. Write "Clean & Jerk", not "best clean & jerk".
 
 Programs:
-- When a program names its days by weekday, output every week as all seven days, Monday to Sunday in calendar order, with isRestDay true and no exercises for each day not listed. When days are only numbered (Day 1, Day 2), output just those days and add no rest days.
+- When a program names its days by weekday, output every week as all seven days, Monday to Sunday in calendar order, with isRestDay true and no exercises for each day not listed. When days are only numbered (Day 1, Day 2), output just those days and add no rest days, in weeks of at most seven days: Day 1 to Day 7 are the first week, Day 8 to Day 14 the second, and so on, each week's days titled again from "Day 1".
 - When columns are dated sessions, as in a training log, each date is one week with one day, in order, with the date as the week "label". Omit "weekday" and add no rest days.
 
 Exercises:

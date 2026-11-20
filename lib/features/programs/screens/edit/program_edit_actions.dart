@@ -85,8 +85,10 @@ Future<void> showDayActions(
     context,
     title: day.title,
     actions: [
-      const SheetAction(_DayAction.duplicate, 'Duplicate day', Icons.content_copy_outlined),
-      if (program.weeks.length > 1)
+      // A week holds at most 7 days, so a full week can't take a copy.
+      if (!week.isFull)
+        const SheetAction(_DayAction.duplicate, 'Duplicate day', Icons.content_copy_outlined),
+      if (program.weeks.any((w) => w.id != week.id && !w.isFull))
         const SheetAction(_DayAction.copy, 'Copy to other weeks…', Icons.library_add_outlined),
       const SheetAction(_DayAction.rename, 'Rename', Icons.edit_outlined),
       SheetAction(
@@ -184,7 +186,10 @@ Future<List<String>?> _pickWeeks(
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-              child: Text('It goes at the end of each week you pick.', style: Theme.of(ctx).textTheme.bodySmall),
+              child: Text(
+                'It goes at the end of each week you pick. A week holds up to $kMaxDaysPerWeek days.',
+                style: Theme.of(ctx).textTheme.bodySmall,
+              ),
             ),
             Flexible(
               child: ListView(
@@ -196,8 +201,11 @@ Future<List<String>?> _pickWeeks(
                         key: ValueKey('copy_to_${w.id}'),
                         value: chosen.contains(w.id),
                         title: Text(weekTitle(w)),
-                        subtitle: Text(weekSummary(w)),
-                        onChanged: (v) => setState(() => v == true ? chosen.add(w.id) : chosen.remove(w.id)),
+                        subtitle: Text(w.isFull ? '${weekSummary(w)} · full' : weekSummary(w)),
+                        // A full week can't take another day.
+                        onChanged: w.isFull
+                            ? null
+                            : (v) => setState(() => v == true ? chosen.add(w.id) : chosen.remove(w.id)),
                       ),
                 ],
               ),

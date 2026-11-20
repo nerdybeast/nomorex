@@ -8,11 +8,13 @@ import '../utils/program_day_date.dart';
 /// and starting a copy of someone else's (CommunityProgramDetailScreen), so
 /// both flows schedule identically.
 ///
-/// [workoutCount], when given, says up front what starting does: it puts
-/// that many workouts on the calendar.
+/// [lastDayOffset] is the program's last day (`Program.lastDayOffset`), for
+/// the "ends around" date; null when it has no days. [workoutCount], when
+/// given, says up front what starting does: it puts that many workouts on
+/// the calendar.
 Future<DateTime?> showStartProgramDialog(
   BuildContext context, {
-  required int dayCount,
+  required int? lastDayOffset,
   int? workoutCount,
 }) async {
   var startDate = DateTime.now();
@@ -40,13 +42,13 @@ Future<DateTime?> showStartProgramDialog(
                 if (picked != null) setState(() => startDate = picked);
               },
             ),
-            if (dayCount > 0)
+            if (lastDayOffset != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   workoutCount != null && workoutCount > 0
-                      ? '${pluralize(workoutCount, 'workout')}, ends around ${formatDate(programDayDate(startDate, dayCount - 1))}.'
-                      : 'Ends around ${formatDate(programDayDate(startDate, dayCount - 1))}.',
+                      ? '${pluralize(workoutCount, 'workout')}, ends around ${formatDate(programDayDate(startDate, lastDayOffset))}.'
+                      : 'Ends around ${formatDate(programDayDate(startDate, lastDayOffset))}.',
                   style: Theme.of(ctx).textTheme.bodySmall,
                 ),
               ),

@@ -193,7 +193,7 @@ class _InstanceWeekSection extends StatelessWidget {
                 ProgramDayCard(
                   title: day.title,
                   subtitle: programDaySubtitle(day),
-                  highlighted: isProgramDayToday(instance.startedAt, day.position),
+                  highlighted: isProgramDayToday(instance.startedAt, day.dayOffset),
                   completed: instance.isDayCheckedFor(StatsDay.fromDay(day)),
                   showChevron: programDayHasContent(day) && dayToWorkoutId.containsKey(day.id),
                   onTap: dayToWorkoutId.containsKey(day.id)

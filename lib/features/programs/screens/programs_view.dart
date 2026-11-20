@@ -173,7 +173,7 @@ class _ProgramTile extends ConsumerWidget {
           for (final w in program.weeks)
             StatsWeek([
               for (final d in w.days)
-                StatsDay(id: d.id, position: d.position, isRest: d.isRestDay),
+                StatsDay.fromDay(d),
             ]),
         ]);
 

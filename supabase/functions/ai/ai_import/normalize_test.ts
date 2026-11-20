@@ -225,10 +225,65 @@ Deno.test('fills the rest days a weekday-named week leaves out', () => {
   ]);
 });
 
-Deno.test('keeps two sessions on one weekday', () => {
-  const r = ok({ type: 'program', weeks: [{ days: [trainingDay('monday'), trainingDay('monday')] }] });
-  assertEquals(r.weeks[0].days.length, 8);
-  assertEquals(r.weeks[0].days.filter((d) => d.weekday === 'monday').length, 2);
+Deno.test('merges two sessions on one weekday into one day, keeping both', () => {
+  const am = { ...trainingDay('monday'), title: 'AM', notes: 'Snatch focus' };
+  const pm = {
+    weekday: 'monday',
+    title: 'PM',
+    exercises: [{ name: 'Front Squat', prescriptions: [{ sets: 1, reps: 3, percent: 80 }] }],
+  };
+  const r = ok({ type: 'program', weeks: [{ days: [am, pm] }] });
+  assertEquals(r.weeks[0].days.length, 7);
+  const monday = r.weeks[0].days[0];
+  assertEquals(monday.title, 'AM / PM');
+  assertEquals(monday.notes, 'Snatch focus');
+  assertEquals(monday.exercises.map((e) => e.name), ['Back Squat', 'Front Squat']);
+});
+
+Deno.test('splits numbered days into weeks of seven, restarting the titles', () => {
+  const days = Array.from(
+    { length: 20 },
+    (_, i) =>
+      i === 6 || i === 13 ? { title: `Day ${i + 1}`, isRestDay: true } : {
+        title: `Day ${i + 1}`,
+        exercises: trainingDay('monday').exercises,
+      },
+  );
+  const r = ok({ type: 'program', weeks: [{ label: 'Arm challenge', days }] });
+  assertEquals(r.weeks.map((w) => w.days.length), [7, 7, 6]);
+  assertEquals(r.weeks.map((w) => w.label), ['Arm challenge', undefined, undefined]);
+  assertEquals(r.weeks[1].days.map((d) => d.title), [
+    'Day 1',
+    'Day 2',
+    'Day 3',
+    'Day 4',
+    'Day 5',
+    'Day 6',
+    'Day 7',
+  ]);
+  assertEquals(r.weeks[1].days[6].isRestDay, true);
+});
+
+Deno.test('keeps a day title that is not a day number when splitting', () => {
+  const days = Array.from({ length: 8 }, (_, i) => ({
+    title: i === 7 ? 'Test day' : `Day ${i + 1}`,
+    exercises: trainingDay('monday').exercises,
+  }));
+  const r = ok({ type: 'program', weeks: [{ days }] });
+  assertEquals(r.weeks[1].days.map((d) => d.title), ['Test day']);
+});
+
+Deno.test('names the split week in flagged content', () => {
+  const days = Array.from({ length: 9 }, (_, i) => ({
+    title: `Day ${i + 1}`,
+    exercises: [{
+      name: 'Back Squat',
+      prescriptions: i === 8 ? [{ sets: 3, reps: 5, weight: 'smudged' }] : [{ reps: 3, percent: 70 }],
+    }],
+  }));
+  const r = ok({ type: 'program', weeks: [{ days }] });
+  assertEquals(r.weeks.length, 2);
+  assertEquals(r.unstructured.some((u) => u.location?.startsWith('Week 2, Day 2')), true);
 });
 
 Deno.test('adds no rest days when days are only numbered', () => {

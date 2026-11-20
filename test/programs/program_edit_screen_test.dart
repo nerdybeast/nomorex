@@ -42,8 +42,9 @@ class _TestProgramDetailNotifier extends ProgramDetailNotifier {
   Future<Program> build(String programId) async => _program;
 
   @override
-  Future<void> addWeek({String? label, String? notes}) async {
+  Future<String> addWeek() async {
     onAddWeek?.call();
+    return 'new-week';
   }
 
   @override

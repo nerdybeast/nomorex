@@ -1,11 +1,12 @@
 import '../utils/program_stats.dart';
+import 'program.dart';
 
 /// The PostgREST select every program-instance query uses: the program's name
 /// and week/day structure plus each materialized workout's status, so an
 /// instance can compute its progress (counts and check marks) without further
 /// queries. One shared string so the lists and the detail fetch can't drift.
 const kProgramInstanceSelect =
-    '*, programs(name, program_weeks(id, position, program_days(id, position, is_rest_day))), '
+    '*, programs(name, program_weeks(id, position, week_number, program_days(id, position, is_rest_day))), '
     'workouts(id, program_day_id, status)';
 
 /// One user's "run" of a program, created when they hit Start. Owns the
@@ -78,7 +79,9 @@ class ProgramInstance {
 
   factory ProgramInstance.fromJson(Map<String, dynamic> json) {
     final programMap = json['programs'] as Map<String, dynamic>?;
-    final rawWeeks = programMap?['program_weeks'] as List?;
+    final rawWeeks = programMap?['program_weeks'] == null
+        ? null
+        : sortedWeekJson(programMap!['program_weeks'] as List);
     final rawWorkouts = json['workouts'] as List?;
     return ProgramInstance(
       id: json['id'] as String,
@@ -90,9 +93,11 @@ class ProgramInstance {
       completedAt: json['completed_at'] == null
           ? null
           : DateTime.parse(json['completed_at'] as String),
-      structure: rawWeeks
-          ?.map((e) => StatsWeek.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      structure: rawWeeks == null
+          ? null
+          : [
+              for (var i = 0; i < rawWeeks.length; i++) StatsWeek.fromJson(rawWeeks[i], weekIndex: i),
+            ],
       workoutStatusByDayId: {
         for (final w in rawWorkouts ?? const [])
           if ((w as Map<String, dynamic>)['program_day_id'] != null)

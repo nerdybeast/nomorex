@@ -39,6 +39,18 @@ class Program {
   final DateTime updatedAt;
   final List<ProgramWeek> weeks;
 
+  /// The [ProgramDay.dayOffset] of the program's last scheduled day, or null
+  /// when it has no days.
+  int? get lastDayOffset {
+    int? last;
+    for (final w in weeks) {
+      for (final d in w.days) {
+        if (last == null || d.dayOffset > last) last = d.dayOffset;
+      }
+    }
+    return last;
+  }
+
   /// A saved copy of another user's public program. Permanent and never
   /// public; see `Workout.isCopy`.
   final bool isCopy;
@@ -52,11 +64,10 @@ class Program {
   final String? copiedFromProgramId;
 
   factory Program.fromJson(Map<String, dynamic> json) {
-    final rawWeeks = (json['program_weeks'] as List?) ?? const [];
-    final weeks = rawWeeks
-        .map((e) => ProgramWeek.fromJson(e as Map<String, dynamic>))
-        .toList()
-      ..sort((a, b) => a.position.compareTo(b.position));
+    final rawWeeks = sortedWeekJson(json['program_weeks'] as List?);
+    final weeks = [
+      for (var i = 0; i < rawWeeks.length; i++) ProgramWeek.fromJson(rawWeeks[i], weekIndex: i),
+    ];
     return Program(
       id: json['id'] as String,
       userId: json['user_id'] as String,
@@ -79,3 +90,14 @@ class Program {
     );
   }
 }
+
+/// A program's weeks as PostgREST returned them, in program order: by
+/// `position`, then `week_number`, the same order `start_program` dates them in.
+List<Map<String, dynamic>> sortedWeekJson(List? raw) =>
+    (raw ?? const []).cast<Map<String, dynamic>>().toList()
+      ..sort((a, b) {
+        final byPosition = (a['position'] as int).compareTo(b['position'] as int);
+        return byPosition != 0
+            ? byPosition
+            : ((a['week_number'] as int?) ?? 0).compareTo((b['week_number'] as int?) ?? 0);
+      });

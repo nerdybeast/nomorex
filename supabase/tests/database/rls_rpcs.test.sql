@@ -8,7 +8,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(30);
+select plan(32);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser with fixed ids.
@@ -117,6 +117,12 @@ select throws_like(
        (select id from public.program_days where program_week_id = '00000000-0000-4000-8000-00000000d021'::uuid),
        array['00000000-0000-4000-8000-00000000d021'::uuid]) $$,
   'not_found:%', 'copy_program_day refuses a''s public day');
+select throws_like(
+  $$ select public.add_program_week((select pub_program from u)) $$,
+  'not_found:%', 'add_program_week refuses a''s public program');
+select throws_like(
+  $$ select public.add_program_day('00000000-0000-4000-8000-00000000d021'::uuid, 'Day 2', false) $$,
+  'not_found:%', 'add_program_day refuses a''s public week');
 select throws_like(
   $$ select public.replace_program_set_group(array['00000000-0000-4000-8000-00000000d023'::uuid], 3,
        '{"target_reps": 1, "weight_mode": "open"}'::jsonb) $$,
