@@ -61,11 +61,8 @@ class ProgramWeekEditScreen extends ConsumerWidget {
                 },
                 addTooltip: 'Add week',
                 onAdd: () async {
-                  final notifier = ref.read(programDetailProvider(programId).notifier);
-                  await notifier.addWeek();
-                  final updated = await ref.read(programDetailProvider(programId).future);
-                  if (!context.mounted || updated.weeks.isEmpty) return;
-                  replaceWithWeek(context, programId, updated.weeks.last.id);
+                  final id = await ref.read(programDetailProvider(programId).notifier).addWeek();
+                  if (context.mounted) replaceWithWeek(context, programId, id);
                 },
               ),
       ),
@@ -101,13 +98,16 @@ class _WeekBody extends ConsumerWidget {
           )
         else
           _DayList(program: program, week: week),
-        FilledButton.icon(
-          key: const Key('edit_week_add_day'),
-          style: tokens.secondaryButtonStyle,
-          onPressed: () => showAddDayDialog(context, ref, programId: program.id, week: week),
-          icon: const Icon(Icons.add),
-          label: const Text('Add day'),
-        ),
+        // A week holds at most 7 days: after a day is deleted this adds one
+        // back, and a full week has no button.
+        if (!week.isFull)
+          FilledButton.icon(
+            key: const Key('edit_week_add_day'),
+            style: tokens.secondaryButtonStyle,
+            onPressed: () => showAddDayDialog(context, ref, programId: program.id, week: week),
+            icon: const Icon(Icons.add),
+            label: Text('Add day · ${week.days.length} of $kMaxDaysPerWeek'),
+          ),
       ],
     );
   }

@@ -137,9 +137,9 @@ void main() {
           completedAt: DateTime(2026, 8, 2, 12),
           structure: const [
             StatsWeek([
-              StatsDay(id: 'd1', position: 0, isRest: false),
-              StatsDay(id: 'd2', position: 1, isRest: false),
-              StatsDay(id: 'd3', position: 2, isRest: false),
+              StatsDay(id: 'd1', dayOffset: 0, isRest: false),
+              StatsDay(id: 'd2', dayOffset: 1, isRest: false),
+              StatsDay(id: 'd3', dayOffset: 2, isRest: false),
             ]),
           ],
           workoutStatusByDayId: const {'d1': 'finished'},
@@ -279,11 +279,11 @@ void main() {
     ];
     const structure = [
       StatsWeek([
-        StatsDay(id: 'd1', position: 0, isRest: false),
-        StatsDay(id: 'd2', position: 1, isRest: false),
-        StatsDay(id: 'd3', position: 2, isRest: true),
+        StatsDay(id: 'd1', dayOffset: 0, isRest: false),
+        StatsDay(id: 'd2', dayOffset: 1, isRest: false),
+        StatsDay(id: 'd3', dayOffset: 2, isRest: true),
       ]),
-      StatsWeek([StatsDay(id: 'd4', position: 3, isRest: false)]),
+      StatsWeek([StatsDay(id: 'd4', dayOffset: 3, isRest: false)]),
     ];
 
     Future<void> pump(

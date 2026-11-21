@@ -188,4 +188,55 @@ void main() {
     expect(own.isCopy, isFalse);
     expect(own.copiedFromProgramId, isNull);
   });
+
+  group('day offsets: every week is 7 calendar days', () {
+    Map<String, dynamic> day(String id, int position) =>
+        {'id': id, 'program_week_id': 'w', 'day_number': 1, 'title': id, 'position': position};
+    Map<String, dynamic> week(String id, int number, int position, List<Map<String, dynamic>> days) =>
+        {'id': id, 'program_id': 'p', 'week_number': number, 'position': position, 'program_days': days};
+
+    // Out of order, with gaps in the day positions; Week 2 is empty.
+    final json = {
+      'id': 'p',
+      'user_id': 'u',
+      'name': 'Short weeks',
+      'created_at': '2026-11-01T00:00:00Z',
+      'updated_at': '2026-11-01T00:00:00Z',
+      'program_weeks': [
+        week('w3', 3, 2, [day('c', 40)]),
+        week('w1', 1, 0, [day('b', 9), day('a', 2), day('a2', 5)]),
+        week('w2', 2, 1, []),
+      ],
+    };
+
+    test('Program.fromJson dates a day by its week and place in the week', () {
+      final program = Program.fromJson(json);
+      expect(program.weeks.map((w) => w.id), ['w1', 'w2', 'w3']);
+      expect(
+        {for (final w in program.weeks) for (final d in w.days) d.id: d.dayOffset},
+        {'a': 0, 'a2': 1, 'b': 2, 'c': 14},
+      );
+      expect(program.lastDayOffset, 14);
+      expect(program.weeks.first.isFull, isFalse);
+    });
+
+    test('a program with no days has no last day', () {
+      expect(Program.fromJson({...json, 'program_weeks': [week('w1', 1, 0, [])]}).lastDayOffset, isNull);
+    });
+
+    test('ProgramInstance.fromJson gives its structure the same offsets', () {
+      final instance = ProgramInstance.fromJson({
+        'id': 'i',
+        'program_id': 'p',
+        'user_id': 'u',
+        'started_at': '2026-11-16',
+        'status': 'active',
+        'programs': {'name': 'Short weeks', 'program_weeks': json['program_weeks']},
+      });
+      expect(
+        [for (final w in instance.structure!) [for (final d in w.days) d.dayOffset]],
+        [[0, 1, 2], <int>[], [14]],
+      );
+    });
+  });
 }

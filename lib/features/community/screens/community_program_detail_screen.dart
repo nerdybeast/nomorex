@@ -69,7 +69,7 @@ class CommunityProgramDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _CopyActions(
                   programId: program.id,
-                  dayCount: program.weeks.fold<int>(0, (sum, w) => sum + w.days.length),
+                  lastDayOffset: program.lastDayOffset,
                   // Training days: each non-rest day becomes one workout.
                   workoutCount: program.weeks.expand((w) => w.days).where((d) => !d.isRestDay).length,
                 ),
@@ -90,9 +90,9 @@ class CommunityProgramDetailScreen extends ConsumerWidget {
 /// "Start program" / "Save to my programs". Both make a private copy in the
 /// viewer's own programs; Start also begins a dated run of that copy.
 class _CopyActions extends ConsumerStatefulWidget {
-  const _CopyActions({required this.programId, required this.dayCount, required this.workoutCount});
+  const _CopyActions({required this.programId, required this.lastDayOffset, required this.workoutCount});
   final String programId;
-  final int dayCount;
+  final int? lastDayOffset;
   final int workoutCount;
 
   @override
@@ -133,7 +133,7 @@ class _CopyActionsState extends ConsumerState<_CopyActions> with AutomaticKeepAl
   Future<void> _start() async {
     final startDate = await showStartProgramDialog(
       context,
-      dayCount: widget.dayCount,
+      lastDayOffset: widget.lastDayOffset,
       workoutCount: widget.workoutCount,
     );
     if (startDate == null || !mounted) return;

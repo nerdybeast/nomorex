@@ -5,9 +5,10 @@ import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
 
 /// Asks for a new day's title (defaulting to the next "Day N") and whether
-/// it's a rest day, then adds it to the end of [week]. Returns whether a day
-/// was added, once it's saved.
-Future<bool> showAddDayDialog(
+/// it's a rest day, then adds it to the end of [week], which must have room
+/// (fewer than `kMaxDaysPerWeek` days). Returns the new day's id once it's
+/// saved, or null if cancelled.
+Future<String?> showAddDayDialog(
   BuildContext context,
   WidgetRef ref, {
   required String programId,
@@ -47,12 +48,11 @@ Future<bool> showAddDayDialog(
   );
   if (result == true) {
     final typed = controller.text.trim();
-    await ref.read(programDetailProvider(programId).notifier).addDay(
+    return ref.read(programDetailProvider(programId).notifier).addDay(
           week.id,
           title: typed.isEmpty ? defaultTitle : typed,
           isRestDay: isRestDay,
         );
-    return true;
   }
-  return false;
+  return null;
 }

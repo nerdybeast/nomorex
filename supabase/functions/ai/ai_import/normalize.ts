@@ -355,15 +355,83 @@ function normalizeDay(raw: Raw, location: string, ctx: Context): ImportDay {
 }
 
 /**
- * Inserts the rest days a weekday-named week leaves out. start_program dates
- * each day as start + position, so a missing rest day would schedule the
- * sessions on consecutive days. Only applies when every day names its weekday.
+ * The most days a program week holds. The database refuses an 8th
+ * (enforce_program_week_day_limit), and start_program gives every week 7
+ * calendar days: a day lands on start + 7 × week index + its place in the week.
+ */
+export const MAX_DAYS_PER_WEEK = 7;
+
+const NUMBERED_DAY = /^day\s*\d+$/i;
+
+/**
+ * Splits a week of numbered days longer than a week ("Day 1" … "Day 20") into
+ * weeks of seven, in order, before its days are read, so the locations in
+ * flagged content name the week each day ends up in. A "Day N" title restarts
+ * at Day 1 in each week. A weekday-named week is left whole: fillRestDays
+ * makes it one calendar week.
+ */
+function splitRawWeek(raw: Raw): Raw[] {
+  const days = asArray(raw.days);
+  const weekdayNamed = days.length > 0 &&
+    days.every((d) => normalizeWeekday(asObject(d)?.weekday) !== undefined);
+  if (weekdayNamed || days.length <= MAX_DAYS_PER_WEEK) return [raw];
+  const weeks: Raw[] = [];
+  for (let start = 0; start < days.length; start += MAX_DAYS_PER_WEEK) {
+    weeks.push({
+      // The label names the program's week, so only its first part keeps it.
+      ...(start === 0 && raw.label !== undefined ? { label: raw.label } : {}),
+      days: days.slice(start, start + MAX_DAYS_PER_WEEK).map((d, i) => {
+        const obj = asObject(d);
+        const title = obj && asText(obj.title);
+        return obj && title && NUMBERED_DAY.test(title) ? { ...obj, title: `Day ${i + 1}` } : d;
+      }),
+    });
+  }
+  return weeks;
+}
+
+/** Backstop for a week still over 7 days after normalizing: weeks of seven. */
+function splitWeek(week: ImportWeek): ImportWeek[] {
+  if (week.days.length <= MAX_DAYS_PER_WEEK) return [week];
+  const weeks: ImportWeek[] = [];
+  for (let start = 0; start < week.days.length; start += MAX_DAYS_PER_WEEK) {
+    weeks.push({
+      ...(start === 0 && week.label ? { label: week.label } : {}),
+      days: week.days.slice(start, start + MAX_DAYS_PER_WEEK),
+    });
+  }
+  return weeks;
+}
+
+/**
+ * Two sessions on one weekday (AM and PM) as one day, since a week holds one
+ * day per weekday: the first session's exercises, then the second's, with the
+ * titles and notes kept.
+ */
+function mergeSessions(sessions: ImportDay[]): ImportDay {
+  if (sessions.length === 1) return sessions[0];
+  const exercises = sessions.flatMap((d) => d.exercises);
+  const titles = sessions.flatMap((d) => d.title ?? []);
+  const notes = sessions.flatMap((d) => d.notes ?? []).join('\n');
+  return {
+    ...(titles.length ? { title: titles.join(' / ') } : {}),
+    weekday: sessions[0].weekday,
+    isRestDay: exercises.length === 0 && sessions.every((d) => d.isRestDay),
+    ...(notes ? { notes } : {}),
+    exercises,
+  };
+}
+
+/**
+ * Makes a weekday-named week its seven days, Monday to Sunday: inserts the
+ * rest days it leaves out, so the sessions keep their weekdays, and merges two
+ * sessions on one weekday. Only applies when every day names its weekday.
  */
 function fillRestDays(week: ImportWeek): ImportWeek {
   if (week.days.length === 0 || week.days.some((d) => !d.weekday)) return week;
-  const days = WEEKDAYS.flatMap((weekday) => {
+  const days = WEEKDAYS.map((weekday) => {
     const onDay = week.days.filter((d) => d.weekday === weekday);
-    return onDay.length ? onDay : [{ weekday, isRestDay: true, exercises: [] }];
+    return onDay.length ? mergeSessions(onDay) : { weekday, isRestDay: true, exercises: [] };
   });
   return { ...week, days };
 }
@@ -391,7 +459,7 @@ export function normalizeResult(
   if (!raw) return { kind: 'invalid' };
 
   const ctx: Context = { catalog: new Catalog(catalogExercises), unstructured: [] };
-  const rawWeeks = asObjects(raw.weeks);
+  const rawWeeks = asObjects(raw.weeks).flatMap(splitRawWeek);
   const isProgramShaped = rawWeeks.length > 1;
 
   let weeks: ImportWeek[] = rawWeeks.map((w, weekIndex) => {
@@ -444,7 +512,7 @@ export function normalizeResult(
     if (notes) merged.notes = notes;
     weeks = [{ days: [merged] }];
   } else {
-    weeks = weeks.map(fillRestDays);
+    weeks = weeks.map(fillRestDays).flatMap(splitWeek);
   }
 
   const allExercises = weeks.flatMap((w) => w.days).flatMap((d) => d.exercises);

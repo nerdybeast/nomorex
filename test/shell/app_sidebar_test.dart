@@ -300,7 +300,7 @@ void main() {
         startedAt: DateTime(now.year, now.month, now.day),
         status: 'active',
         structure: const [
-          StatsWeek([StatsDay(id: 'd1', position: 0, isRest: false)]),
+          StatsWeek([StatsDay(id: 'd1', dayOffset: 0, isRest: false)]),
         ],
       ),
     ],

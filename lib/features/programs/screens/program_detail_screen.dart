@@ -35,9 +35,9 @@ class ProgramDetailScreen extends ConsumerWidget {
   const ProgramDetailScreen({super.key, required this.programId});
   final String programId;
 
-  Future<void> _startProgram(BuildContext context, WidgetRef ref, int dayCount, int workoutCount) async {
+  Future<void> _startProgram(BuildContext context, WidgetRef ref, int? lastDayOffset, int workoutCount) async {
     final startDate =
-        await showStartProgramDialog(context, dayCount: dayCount, workoutCount: workoutCount);
+        await showStartProgramDialog(context, lastDayOffset: lastDayOffset, workoutCount: workoutCount);
     if (startDate == null || !context.mounted) return;
 
     try {
@@ -57,7 +57,7 @@ class ProgramDetailScreen extends ConsumerWidget {
         content: const Text("Couldn't start the program. Check your connection and try again."),
         action: SnackBarAction(
           label: 'Retry',
-          onPressed: () => _startProgram(context, ref, dayCount, workoutCount),
+          onPressed: () => _startProgram(context, ref, lastDayOffset, workoutCount),
         ),
       ));
     }
@@ -162,7 +162,7 @@ class ProgramDetailScreen extends ConsumerWidget {
                   onPressed: () => _startProgram(
                     context,
                     ref,
-                    program.weeks.fold<int>(0, (sum, w) => sum + w.days.length),
+                    program.lastDayOffset,
                     _workoutCount(program),
                   ),
                   icon: const Icon(Icons.play_arrow),
@@ -207,7 +207,7 @@ class _TodayRow extends ConsumerWidget {
     ProgramDay? today;
     for (final week in program.weeks) {
       for (final day in week.days) {
-        if (isProgramDayToday(run.startedAt, day.position)) today = day;
+        if (isProgramDayToday(run.startedAt, day.dayOffset)) today = day;
       }
     }
     final day = today;
@@ -275,7 +275,7 @@ class _WeekListState extends State<_WeekList> {
   late Set<int> _open = {_initialWeek()};
 
   int _initialWeek() => currentWeekIndex(
-        [for (final w in widget.program.weeks) [for (final d in w.days) d.position]],
+        [for (final w in widget.program.weeks) [for (final d in w.days) d.dayOffset]],
         widget.run?.startedAt,
       );
 
@@ -406,7 +406,7 @@ class _WeekSection extends StatelessWidget {
                   ProgramDayCard(
                     title: day.title,
                     subtitle: programDaySubtitle(day),
-                    highlighted: startedAt != null && isProgramDayToday(startedAt, day.position),
+                    highlighted: startedAt != null && isProgramDayToday(startedAt, day.dayOffset),
                     showChevron: programDayHasContent(day),
                     onTap: programDayHasContent(day)
                         ? () => context.push(AppConstants.routeProgramDayDetail(programId, day.id))

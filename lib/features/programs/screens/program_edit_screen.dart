@@ -221,7 +221,7 @@ class _WeekCard extends ConsumerWidget {
         shape: const Border(),
         collapsedShape: const Border(),
         title: Text('Week ${week.weekNumber}${week.label != null ? ' — ${week.label}' : ''}'),
-        subtitle: Text('${week.days.length} ${week.days.length == 1 ? 'day' : 'days'}'),
+        subtitle: Text('${week.days.length} of $kMaxDaysPerWeek days'),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -249,11 +249,14 @@ class _WeekCard extends ConsumerWidget {
             padding: const EdgeInsets.all(8),
             child: Row(
               children: [
-                TextButton.icon(
-                  onPressed: () => onAddDay(week),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Day'),
-                ),
+                // A week holds at most 7 days; a full week offers none.
+                if (!week.isFull)
+                  TextButton.icon(
+                    key: ValueKey('edit_program_add_day_${week.id}'),
+                    onPressed: () => onAddDay(week),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Day'),
+                  ),
                 const Spacer(),
                 _DeleteTextButton(label: 'Delete week', onPressed: deleteWeek),
               ],
@@ -352,12 +355,13 @@ class _DayCard extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Row(
               children: [
-                if (!day.isRestDay)
-                  TextButton.icon(
-                    onPressed: () => onAddExercise(day.id),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Exercise'),
-                  ),
+                // Offered on a rest day too: adding an exercise makes it a
+                // training day (ProgramDetailNotifier.addExercise).
+                TextButton.icon(
+                  onPressed: () => onAddExercise(day.id),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Exercise'),
+                ),
                 const Spacer(),
                 _DeleteTextButton(
                   label: 'Delete day',

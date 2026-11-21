@@ -121,13 +121,13 @@ class _ProgramDayEditScreenState extends ConsumerState<ProgramDayEditScreen> wit
                   if (id != widget.dayId) replaceWithDay(context, programId, id);
                 },
                 addTooltip: 'Add day',
-                onAdd: () async {
-                  final added = await showAddDayDialog(context, ref, programId: programId, week: week!);
-                  if (!added || !context.mounted) return;
-                  final updated = await ref.read(programDetailProvider(programId).future);
-                  final days = updated.weeks.where((w) => w.id == week!.id).firstOrNull?.days ?? const [];
-                  if (days.isNotEmpty && context.mounted) replaceWithDay(context, programId, days.last.id);
-                },
+                // A full week (7 days) has no + to add another.
+                onAdd: week.isFull
+                    ? null
+                    : () async {
+                        final id = await showAddDayDialog(context, ref, programId: programId, week: week!);
+                        if (id != null && context.mounted) replaceWithDay(context, programId, id);
+                      },
               ),
       ),
       body: detail.when(
@@ -181,8 +181,16 @@ class _DayBody extends ConsumerWidget {
           Text('Rest day', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
-            'Nothing is programmed. To add exercises, make it a training day from the ⋯ menu.',
+            'Nothing is programmed. Adding an exercise makes it a training day.',
             style: tokens.bodySmall,
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            key: const Key('edit_day_rest_add_exercise'),
+            style: tokens.secondaryButtonStyle,
+            onPressed: onAddExercise,
+            icon: const Icon(Icons.add),
+            label: const Text('Add exercise'),
           ),
         ],
       );

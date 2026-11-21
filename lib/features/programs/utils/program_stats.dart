@@ -3,21 +3,21 @@ import '../models/program_week.dart';
 
 /// One scheduled day of a program, reduced to what the counts need.
 class StatsDay {
-  const StatsDay({required this.id, required this.position, required this.isRest});
+  const StatsDay({required this.id, required this.dayOffset, required this.isRest});
 
   final String id;
 
-  /// Global, 0-based order across the whole program (`program_days.position`);
-  /// the day's date is the run's start date plus this many days.
-  final int position;
+  /// Days from the run's start date to this day's date
+  /// (`ProgramDay.dayOffset`: 7 × week index + place in the week).
+  final int dayOffset;
   final bool isRest;
 
   factory StatsDay.fromDay(ProgramDay day) =>
-      StatsDay(id: day.id, position: day.position, isRest: day.isRestDay);
+      StatsDay(id: day.id, dayOffset: day.dayOffset, isRest: day.isRestDay);
 
-  factory StatsDay.fromJson(Map<String, dynamic> json) => StatsDay(
+  factory StatsDay.fromJson(Map<String, dynamic> json, {required int dayOffset}) => StatsDay(
         id: json['id'] as String,
-        position: json['position'] as int,
+        dayOffset: dayOffset,
         isRest: (json['is_rest_day'] as bool?) ?? false,
       );
 }
@@ -31,11 +31,17 @@ class StatsWeek {
   factory StatsWeek.fromWeek(ProgramWeek week) =>
       StatsWeek(week.days.map(StatsDay.fromDay).toList());
 
-  factory StatsWeek.fromJson(Map<String, dynamic> json) {
-    final raw = (json['program_days'] as List?) ?? const [];
-    return StatsWeek(
-      raw.map((e) => StatsDay.fromJson(e as Map<String, dynamic>)).toList(),
-    );
+  /// [weekIndex] is the week's 0-based place in the program; see
+  /// `ProgramWeek.fromJson`.
+  factory StatsWeek.fromJson(Map<String, dynamic> json, {required int weekIndex}) {
+    final raw = ((json['program_days'] as List?) ?? const [])
+        .cast<Map<String, dynamic>>()
+        .toList()
+      ..sort((a, b) => (a['position'] as int).compareTo(b['position'] as int));
+    return StatsWeek([
+      for (var i = 0; i < raw.length; i++)
+        StatsDay.fromJson(raw[i], dayOffset: weekIndex * kMaxDaysPerWeek + i),
+    ]);
   }
 }
 
@@ -97,7 +103,7 @@ class RunClock {
   DateTime get _cutoff => DateTime(asOf.year, asOf.month, asOf.day + (ended ? 1 : 0));
 
   bool hasPassed(StatsDay d) =>
-      DateTime(startedAt.year, startedAt.month, startedAt.day + d.position)
+      DateTime(startedAt.year, startedAt.month, startedAt.day + d.dayOffset)
           .isBefore(_cutoff);
 }
 
