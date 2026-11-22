@@ -12,6 +12,6 @@ runs:
         # Flutter than the one the PR was verified against. Bump this on
         # purpose, not by surprise. scripts/lib/cloud.sh (`read_pins`) reads
         # this line for the cloud sessions, so keep the key and format.
-        flutter-version: 3.50.0
+        flutter-version: 3.50.1
         channel: stable
         cache: true
