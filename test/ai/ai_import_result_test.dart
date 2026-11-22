@@ -131,4 +131,83 @@ void main() {
       expect(out['schemaVersion'], 1);
     });
   });
+
+  group('sessions (import schema 2)', () {
+    Map<String, dynamic> split() => {
+      'schemaVersion': 2,
+      'type': 'program',
+      'weeks': [
+        {
+          'days': [
+            {
+              'weekday': 'monday',
+              'isRestDay': false,
+              'sessions': [
+                {
+                  'title': 'AM',
+                  'notes': 'Fasted',
+                  'exercises': [
+                    {
+                      'name': 'Bench',
+                      'match': null,
+                      'sets': [
+                        {'reps': 5, 'weight': 225, 'unit': 'lb'},
+                      ],
+                    },
+                  ],
+                },
+                {
+                  'exercises': [
+                    {
+                      'name': 'Front Squat',
+                      'match': {'exerciseId': 'ex-fs', 'name': 'Front Squat', 'confidence': 'exact'},
+                      'sets': [
+                        {'reps': 3, 'percent': 80},
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      'unstructured': <Map<String, dynamic>>[],
+    };
+
+    test('a day reads its sessions, and its exercises across them', () {
+      final day = AiImportResult.fromJson(split()).days.single;
+      expect(day.sessions.map((s) => s.label(day.sessions.indexOf(s))), ['AM', 'Session 2']);
+      expect(day.sessions.first.notes, 'Fasted');
+      expect(day.exercises.map((e) => e.name), ['Bench', 'Front Squat']);
+    });
+
+    test('a schema 1 day is one session', () {
+      final day = AiImportResult.fromJson(workoutResult()).days.single;
+      expect(day.sessions, hasLength(1));
+      expect(day.exercises, hasLength(4));
+    });
+
+    test('the reviewed payload keeps the sessions, with fixes and kg loads inside them', () {
+      final out = buildReviewedPayload(
+        split(),
+        title: 'x',
+        fixes: {
+          normalizeExerciseName('Bench'): const UseExistingExercise(
+            Exercise(id: 'ex-bp', name: 'Bench Press', isPredefined: true),
+          ),
+        },
+      );
+      final day = (out['weeks'] as List)[0]['days'][0] as Map;
+      expect(day.containsKey('exercises'), isFalse);
+      final sessions = day['sessions'] as List;
+      expect(sessions.map((s) => s['title']), ['AM', null]);
+      expect(sessions[0]['notes'], 'Fasted');
+      final bench = sessions[0]['exercises'][0] as Map;
+      expect(bench['match']['exerciseId'], 'ex-bp');
+      expect(bench['sets'][0]['weightKg'], 102.058);
+      expect(sessions[1]['exercises'][0]['sets'][0]['percent'], 80);
+    });
+  });
 }
+

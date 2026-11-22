@@ -70,8 +70,11 @@ class CommunityProgramDetailScreen extends ConsumerWidget {
                 _CopyActions(
                   programId: program.id,
                   lastDayOffset: program.lastDayOffset,
-                  // Training days: each non-rest day becomes one workout.
-                  workoutCount: program.weeks.expand((w) => w.days).where((d) => !d.isRestDay).length,
+                  // Each session of a training day becomes one workout.
+                  workoutCount: program.weeks
+                      .expand((w) => w.days)
+                      .where((d) => !d.isRestDay)
+                      .fold(0, (n, d) => n + d.workoutKeys.length),
                 ),
               ],
               const SizedBox(height: 16),

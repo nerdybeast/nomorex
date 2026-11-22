@@ -18,8 +18,8 @@ class CommunityProgramDetailNotifier extends _$CommunityProgramDetailNotifier {
     ref.watch(authStateProvider);
     final data = await _db
         .from('programs')
-        .select('*, profiles(display_name), program_weeks(*, program_days(*, program_exercises('
-            '*, exercises(name), program_sets(*, exercises(name)))))')
+        .select('*, profiles(display_name), program_weeks(*, program_days(*, program_sessions(*, program_exercises('
+            '*, exercises(name), program_sets(*, exercises(name))))))')
         .eq('id', programId)
         .single();
     return Program.fromJson(data);

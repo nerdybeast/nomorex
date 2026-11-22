@@ -27,7 +27,7 @@ void main() {
       bool ended = false,
     }) =>
         runStats(weeks,
-            workoutStatusByDayId: status, startedAt: start, asOf: asOf, ended: ended);
+            workoutStatusByKey: status, startedAt: start, asOf: asOf, ended: ended);
 
     test('counts only finished workouts', () {
       final s = stats({'a': 'finished', 'b': 'in_progress', 'd': 'not_started'},
@@ -70,23 +70,23 @@ void main() {
     final status = {'a': 'finished', 'b': 'in_progress'};
 
     test('a training day is checked only once its workout is finished', () {
-      expect(isDayChecked(_d('a', 0), workoutStatusByDayId: status, clock: clock), isTrue);
-      expect(isDayChecked(_d('b', 1), workoutStatusByDayId: status, clock: clock), isFalse);
+      expect(isDayChecked(_d('a', 0), workoutStatusByKey: status, clock: clock), isTrue);
+      expect(isDayChecked(_d('b', 1), workoutStatusByKey: status, clock: clock), isFalse);
     });
 
     test('a rest day is checked once its date has passed', () {
-      expect(isDayChecked(_d('c', 1, rest: true), workoutStatusByDayId: {}, clock: clock), isTrue);
-      expect(isDayChecked(_d('c', 2, rest: true), workoutStatusByDayId: {}, clock: clock), isFalse);
+      expect(isDayChecked(_d('c', 1, rest: true), workoutStatusByKey: {}, clock: clock), isTrue);
+      expect(isDayChecked(_d('c', 2, rest: true), workoutStatusByKey: {}, clock: clock), isFalse);
     });
 
     test('week check agrees with the completed-weeks count', () {
       final statuses = {'a': 'finished', 'b': 'finished', 'd': 'finished'};
       final done = [
         for (final w in weeks)
-          isWeekDone(w, workoutStatusByDayId: statuses, clock: clock),
+          isWeekDone(w, workoutStatusByKey: statuses, clock: clock),
       ];
       final s = runStats(weeks,
-          workoutStatusByDayId: statuses,
+          workoutStatusByKey: statuses,
           startedAt: DateTime(2026, 8, 1),
           asOf: DateTime(2026, 8, 3));
       expect(done.where((d) => d).length, s.completedWeeks);
@@ -95,7 +95,7 @@ void main() {
 
     test('an empty week is never done', () {
       expect(
-        isWeekDone(const StatsWeek([]), workoutStatusByDayId: {}, clock: clock),
+        isWeekDone(const StatsWeek([]), workoutStatusByKey: {}, clock: clock),
         isFalse,
       );
     });
@@ -138,6 +138,81 @@ void main() {
       final s = i.stats!;
       expect((s.weeks, s.days, s.workouts), (1, 2, 1));
       expect((s.completedWeeks, s.completedDays, s.completedWorkouts), (1, 2, 1));
+    });
+  });
+
+  group('sessions', () {
+    // Day a has two sessions (a1, a2); b has one (b1); c is a rest day.
+    final split = [
+      StatsWeek([
+        StatsDay(id: 'a', dayOffset: 0, isRest: false, workoutKeys: const ['a1', 'a2']),
+        StatsDay(id: 'b', dayOffset: 1, isRest: false, workoutKeys: const ['b1']),
+        StatsDay(id: 'c', dayOffset: 2, isRest: true, workoutKeys: const ['c1']),
+      ]),
+    ];
+    final clock = RunClock(startedAt: DateTime(2026, 8, 1), asOf: DateTime(2026, 8, 1));
+
+    test('each session of a training day is a workout', () {
+      expect(templateStats(split).workouts, 3);
+    });
+
+    test('a day is checked only once every session is finished', () {
+      final day = split.single.days.first;
+      expect(isDayChecked(day, workoutStatusByKey: {'a1': 'finished'}, clock: clock), isFalse);
+      expect(isDayChecked(day, workoutStatusByKey: {'a1': 'finished', 'a2': 'finished'}, clock: clock), isTrue);
+    });
+
+    test('finished sessions count one by one, and the week needs them all', () {
+      final s = runStats(split,
+          workoutStatusByKey: {'a1': 'finished', 'b1': 'finished'},
+          startedAt: DateTime(2026, 8, 1),
+          asOf: DateTime(2026, 8, 3));
+      expect((s.workouts, s.completedWorkouts, s.completedWeeks), (3, 2, 0));
+      final done = runStats(split,
+          workoutStatusByKey: {'a1': 'finished', 'a2': 'finished', 'b1': 'finished'},
+          startedAt: DateTime(2026, 8, 1),
+          asOf: DateTime(2026, 8, 3));
+      expect((done.completedWorkouts, done.completedWeeks), (3, 1));
+    });
+
+    test('a run keys its workouts by session, falling back to the day', () {
+      final i = ProgramInstance.fromJson({
+        'id': 'i1',
+        'program_id': 'p1',
+        'user_id': 'u1',
+        'started_at': '2026-08-01',
+        'status': 'active',
+        'programs': {
+          'name': 'Split',
+          'program_weeks': [
+            {
+              'id': 'w1',
+              'position': 0,
+              'program_days': [
+                {
+                  'id': 'd1',
+                  'position': 0,
+                  'is_rest_day': false,
+                  'program_sessions': [
+                    {'id': 's2', 'position': 1},
+                    {'id': 's1', 'position': 0},
+                  ],
+                },
+                {'id': 'd2', 'position': 1, 'is_rest_day': false, 'program_sessions': []},
+              ],
+            },
+          ],
+        },
+        'workouts': [
+          {'id': 'x', 'program_day_id': 'd1', 'program_session_id': 's1', 'status': 'finished'},
+          {'id': 'y', 'program_day_id': 'd1', 'program_session_id': 's2', 'status': 'not_started'},
+          {'id': 'z', 'program_day_id': 'd2', 'program_session_id': null, 'status': 'finished'},
+        ],
+      });
+      expect(i.structure!.single.days.first.workoutKeys, ['s1', 's2']);
+      expect(i.workoutStatusByKey, {'s1': 'finished', 's2': 'not_started', 'd2': 'finished'});
+      final s = i.stats!;
+      expect((s.workouts, s.completedWorkouts), (3, 2));
     });
   });
 }

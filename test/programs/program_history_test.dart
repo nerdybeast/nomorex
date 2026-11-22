@@ -6,7 +6,9 @@ import 'package:nomorex/core/constants/app_constants.dart';
 import 'package:nomorex/core/theme/app_theme.dart';
 import 'package:nomorex/features/programs/models/program.dart';
 import 'package:nomorex/features/programs/models/program_day.dart';
+import 'package:nomorex/features/programs/models/program_exercise.dart';
 import 'package:nomorex/features/programs/models/program_instance.dart';
+import 'package:nomorex/features/programs/models/program_session.dart';
 import 'package:nomorex/features/programs/models/program_week.dart';
 import 'package:nomorex/features/programs/providers/finished_program_instances_provider.dart';
 import 'package:nomorex/features/programs/providers/program_detail_provider.dart';
@@ -142,7 +144,7 @@ void main() {
               StatsDay(id: 'd3', dayOffset: 2, isRest: false),
             ]),
           ],
-          workoutStatusByDayId: const {'d1': 'finished'},
+          workoutStatusByKey: const {'d1': 'finished'},
         ),
       ]);
 
@@ -301,7 +303,7 @@ void main() {
         programName: 'Block',
         completedAt: completedAt,
         structure: structure,
-        workoutStatusByDayId: statuses,
+        workoutStatusByKey: statuses,
       );
       await tester.pumpWidget(
         ProviderScope(
@@ -356,6 +358,79 @@ void main() {
 
       expect(find.byKey(const Key('program_week_completed')), findsNWidgets(2));
       expect(find.byKey(const Key('program_instance_complete')), findsNothing);
+    });
+  });
+
+  group('ProgramInstanceDetailScreen sessions', () {
+    ProgramExercise ex(String id, String name) =>
+        ProgramExercise(id: id, programDayId: 'd1', exerciseId: 'x$id', exerciseName: name, position: 0);
+
+    // One training day split into AM (Snatch) and an untitled session (Squat).
+    final weeks = [
+      ProgramWeek(
+        id: 'w1',
+        programId: 'p1',
+        weekNumber: 1,
+        position: 0,
+        days: [
+          ProgramDay(
+            id: 'd1',
+            programWeekId: 'w1',
+            dayNumber: 1,
+            title: 'Day 1',
+            position: 0,
+            sessions: [
+              ProgramSession(id: 's1', programDayId: 'd1', position: 0, title: 'AM', exercises: [ex('e1', 'Snatch')]),
+              ProgramSession(id: 's2', programDayId: 'd1', position: 1, exercises: [ex('e2', 'Squat')]),
+            ],
+          ),
+        ],
+      ),
+    ];
+
+    testWidgets('a split day shows a row per session, each checked on its own', (tester) async {
+      final instance = ProgramInstance(
+        id: 'run-1',
+        programId: 'p1',
+        userId: 'u1',
+        startedAt: DateTime(2000, 1, 1),
+        status: 'active',
+        programName: 'Block',
+        structure: const [
+          StatsWeek([StatsDay(id: 'd1', dayOffset: 0, isRest: false, workoutKeys: ['s1', 's2'])]),
+        ],
+        workoutStatusByKey: const {'s1': 'finished', 's2': 'not_started'},
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            programInstanceDetailProvider('run-1').overrideWith(() => _StubInstanceNotifier(instance)),
+            programDetailProvider('p1').overrideWith(() => _StubProgramDetailNotifier(weeks)),
+            programInstanceWorkoutsProvider('run-1').overrideWith(() => _EmptyInstanceWorkoutsNotifier()),
+            programInstancesProvider.overrideWith(() => _RecordingInstancesNotifier([])),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            home: const ProgramInstanceDetailScreen(instanceId: 'run-1'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Day 1 · AM'), findsOneWidget);
+      expect(find.text('Day 1 · Session 2'), findsOneWidget);
+      expect(find.text('Snatch'), findsOneWidget);
+      // Only the finished session is checked, and the week isn't done.
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('program_session_row_s1')),
+          matching: find.byKey(const Key('program_day_completed')),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('program_day_completed')), findsOneWidget);
+      expect(find.byKey(const Key('program_week_completed')), findsNothing);
+      expect(find.text('1 of 2 workouts'), findsOneWidget);
     });
   });
 }

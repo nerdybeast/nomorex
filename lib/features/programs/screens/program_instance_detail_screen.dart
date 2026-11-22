@@ -83,7 +83,7 @@ class ProgramInstanceDetailScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
         data: (instance) {
           final programAsync = ref.watch(programDetailProvider(instance.programId));
-          final dayToWorkoutId =
+          final workoutIds =
               ref.watch(programInstanceWorkoutsProvider(instanceId)).asData?.value ?? const {};
           final upcoming = isProgramUpcoming(instance.startedAt);
 
@@ -143,7 +143,7 @@ class ProgramInstanceDetailScreen extends ConsumerWidget {
                   _InstanceWeekSection(
                     week: week,
                     instance: instance,
-                    dayToWorkoutId: dayToWorkoutId,
+                    workoutIds: workoutIds,
                   ),
               ],
             ),
@@ -158,12 +158,12 @@ class _InstanceWeekSection extends StatelessWidget {
   const _InstanceWeekSection({
     required this.week,
     required this.instance,
-    required this.dayToWorkoutId,
+    required this.workoutIds,
   });
 
   final ProgramWeek week;
   final ProgramInstance instance;
-  final Map<String, String> dayToWorkoutId;
+  final Map<String, String> workoutIds;
 
   @override
   Widget build(BuildContext context) {
@@ -190,16 +190,32 @@ class _InstanceWeekSection extends StatelessWidget {
           ListGroup(
             children: [
               for (final day in week.days)
-                ProgramDayCard(
-                  title: day.title,
-                  subtitle: programDaySubtitle(day),
-                  highlighted: isProgramDayToday(instance.startedAt, day.dayOffset),
-                  completed: instance.isDayCheckedFor(StatsDay.fromDay(day)),
-                  showChevron: programDayHasContent(day) && dayToWorkoutId.containsKey(day.id),
-                  onTap: dayToWorkoutId.containsKey(day.id)
-                      ? () => context.push(AppConstants.routeWorkoutDetail(dayToWorkoutId[day.id]!))
-                      : null,
-                ),
+                // A training day split into sessions gets a row per session,
+                // each its own workout; any other day is one row.
+                if (!day.isRestDay && day.hasMultipleSessions)
+                  for (final (i, session) in day.sessions.indexed)
+                    ProgramDayCard(
+                      key: ValueKey('program_session_row_${session.id}'),
+                      title: programSessionTitle(day, i),
+                      subtitle: programSessionSubtitle(session),
+                      highlighted: isProgramDayToday(instance.startedAt, day.dayOffset),
+                      completed: instance.workoutStatusByKey[session.id] == 'finished',
+                      showChevron: session.exercises.isNotEmpty && workoutIds.containsKey(session.id),
+                      onTap: workoutIds.containsKey(session.id)
+                          ? () => context.push(AppConstants.routeWorkoutDetail(workoutIds[session.id]!))
+                          : null,
+                    )
+                else
+                  ProgramDayCard(
+                    title: day.title,
+                    subtitle: programDaySubtitle(day),
+                    highlighted: isProgramDayToday(instance.startedAt, day.dayOffset),
+                    completed: instance.isDayCheckedFor(StatsDay.fromDay(day)),
+                    showChevron: programDayHasContent(day) && workoutIds.containsKey(day.workoutKeys.first),
+                    onTap: workoutIds.containsKey(day.workoutKeys.first)
+                        ? () => context.push(AppConstants.routeWorkoutDetail(workoutIds[day.workoutKeys.first]!))
+                        : null,
+                  ),
             ],
           ),
         ],

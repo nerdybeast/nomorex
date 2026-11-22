@@ -9,7 +9,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(32);
+select plan(33);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser with fixed ids.
@@ -85,6 +85,8 @@ select is((select count(*)::int from public.program_weeks where id = (select pub
   'b can see a''s public program''s weeks');
 select is((select count(*)::int from public.program_days where id = (select pub_day from u)), 1,
   'b can see a''s public program''s days');
+select is((select count(*)::int from public.program_sessions where program_day_id = (select pub_day from u)), 1,
+  'b can see a''s public program''s sessions');
 select is((select count(*)::int from public.program_exercises where id = (select pub_pe from u)), 1,
   'b can see a''s public program''s exercises');
 select is((select count(*)::int from public.program_sets where id = (select pub_ps from u)), 1,
@@ -186,7 +188,8 @@ select is(
   (select count(*)::int from public.workouts where id = (select pub_workout from u))
   + (select count(*)::int from public.workout_sets where id = (select pub_ws from u))
   + (select count(*)::int from public.programs where id = (select pub_program from u))
-  + (select count(*)::int from public.program_sets where id = (select pub_ps from u)),
+  + (select count(*)::int from public.program_sets where id = (select pub_ps from u))
+  + (select count(*)::int from public.program_sessions where program_day_id = (select pub_day from u)),
   0, 'anon cannot see public workouts, programs or their children');
 select is((select count(*)::int from public.exercises), 0,
   'anon cannot see any exercise, predefined included');

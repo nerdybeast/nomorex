@@ -5,6 +5,7 @@ import '../../../shared/widgets/summary_card.dart';
 import '../../workouts/utils/set_resolver.dart';
 import '../models/program_day.dart';
 import '../models/program_exercise.dart';
+import '../models/program_session.dart';
 import '../models/program_set.dart';
 import '../models/program_week.dart';
 import 'program_day_brief.dart';
@@ -15,11 +16,20 @@ String weekTitle(ProgramWeek week) {
   return label == null || label.isEmpty ? 'Week ${week.weekNumber}' : 'Week ${week.weekNumber} · $label';
 }
 
-/// "6 exercises · 24 sets", "Rest day", or "No exercises yet".
+/// "6 exercises · 24 sets", "2 sessions · 6 exercises · 24 sets", "Rest
+/// day", or "No exercises yet".
 String daySummary(ProgramDay day) {
   if (day.isRestDay) return 'Rest day';
-  if (day.exercises.isEmpty) return 'No exercises yet';
-  return '${pluralize(day.exercises.length, 'exercise')} · ${pluralize(totalSets(day), 'set')}';
+  final sessions = day.hasMultipleSessions ? '${pluralize(day.sessions.length, 'session')} · ' : '';
+  if (day.exercises.isEmpty) return '${sessions}No exercises yet';
+  return '$sessions${pluralize(day.exercises.length, 'exercise')} · ${pluralize(totalSets(day), 'set')}';
+}
+
+/// "3 exercises · 12 sets", or "No exercises yet", for one session.
+String sessionSummary(ProgramSession session) {
+  if (session.exercises.isEmpty) return 'No exercises yet';
+  final sets = session.exercises.fold<int>(0, (n, e) => n + e.sets.length);
+  return '${pluralize(session.exercises.length, 'exercise')} · ${pluralize(sets, 'set')}';
 }
 
 /// "5 days · 26 exercises".

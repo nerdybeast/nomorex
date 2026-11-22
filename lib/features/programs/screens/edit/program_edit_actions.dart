@@ -5,6 +5,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../shared/widgets/confirm_dialog.dart';
 import '../../models/program.dart';
 import '../../models/program_day.dart';
+import '../../models/program_session.dart';
 import '../../models/program_week.dart';
 import '../../providers/program_detail_provider.dart';
 import '../../utils/program_edit_summary.dart';
@@ -13,6 +14,8 @@ import 'widgets/edit_chrome.dart';
 enum _WeekAction { duplicate, rename, delete }
 
 enum _DayAction { duplicate, copy, rename, restDay, delete }
+
+enum _SessionAction { rename, notes, duplicate, moveUp, moveDown, delete }
 
 /// The ⋯ menu for a week. Weeks are moved by dragging on the program screen,
 /// so it has no move entries. [onDeleted] runs after the week is gone, so a
@@ -150,6 +153,93 @@ Future<void> showDayActions(
       }
       await notifier.removeDay(day.id);
       onDeleted?.call();
+  }
+}
+
+/// Adds a session to [day] (up to [kMaxSessionsPerDay]), saying so in a
+/// snackbar. Returns the new session's id, or null when it failed.
+Future<String?> addSessionTo(BuildContext context, WidgetRef ref, {required String programId, required ProgramDay day}) async {
+  try {
+    final id = await ref.read(programDetailProvider(programId).notifier).addSession(day.id);
+    if (context.mounted) showEditSnack(context, 'Session ${day.sessions.length + 1} added to ${day.title}');
+    return id;
+  } catch (_) {
+    if (context.mounted) showEditSnack(context, "Couldn't add the session. Try again.");
+    return null;
+  }
+}
+
+/// The ⋯ menu for one of a day's sessions. Shown only on a day with more
+/// than one; a day's last session can't be removed (delete the day instead).
+Future<void> showSessionActions(
+  BuildContext context,
+  WidgetRef ref, {
+  required String programId,
+  required ProgramDay day,
+  required ProgramSession session,
+}) async {
+  final index = day.sessions.indexWhere((s) => s.id == session.id);
+  final label = session.label(index);
+  final action = await showActionSheet<_SessionAction>(
+    context,
+    title: '${day.title} · $label',
+    actions: [
+      const SheetAction(_SessionAction.rename, 'Rename', Icons.edit_outlined),
+      const SheetAction(_SessionAction.notes, 'Notes', Icons.notes_outlined),
+      if (day.canAddSession)
+        const SheetAction(_SessionAction.duplicate, 'Duplicate session', Icons.content_copy_outlined),
+      if (index > 0) const SheetAction(_SessionAction.moveUp, 'Move up', Icons.arrow_upward),
+      if (index < day.sessions.length - 1) const SheetAction(_SessionAction.moveDown, 'Move down', Icons.arrow_downward),
+      if (day.sessions.length > 1)
+        const SheetAction(_SessionAction.delete, 'Remove session', Icons.delete_outline, danger: true),
+    ],
+  );
+  if (action == null || !context.mounted) return;
+  final notifier = ref.read(programDetailProvider(programId).notifier);
+
+  Future<void> move(int by) {
+    final ids = [for (final s in day.sessions) s.id]
+      ..removeAt(index)
+      ..insert(index + by, session.id);
+    return notifier.reorderSessions(day.id, ids);
+  }
+
+  switch (action) {
+    case _SessionAction.rename:
+      final title = await showRenameDialog(
+        context,
+        title: 'Rename $label',
+        label: 'Title',
+        hint: 'e.g. AM, PM, Conditioning',
+        initial: session.title,
+      );
+      if (title != null) await notifier.updateSessionMeta(session.id, title: title);
+    case _SessionAction.notes:
+      final notes = await showRenameDialog(context, title: '$label notes', label: 'Notes', initial: session.notes);
+      if (notes != null) await notifier.updateSessionMeta(session.id, notes: notes);
+    case _SessionAction.duplicate:
+      try {
+        await notifier.duplicateSession(session.id);
+        if (context.mounted) showEditSnack(context, '$label duplicated');
+      } catch (_) {
+        if (context.mounted) showEditSnack(context, "Couldn't duplicate the session. Try again.");
+      }
+    case _SessionAction.moveUp:
+      await move(-1);
+    case _SessionAction.moveDown:
+      await move(1);
+    case _SessionAction.delete:
+      final count = session.exercises.length;
+      if (count > 0) {
+        final confirmed = await showConfirmDialog(
+          context,
+          title: 'Remove $label?',
+          message: 'This will also delete its $count ${count == 1 ? 'exercise' : 'exercises'}.',
+          confirmLabel: 'Remove',
+        );
+        if (!confirmed) return;
+      }
+      await notifier.removeSession(session.id);
   }
 }
 

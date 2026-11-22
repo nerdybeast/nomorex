@@ -188,10 +188,10 @@ Deno.test('returns the job ID and records the normalized result', async () => {
   assertEquals(finish.p_output_tokens, 22);
   const result = finish.p_result as {
     title: string;
-    weeks: { days: { exercises: { match: unknown }[] }[] }[];
+    weeks: { days: { sessions: { exercises: { match: unknown }[] }[] }[] }[];
   };
   assertEquals(result.title, 'Leg day');
-  assertEquals(result.weeks[0].days[0].exercises[0].match, {
+  assertEquals(result.weeks[0].days[0].sessions[0].exercises[0].match, {
     exerciseId: 'squat',
     name: 'Back Squat',
     confidence: 'exact',

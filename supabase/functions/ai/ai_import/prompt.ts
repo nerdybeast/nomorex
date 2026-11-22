@@ -27,6 +27,7 @@ Omit every field that is absent. Never write null. Numbers are JSON numbers.
       "weekday": "monday" ... "sunday",
       "isRestDay": true,
       "notes": string,
+      "sessions": [{ "title": string, "notes": string, "exercises": [...] }],
       "exercises": [{
         "name": string,
         "match": string,
@@ -55,7 +56,7 @@ Reading rules:
 - "type" is "workout" for one session, "program" for several days or weeks, and "none" if the file has no training content.
 - Set "handwritten" to true when any exercise, set or weight in the file is written by hand, including handwriting on a printed form. Omit it for typed or printed content.
 - A workout goes in one week with one day.
-- Two sessions on one day (AM and PM) are one day entry: the first session's exercises, then the second's.
+- A day with two or three sessions (AM and PM, "Session 1" and "Session 2") is one day entry whose "sessions" lists them in order, each with its own "exercises", in the same format as a day's, and "title" ("AM") when the file names it. A day with one session has "exercises" and no "sessions".
 - Omit "unit" when the file prints no unit for that weight. Never guess one.
 - Consecutive identical sets are one prescription with "sets" giving the count. Sets that differ are separate prescriptions, in order. Omit "sets" for a single set.
 - A ditto mark repeats the value from the same row in the previous column. Write the repeated values out in full.

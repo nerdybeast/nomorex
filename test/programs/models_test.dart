@@ -43,9 +43,36 @@ void main() {
                 'is_rest_day': false,
                 'notes': null,
                 'position': 0,
+                'program_sessions': [
+                  {
+                    'id': 's2',
+                    'program_day_id': 'd1',
+                    'title': 'PM',
+                    'notes': null,
+                    'position': 1,
+                    'program_exercises': [
+                      {
+                        'id': 'pe2',
+                        'program_day_id': 'd1',
+                        'program_session_id': 's2',
+                        'exercise_id': 'e2',
+                        'position': 0,
+                        'notes': null,
+                        'exercises': {'name': 'Front Squat'},
+                        'program_sets': [],
+                      },
+                    ],
+                  },
+                  {
+                    'id': 's1',
+                    'program_day_id': 'd1',
+                    'title': null,
+                    'notes': 'fasted',
+                    'position': 0,
                 'program_exercises': [
                   {
                     'id': 'pe1',
+                    'program_session_id': 's1',
                     'program_day_id': 'd1',
                     'exercise_id': 'e1',
                     'position': 0,
@@ -66,6 +93,8 @@ void main() {
                     ],
                   },
                 ],
+                  },
+                ],
               },
             ],
           },
@@ -78,8 +107,16 @@ void main() {
       final week1 = program.weeks.first;
       expect(week1.days.single.title, 'Day 1');
       final day1 = week1.days.single;
-      expect(day1.exercises.single.exerciseName, 'Snatch');
-      final set1 = day1.exercises.single.sets.single;
+      expect(day1.sessions.map((s) => s.id), ['s1', 's2'], reason: 'sessions sorted by position');
+      expect(day1.sessions.map((s) => s.label(day1.sessions.indexOf(s))), ['Session 1', 'PM']);
+      expect(day1.sessions.first.notes, 'fasted');
+      expect(day1.hasMultipleSessions, isTrue);
+      expect(day1.canAddSession, isTrue);
+      expect(day1.workoutKeys, ['s1', 's2']);
+      expect(day1.exercises.map((e) => e.exerciseName), ['Snatch', 'Front Squat'],
+          reason: 'exercises flatten session by session');
+      expect(day1.exercises.first.programSessionId, 's1');
+      final set1 = day1.exercises.first.sets.single;
       expect(set1.weightMode, 'percentage');
       expect(set1.percentage, 80);
     },

@@ -18,6 +18,7 @@ import 'ai_import_test.dart' as ai_import;
 import 'app_test.dart' as app;
 import 'community_copy_test.dart' as community_copy;
 import 'personal_best_test.dart' as personal_best;
+import 'program_sessions_test.dart' as program_sessions;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -26,4 +27,5 @@ void main() {
   personal_best.main();
   ai_import.main();
   community_copy.main();
+  program_sessions.main();
 }

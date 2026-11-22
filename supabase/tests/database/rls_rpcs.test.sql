@@ -8,7 +8,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(32);
+select plan(35);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser with fixed ids.
@@ -127,6 +127,21 @@ select throws_like(
   $$ select public.replace_program_set_group(array['00000000-0000-4000-8000-00000000d023'::uuid], 3,
        '{"target_reps": 1, "weight_mode": "open"}'::jsonb) $$,
   'not_found:%', 'replace_program_set_group refuses a''s sets');
+select throws_like(
+  $$ select public.add_program_session(
+       (select id from public.program_days where program_week_id = '00000000-0000-4000-8000-00000000d021'::uuid), 'PM') $$,
+  'not_found:%', 'add_program_session refuses a''s public day');
+select throws_like(
+  $$ select public.duplicate_program_session(
+       (select s.id from public.program_sessions s join public.program_days d on d.id = s.program_day_id
+        where d.program_week_id = '00000000-0000-4000-8000-00000000d021'::uuid)) $$,
+  'not_found:%', 'duplicate_program_session refuses a''s public session');
+select throws_like(
+  $$ select public.reorder_program_sessions(
+       (select id from public.program_days where program_week_id = '00000000-0000-4000-8000-00000000d021'::uuid),
+       array(select s.id from public.program_sessions s join public.program_days d on d.id = s.program_day_id
+             where d.program_week_id = '00000000-0000-4000-8000-00000000d021'::uuid)) $$,
+  'not_found:%', 'reorder_program_sessions refuses a''s public day');
 select throws_like(
   $$ select public.reorder_program_weeks((select pub_program from u),
        array['00000000-0000-4000-8000-00000000d021'::uuid]) $$,

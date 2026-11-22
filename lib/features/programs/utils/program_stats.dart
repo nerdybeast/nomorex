@@ -3,9 +3,21 @@ import '../models/program_week.dart';
 
 /// One scheduled day of a program, reduced to what the counts need.
 class StatsDay {
-  const StatsDay({required this.id, required this.dayOffset, required this.isRest});
+  const StatsDay({required this.id, required this.dayOffset, required this.isRest, List<String>? workoutKeys})
+      : workoutKeys = workoutKeys ?? const [];
 
   final String id;
+
+  /// What each of the day's workouts is keyed by in a run's status map: its
+  /// sessions' ids (`ProgramDay.workoutKeys`). Empty means one workout keyed
+  /// by the day ([keys]).
+  final List<String> workoutKeys;
+
+  /// [workoutKeys], or the day's own id when it has none.
+  List<String> get keys => workoutKeys.isEmpty ? [id] : workoutKeys;
+
+  /// One workout per session.
+  int get workoutCount => keys.length;
 
   /// Days from the run's start date to this day's date
   /// (`ProgramDay.dayOffset`: 7 × week index + place in the week).
@@ -13,13 +25,18 @@ class StatsDay {
   final bool isRest;
 
   factory StatsDay.fromDay(ProgramDay day) =>
-      StatsDay(id: day.id, dayOffset: day.dayOffset, isRest: day.isRestDay);
+      StatsDay(id: day.id, dayOffset: day.dayOffset, isRest: day.isRestDay, workoutKeys: day.workoutKeys);
 
-  factory StatsDay.fromJson(Map<String, dynamic> json, {required int dayOffset}) => StatsDay(
-        id: json['id'] as String,
-        dayOffset: dayOffset,
-        isRest: (json['is_rest_day'] as bool?) ?? false,
-      );
+  factory StatsDay.fromJson(Map<String, dynamic> json, {required int dayOffset}) {
+    final sessions = ((json['program_sessions'] as List?) ?? const []).cast<Map<String, dynamic>>().toList()
+      ..sort((a, b) => (a['position'] as int).compareTo(b['position'] as int));
+    return StatsDay(
+      id: json['id'] as String,
+      dayOffset: dayOffset,
+      isRest: (json['is_rest_day'] as bool?) ?? false,
+      workoutKeys: [for (final s in sessions) s['id'] as String],
+    );
+  }
 }
 
 /// One week of a program, reduced to what the counts need.
@@ -49,10 +66,11 @@ class StatsWeek {
 /// are done.
 ///
 /// - **days** are every scheduled day, rest days included.
-/// - **workouts** are the training days only: each non-rest day materializes
-///   exactly one workout when a program is started.
+/// - **workouts** are the training days' sessions: each session of a non-rest
+///   day materializes one workout when a program is started.
 /// - A day is **completed** once its calendar date has passed.
 /// - A workout is **completed** once it is `finished`.
+/// - A day's check mark needs every one of its sessions finished.
 /// - A week is **completed** once all its training workouts are finished (rest
 ///   days can't block it); a week with no training days completes when its
 ///   last day's date has passed.
@@ -84,7 +102,7 @@ ProgramStats templateStats(List<StatsWeek> weeks) {
   return ProgramStats(
     weeks: weeks.length,
     days: days.length,
-    workouts: days.where((d) => !d.isRest).length,
+    workouts: days.where((d) => !d.isRest).fold<int>(0, (n, d) => n + d.workoutCount),
   );
 }
 
@@ -107,7 +125,8 @@ class RunClock {
           .isBefore(_cutoff);
 }
 
-bool _finished(StatsDay d, Map<String, String> status) => status[d.id] == 'finished';
+/// Every one of the day's workouts (one per session) is finished.
+bool _finished(StatsDay d, Map<String, String> status) => d.keys.every((k) => status[k] == 'finished');
 
 /// A day's check mark: a training day is checked once its workout is
 /// finished; a rest day (no workout) once its date has passed. Deliberately
@@ -115,33 +134,34 @@ bool _finished(StatsDay d, Map<String, String> status) => status[d.id] == 'finis
 /// days regardless of what was logged.
 bool isDayChecked(
   StatsDay day, {
-  required Map<String, String> workoutStatusByDayId,
+  required Map<String, String> workoutStatusByKey,
   required RunClock clock,
 }) =>
-    day.isRest ? clock.hasPassed(day) : _finished(day, workoutStatusByDayId);
+    day.isRest ? clock.hasPassed(day) : _finished(day, workoutStatusByKey);
 
 /// A week is done once all its training workouts are finished (rest days
 /// can't block it); a week with no training days is done once its last day's
 /// date has passed. An empty week is never done.
 bool isWeekDone(
   StatsWeek week, {
-  required Map<String, String> workoutStatusByDayId,
+  required Map<String, String> workoutStatusByKey,
   required RunClock clock,
 }) {
   if (week.days.isEmpty) return false;
   final training = week.days.where((d) => !d.isRest);
   return training.isEmpty
       ? week.days.every(clock.hasPassed)
-      : training.every((d) => _finished(d, workoutStatusByDayId));
+      : training.every((d) => _finished(d, workoutStatusByKey));
 }
 
 /// Totals plus progress for a run started on [startedAt].
 ///
-/// [workoutStatusByDayId] maps `program_day_id` to the materialized workout's
-/// status; see [RunClock] for [asOf] / [ended].
+/// [workoutStatusByKey] maps each materialized workout's key (`workoutKey`:
+/// its session, or its day when it has none) to its status; see [RunClock]
+/// for [asOf] / [ended].
 ProgramStats runStats(
   List<StatsWeek> weeks, {
-  required Map<String, String> workoutStatusByDayId,
+  required Map<String, String> workoutStatusByKey,
   required DateTime startedAt,
   required DateTime asOf,
   bool ended = false,
@@ -152,12 +172,20 @@ ProgramStats runStats(
   return ProgramStats(
     weeks: weeks.length,
     days: allDays.length,
-    workouts: allDays.where((d) => !d.isRest).length,
+    workouts: allDays.where((d) => !d.isRest).fold<int>(0, (n, d) => n + d.workoutCount),
     completedWeeks: weeks
-        .where((w) => isWeekDone(w, workoutStatusByDayId: workoutStatusByDayId, clock: clock))
+        .where((w) => isWeekDone(w, workoutStatusByKey: workoutStatusByKey, clock: clock))
         .length,
     completedDays: allDays.where(clock.hasPassed).length,
-    completedWorkouts:
-        allDays.where((d) => !d.isRest && _finished(d, workoutStatusByDayId)).length,
+    completedWorkouts: allDays
+        .where((d) => !d.isRest)
+        .fold<int>(0, (n, d) => n + d.keys.where((k) => workoutStatusByKey[k] == 'finished').length),
   );
 }
+
+/// The key a run's workout is stored under in a status or id map: its
+/// `program_session_id`, or its `program_day_id` for a workout with no session
+/// (materialized from a day that had none). Matches [StatsDay.keys] and
+/// `ProgramDay.workoutKeys`.
+String? workoutKey(Map<String, dynamic> workoutRow) =>
+    (workoutRow['program_session_id'] ?? workoutRow['program_day_id']) as String?;

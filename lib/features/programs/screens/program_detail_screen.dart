@@ -213,27 +213,38 @@ class _TodayRow extends ConsumerWidget {
     final day = today;
     if (day == null) return const SizedBox.shrink();
     final workouts = ref.watch(programInstanceWorkoutsProvider(run.id)).asData?.value ?? const {};
-    final workoutId = workouts[day.id];
-    final canOpen = programDayHasContent(day);
+
+    // The run's own workout when there is one; the run screen otherwise (a
+    // day added to the template after the start).
+    VoidCallback open(String key) => () => context.push(workouts[key] != null
+        ? AppConstants.routeWorkoutDetail(workouts[key]!)
+        : AppConstants.routeProgramInstanceDetail(run.id));
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: ListGroup(
         children: [
-          ProgramDayCard(
-            key: const Key('program_today_row'),
-            // The TODAY pill already says when; the title stays the day's own.
-            title: day.title,
-            subtitle: programDaySubtitle(day),
-            highlighted: true,
-            showChevron: canOpen,
-            // The run's own workout when there is one; the run screen
-            // otherwise (a day added to the template after the start).
-            onTap: !canOpen
-                ? null
-                : () => context.push(workoutId != null
-                    ? AppConstants.routeWorkoutDetail(workoutId)
-                    : AppConstants.routeProgramInstanceDetail(run.id)),
-          ),
+          // A day split into sessions shows each one: each is its own workout.
+          if (!day.isRestDay && day.hasMultipleSessions)
+            for (final (i, session) in day.sessions.indexed)
+              ProgramDayCard(
+                key: ValueKey('program_today_session_${session.id}'),
+                title: programSessionTitle(day, i),
+                subtitle: programSessionSubtitle(session),
+                highlighted: true,
+                showChevron: session.exercises.isNotEmpty,
+                onTap: session.exercises.isEmpty ? null : open(session.id),
+              )
+          else
+            ProgramDayCard(
+              key: const Key('program_today_row'),
+              // The TODAY pill already says when; the title stays the day's own.
+              title: day.title,
+              subtitle: programDaySubtitle(day),
+              highlighted: true,
+              showChevron: programDayHasContent(day),
+              onTap: programDayHasContent(day) ? open(day.workoutKeys.first) : null,
+            ),
         ],
       ),
     );
@@ -344,7 +355,8 @@ class _WeekSection extends StatelessWidget {
     final theme = Theme.of(context);
     final tokens = NomorexTokens.of(context);
     final days = week.days.length;
-    final workouts = week.days.where((d) => !d.isRestDay).length;
+    // One workout per session of each training day.
+    final workouts = week.days.where((d) => !d.isRestDay).fold(0, (n, d) => n + d.workoutKeys.length);
     final heading = 'Week ${week.weekNumber}${week.label != null ? ' · ${week.label}' : ''}';
     final startedAt = todayStartedAt;
 

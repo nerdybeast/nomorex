@@ -22,11 +22,11 @@ class ProgramsNotifier extends _$ProgramsNotifier {
     final userId = _db.auth.currentUser?.id;
     if (userId == null) return [];
 
-    // Shallow: program + its weeks and day rows (no exercises/sets) for the
-    // "N weeks" / "N training days" summary.
+    // Shallow: program + its weeks, day rows and session ids (no
+    // exercises/sets) for the "N weeks" / "N workouts" summary.
     final data = await _db
         .from('programs')
-        .select('*, program_weeks(*, program_days(*))')
+        .select('*, program_weeks(*, program_days(*, program_sessions(id, program_day_id, position)))')
         .eq('user_id', userId)
         .eq('is_archived', false)
         .order('created_at', ascending: false);
