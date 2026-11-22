@@ -30,7 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^2.0.0
   supabase_flutter: ^2.8.0
   flutter_riverpod: ^3.5.0
   riverpod_annotation: ^4.0.8
@@ -38,7 +38,7 @@ dependencies:
   intl: any
   collection: any
   sentry_flutter: ^10.3.0
-  haptic_feedback: ^0.6.5
+  haptic_feedback: ^0.9.0+2
   image_picker: ^1.2.4
   file_selector: ^1.1.0
   image: ^4.12.0
