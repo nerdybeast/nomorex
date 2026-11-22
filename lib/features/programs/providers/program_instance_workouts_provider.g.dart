@@ -69,7 +69,7 @@ final class ProgramInstanceWorkoutsNotifierProvider
 }
 
 String _$programInstanceWorkoutsNotifierHash() =>
-    r'bf782a5549b90f710b8532a3f346b0d6fdd220af';
+    r'523f2e516ccbe2126148969c0a019b794d755516';
 
 /// Maps a program instance's materialized workouts back to the session each
 /// one was generated from (`workoutKey`: its `program_session_id`, or its
