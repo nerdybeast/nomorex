@@ -47,7 +47,7 @@ class CommunityProgramsNotifier extends _$CommunityProgramsNotifier {
   Future<List<Program>> _fetch(String userId, int offset) async {
     final data = await _db
         .from('programs')
-        .select('*, profiles(display_name), program_weeks(*, program_days(*))')
+        .select('*, profiles(display_name), program_weeks(*, program_days(*, program_sessions(id, program_day_id, position)))')
         .eq('is_public', true)
         // Archiving is the app's stand-in for deleting a program, so an
         // archived one must not stay browsable just because it was public.

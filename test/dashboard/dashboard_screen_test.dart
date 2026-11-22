@@ -200,7 +200,7 @@ void main() {
           StatsDay(id: 'd2', dayOffset: 1, isRest: true),
         ]),
       ],
-      workoutStatusByDayId: const {'d1': 'finished'},
+      workoutStatusByKey: const {'d1': 'finished'},
     );
 
     await tester.pumpWidget(

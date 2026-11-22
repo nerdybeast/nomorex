@@ -84,15 +84,22 @@ class ImportWeek {
 }
 
 class ImportDay {
-  const ImportDay({required this.isRestDay, required this.exercises, this.title, this.weekday, this.notes});
+  const ImportDay({required this.isRestDay, required this.sessions, this.title, this.weekday, this.notes});
 
-  factory ImportDay.fromJson(Map<String, dynamic> json) => ImportDay(
-    title: _text(json['title']),
-    weekday: _text(json['weekday']),
-    isRestDay: json['isRestDay'] == true,
-    notes: _text(json['notes']),
-    exercises: [for (final e in _objects(json['exercises'])) ImportExercise.fromJson(e)],
-  );
+  /// Reads a day's `sessions` (import schema 2), or else its `exercises` as
+  /// one session (schema 1, stored before days had sessions).
+  factory ImportDay.fromJson(Map<String, dynamic> json) {
+    final sessions = _objects(json['sessions']);
+    return ImportDay(
+      title: _text(json['title']),
+      weekday: _text(json['weekday']),
+      isRestDay: json['isRestDay'] == true,
+      notes: _text(json['notes']),
+      sessions: sessions.isNotEmpty
+          ? [for (final s in sessions) ImportSession.fromJson(s)]
+          : [ImportSession.fromJson({'exercises': json['exercises']})],
+    );
+  }
 
   final String? title;
 
@@ -100,7 +107,30 @@ class ImportDay {
   final String? weekday;
   final bool isRestDay;
   final String? notes;
+
+  /// At least one; more than one is a day of several workouts (AM, PM …).
+  final List<ImportSession> sessions;
+
+  /// Every exercise of the day, session by session.
+  List<ImportExercise> get exercises => [for (final s in sessions) ...s.exercises];
+}
+
+/// One of a day's sessions, each its own workout once the program starts.
+class ImportSession {
+  const ImportSession({required this.exercises, this.title, this.notes});
+
+  factory ImportSession.fromJson(Map<String, dynamic> json) => ImportSession(
+    title: _text(json['title']),
+    notes: _text(json['notes']),
+    exercises: [for (final e in _objects(json['exercises'])) ImportExercise.fromJson(e)],
+  );
+
+  final String? title;
+  final String? notes;
   final List<ImportExercise> exercises;
+
+  /// The title, or "Session N" for the session at [index] (0-based).
+  String label(int index) => title ?? 'Session ${index + 1}';
 }
 
 class ImportExercise {
@@ -308,6 +338,14 @@ Map<String, dynamic> buildReviewedPayload(
     return out;
   }
 
+  List<Map<String, dynamic>> reviewExercises(Object? exercises) => [
+    for (final exercise in _objects(exercises))
+      {
+        ...fixed(exercise),
+        'sets': [for (final set in _objects(exercise['sets'])) reviewSet(set)],
+      },
+  ];
+
   final trimmed = title.trim();
   return {
     ...raw,
@@ -320,13 +358,15 @@ Map<String, dynamic> buildReviewedPayload(
             for (final day in _objects(week['days']))
               {
                 ...day,
-                'exercises': [
-                  for (final exercise in _objects(day['exercises']))
-                    {
-                      ...fixed(exercise),
-                      'sets': [for (final set in _objects(exercise['sets'])) reviewSet(set)],
-                    },
-                ],
+                // A schema 2 day holds its exercises in sessions; a schema 1
+                // day (stored before #175) holds them itself.
+                if (day['sessions'] is List)
+                  'sessions': [
+                    for (final session in _objects(day['sessions']))
+                      {...session, 'exercises': reviewExercises(session['exercises'])},
+                  ]
+                else
+                  'exercises': reviewExercises(day['exercises']),
               },
           ],
         },

@@ -142,7 +142,7 @@ void main() {
         ]),
         StatsWeek([StatsDay(id: 'd4', dayOffset: 3, isRest: false)]),
       ],
-      workoutStatusByDayId: const {'d1': 'finished', 'd2': 'finished', 'd4': 'not_started'},
+      workoutStatusByKey: const {'d1': 'finished', 'd2': 'finished', 'd4': 'not_started'},
     );
     await tester.pumpWidget(
       ProviderScope(

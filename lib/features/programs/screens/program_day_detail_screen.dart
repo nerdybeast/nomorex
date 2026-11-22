@@ -80,8 +80,28 @@ class ProgramDayDetailScreen extends ConsumerWidget {
               else ...[
                 _DayTiles(day: day, unit: loads.unit),
                 const SizedBox(height: 16),
-                // Keyed by day so a different day starts from its own first lift.
-                _Lifts(key: ValueKey(day.id), exercises: exercises, loads: loads),
+                if (day.hasMultipleSessions)
+                  // Each session is its own workout, so each gets its own
+                  // heading and list.
+                  for (final (i, session) in day.sessions.indexed) ...[
+                    if (i > 0) const SizedBox(height: 20),
+                    Semantics(
+                      header: true,
+                      child: Text(session.label(i).toUpperCase(), style: tokens.eyebrow),
+                    ),
+                    if (session.notes?.trim() case final notes? when notes.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(notes, style: tokens.bodySmall),
+                    ],
+                    const SizedBox(height: 8),
+                    if (session.exercises.isEmpty)
+                      Text('No exercises yet.', style: tokens.bodySmall.copyWith(color: tokens.fg3))
+                    else
+                      _Lifts(key: ValueKey(session.id), exercises: session.exercises, loads: loads),
+                  ]
+                else
+                  // Keyed by day so a different day starts from its own first lift.
+                  _Lifts(key: ValueKey(day.id), exercises: exercises, loads: loads),
               ],
             ],
           );

@@ -10,6 +10,7 @@ import '../../../workouts/widgets/exercise_editor_card.dart';
 import '../../models/program.dart';
 import '../../models/program_day.dart';
 import '../../models/program_exercise.dart';
+import '../../models/program_session.dart';
 import '../../models/program_week.dart';
 import '../../providers/program_detail_provider.dart';
 import '../../utils/program_edit_summary.dart';
@@ -19,8 +20,9 @@ import 'widgets/edit_chrome.dart';
 import 'widgets/exercise_edit_sheet.dart';
 
 /// One day of the phone editor: tabs to switch days within the week, then
-/// the day's exercises in a list you drag to reorder. Tapping an exercise
-/// edits it in a sheet ([showExerciseEditSheet]).
+/// the day's exercises in a list you drag to reorder, one list per session
+/// when the day has more than one (up to [kMaxSessionsPerDay]). Tapping an
+/// exercise edits it in a sheet ([showExerciseEditSheet]).
 class ProgramDayEditScreen extends ConsumerStatefulWidget {
   const ProgramDayEditScreen({super.key, required this.programId, required this.dayId});
 
@@ -53,13 +55,14 @@ class _ProgramDayEditScreenState extends ConsumerState<ProgramDayEditScreen> wit
     }
   }
 
-  Future<void> _addExercise(ProgramDay day) async {
+  /// Adds to [session], or to the day's first session when null.
+  Future<void> _addExercise(ProgramDay day, [ProgramSession? session]) async {
     final provider = programDetailProvider(programId);
     final beforeIds = {for (final e in day.exercises) e.id};
     final added = await showExercisePickerSheet(
       context,
-      addedExerciseIds: {for (final e in day.exercises) e.exerciseId},
-      onPick: (exercise) => ref.read(provider.notifier).addExercise(day.id, exercise.id),
+      addedExerciseIds: {for (final e in session?.exercises ?? day.exercises) e.exerciseId},
+      onPick: (exercise) => ref.read(provider.notifier).addExercise(day.id, exercise.id, sessionId: session?.id),
     );
     if (added == null || !mounted) return;
     final program = await ref.read(provider.future);
@@ -112,7 +115,11 @@ class _ProgramDayEditScreenState extends ConsumerState<ProgramDayEditScreen> wit
                     StripItem(
                       key: d.id,
                       label: d.title,
-                      detail: d.isRestDay ? 'rest' : '${d.exercises.length} ex',
+                      detail: d.isRestDay
+                          ? 'rest'
+                          : d.hasMultipleSessions
+                              ? '${d.sessions.length} sessions'
+                              : '${d.exercises.length} ex',
                       semanticLabel: '${d.title}, ${daySummary(d)}',
                     ),
                 ],
@@ -143,7 +150,7 @@ class _ProgramDayEditScreenState extends ConsumerState<ProgramDayEditScreen> wit
                 scroll: _scroll,
                 highlightedExerciseId: highlightedExerciseId,
                 highlightKey: highlightKey,
-                onAddExercise: () => _addExercise(day!),
+                onAddExercise: (session) => _addExercise(day!, session),
               ),
       ),
     );
@@ -165,13 +172,13 @@ class _DayBody extends ConsumerWidget {
   final ScrollController scroll;
   final String? highlightedExerciseId;
   final GlobalKey highlightKey;
-  final VoidCallback onAddExercise;
+
+  /// Opens the picker for a session, or for the day's first one when null.
+  final void Function(ProgramSession? session) onAddExercise;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = NomorexTokens.of(context);
-    final palette = tokens.palette;
-    final notifier = ref.read(programDetailProvider(program.id).notifier);
     final exercises = day.exercises;
 
     if (day.isRestDay) {
@@ -188,10 +195,58 @@ class _DayBody extends ConsumerWidget {
           FilledButton.icon(
             key: const Key('edit_day_rest_add_exercise'),
             style: tokens.secondaryButtonStyle,
-            onPressed: onAddExercise,
+            onPressed: () => onAddExercise(null),
             icon: const Icon(Icons.add),
             label: const Text('Add exercise'),
           ),
+        ],
+      );
+    }
+
+    Widget list(ProgramSession? session) {
+      final rows = session?.exercises ?? exercises;
+      if (rows.isEmpty) return const SizedBox.shrink();
+      return _ExerciseList(
+        programId: program.id,
+        dayId: day.id,
+        exercises: rows,
+        highlightedExerciseId: highlightedExerciseId,
+        highlightKey: highlightKey,
+      );
+    }
+
+    Widget addSession() => TextButton.icon(
+          key: const Key('edit_day_add_session'),
+          onPressed: () => addSessionTo(context, ref, programId: program.id, day: day),
+          icon: const Icon(Icons.add),
+          label: Text('Add session · ${day.sessions.length} of $kMaxSessionsPerDay'),
+        );
+
+    // One session (every day until a second is added): the list as it always
+    // was, with no session chrome.
+    if (!day.hasMultipleSessions) {
+      return ListView(
+        controller: scroll,
+        padding: contentPadding(context, bottom: 32),
+        children: [
+          Text(
+            exercises.isEmpty ? 'No exercises yet.' : '${daySummary(day)} · drag to reorder',
+            style: tokens.bodySmall.copyWith(color: tokens.fg3),
+          ),
+          const SizedBox(height: 8),
+          list(day.sessions.firstOrNull),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            key: const Key('edit_day_add_exercise'),
+            style: tokens.secondaryButtonStyle,
+            onPressed: () => onAddExercise(day.sessions.firstOrNull),
+            icon: const Icon(Icons.add),
+            label: const Text('Add exercise'),
+          ),
+          if (day.sessions.isNotEmpty && day.canAddSession) ...[
+            const SizedBox(height: 8),
+            Align(alignment: Alignment.centerLeft, child: addSession()),
+          ],
         ],
       );
     }
@@ -201,51 +256,125 @@ class _DayBody extends ConsumerWidget {
       padding: contentPadding(context, bottom: 32),
       children: [
         Text(
-          exercises.isEmpty ? 'No exercises yet.' : '${daySummary(day)} · drag to reorder',
+          '${daySummary(day)} · each session is its own workout',
           style: tokens.bodySmall.copyWith(color: tokens.fg3),
         ),
-        const SizedBox(height: 8),
-        if (exercises.isNotEmpty)
-          Material(
-            color: palette.bg1,
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(NomorexSizes.radiusLg),
-              side: BorderSide(color: palette.borderSubtle),
-            ),
-            child: ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false,
-              itemCount: exercises.length,
-              itemBuilder: (context, i) {
-                final e = exercises[i];
-                return _ExerciseRow(
-                  key: ValueKey(e.id),
-                  rowKey: e.id == highlightedExerciseId ? highlightKey : null,
-                  index: i,
-                  exercise: e,
-                  highlighted: e.id == highlightedExerciseId,
-                  onTap: () => showExerciseEditSheet(context, programId: program.id, exerciseId: e.id),
-                );
-              },
-              onReorderItem: (oldIndex, newIndex) {
-                final ids = exercises.map((e) => e.id).toList();
-                final moved = ids.removeAt(oldIndex);
-                ids.insert(newIndex, moved);
-                notifier.reorderExercises(dayId: day.id, orderedExerciseIds: ids);
-              },
+        for (final (i, session) in day.sessions.indexed) ...[
+          const SizedBox(height: 16),
+          _SessionHeader(programId: program.id, day: day, session: session, index: i),
+          const SizedBox(height: 8),
+          list(session),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            key: ValueKey('edit_session_add_exercise_${session.id}'),
+            style: tokens.secondaryButtonStyle,
+            onPressed: () => onAddExercise(session),
+            icon: const Icon(Icons.add),
+            label: Text('Add exercise to ${session.label(i)}'),
+          ),
+        ],
+        if (day.canAddSession) ...[
+          const SizedBox(height: 16),
+          Align(alignment: Alignment.centerLeft, child: addSession()),
+        ],
+      ],
+    );
+  }
+}
+
+/// A session's title, summary and notes, with its ⋯ menu
+/// ([showSessionActions]).
+class _SessionHeader extends ConsumerWidget {
+  const _SessionHeader({required this.programId, required this.day, required this.session, required this.index});
+
+  final String programId;
+  final ProgramDay day;
+  final ProgramSession session;
+  final int index;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = NomorexTokens.of(context);
+    final label = session.label(index);
+    final notes = session.notes?.trim();
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Semantics(
+            header: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.titleMedium),
+                Text(sessionSummary(session), style: tokens.bodySmall.copyWith(color: tokens.fg3)),
+                if (notes != null && notes.isNotEmpty)
+                  Text(notes, maxLines: 2, overflow: TextOverflow.ellipsis, style: tokens.bodySmall),
+              ],
             ),
           ),
-        const SizedBox(height: 12),
-        FilledButton.icon(
-          key: const Key('edit_day_add_exercise'),
-          style: tokens.secondaryButtonStyle,
-          onPressed: onAddExercise,
-          icon: const Icon(Icons.add),
-          label: const Text('Add exercise'),
+        ),
+        IconButton(
+          key: ValueKey('edit_session_more_${session.id}'),
+          tooltip: '$label options',
+          icon: const Icon(Icons.more_horiz),
+          onPressed: () => showSessionActions(context, ref, programId: programId, day: day, session: session),
         ),
       ],
+    );
+  }
+}
+
+/// One session's exercises, dragged to reorder within the session.
+class _ExerciseList extends ConsumerWidget {
+  const _ExerciseList({
+    required this.programId,
+    required this.dayId,
+    required this.exercises,
+    required this.highlightedExerciseId,
+    required this.highlightKey,
+  });
+
+  final String programId;
+  final String dayId;
+  final List<ProgramExercise> exercises;
+  final String? highlightedExerciseId;
+  final GlobalKey highlightKey;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = NomorexTokens.of(context).palette;
+    final notifier = ref.read(programDetailProvider(programId).notifier);
+    return Material(
+      color: palette.bg1,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(NomorexSizes.radiusLg),
+        side: BorderSide(color: palette.borderSubtle),
+      ),
+      child: ReorderableListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        buildDefaultDragHandles: false,
+        itemCount: exercises.length,
+        itemBuilder: (context, i) {
+          final e = exercises[i];
+          return _ExerciseRow(
+            key: ValueKey(e.id),
+            rowKey: e.id == highlightedExerciseId ? highlightKey : null,
+            index: i,
+            exercise: e,
+            highlighted: e.id == highlightedExerciseId,
+            onTap: () => showExerciseEditSheet(context, programId: programId, exerciseId: e.id),
+          );
+        },
+        onReorderItem: (oldIndex, newIndex) {
+          final ids = exercises.map((e) => e.id).toList();
+          final moved = ids.removeAt(oldIndex);
+          ids.insert(newIndex, moved);
+          notifier.reorderExercises(dayId: dayId, orderedExerciseIds: ids);
+        },
+      ),
     );
   }
 }

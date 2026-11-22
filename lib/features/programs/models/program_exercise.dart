@@ -1,7 +1,7 @@
 import 'program_set.dart';
 
 /// Template equivalent of [WorkoutExercise] — same shape minus `workoutId`,
-/// plus `programDayId`.
+/// plus `programDayId` and the session it belongs to.
 class ProgramExercise {
   const ProgramExercise({
     required this.id,
@@ -9,12 +9,16 @@ class ProgramExercise {
     required this.exerciseId,
     required this.exerciseName,
     required this.position,
+    this.programSessionId,
     this.notes,
     this.sets = const [],
   });
 
   final String id;
   final String programDayId;
+
+  /// Null only for rows built without one (tests).
+  final String? programSessionId;
   final String exerciseId;
   final String exerciseName;
   final int position;
@@ -31,6 +35,7 @@ class ProgramExercise {
     return ProgramExercise(
       id: json['id'] as String,
       programDayId: json['program_day_id'] as String,
+      programSessionId: json['program_session_id'] as String?,
       exerciseId: json['exercise_id'] as String,
       exerciseName: exerciseMap?['name'] as String? ?? '',
       position: json['position'] as int,

@@ -11,6 +11,7 @@ import 'package:nomorex/features/programs/models/program_week.dart';
 import 'package:nomorex/features/programs/providers/program_detail_provider.dart';
 import 'package:nomorex/features/programs/screens/program_day_detail_screen.dart';
 import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
+import '../support/program_fixtures.dart';
 
 class _StubProgramDetailNotifier extends ProgramDetailNotifier {
   _StubProgramDetailNotifier(this._program);
@@ -34,7 +35,7 @@ Program _program() => Program(
       programId: 'p1',
       weekNumber: 1,
       position: 0,
-      days: const [
+      days: [
         ProgramDay(
           id: 'd1',
           programWeekId: 'wk1',
@@ -42,7 +43,7 @@ Program _program() => Program(
           title: 'Day 1',
           notes: 'EMOM 10 min after the main lift',
           position: 0,
-          exercises: [
+          sessions: soloSession('d1', [
             ProgramExercise(
               id: 'pe1',
               programDayId: 'd1',
@@ -80,7 +81,7 @@ Program _program() => Program(
                 ),
               ],
             ),
-          ],
+          ]),
         ),
       ],
     ),
@@ -198,7 +199,7 @@ void main() {
           updatedAt: DateTime(2026, 7, 1),
           weeks: [
             ProgramWeek(id: 'wk1', programId: 'p1', weekNumber: 1, position: 0, days: [
-              ProgramDay(id: 'd1', programWeekId: 'wk1', dayNumber: 1, title: 'Day 1', position: 0, exercises: [
+              ProgramDay(id: 'd1', programWeekId: 'wk1', dayNumber: 1, title: 'Day 1', position: 0, sessions: soloSession('d1', [
                 ProgramExercise(
                   id: 'pe1',
                   programDayId: 'd1',
@@ -221,7 +222,7 @@ void main() {
                     ProgramSet(id: 'p1s', programExerciseId: 'pe2', position: 0, weightMode: 'percentage', targetReps: 3, percentage: 90, basisExerciseId: 'clean', basisExerciseName: 'Clean'),
                   ],
                 ),
-              ]),
+              ])),
             ]),
           ],
         );
@@ -263,7 +264,7 @@ void main() {
           updatedAt: DateTime(2026, 7, 1),
           weeks: [
             ProgramWeek(id: 'wk1', programId: 'p1', weekNumber: 1, position: 0, days: [
-              ProgramDay(id: 'd1', programWeekId: 'wk1', dayNumber: 1, title: 'Day 1', position: 0, exercises: [
+              ProgramDay(id: 'd1', programWeekId: 'wk1', dayNumber: 1, title: 'Day 1', position: 0, sessions: soloSession('d1', [
                 for (final (i, name) in ['Snatch', 'Clean Pull', 'Back Squat'].indexed)
                   ProgramExercise(
                     id: 'pe$i',
@@ -275,7 +276,7 @@ void main() {
                       ProgramSet(id: 's$i', programExerciseId: 'pe$i', position: 0, weightMode: 'absolute', targetReps: 3, absoluteWeightKg: 50.0 + i * 10),
                     ],
                   ),
-              ]),
+              ])),
             ]),
           ],
         );

@@ -6,8 +6,9 @@ import 'program.dart';
 /// instance can compute its progress (counts and check marks) without further
 /// queries. One shared string so the lists and the detail fetch can't drift.
 const kProgramInstanceSelect =
-    '*, programs(name, program_weeks(id, position, week_number, program_days(id, position, is_rest_day))), '
-    'workouts(id, program_day_id, status)';
+    '*, programs(name, program_weeks(id, position, week_number, '
+    'program_days(id, position, is_rest_day, program_sessions(id, position)))), '
+    'workouts(id, program_day_id, program_session_id, status)';
 
 /// One user's "run" of a program, created when they hit Start. Owns the
 /// batch of materialized workouts (`workouts.program_instance_id`).
@@ -21,7 +22,7 @@ class ProgramInstance {
     this.programName,
     this.completedAt,
     this.structure,
-    this.workoutStatusByDayId = const {},
+    this.workoutStatusByKey = const {},
   });
 
   final String id;
@@ -38,8 +39,9 @@ class ProgramInstance {
   /// queries that don't (e.g. the single-instance detail fetch).
   final List<StatsWeek>? structure;
 
-  /// `program_day_id` -> status of the workout that day materialized into.
-  final Map<String, String> workoutStatusByDayId;
+  /// Each materialized workout's key (`workoutKey`: its session, or its day
+  /// when it has none) -> its status.
+  final Map<String, String> workoutStatusByKey;
 
   bool get isActive => status == 'active';
 
@@ -52,7 +54,7 @@ class ProgramInstance {
     final c = _clock;
     return runStats(
       weeks,
-      workoutStatusByDayId: workoutStatusByDayId,
+      workoutStatusByKey: workoutStatusByKey,
       startedAt: c.startedAt,
       asOf: c.asOf,
       ended: c.ended,
@@ -71,11 +73,11 @@ class ProgramInstance {
 
   /// Whether [day] earns a check mark (see [isDayChecked]).
   bool isDayCheckedFor(StatsDay day) =>
-      isDayChecked(day, workoutStatusByDayId: workoutStatusByDayId, clock: _clock);
+      isDayChecked(day, workoutStatusByKey: workoutStatusByKey, clock: _clock);
 
   /// Whether [week] earns a check mark (see [isWeekDone]).
   bool isWeekCheckedFor(StatsWeek week) =>
-      isWeekDone(week, workoutStatusByDayId: workoutStatusByDayId, clock: _clock);
+      isWeekDone(week, workoutStatusByKey: workoutStatusByKey, clock: _clock);
 
   factory ProgramInstance.fromJson(Map<String, dynamic> json) {
     final programMap = json['programs'] as Map<String, dynamic>?;
@@ -98,10 +100,9 @@ class ProgramInstance {
           : [
               for (var i = 0; i < rawWeeks.length; i++) StatsWeek.fromJson(rawWeeks[i], weekIndex: i),
             ],
-      workoutStatusByDayId: {
+      workoutStatusByKey: {
         for (final w in rawWorkouts ?? const [])
-          if ((w as Map<String, dynamic>)['program_day_id'] != null)
-            w['program_day_id'] as String: w['status'] as String,
+          ?workoutKey(w as Map<String, dynamic>): w['status'] as String,
       },
     );
   }

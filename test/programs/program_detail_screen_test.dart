@@ -11,6 +11,7 @@ import 'package:nomorex/features/programs/providers/program_instances_list_provi
 import 'package:nomorex/features/programs/screens/program_detail_screen.dart';
 
 import '../support/call_counter.dart';
+import '../support/program_fixtures.dart';
 
 class _Detail extends ProgramDetailNotifier {
   _Detail(this._program);
@@ -68,14 +69,14 @@ Program _program({String? description}) => Program(
                   title: 'W${w + 1} Day ${d + 1}',
                   position: w * 3 + d,
                   isRestDay: d == 2,
-                  exercises: d == 2
+                  sessions: soloSession('w$w-d$d', d == 2
                       ? const []
                       : [
                           _ex('w$w-d$d', 0, 'Back squat'),
                           _ex('w$w-d$d', 1, 'Clean'),
                           _ex('w$w-d$d', 2, 'Bench press'),
                           _ex('w$w-d$d', 3, 'Row'),
-                        ],
+                        ]),
                 ),
             ],
           ),

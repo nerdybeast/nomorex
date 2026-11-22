@@ -2876,13 +2876,21 @@ with b as (
   select dy.id, '9c4fb05e-616d-427e-8fa0-b1c2d3e4f5a6', dy.week_id, b.uid, dy.d,
          case when dy.is_rest then 'Rest' else 'Day ' || dy.d end, dy.is_rest, null, dy.pos
   from dy, b
+), ss as (
+  -- Each day's one session. Passed explicitly below: the exercise trigger
+  -- can't see days inserted earlier in this same statement.
+  select gen_random_uuid() as id, dy.id as day_id from dy
+), ins_ss as (
+  insert into public.program_sessions (id, program_day_id, user_id, position)
+  select ss.id, ss.day_id, b.uid, 0
+  from ss, b
 ), ex as (
-  select gen_random_uuid() as id, dy.id as day_id, e
-  from dy, generate_series(0, 4) as e
+  select gen_random_uuid() as id, dy.id as day_id, ss.id as session_id, e
+  from dy join ss on ss.day_id = dy.id, generate_series(0, 4) as e
   where not dy.is_rest
 ), ins_ex as (
-  insert into public.program_exercises (id, program_day_id, user_id, exercise_id, position, notes)
-  select ex.id, ex.day_id, b.uid,
+  insert into public.program_exercises (id, program_day_id, program_session_id, user_id, exercise_id, position, notes)
+  select ex.id, ex.day_id, ex.session_id, b.uid,
          -- First slot is b's custom lift, the rest cycle predefined lifts.
          case when ex.e = 0 then '5e0b7c1a-2d3f-4e5a-8b6c-7d8e9f0a1b2c'::uuid
               else (select id from lifts where idx = ex.e - 1) end,
@@ -2921,3 +2929,11 @@ where notes ~ '\d+-\d+ reps';
 -- AI imports ship switched off on hosted projects until launch (#88). Local and
 -- CI stacks run with them on.
 update public.ai_import_limits set enabled = true;
+
+-- Every program day has at least one session (#175). Days with exercises got
+-- theirs when the exercises were inserted (program_exercises_fill_session);
+-- this gives the seeded rest days theirs, as add_program_week does.
+insert into public.program_sessions (program_day_id, user_id, position)
+select d.id, d.user_id, 0
+from public.program_days d
+where not exists (select 1 from public.program_sessions s where s.program_day_id = d.id);

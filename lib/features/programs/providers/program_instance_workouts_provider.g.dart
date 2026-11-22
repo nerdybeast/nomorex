@@ -8,26 +8,29 @@ part of 'program_instance_workouts_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Maps a program instance's materialized workouts back to the
-/// `program_day_id` each one was generated from, so a day card can push
-/// straight to the real, loggable workout for that day.
+/// Maps a program instance's materialized workouts back to the session each
+/// one was generated from (`workoutKey`: its `program_session_id`, or its
+/// `program_day_id` when it has none), so a day's session rows can push
+/// straight to the real, loggable workout.
 
 @ProviderFor(ProgramInstanceWorkoutsNotifier)
 final programInstanceWorkoutsProvider =
     ProgramInstanceWorkoutsNotifierFamily._();
 
-/// Maps a program instance's materialized workouts back to the
-/// `program_day_id` each one was generated from, so a day card can push
-/// straight to the real, loggable workout for that day.
+/// Maps a program instance's materialized workouts back to the session each
+/// one was generated from (`workoutKey`: its `program_session_id`, or its
+/// `program_day_id` when it has none), so a day's session rows can push
+/// straight to the real, loggable workout.
 final class ProgramInstanceWorkoutsNotifierProvider
     extends
         $AsyncNotifierProvider<
           ProgramInstanceWorkoutsNotifier,
           Map<String, String>
         > {
-  /// Maps a program instance's materialized workouts back to the
-  /// `program_day_id` each one was generated from, so a day card can push
-  /// straight to the real, loggable workout for that day.
+  /// Maps a program instance's materialized workouts back to the session each
+  /// one was generated from (`workoutKey`: its `program_session_id`, or its
+  /// `program_day_id` when it has none), so a day's session rows can push
+  /// straight to the real, loggable workout.
   ProgramInstanceWorkoutsNotifierProvider._({
     required ProgramInstanceWorkoutsNotifierFamily super.from,
     required String super.argument,
@@ -66,11 +69,12 @@ final class ProgramInstanceWorkoutsNotifierProvider
 }
 
 String _$programInstanceWorkoutsNotifierHash() =>
-    r'38b2b20f6fdaa37421a28416d1e17fc3cc3d42f3';
+    r'bf782a5549b90f710b8532a3f346b0d6fdd220af';
 
-/// Maps a program instance's materialized workouts back to the
-/// `program_day_id` each one was generated from, so a day card can push
-/// straight to the real, loggable workout for that day.
+/// Maps a program instance's materialized workouts back to the session each
+/// one was generated from (`workoutKey`: its `program_session_id`, or its
+/// `program_day_id` when it has none), so a day's session rows can push
+/// straight to the real, loggable workout.
 
 final class ProgramInstanceWorkoutsNotifierFamily extends $Family
     with
@@ -90,9 +94,10 @@ final class ProgramInstanceWorkoutsNotifierFamily extends $Family
         isAutoDispose: false,
       );
 
-  /// Maps a program instance's materialized workouts back to the
-  /// `program_day_id` each one was generated from, so a day card can push
-  /// straight to the real, loggable workout for that day.
+  /// Maps a program instance's materialized workouts back to the session each
+  /// one was generated from (`workoutKey`: its `program_session_id`, or its
+  /// `program_day_id` when it has none), so a day's session rows can push
+  /// straight to the real, loggable workout.
 
   ProgramInstanceWorkoutsNotifierProvider call(String instanceId) =>
       ProgramInstanceWorkoutsNotifierProvider._(
@@ -104,9 +109,10 @@ final class ProgramInstanceWorkoutsNotifierFamily extends $Family
   String toString() => r'programInstanceWorkoutsProvider';
 }
 
-/// Maps a program instance's materialized workouts back to the
-/// `program_day_id` each one was generated from, so a day card can push
-/// straight to the real, loggable workout for that day.
+/// Maps a program instance's materialized workouts back to the session each
+/// one was generated from (`workoutKey`: its `program_session_id`, or its
+/// `program_day_id` when it has none), so a day's session rows can push
+/// straight to the real, loggable workout.
 
 abstract class _$ProgramInstanceWorkoutsNotifier
     extends $AsyncNotifier<Map<String, String>> {

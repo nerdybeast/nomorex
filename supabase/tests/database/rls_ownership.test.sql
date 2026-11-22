@@ -11,7 +11,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(64);
+select plan(70);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser: a complete private tree for each user.
@@ -38,7 +38,7 @@ language plpgsql as $$
 begin
   insert into fx (owner, kind)
   select p_owner, k from unnest(array['exercise', 'pr', 'workout', 'workout_exercise', 'workout_set',
-    'program', 'week', 'day', 'program_exercise', 'program_set', 'instance']) k;
+    'program', 'week', 'day', 'session', 'program_exercise', 'program_set', 'instance']) k;
 
   insert into public.exercises (id, name, is_predefined, user_id)
   values (pg_temp.fx(p_owner, 'exercise'), 'pgTAP RLS custom lift ' || p_owner, false, p_user);
@@ -59,8 +59,11 @@ begin
   values (pg_temp.fx(p_owner, 'week'), pg_temp.fx(p_owner, 'program'), p_user, 1, 0);
   insert into public.program_days (id, program_id, program_week_id, user_id, day_number, title, position)
   values (pg_temp.fx(p_owner, 'day'), pg_temp.fx(p_owner, 'program'), pg_temp.fx(p_owner, 'week'), p_user, 1, 'Day 1', 0);
-  insert into public.program_exercises (id, program_day_id, user_id, exercise_id, position)
-  values (pg_temp.fx(p_owner, 'program_exercise'), pg_temp.fx(p_owner, 'day'), p_user, pg_temp.fx(p_owner, 'exercise'), 0);
+  insert into public.program_sessions (id, program_day_id, user_id, position)
+  values (pg_temp.fx(p_owner, 'session'), pg_temp.fx(p_owner, 'day'), p_user, 0);
+  insert into public.program_exercises (id, program_day_id, program_session_id, user_id, exercise_id, position)
+  values (pg_temp.fx(p_owner, 'program_exercise'), pg_temp.fx(p_owner, 'day'), pg_temp.fx(p_owner, 'session'),
+          p_user, pg_temp.fx(p_owner, 'exercise'), 0);
   insert into public.program_sets (id, program_exercise_id, user_id, position, target_reps, weight_mode, percentage)
   values (pg_temp.fx(p_owner, 'program_set'), pg_temp.fx(p_owner, 'program_exercise'), p_user, 0, 5, 'percentage', 70);
   insert into public.program_instances (id, program_id, user_id)
@@ -89,7 +92,7 @@ insert into owned values
   ('exercises', 'exercise', 'id'), ('personal_bests', 'pr', 'id'),
   ('workouts', 'workout', 'id'), ('workout_exercises', 'workout_exercise', 'id'),
   ('workout_sets', 'workout_set', 'id'), ('programs', 'program', 'id'),
-  ('program_weeks', 'week', 'id'), ('program_days', 'day', 'id'),
+  ('program_weeks', 'week', 'id'), ('program_days', 'day', 'id'), ('program_sessions', 'session', 'id'),
   ('program_exercises', 'program_exercise', 'id'), ('program_sets', 'program_set', 'id'),
   ('program_instances', 'instance', 'id');
 grant select on owned to authenticated;
@@ -101,7 +104,7 @@ grant select on owned to authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', (select b from u), 'role', 'authenticated')::text, true);
 set local role authenticated;
 
--- SELECT: none of a's private rows are visible (11 tables + profiles below).
+-- SELECT: none of a's private rows are visible (12 tables + profiles below).
 select is(
   (select count(*)::int from public.exercises where id = pg_temp.fx('a', 'exercise')), 0,
   'b cannot see a''s custom exercise');
@@ -127,6 +130,9 @@ select is(
   (select count(*)::int from public.program_days where id = pg_temp.fx('a', 'day')), 0,
   'b cannot see a''s private program''s days');
 select is(
+  (select count(*)::int from public.program_sessions where id = pg_temp.fx('a', 'session')), 0,
+  'b cannot see a''s private program''s sessions');
+select is(
   (select count(*)::int from public.program_exercises where id = pg_temp.fx('a', 'program_exercise')), 0,
   'b cannot see a''s private program''s exercises');
 select is(
@@ -143,7 +149,7 @@ select is(
 select is(
   (select count(*)::int from owned o
    where exists (select 1 from fx where fx.owner = 'b' and fx.kind = o.kind)),
-  11, 'b has a fixture row in each of the 11 tables');
+  12, 'b has a fixture row in each of the 12 tables');
 select is(
   (select count(*)::int from public.workout_sets where id = pg_temp.fx('b', 'workout_set'))
   + (select count(*)::int from public.program_instances where id = pg_temp.fx('b', 'instance'))
@@ -181,6 +187,10 @@ select throws_ok(
      select pg_temp.fx('a', 'program'), pg_temp.fx('a', 'week'), a, 9, 'forged', 9 from u $$,
   '42501', null, 'b cannot insert a program day owned by a');
 select throws_ok(
+  $$ insert into public.program_sessions (program_day_id, user_id, position)
+     select pg_temp.fx('a', 'day'), a, 9 from u $$,
+  '42501', null, 'b cannot insert a program session owned by a');
+select throws_ok(
   $$ insert into public.program_exercises (program_day_id, user_id, exercise_id, position)
      select pg_temp.fx('a', 'day'), a, predefined, 9 from u $$,
   '42501', null, 'b cannot insert a program exercise owned by a');
@@ -197,7 +207,7 @@ select is(
   (select sum(pg_temp.affected(format(
      'update public.%I set created_at = created_at where %I = %L', tbl, key_col, pg_temp.fx('a', kind))))::int
    from owned),
-  0, 'b''s updates to a''s rows touch none of them, in any of the 11 tables');
+  0, 'b''s updates to a''s rows touch none of them, in any of the 12 tables');
 select is(
   pg_temp.affected(format('update public.profiles set display_name = %L where id = %L', 'hijacked', (select a from u))),
   0, 'b cannot rename a''s profile');
@@ -205,7 +215,7 @@ select is(
   (select sum(pg_temp.affected(format(
      'delete from public.%I where %I = %L', tbl, key_col, pg_temp.fx('a', kind))))::int
    from owned),
-  0, 'b''s deletes of a''s rows touch none of them, in any of the 11 tables');
+  0, 'b''s deletes of a''s rows touch none of them, in any of the 12 tables');
 
 -- Reassigning b's own row to a is refused by WITH CHECK on every table.
 select throws_ok(
@@ -232,6 +242,9 @@ select throws_ok(
 select throws_ok(
   $$ update public.program_days set user_id = (select a from u) where id = pg_temp.fx('b', 'day') $$,
   '42501', null, 'b cannot hand b''s program day to a');
+select throws_ok(
+  $$ update public.program_sessions set user_id = (select a from u) where id = pg_temp.fx('b', 'session') $$,
+  '42501', null, 'b cannot hand b''s program session to a');
 select throws_ok(
   $$ update public.program_exercises set user_id = (select a from u) where id = pg_temp.fx('b', 'program_exercise') $$,
   '42501', null, 'b cannot hand b''s program exercise to a');
@@ -297,6 +310,17 @@ select throws_ok(
   $$ insert into public.program_exercises (program_day_id, user_id, exercise_id, position)
      select pg_temp.fx('a', 'day'), b, predefined, 9 from u $$,
   '42501', null, 'b cannot attach b''s exercise to a''s program day');
+select throws_ok(
+  $$ insert into public.program_sessions (program_day_id, user_id, position)
+     select pg_temp.fx('a', 'day'), b, 9 from u $$,
+  '42501', null, 'b cannot attach b''s session to a''s program day');
+select throws_ok(
+  $$ insert into public.program_exercises (program_session_id, user_id, exercise_id, position)
+     select pg_temp.fx('a', 'session'), b, predefined, 9 from u $$,
+  '42501', null, 'b cannot attach b''s exercise to a''s program session');
+select throws_ok(
+  $$ update public.workouts set program_session_id = pg_temp.fx('a', 'session') where id = pg_temp.fx('b', 'workout') $$,
+  '42501', null, 'b cannot link b''s workout to a session of a''s program');
 select throws_ok(
   $$ insert into public.program_sets (program_exercise_id, user_id, position, target_reps, weight_mode, percentage)
      select pg_temp.fx('a', 'program_exercise'), b, 9, 5, 'percentage', 70 from u $$,

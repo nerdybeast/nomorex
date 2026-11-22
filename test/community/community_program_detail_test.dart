@@ -16,6 +16,7 @@ import 'package:nomorex/features/programs/models/program_week.dart';
 import 'package:nomorex/features/programs/providers/program_copy_count_provider.dart';
 import 'package:nomorex/features/programs/providers/programs_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../support/program_fixtures.dart';
 
 class _StubCommunityProgramDetailNotifier extends CommunityProgramDetailNotifier {
   _StubCommunityProgramDetailNotifier(this._program);
@@ -69,13 +70,13 @@ Program _program({String? owner}) => Program(
           position: 0,
           label: 'Accumulation',
           days: [
-            const ProgramDay(
+            ProgramDay(
               id: 'd1',
               programWeekId: 'wk1',
               dayNumber: 1,
               title: 'Day 1',
               position: 0,
-              exercises: [
+              sessions: soloSession('d1', [
                 ProgramExercise(
                   id: 'pe1',
                   programDayId: 'd1',
@@ -83,7 +84,7 @@ Program _program({String? owner}) => Program(
                   exerciseName: 'Back Squat',
                   position: 0,
                 ),
-              ],
+              ]),
             ),
             const ProgramDay(
               id: 'd2',

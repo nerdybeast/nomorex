@@ -64,7 +64,7 @@ final class CommunityProgramDetailNotifierProvider
 }
 
 String _$communityProgramDetailNotifierHash() =>
-    r'2d8b4c0907fa2e01a22e1b29efe644333374585a';
+    r'154f69f8529a6a0febf4e04f6dab193255c13385';
 
 /// Full read-only tree for one public program, mirroring
 /// [CommunityWorkoutDetailNotifier]. Deliberately separate from

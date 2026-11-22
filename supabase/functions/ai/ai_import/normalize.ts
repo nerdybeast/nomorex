@@ -69,12 +69,20 @@ export interface ImportExercise {
   sets: ImportSet[];
 }
 
+/** One of a day's sessions (AM, PM …), each its own workout once started. */
+export interface ImportSession {
+  title?: string;
+  notes?: string;
+  exercises: ImportExercise[];
+}
+
+/** A day holds 1 to MAX_SESSIONS_PER_DAY sessions, always at least one. */
 export interface ImportDay {
   title?: string;
   weekday?: string;
   isRestDay: boolean;
   notes?: string;
-  exercises: ImportExercise[];
+  sessions: ImportSession[];
 }
 
 export interface ImportWeek {
@@ -88,7 +96,8 @@ export interface UnstructuredItem {
 }
 
 export interface ImportResult {
-  schemaVersion: 1;
+  /** 2: days hold `sessions`. 1 (stored before #175): days held `exercises`. */
+  schemaVersion: 2;
   type: ImportType;
   title?: string;
   weeks: ImportWeek[];
@@ -335,23 +344,83 @@ function normalizeExercise(raw: Raw, dayLocation: string, ctx: Context): ImportE
   };
 }
 
+/**
+ * The most sessions a program day holds. The database refuses a 4th
+ * (enforce_program_day_session_limit); start_program makes each its own
+ * workout on the day's date.
+ */
+export const MAX_SESSIONS_PER_DAY = 3;
+
+function normalizeSession(raw: Raw, location: string, ctx: Context): ImportSession {
+  const title = asText(raw.title);
+  const notes = asText(raw.notes);
+  const exercises = asArray(raw.exercises).flatMap((e) => {
+    const obj = asObject(e);
+    return (obj && normalizeExercise(obj, location, ctx)) ?? [];
+  });
+  return { ...(title ? { title } : {}), ...(notes ? { notes } : {}), exercises };
+}
+
+/**
+ * At most MAX_SESSIONS_PER_DAY sessions: any beyond go into the last one, in
+ * order, and an unstructured entry says so, so nothing is silently merged.
+ */
+function capSessions(sessions: ImportSession[], location: string, ctx: Context): ImportSession[] {
+  if (sessions.length <= MAX_SESSIONS_PER_DAY) return sessions;
+  const kept = sessions.slice(0, MAX_SESSIONS_PER_DAY - 1);
+  const rest = sessions.slice(MAX_SESSIONS_PER_DAY - 1);
+  const titles = rest.map((s, i) => s.title ?? `Session ${MAX_SESSIONS_PER_DAY + i}`);
+  const notes = rest.flatMap((s) => s.notes ?? []).join('\n');
+  ctx.unstructured.push({
+    location,
+    originalText: `${sessions.length} sessions on one day; a day holds ${MAX_SESSIONS_PER_DAY}, so ${
+      titles.join(', ')
+    } are combined into one.`,
+  });
+  return [...kept, {
+    title: titles.join(' / '),
+    ...(notes ? { notes } : {}),
+    exercises: rest.flatMap((s) => s.exercises),
+  }];
+}
+
+/** Every exercise of a day, session by session. */
+export const dayExercises = (day: ImportDay) => day.sessions.flatMap((s) => s.exercises);
+
 function normalizeDay(raw: Raw, location: string, ctx: Context): ImportDay {
   const title = asText(raw.title);
   const weekday = normalizeWeekday(raw.weekday);
   const notes = asText(raw.notes);
   const dayLocation = title ? `${location}, ${title}` : location;
-  const exercises = asArray(raw.exercises).flatMap((e) => {
-    const obj = asObject(e);
-    return (obj && normalizeExercise(obj, dayLocation, ctx)) ?? [];
+  // A day of 2–3 sessions lists them in "sessions"; a day of one lists its
+  // exercises directly, which keeps the common case short.
+  const rawSessions = asArray(raw.sessions).flatMap((s): Raw[] => {
+    const obj = asObject(s);
+    return obj ? [obj] : [];
   });
-  return {
+  const sessions = rawSessions.length > 0
+    ? capSessions(
+      rawSessions.map((s, i) =>
+        normalizeSession(
+          s,
+          rawSessions.length > 1 ? `${dayLocation}, ${asText(s.title) ?? `Session ${i + 1}`}` : dayLocation,
+          ctx,
+        )
+      ),
+      dayLocation,
+      ctx,
+    )
+    : [normalizeSession({ exercises: raw.exercises }, dayLocation, ctx)];
+  const day: ImportDay = {
     ...(title ? { title } : {}),
     ...(weekday ? { weekday } : {}),
-    // A "rest day" with exercises on it is not a rest day.
-    isRestDay: raw.isRestDay === true && exercises.length === 0,
+    isRestDay: false,
     ...(notes ? { notes } : {}),
-    exercises,
+    sessions,
   };
+  // A "rest day" with exercises on it is not a rest day.
+  day.isRestDay = raw.isRestDay === true && dayExercises(day).length === 0;
+  return day;
 }
 
 /**
@@ -404,39 +473,49 @@ function splitWeek(week: ImportWeek): ImportWeek[] {
 }
 
 /**
- * Two sessions on one weekday (AM and PM) as one day, since a week holds one
- * day per weekday: the first session's exercises, then the second's, with the
- * titles and notes kept.
+ * Several entries for one weekday (AM and PM listed as separate days) as one
+ * day, since a week holds one day per weekday: each entry's sessions become
+ * that day's sessions, in order, titled by the entry when it has a title and
+ * the session has none. Over MAX_SESSIONS_PER_DAY, capSessions combines the
+ * rest.
  */
-function mergeSessions(sessions: ImportDay[]): ImportDay {
-  if (sessions.length === 1) return sessions[0];
-  const exercises = sessions.flatMap((d) => d.exercises);
-  const titles = sessions.flatMap((d) => d.title ?? []);
-  const notes = sessions.flatMap((d) => d.notes ?? []).join('\n');
-  return {
-    ...(titles.length ? { title: titles.join(' / ') } : {}),
-    weekday: sessions[0].weekday,
-    isRestDay: exercises.length === 0 && sessions.every((d) => d.isRestDay),
-    ...(notes ? { notes } : {}),
-    exercises,
+function mergeSessions(entries: ImportDay[], location: string, ctx: Context): ImportDay {
+  if (entries.length === 1) return entries[0];
+  const sessions = entries.flatMap((d) =>
+    d.sessions.map((s) => {
+      const title = s.title ?? (d.sessions.length === 1 ? d.title : undefined);
+      // A day's notes describe its one session when it's an entry of its own.
+      const notes = [d.sessions.length === 1 ? d.notes : undefined, s.notes].filter(Boolean).join('\n');
+      return { ...(title ? { title } : {}), ...(notes ? { notes } : {}), exercises: s.exercises };
+    })
+  );
+  const merged: ImportDay = {
+    weekday: entries[0].weekday,
+    isRestDay: false,
+    sessions: capSessions(sessions, location, ctx),
   };
+  merged.isRestDay = dayExercises(merged).length === 0 && entries.every((d) => d.isRestDay);
+  return merged;
 }
 
 /**
  * Makes a weekday-named week its seven days, Monday to Sunday: inserts the
- * rest days it leaves out, so the sessions keep their weekdays, and merges two
- * sessions on one weekday. Only applies when every day names its weekday.
+ * rest days it leaves out, so the sessions keep their weekdays, and makes
+ * several entries on one weekday that day's sessions. Only applies when every
+ * day names its weekday.
  */
-function fillRestDays(week: ImportWeek): ImportWeek {
+function fillRestDays(week: ImportWeek, weekLocation: string, ctx: Context): ImportWeek {
   if (week.days.length === 0 || week.days.some((d) => !d.weekday)) return week;
-  const days = WEEKDAYS.map((weekday) => {
+  const days = WEEKDAYS.map((weekday): ImportDay => {
     const onDay = week.days.filter((d) => d.weekday === weekday);
-    return onDay.length ? mergeSessions(onDay) : { weekday, isRestDay: true, exercises: [] };
+    return onDay.length
+      ? mergeSessions(onDay, `${weekLocation}, ${weekday[0].toUpperCase()}${weekday.slice(1)}`, ctx)
+      : { weekday, isRestDay: true, sessions: [{ exercises: [] }] };
   });
   return { ...week, days };
 }
 
-const hasContent = (day: ImportDay) => day.exercises.length > 0;
+const hasContent = (day: ImportDay) => dayExercises(day).length > 0;
 
 /** Parses the model's text, tolerating Markdown fences and surrounding prose. */
 export function parseModelJson(text: string): unknown {
@@ -477,7 +556,7 @@ export function normalizeResult(
     return { ...(label ? { label } : {}), days };
   });
 
-  const unstructured = [
+  const fromModel = [
     ...asArray(raw.unstructured).flatMap((u) => {
       const obj = asObject(u);
       const originalText = asText(obj ? obj.originalText : u);
@@ -485,11 +564,12 @@ export function normalizeResult(
       const location = obj ? asText(obj.location) : undefined;
       return [{ ...(location ? { location } : {}), originalText }];
     }),
-    ...ctx.unstructured,
   ];
 
   const trainingDays = weeks.flatMap((w) => w.days).filter(hasContent);
-  if (trainingDays.length === 0 && unstructured.length === 0) return { kind: 'no_workout_found' };
+  if (trainingDays.length === 0 && fromModel.length === 0 && ctx.unstructured.length === 0) {
+    return { kind: 'no_workout_found' };
+  }
 
   const detectedType: ImportType = raw.type === 'workout' && trainingDays.length <= 1
     ? 'workout'
@@ -506,23 +586,27 @@ export function normalizeResult(
     const merged: ImportDay = {
       ...(trainingDays.length === 1 && only.title ? { title: only.title } : {}),
       isRestDay: false,
-      exercises: trainingDays.flatMap((d) => d.exercises),
+      sessions: [{ exercises: trainingDays.flatMap(dayExercises) }],
     };
     const notes = trainingDays.flatMap((d) => d.notes ?? []).join('\n');
     if (notes) merged.notes = notes;
     weeks = [{ days: [merged] }];
   } else {
-    weeks = weeks.map(fillRestDays).flatMap(splitWeek);
+    weeks = weeks
+      .map((w, i) => fillRestDays(w, w.label ?? (isProgramShaped ? `Week ${i + 1}` : 'Workout'), ctx))
+      .flatMap(splitWeek);
   }
 
-  const allExercises = weeks.flatMap((w) => w.days).flatMap((d) => d.exercises);
+  // Read after fillRestDays, which can add to ctx.unstructured.
+  const unstructured = [...fromModel, ...ctx.unstructured];
+  const allExercises = weeks.flatMap((w) => w.days).flatMap(dayExercises);
   const allSets = allExercises.flatMap((e) => e.sets);
   const title = asText(raw.title);
   return {
     kind: 'ok',
     detectedType,
     result: {
-      schemaVersion: 1,
+      schemaVersion: 2,
       type,
       ...(title ? { title: title.slice(0, 200) } : {}),
       weeks,

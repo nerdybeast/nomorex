@@ -14,12 +14,14 @@ import '../../workouts/widgets/set_editor.dart';
 import '../models/program.dart';
 import '../models/program_exercise.dart';
 import '../models/program_day.dart';
+import '../models/program_session.dart';
 import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
 import '../utils/parsed_program_set.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/auto_save_field.dart';
 import '../widgets/add_day_dialog.dart';
+import 'edit/program_edit_actions.dart';
 
 // SetEditor is shared with the workouts feature, so its "Add sets (%)"
 // callback speaks ParsedSet regardless of caller; convert 1:1 to this
@@ -56,9 +58,10 @@ class _ProgramEditScreenState extends ConsumerState<ProgramEditScreen>
     super.dispose();
   }
 
-  /// Opens the exercise picker for [dayId]. A pick saves straight away; once
-  /// the sheet closes, the new card is scrolled to and edged in orange.
-  Future<void> _addExercise(String dayId) async {
+  /// Opens the exercise picker for [dayId]'s session [sessionId] (its first
+  /// session when null). A pick saves straight away; once the sheet closes,
+  /// the new card is scrolled to and edged in orange.
+  Future<void> _addExercise(String dayId, [String? sessionId]) async {
     final provider = programDetailProvider(programId);
     List<ProgramExercise> dayExercises(Program p) =>
         p.weeks.expand((w) => w.days).firstWhere((d) => d.id == dayId).exercises;
@@ -67,8 +70,11 @@ class _ProgramEditScreenState extends ConsumerState<ProgramEditScreen>
     final beforeIds = {for (final e in before) e.id};
     final added = await showExercisePickerSheet(
       context,
-      addedExerciseIds: {for (final e in before) e.exerciseId},
-      onPick: (exercise) => ref.read(provider.notifier).addExercise(dayId, exercise.id),
+      addedExerciseIds: {
+        for (final e in before)
+          if (sessionId == null || e.programSessionId == sessionId) e.exerciseId,
+      },
+      onPick: (exercise) => ref.read(provider.notifier).addExercise(dayId, exercise.id, sessionId: sessionId),
     );
     if (added == null || !mounted) return;
     final after = dayExercises(await ref.read(provider.future));
@@ -192,7 +198,7 @@ class _WeekCard extends ConsumerWidget {
   final ProgramWeek week;
   final String unit;
   final void Function(ProgramWeek week) onAddDay;
-  final void Function(String dayId) onAddExercise;
+  final void Function(String dayId, [String? sessionId]) onAddExercise;
   final String? highlightedExerciseId;
   final GlobalKey highlightKey;
 
@@ -268,6 +274,8 @@ class _WeekCard extends ConsumerWidget {
   }
 }
 
+/// One day in the desktop editor: its exercises, grouped under a header per
+/// session when it has more than one (up to [kMaxSessionsPerDay]).
 class _DayCard extends ConsumerWidget {
   const _DayCard({
     super.key,
@@ -282,86 +290,138 @@ class _DayCard extends ConsumerWidget {
   final String programId;
   final ProgramDay day;
   final String unit;
-  final void Function(String dayId) onAddExercise;
+  final void Function(String dayId, [String? sessionId]) onAddExercise;
   final String? highlightedExerciseId;
   final GlobalKey highlightKey;
+
+  Widget _exerciseList(ProgramDetailNotifier notifier, List<ProgramExercise> exercises) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+        child: ReorderableListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          buildDefaultDragHandles: false,
+          itemCount: exercises.length,
+          itemBuilder: (context, i) {
+            final ex = exercises[i];
+            return Padding(
+              key: ValueKey(ex.id),
+              padding: const EdgeInsets.only(bottom: 12),
+              child: ExerciseEditorCard(
+                key: ex.id == highlightedExerciseId ? highlightKey : null,
+                index: i,
+                name: ex.exerciseName,
+                highlighted: ex.id == highlightedExerciseId,
+                onDelete: () => notifier.removeExercise(ex.id),
+                children: [
+                  AutoSaveField(
+                    key: ValueKey(ex.id),
+                    initialValue: ex.notes,
+                    labelText: 'Notes (e.g. build to a heavy triple)',
+                    onChanged: (v) => notifier.updateExerciseNotes(ex.id, v),
+                  ),
+                  const SizedBox(height: 8),
+                  SetEditor(
+                    sets: ex.sets.map((s) => s.toEditableRow()).toList(),
+                    unit: unit,
+                    currentExerciseId: ex.exerciseId,
+                    currentExerciseName: ex.exerciseName,
+                    onAddPercentageSets: (parsed) => notifier.addPercentageSets(
+                      ex.id,
+                      [
+                        for (final p in parsed)
+                          _toParsedProgramSet(p),
+                      ],
+                    ),
+                    onAddAbsoluteSets: (batch) => notifier.addAbsoluteSets(ex.id, batch),
+                    onReplaceGroup: notifier.replaceSetGroup,
+                    onReorderSets: (orderedIds) =>
+                        notifier.reorderSets(ex.id, orderedIds),
+                  ),
+                ],
+              ),
+            );
+          },
+          onReorderItem: (oldIndex, newIndex) {
+            final ids = exercises.map((e) => e.id).toList();
+            final moved = ids.removeAt(oldIndex);
+            ids.insert(newIndex, moved);
+            notifier.reorderExercises(dayId: day.id, orderedExerciseIds: ids);
+          },
+        ),
+      );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(programDetailProvider(programId).notifier);
+    final split = !day.isRestDay && day.hasMultipleSessions;
     return Padding(
       padding: const EdgeInsets.only(left: 8),
       child: ExpansionTile(
         title: Text(day.title),
-        subtitle: Text(day.isRestDay ? 'Rest day' : '${day.exercises.length} exercises'),
+        subtitle: Text(day.isRestDay
+            ? 'Rest day'
+            : split
+                ? '${day.sessions.length} sessions · ${day.exercises.length} exercises'
+                : '${day.exercises.length} exercises'),
         children: [
-          if (!day.isRestDay)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: ReorderableListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                buildDefaultDragHandles: false,
-                itemCount: day.exercises.length,
-                itemBuilder: (context, i) {
-                  final ex = day.exercises[i];
-                  return Padding(
-                    key: ValueKey(ex.id),
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: ExerciseEditorCard(
-                      key: ex.id == highlightedExerciseId ? highlightKey : null,
-                      index: i,
-                      name: ex.exerciseName,
-                      highlighted: ex.id == highlightedExerciseId,
-                      onDelete: () => notifier.removeExercise(ex.id),
-                      children: [
-                        AutoSaveField(
-                          key: ValueKey(ex.id),
-                          initialValue: ex.notes,
-                          labelText: 'Notes (e.g. build to a heavy triple)',
-                          onChanged: (v) => notifier.updateExerciseNotes(ex.id, v),
-                        ),
-                        const SizedBox(height: 8),
-                        SetEditor(
-                          sets: ex.sets.map((s) => s.toEditableRow()).toList(),
-                          unit: unit,
-                          currentExerciseId: ex.exerciseId,
-                          currentExerciseName: ex.exerciseName,
-                          onAddPercentageSets: (parsed) => notifier.addPercentageSets(
-                            ex.id,
-                            [
-                              for (final p in parsed)
-                                _toParsedProgramSet(p),
-                            ],
-                          ),
-                          onAddAbsoluteSets: (batch) => notifier.addAbsoluteSets(ex.id, batch),
-                          onReplaceGroup: notifier.replaceSetGroup,
-                          onReorderSets: (orderedIds) =>
-                              notifier.reorderSets(ex.id, orderedIds),
-                        ),
-                      ],
+          if (split)
+            for (final (i, session) in day.sessions.indexed) ...[
+              // The ⋯ sits beside the title in a Row, not in a ListTile's
+              // trailing, so it stays its own button for screen readers.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Semantics(
+                        header: true,
+                        child: Text(session.label(i), style: Theme.of(context).textTheme.titleSmall),
+                      ),
                     ),
-                  );
-                },
-                onReorderItem: (oldIndex, newIndex) {
-                  final ids = day.exercises.map((e) => e.id).toList();
-                  final moved = ids.removeAt(oldIndex);
-                  ids.insert(newIndex, moved);
-                  notifier.reorderExercises(dayId: day.id, orderedExerciseIds: ids);
-                },
+                    IconButton(
+                      key: ValueKey('edit_session_more_${session.id}'),
+                      tooltip: '${session.label(i)} options',
+                      icon: const Icon(Icons.more_horiz),
+                      onPressed: () => showSessionActions(context, ref, programId: programId, day: day, session: session),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              _exerciseList(notifier, session.exercises),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: ValueKey('edit_session_add_exercise_${session.id}'),
+                    onPressed: () => onAddExercise(day.id, session.id),
+                    icon: const Icon(Icons.add),
+                    label: Text('Exercise to ${session.label(i)}'),
+                  ),
+                ),
+              ),
+            ]
+          else if (!day.isRestDay)
+            _exerciseList(notifier, day.exercises),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Row(
               children: [
                 // Offered on a rest day too: adding an exercise makes it a
                 // training day (ProgramDetailNotifier.addExercise).
-                TextButton.icon(
-                  onPressed: () => onAddExercise(day.id),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Exercise'),
-                ),
+                if (!split)
+                  TextButton.icon(
+                    onPressed: () => onAddExercise(day.id),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Exercise'),
+                  ),
+                if (!day.isRestDay && day.sessions.isNotEmpty && day.canAddSession)
+                  TextButton.icon(
+                    key: ValueKey('edit_day_add_session_${day.id}'),
+                    onPressed: () => addSessionTo(context, ref, programId: programId, day: day),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Session'),
+                  ),
                 const Spacer(),
                 _DeleteTextButton(
                   label: 'Delete day',

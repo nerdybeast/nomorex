@@ -50,7 +50,7 @@ final class CommunityProgramsNotifierProvider
 }
 
 String _$communityProgramsNotifierHash() =>
-    r'0e1db506a999bebcdf76db6677223cff133ad42f';
+    r'9f13a0b4a8f7bfef415a952263fdb1e517f07b24';
 
 /// Public programs authored by *other* users, mirroring
 /// [CommunityWorkoutsNotifier]. Shallow like `ProgramsNotifier`: weeks and

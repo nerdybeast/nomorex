@@ -12,6 +12,7 @@ import 'package:nomorex/features/programs/models/program_set.dart';
 import 'package:nomorex/features/programs/models/program_week.dart';
 import 'package:nomorex/features/programs/providers/program_detail_provider.dart';
 import 'package:nomorex/features/programs/screens/program_edit_screen.dart';
+import '../support/program_fixtures.dart';
 
 class _StubExercisesNotifier extends ExercisesNotifier {
   @override
@@ -48,7 +49,7 @@ class _TestProgramDetailNotifier extends ProgramDetailNotifier {
   }
 
   @override
-  Future<void> addExercise(String dayId, String exerciseId) async {
+  Future<void> addExercise(String dayId, String exerciseId, {String? sessionId}) async {
     onAddExercise?.call(dayId, exerciseId);
   }
 
@@ -335,7 +336,7 @@ void main() {
                 dayNumber: 1,
                 title: 'Day 1',
                 position: 0,
-                exercises: const [
+                sessions: soloSession('d1', [
                   ProgramExercise(
                     id: 'pe1',
                     programDayId: 'd1',
@@ -350,7 +351,7 @@ void main() {
                     exerciseName: 'Front Squat',
                     position: 1,
                   ),
-                ],
+                ]),
               ),
             ],
           ),
@@ -426,7 +427,7 @@ void main() {
               dayNumber: 1,
               title: 'Day 1',
               position: 0,
-              exercises: const [
+              sessions: soloSession('d1', [
                 ProgramExercise(
                   id: 'pe1',
                   programDayId: 'd1',
@@ -452,7 +453,7 @@ void main() {
                     ),
                   ],
                 ),
-              ],
+              ]),
             ),
           ],
         ),

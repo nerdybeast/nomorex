@@ -5,7 +5,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(53);
+select plan(56);
 
 create temp table t on commit drop as
 select (select id from auth.users where email = 'a@a.com') as owner,
@@ -32,6 +32,7 @@ select pg_temp.new_job('10000000-0000-4000-8000-000000000005', 'program', 'ready
 select pg_temp.new_job('10000000-0000-4000-8000-000000000006', 'workout');
 select pg_temp.new_job('10000000-0000-4000-8000-000000000007', 'workout');
 select pg_temp.new_job('10000000-0000-4000-8000-000000000008', 'program');
+select pg_temp.new_job('10000000-0000-4000-8000-000000000009', 'program');
 
 -- A custom exercise belonging to another user, which must never be linked.
 insert into public.exercises (id, name, is_predefined, user_id)
@@ -467,6 +468,60 @@ select is(
   (select notes from public.workouts
    where program_instance_id = (select id from run) and date = '2026-11-16'::date),
   'Stay tight', 'start_program carries the day''s notes onto its workout');
+
+-- ---------------------------------------------------------------------------
+-- Sessions (import schema 2): a day's sessions become program_sessions
+-- ---------------------------------------------------------------------------
+
+create temp table sessions_result on commit drop as
+select public.ai_import_accept(
+  '10000000-0000-4000-8000-000000000009'::uuid,
+  $json${
+    "title": "Two-a-days",
+    "weeks": [
+      {"days": [
+        {"weekday": "monday", "isRestDay": false, "notes": "Big day", "sessions": [
+          {"title": "AM", "notes": "Fasted", "exercises": [
+            {"name": "Back Squat", "match": null, "sets": [{"sets": 2, "reps": 5, "weightKg": 100}]}
+          ]},
+          {"exercises": [
+            {"name": "Bench Press", "match": null, "sets": [{"reps": 3, "weightKg": 80}]},
+            {"name": "Pgtap Sled Pull", "match": null, "sets": [{"reps": 1, "weightKg": 50}]}
+          ]}
+        ]},
+        {"weekday": "tuesday", "isRestDay": true, "sessions": []}
+      ]}
+    ],
+    "unstructured": [
+      {"location": "Monday, Pgtap Sled Pull", "originalText": "heavy as possible"}
+    ]
+  }$json$::jsonb,
+  '2026-11-16'::date
+) as r;
+
+create temp table sp on commit drop as
+select ((r ->> 'program_id')::uuid) as id from sessions_result;
+grant select on sp to authenticated;
+
+select results_eq(
+  $$ select d.title, s.position, s.title, s.notes,
+            (select count(*)::int from public.program_exercises pe where pe.program_session_id = s.id)
+     from public.program_sessions s join public.program_days d on d.id = s.program_day_id
+     where d.program_id = (select id from sp) order by d.position, s.position $$,
+  $$ values ('Monday'::text, 0, 'AM'::text, 'Fasted'::text, 1),
+            ('Monday', 1, null, null, 2),
+            ('Tuesday', 0, null, null, 0) $$,
+  'each day''s sessions become program sessions, in order; an empty list makes one empty session');
+select is(
+  (select pe.notes from public.program_exercises pe
+   join public.program_days d on d.id = pe.program_day_id
+   where d.program_id = (select id from sp) and pe.exercise_id = '20000000-0000-4000-8000-000000000002'::uuid),
+  'heavy as possible', 'notes are placed by an exercise''s place in the day, across sessions');
+select results_eq(
+  $$ select title, is_rest_day, notes from public.program_days
+     where program_id = (select id from sp) order by position $$,
+  $$ values ('Monday'::text, false, 'Big day'::text), ('Tuesday', true, null) $$,
+  'a day''s own notes and rest flag stay on the day');
 
 -- ---------------------------------------------------------------------------
 -- Other users

@@ -1,6 +1,7 @@
 import { assertEquals } from 'jsr:@std/assert@1';
 import {
   type CatalogExercise,
+  dayExercises,
   type ImportResult,
   normalizeExerciseName,
   normalizeResult,
@@ -26,7 +27,7 @@ function ok(raw: unknown, requested?: 'workout' | 'program'): ImportResult {
   return out.result;
 }
 
-const firstExercise = (r: ImportResult) => r.weeks[0].days[0].exercises[0];
+const firstExercise = (r: ImportResult) => dayExercises(r.weeks[0].days[0])[0];
 const firstSet = (r: ImportResult) => firstExercise(r).sets[0];
 
 Deno.test('keeps ranges, RPE and the printed unit', () => {
@@ -225,7 +226,7 @@ Deno.test('fills the rest days a weekday-named week leaves out', () => {
   ]);
 });
 
-Deno.test('merges two sessions on one weekday into one day, keeping both', () => {
+Deno.test("two entries on one weekday become that day's two sessions", () => {
   const am = { ...trainingDay('monday'), title: 'AM', notes: 'Snatch focus' };
   const pm = {
     weekday: 'monday',
@@ -235,9 +236,80 @@ Deno.test('merges two sessions on one weekday into one day, keeping both', () =>
   const r = ok({ type: 'program', weeks: [{ days: [am, pm] }] });
   assertEquals(r.weeks[0].days.length, 7);
   const monday = r.weeks[0].days[0];
-  assertEquals(monday.title, 'AM / PM');
-  assertEquals(monday.notes, 'Snatch focus');
-  assertEquals(monday.exercises.map((e) => e.name), ['Back Squat', 'Front Squat']);
+  assertEquals(monday.title, undefined);
+  assertEquals(monday.sessions.map((s) => [s.title, s.notes, s.exercises.map((e) => e.name)]), [
+    ['AM', 'Snatch focus', ['Back Squat']],
+    ['PM', undefined, ['Front Squat']],
+  ]);
+  assertEquals(r.unstructured, []);
+});
+
+Deno.test("a day's sessions are kept apart, in order", () => {
+  const r = ok({
+    type: 'program',
+    weeks: [{
+      days: [{
+        weekday: 'monday',
+        notes: 'Two-a-day',
+        sessions: [
+          { title: 'AM', exercises: trainingDay('monday').exercises },
+          { exercises: [{ name: 'Front Squat', prescriptions: [{ reps: 3, percent: 80 }] }] },
+        ],
+      }],
+    }],
+  });
+  const monday = r.weeks[0].days[0];
+  assertEquals(monday.notes, 'Two-a-day');
+  assertEquals(monday.isRestDay, false);
+  assertEquals(monday.sessions.map((s) => s.title), ['AM', undefined]);
+  assertEquals(dayExercises(monday).map((e) => e.name), ['Back Squat', 'Front Squat']);
+});
+
+Deno.test('a day with one session lists it as one', () => {
+  const r = ok({ type: 'program', weeks: [{ days: [trainingDay('monday')] }] });
+  assertEquals(r.schemaVersion, 2);
+  assertEquals(r.weeks[0].days[0].sessions.length, 1);
+  // A rest day the week leaves out gets one empty session too.
+  assertEquals(r.weeks[0].days[1].sessions, [{ exercises: [] }]);
+});
+
+Deno.test('a 4th session is combined into the 3rd, and says so', () => {
+  const session = (title: string) => ({ title, exercises: trainingDay('monday').exercises });
+  const r = ok({
+    type: 'program',
+    weeks: [{ days: [{ weekday: 'monday', sessions: ['A', 'B', 'C', 'D'].map(session) }] }],
+  });
+  const monday = r.weeks[0].days[0];
+  assertEquals(monday.sessions.map((s) => [s.title, s.exercises.length]), [['A', 1], ['B', 1], ['C / D', 2]]);
+  assertEquals(r.unstructured.length, 1);
+  assertEquals(r.unstructured[0].location, 'Workout, Monday');
+  assertEquals(r.flags.unstructuredContent, true);
+});
+
+Deno.test('four entries on one weekday fold into 3 sessions', () => {
+  const entry = (title: string) => ({ ...trainingDay('tuesday'), title });
+  const r = ok({ type: 'program', weeks: [{ days: ['1', '2', '3', '4'].map(entry) }] });
+  const tuesday = r.weeks[0].days[1];
+  assertEquals(tuesday.sessions.map((s) => s.title), ['1', '2', '3 / 4']);
+  assertEquals(r.unstructured.map((u) => u.location), ['Workout, Tuesday']);
+});
+
+Deno.test('a re-run as a workout puts every session in one', () => {
+  const r = ok({
+    type: 'program',
+    weeks: [{
+      days: [{
+        weekday: 'monday',
+        sessions: [
+          { title: 'AM', exercises: trainingDay('monday').exercises },
+          { title: 'PM', exercises: trainingDay('monday').exercises },
+        ],
+      }, trainingDay('tuesday')],
+    }],
+  }, 'workout');
+  assertEquals(r.weeks[0].days.length, 1);
+  assertEquals(r.weeks[0].days[0].sessions.length, 1);
+  assertEquals(r.weeks[0].days[0].sessions[0].exercises.length, 3);
 });
 
 Deno.test('splits numbered days into weeks of seven, restarting the titles', () => {
@@ -313,7 +385,7 @@ Deno.test('a re-run as a workout merges every day into one', () => {
   assertEquals(r.type, 'workout');
   assertEquals(r.weeks.length, 1);
   assertEquals(r.weeks[0].days.length, 1);
-  assertEquals(r.weeks[0].days[0].exercises.length, 2);
+  assertEquals(dayExercises(r.weeks[0].days[0]).length, 2);
 });
 
 Deno.test('a re-run as a program stays a program', () => {

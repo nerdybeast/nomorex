@@ -407,7 +407,24 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
           else if (day.exercises.isEmpty)
             GroupableTile(child: Text('Nothing was read for this day.', style: muted)),
           if (day.notes case final notes?) GroupableTile(child: Text(notes, style: muted)),
-          for (final exercise in day.exercises) _ExerciseTile(exercise: exercise, fixes: _fixes, unit: _unit),
+          // A day of several sessions (AM, PM …) shows each one's lifts under
+          // its name: each becomes its own workout.
+          if (day.sessions.length > 1)
+            for (final (i, session) in day.sessions.indexed) ...[
+              GroupableTile(
+                key: ValueKey('ai_review_session_${title}_$i'),
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    [session.label(i), ?session.notes].join(' · '),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+              ),
+              for (final exercise in session.exercises) _ExerciseTile(exercise: exercise, fixes: _fixes, unit: _unit),
+            ]
+          else
+            for (final exercise in day.exercises) _ExerciseTile(exercise: exercise, fixes: _fixes, unit: _unit),
         ],
       ),
     );

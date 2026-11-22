@@ -10,6 +10,7 @@ import 'package:nomorex/features/profile/providers/profile_provider.dart';
 import 'package:nomorex/features/programs/models/program.dart';
 import 'package:nomorex/features/programs/models/program_day.dart';
 import 'package:nomorex/features/programs/models/program_exercise.dart';
+import 'package:nomorex/features/programs/models/program_session.dart';
 import 'package:nomorex/features/programs/models/program_set.dart';
 import 'package:nomorex/features/programs/models/program_week.dart';
 import 'package:nomorex/features/programs/providers/program_detail_provider.dart';
@@ -20,19 +21,42 @@ import 'package:nomorex/features/programs/screens/edit/program_week_edit_screen.
 import 'package:nomorex/features/programs/screens/program_edit_screen.dart';
 import 'package:nomorex/features/workouts/providers/one_rep_max_provider.dart';
 import 'package:nomorex/shared/models/one_rep_max.dart';
+import '../../support/program_fixtures.dart';
 
 /// Records what the screens ask for and applies deletes, so a screen can
 /// react to its own week or day going away.
 class _Notifier extends ProgramDetailNotifier {
-  _Notifier(this.calls, {this.withFullWeek = false});
+  _Notifier(this.calls, {this.withFullWeek = false, this.withSessions = false});
 
   final List<String> calls;
   final bool withFullWeek;
+  final bool withSessions;
   final _removedDays = <String>{};
 
   @override
   Future<Program> build(String programId) async =>
-      _program(removedDays: _removedDays, withFullWeek: withFullWeek);
+      _program(removedDays: _removedDays, withFullWeek: withFullWeek, withSessions: withSessions);
+
+  @override
+  Future<String> addSession(String dayId, {String? title}) async {
+    calls.add('addSession $dayId');
+    return 'new-session';
+  }
+
+  @override
+  Future<void> removeSession(String sessionId) async {
+    calls.add('removeSession $sessionId');
+  }
+
+  @override
+  Future<void> reorderSessions(String dayId, List<String> orderedSessionIds) async {
+    calls.add('reorderSessions $dayId ${orderedSessionIds.join(',')}');
+  }
+
+  @override
+  Future<void> updateSessionMeta(String sessionId, {String? title, String? notes}) async {
+    calls.add('sessionMeta $sessionId ${title ?? ''}${notes ?? ''}');
+  }
 
   @override
   Future<String> duplicateWeek(String weekId) async {
@@ -101,8 +125,10 @@ ProgramExercise _ex(String id, String day, int pos, String name, List<ProgramSet
 
 /// Week 1 "Meso 1/4": Day 1 (Muscle Snatch 4 × 3 · 20 kg, Snatch 10 × 1 ·
 /// 80%), "Day 2 (Athletic Development)" (Front Squat). Week 2: Day 3 (Clean).
-/// With [withFullWeek], Week 3 holds 7 rest days, as a new week does.
-Program _program({Set<String> removedDays = const {}, bool withFullWeek = false}) {
+/// With [withFullWeek], Week 3 holds 7 rest days, as a new week does. With
+/// [withSessions], Week 4's one day "Two-a-day" is split into 3 sessions:
+/// AM (Snatch), an untitled one (Back Squat) and Conditioning (empty).
+Program _program({Set<String> removedDays = const {}, bool withFullWeek = false, bool withSessions = false}) {
   List<ProgramDay> keep(List<ProgramDay> days) => [for (final d in days) if (!removedDays.contains(d.id)) d];
   return Program(
     id: 'p1',
@@ -118,14 +144,14 @@ Program _program({Set<String> removedDays = const {}, bool withFullWeek = false}
         label: 'Meso 1/4',
         position: 0,
         days: keep([
-          ProgramDay(id: 'd1', programWeekId: 'w1', dayNumber: 1, title: 'Day 1', position: 0, exercises: [
+          ProgramDay(id: 'd1', programWeekId: 'w1', dayNumber: 1, title: 'Day 1', position: 0, sessions: soloSession('d1', [
             _ex('pe1', 'd1', 0, 'Muscle Snatch', [for (var i = 0; i < 4; i++) _set('a$i', 'pe1', i, kg: 20)],
                 notes: 'In bottom + press'),
             _ex('pe2', 'd1', 1, 'Snatch', [for (var i = 0; i < 10; i++) _set('b$i', 'pe2', i, reps: 1, pct: 80)]),
-          ]),
-          ProgramDay(id: 'd2', programWeekId: 'w1', dayNumber: 2, title: 'Day 2 (Athletic Development)', position: 1, exercises: [
+          ])),
+          ProgramDay(id: 'd2', programWeekId: 'w1', dayNumber: 2, title: 'Day 2 (Athletic Development)', position: 1, sessions: soloSession('d2', [
             _ex('pe3', 'd2', 0, 'Front Squat', [_set('c0', 'pe3', 0, kg: 80)]),
-          ]),
+          ])),
         ]),
       ),
       ProgramWeek(
@@ -134,9 +160,9 @@ Program _program({Set<String> removedDays = const {}, bool withFullWeek = false}
         weekNumber: 2,
         position: 1,
         days: keep([
-          ProgramDay(id: 'd3', programWeekId: 'w2', dayNumber: 1, title: 'Day 3', position: 2, exercises: [
+          ProgramDay(id: 'd3', programWeekId: 'w2', dayNumber: 1, title: 'Day 3', position: 2, sessions: soloSession('d3', [
             _ex('pe4', 'd3', 0, 'Clean', [_set('e0', 'pe4', 0, reps: 1, pct: 85)]),
-          ]),
+          ])),
         ]),
       ),
       if (withFullWeek)
@@ -157,6 +183,31 @@ Program _program({Set<String> removedDays = const {}, bool withFullWeek = false}
               ),
           ],
         ),
+      if (withSessions)
+        ProgramWeek(
+          id: 'w4',
+          programId: 'p1',
+          weekNumber: 4,
+          position: 3,
+          days: [
+            ProgramDay(
+              id: 'd4',
+              programWeekId: 'w4',
+              dayNumber: 1,
+              title: 'Two-a-day',
+              position: 10,
+              sessions: [
+                ProgramSession(id: 's4a', programDayId: 'd4', position: 0, title: 'AM', exercises: [
+                  _ex('pe5', 'd4', 0, 'Snatch', [_set('f0', 'pe5', 0, reps: 2, pct: 75)]),
+                ]),
+                ProgramSession(id: 's4b', programDayId: 'd4', position: 1, exercises: [
+                  _ex('pe6', 'd4', 0, 'Back Squat', [_set('g0', 'pe6', 0, kg: 100)]),
+                ]),
+                const ProgramSession(id: 's4c', programDayId: 'd4', position: 2, title: 'Conditioning'),
+              ],
+            ),
+          ],
+        ),
     ],
   );
 }
@@ -167,6 +218,7 @@ Future<GoRouter> _pump(
   String initial = '/programs/p1/edit',
   bool phone = true,
   bool withFullWeek = false,
+  bool withSessions = false,
 }) async {
   if (phone) {
     tester.view.physicalSize = const Size(390, 844);
@@ -192,7 +244,8 @@ Future<GoRouter> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        programDetailProvider('p1').overrideWith(() => _Notifier(calls, withFullWeek: withFullWeek)),
+        programDetailProvider('p1')
+            .overrideWith(() => _Notifier(calls, withFullWeek: withFullWeek, withSessions: withSessions)),
         exercisesProvider.overrideWith(_Exercises.new),
         oneRepMaxProvider.overrideWith((ref) async => const <String, OneRepMax>{}),
         oneRepMaxByNameProvider.overrideWith((ref) async => const <String, OneRepMax>{}),
@@ -491,6 +544,119 @@ void main() {
       await expand('Week 1 — Meso 1/4');
       await tester.ensureVisible(find.byKey(const ValueKey('edit_program_add_day_w1')));
       expect(find.byKey(const ValueKey('edit_program_add_day_w1')), findsOneWidget);
+    });
+  });
+
+  group('a day holds up to 3 sessions', () {
+    testWidgets('a one-session day looks as before, with Add session under it', (tester) async {
+      final calls = <String>[];
+      await _pump(tester, calls, initial: '/programs/p1/edit/days/d1');
+
+      expect(find.text('Session 1'), findsNothing);
+      expect(find.byKey(const Key('edit_day_add_exercise')), findsOneWidget);
+      expect(find.text('Add session · 1 of 3'), findsOneWidget);
+
+      await tester.ensureVisible(find.byKey(const Key('edit_day_add_session')));
+      await tester.tap(find.byKey(const Key('edit_day_add_session')));
+      await tester.pumpAndSettle();
+      expect(calls, ['addSession d1']);
+    });
+
+    testWidgets('a split day lists each session under its own heading', (tester) async {
+      await _pump(tester, [], initial: '/programs/p1/edit/days/d4', withSessions: true);
+
+      expect(find.text('3 sessions · 2 exercises · 2 sets · each session is its own workout'), findsOneWidget);
+      expect(find.text('AM'), findsOneWidget);
+      expect(find.text('Session 2'), findsOneWidget);
+      expect(find.text('Snatch'), findsOneWidget);
+      expect(find.text('Back Squat'), findsOneWidget);
+      await tester.ensureVisible(find.text('Conditioning'));
+      expect(find.text('No exercises yet'), findsOneWidget);
+      expect(find.byKey(const ValueKey('edit_session_add_exercise_s4c')), findsOneWidget);
+      // The day's tab says it's split.
+      expect(find.text('3 sessions'), findsOneWidget);
+    });
+
+    testWidgets('a day with 3 sessions offers no more, and no Duplicate session', (tester) async {
+      await _pump(tester, [], initial: '/programs/p1/edit/days/d4', withSessions: true);
+
+      expect(find.byKey(const Key('edit_day_add_session')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('edit_session_more_s4a')));
+      await tester.pumpAndSettle();
+      expect(find.text('Duplicate session'), findsNothing);
+      expect(find.text('Move up'), findsNothing);
+      expect(find.text('Move down'), findsOneWidget);
+    });
+
+    testWidgets('Move down swaps a session with the next', (tester) async {
+      final calls = <String>[];
+      await _pump(tester, calls, initial: '/programs/p1/edit/days/d4', withSessions: true);
+
+      await tester.tap(find.byKey(const ValueKey('edit_session_more_s4a')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Move down'));
+      await tester.pumpAndSettle();
+      expect(calls, ['reorderSessions d4 s4b,s4a,s4c']);
+    });
+
+    testWidgets('removing a session with exercises asks first', (tester) async {
+      final calls = <String>[];
+      await _pump(tester, calls, initial: '/programs/p1/edit/days/d4', withSessions: true);
+
+      await tester.tap(find.byKey(const ValueKey('edit_session_more_s4a')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove session'));
+      await tester.pumpAndSettle();
+      expect(find.text('Remove AM?'), findsOneWidget);
+      await tester.tap(find.text('Remove'));
+      await tester.pumpAndSettle();
+      expect(calls, ['removeSession s4a']);
+    });
+
+    testWidgets('an empty session is removed without asking', (tester) async {
+      final calls = <String>[];
+      await _pump(tester, calls, initial: '/programs/p1/edit/days/d4', withSessions: true);
+
+      await tester.ensureVisible(find.byKey(const ValueKey('edit_session_more_s4c')));
+      await tester.tap(find.byKey(const ValueKey('edit_session_more_s4c')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove session'));
+      await tester.pumpAndSettle();
+      expect(calls, ['removeSession s4c']);
+    });
+
+    testWidgets('the desktop editor groups a split day by session', (tester) async {
+      final calls = <String>[];
+      await _pump(tester, calls, phone: false, withSessions: true);
+
+      await tester.ensureVisible(find.text('Week 4'));
+      await tester.tap(find.text('Week 4'));
+      await tester.pumpAndSettle();
+      expect(find.text('3 sessions · 2 exercises'), findsOneWidget);
+      await tester.ensureVisible(find.text('Two-a-day'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Two-a-day'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('edit_session_more_s4a')), findsOneWidget);
+      expect(find.text('Session 2'), findsOneWidget);
+      expect(find.byKey(const ValueKey('edit_day_add_session_d4')), findsNothing, reason: 'the day is full');
+    });
+
+    testWidgets('the desktop editor offers + Session on a one-session day', (tester) async {
+      final calls = <String>[];
+      await _pump(tester, calls, phone: false);
+
+      await tester.tap(find.text('Week 1 — Meso 1/4'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Day 1'));
+      await tester.pumpAndSettle();
+      final add = find.byKey(const ValueKey('edit_day_add_session_d1'));
+      await tester.ensureVisible(add);
+      await tester.pumpAndSettle();
+      await tester.tap(add);
+      await tester.pumpAndSettle();
+      expect(calls, ['addSession d1']);
     });
   });
 }

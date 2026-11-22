@@ -20,8 +20,8 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
     ref.watch(authStateProvider);
     final data = await _db
         .from('programs')
-        .select('*, program_weeks(*, program_days(*, program_exercises('
-            '*, exercises(name), program_sets(*, exercises(name)))))')
+        .select('*, program_weeks(*, program_days(*, program_sessions(*, program_exercises('
+            '*, exercises(name), program_sets(*, exercises(name))))))')
         .eq('id', programId)
         .single();
     return Program.fromJson(data);
@@ -145,22 +145,70 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
     await _refresh();
   }
 
+  // ---- Sessions ----
+
+  /// Adds a session at the end of a day, up to `kMaxSessionsPerDay`
+  /// (`add_program_session`; the database refuses a 4th with `day_full`).
+  /// Returns the new session's id.
+  Future<String> addSession(String dayId, {String? title}) async {
+    final id = await _db.rpc('add_program_session', params: {'p_day_id': dayId, 'p_title': title}) as String;
+    await _refresh();
+    return id;
+  }
+
+  /// A copy of the session, with its exercises and sets, right after it.
+  /// Returns the copy's id.
+  Future<String> duplicateSession(String sessionId) async {
+    final id = await _db.rpc('duplicate_program_session', params: {'p_session_id': sessionId}) as String;
+    await _refresh();
+    return id;
+  }
+
+  /// Deletes a session with its exercises and sets. The editors never offer
+  /// it on a day's last session.
+  Future<void> removeSession(String sessionId) async {
+    await _db.from('program_sessions').delete().eq('id', sessionId);
+    await _refresh();
+  }
+
+  /// An empty [title] or [notes] clears it.
+  Future<void> updateSessionMeta(String sessionId, {String? title, String? notes}) async {
+    final values = <String, dynamic>{};
+    if (title != null) values['title'] = title.trim().isEmpty ? null : title.trim();
+    if (notes != null) values['notes'] = notes.trim().isEmpty ? null : notes;
+    if (values.isEmpty) return;
+    await _db.from('program_sessions').update(values).eq('id', sessionId);
+    await _refresh();
+  }
+
+  /// Puts a day's sessions in [orderedSessionIds] order (every one, once).
+  Future<void> reorderSessions(String dayId, List<String> orderedSessionIds) async {
+    await _db.rpc('reorder_program_sessions', params: {'p_day_id': dayId, 'p_session_ids': orderedSessionIds});
+    await _refresh();
+  }
+
   // ---- Exercises ----
 
-  /// Adds an exercise to the end of a day. A rest day becomes a training
-  /// day first: a new week's days start as rest days, and `start_program`
-  /// skips a rest day's exercises.
-  Future<void> addExercise(String dayId, String exerciseId) async {
+  /// Adds an exercise to the end of a session: [sessionId], or else the
+  /// day's first one (created if the day has none). A rest day becomes a
+  /// training day first: a new week's days start as rest days, and
+  /// `start_program` skips a rest day's exercises.
+  Future<void> addExercise(String dayId, String exerciseId, {String? sessionId}) async {
     final current = await future;
     final day = current.weeks.expand((w) => w.days).firstWhere((d) => d.id == dayId);
     if (day.isRestDay) {
       await _db.from('program_days').update({'is_rest_day': false}).eq('id', dayId);
     }
-    final nextPos = day.exercises.isEmpty
-        ? 0
-        : day.exercises.map((e) => e.position).reduce((a, b) => a > b ? a : b) + 1;
+    final session = sessionId == null
+        ? day.sessions.firstOrNull
+        : day.sessions.firstWhere((s) => s.id == sessionId);
+    final targetId = session?.id ?? await _db.rpc('add_program_session', params: {'p_day_id': dayId}) as String;
+    // max + 1, not a count: a count collides after a mid-list delete.
+    final exercises = session?.exercises ?? const [];
+    final nextPos = exercises.isEmpty ? 0 : exercises.map((e) => e.position).reduce((a, b) => a > b ? a : b) + 1;
     await _db.from('program_exercises').insert({
       'program_day_id': dayId,
+      'program_session_id': targetId,
       'user_id': _userId,
       'exercise_id': exerciseId,
       'position': nextPos,
@@ -182,17 +230,18 @@ class ProgramDetailNotifier extends _$ProgramDetailNotifier {
   }
 
   /// Reassigns the position values `program_exercises` already held by
-  /// [orderedExerciseIds] (all within [dayId]) in the new order.
-  /// `program_exercises.position` has no unique constraint, so — unlike
-  /// [reorderWeeks]/[reorderDays] — a single sequential pass is safe.
+  /// [orderedExerciseIds] (all within one session of [dayId]) in the new
+  /// order. `program_exercises.position` has no unique constraint, so —
+  /// unlike [reorderWeeks]/[reorderDays] — a single sequential pass is safe.
   Future<void> reorderExercises({
     required String dayId,
     required List<String> orderedExerciseIds,
   }) async {
     final current = await future;
     final day = current.weeks.expand((w) => w.days).firstWhere((d) => d.id == dayId);
+    final exercises = day.exercises;
     final positions = (orderedExerciseIds
-            .map((id) => day.exercises.firstWhere((e) => e.id == id).position)
+            .map((id) => exercises.firstWhere((e) => e.id == id).position)
             .toList()
           ..sort());
     for (var i = 0; i < orderedExerciseIds.length; i++) {
