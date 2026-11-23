@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../ai/providers/ai_import_jobs_provider.dart';
 import '../../ai/widgets/ai_import_jobs_section.dart';
-import '../../../shared/widgets/dashboard_empty_state_card.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/pr_card.dart';
 import '../../personal_bests/utils/all_time_best.dart';
@@ -13,6 +12,7 @@ import '../../../shared/widgets/program_instance_card.dart';
 import '../../../shared/widgets/recent_workout_card.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/workout_in_progress_card.dart';
+import '../widgets/getting_started.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/weight_converter.dart';
@@ -37,8 +37,8 @@ class DashboardScreen extends ConsumerWidget {
     final instancesAsync = ref.watch(currentProgramInstancesProvider);
     final inProgressWorkoutsAsync = ref.watch(inProgressWorkoutsProvider);
     final finishedWorkoutsAsync = ref.watch(finishedWorkoutsProvider);
-    // Only read by the empty states below, to pick "create your first" vs
-    // "browse". Not-yet-loaded counts as none, which is the safe default.
+    // Only read by the empty rows and getting started, to pick "new" vs
+    // "browse"/"start". Not-yet-loaded counts as none, the safe default.
     final hasWorkouts =
         ref.watch(workoutsProvider).asData?.value.isNotEmpty ?? false;
     final hasPrograms =
@@ -52,8 +52,8 @@ class DashboardScreen extends ConsumerWidget {
         finishedWorkoutsAsync.isRefreshing;
 
     // A section that errored counts as settled/empty here so one unrelated
-    // fetch failure can't hide the welcome message for an otherwise
-    // brand-new user.
+    // fetch failure can't hide getting started from an otherwise brand-new
+    // user.
     bool isEmptyOrErrored<T>(AsyncValue<List<T>> asyncValue) {
       final data = asyncValue.value;
       if (data != null) return data.isEmpty;
@@ -67,11 +67,53 @@ class DashboardScreen extends ConsumerWidget {
       finishedWorkoutsAsync,
     ];
     final allSettled = sections.every((s) => s.hasValue || s.hasError);
-    final showWelcome = allSettled && sections.every(isEmptyOrErrored);
+    final firstRun = allSettled && sections.every(isEmptyOrErrored);
+    // Two or more failures is the connection, not one query: one notice for
+    // the page beats a column of identical errors.
+    final pageFailed = sections.where((s) => s.hasError).length >= 2;
+    // A section shows unless getting started has replaced it (a first run
+    // keeps only a failed section, so its error isn't hidden) or the page
+    // notice already covers its failure.
+    bool shows(AsyncValue<Object?> s) {
+      if (pageFailed && s.hasError) return false;
+      return !firstRun || s.hasError;
+    }
+
+    void refreshAll() {
+      ref.read(inProgressWorkoutsProvider.notifier).refresh();
+      ref.read(currentProgramInstancesProvider.notifier).refresh();
+      ref.read(personalBestsProvider.notifier).refresh();
+      ref.read(finishedWorkoutsProvider.notifier).refresh();
+      ref.invalidate(aiImportJobsProvider);
+    }
+
+    // A failed section's row. Checked before `when()`: while Riverpod retries
+    // a failed load the state is a reload that still holds the error, and
+    // `when()` would show a spinner until the retries run out.
+    final workoutsFailure = _LoadFailure(
+      message: "Couldn't load workouts in progress",
+      retrying: inProgressWorkoutsAsync.retrying,
+      onRetry: () => ref.read(inProgressWorkoutsProvider.notifier).refresh(),
+    );
+    final runsFailure = _LoadFailure(
+      message: "Couldn't load current programs",
+      retrying: instancesAsync.retrying,
+      onRetry: () => ref.read(currentProgramInstancesProvider.notifier).refresh(),
+    );
+    final prsFailure = _LoadFailure(
+      message: "Couldn't load PRs",
+      retrying: prsAsync.retrying,
+      onRetry: () => ref.read(personalBestsProvider.notifier).refresh(),
+    );
+    final historyFailure = _LoadFailure(
+      message: "Couldn't load recent workouts",
+      retrying: finishedWorkoutsAsync.retrying,
+      onRetry: () => ref.read(finishedWorkoutsProvider.notifier).refresh(),
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Text('Home'),
         actions: [
           IconButton(
             icon: isRefreshing
@@ -82,17 +124,7 @@ class DashboardScreen extends ConsumerWidget {
                   )
                 : const Icon(Icons.refresh),
             tooltip: 'Refresh',
-            onPressed: isRefreshing
-                ? null
-                : () {
-                    ref.read(inProgressWorkoutsProvider.notifier).refresh();
-                    ref
-                        .read(currentProgramInstancesProvider.notifier)
-                        .refresh();
-                    ref.read(personalBestsProvider.notifier).refresh();
-                    ref.read(finishedWorkoutsProvider.notifier).refresh();
-                    ref.invalidate(aiImportJobsProvider);
-                  },
+            onPressed: isRefreshing ? null : refreshAll,
           ),
           // On wide layouts the sidebar's account card opens Profile.
           if (isMobile(context))
@@ -106,211 +138,210 @@ class DashboardScreen extends ConsumerWidget {
       body: ListView(
         padding: shellListPadding(context),
         children: [
-          if (showWelcome) ...[
-            const _DashboardWelcomeBanner(),
+          if (pageFailed) ...[
+            _LoadFailure(
+              key: const Key('dashboard_load_failure'),
+              message: "Couldn't load Home",
+              retrying: sections.any((s) => s.retrying),
+              onRetry: refreshAll,
+            ),
             const SizedBox(height: 24),
           ],
-          // Empty unless the user has an import running, ready or failed.
-          const AiImportJobsSection(),
-          const _SectionLabel('Workouts in progress'),
-          const SizedBox(height: 8),
-          inProgressWorkoutsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text(
-              'Failed to load workouts: $e',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-            data: (workouts) {
-              if (workouts.isEmpty) {
-                return DashboardEmptyStateCard(
-                  ctaStyle: EmptyStateCtaStyle.link,
-                  icon: Icons.fitness_center_outlined,
-                  title: 'No workouts currently in progress.',
-                  message: hasWorkouts
-                      ? 'Start one of your workouts to see it here while it\'s active.'
-                      : 'Create a workout to see it here while it\'s active.',
-                  ctaLabel: hasWorkouts
-                      ? 'Browse workouts'
-                      : 'Create your first workout',
-                  onCta: () => hasWorkouts
-                      ? context.go(AppConstants.routeWorkouts)
-                      : context.push(AppConstants.routeWorkoutNew),
-                );
-              }
-              return ListGroup(
-                children: [
-                  for (final workout in workouts)
-                    WorkoutInProgressCard(
-                        title: workout.title,
-                        statusDisplay: workout.status == 'paused'
-                            ? 'Paused'
-                            : 'In progress',
-                        isLive: workout.status != 'paused',
-                        programLabel: workout.programName ?? 'Standalone',
-                        isStandalone: workout.programName == null,
-                        // Ticks live for an in-progress workout and renders
-                        // frozen for a paused one — ElapsedTimer handles both.
-                        statusTrailing: ElapsedTimer(
-                          startedAt: workout.startedAt!,
-                          totalPausedSeconds: workout.totalPausedSeconds,
-                          pausedAt: workout.pausedAt,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: NomorexTokens.of(context).palette.fg1,
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures(),
-                                ],
-                              ),
-                        ),
-                        onTap: () => context.push(
-                          AppConstants.routeWorkoutDetail(workout.id),
-                        ),
-                      ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-          const _SectionLabel('Programs in progress'),
-          const SizedBox(height: 8),
-          instancesAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text(
-              'Failed to load programs: $e',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-            data: (instances) {
-              if (instances.isEmpty) {
-                return DashboardEmptyStateCard(
-                  ctaStyle: EmptyStateCtaStyle.link,
-                  icon: Icons.checklist_outlined,
-                  title: 'No programs currently in progress.',
-                  message: hasPrograms
-                      ? 'Browse your programs to start one and track your progress.'
-                      : 'Create a program to plan your training and track your progress.',
-                  ctaLabel: hasPrograms
-                      ? 'Browse programs'
-                      : 'Create your first program',
-                  onCta: () => hasPrograms
-                      ? context.go(AppConstants.routePrograms)
-                      : context.push(AppConstants.routeProgramNew),
-                );
-              }
-              return ListGroup(
-                children: [
-                  for (final instance in instances)
-                    ProgramInstanceCard(
-                        programName: instance.programName ?? 'Program',
-                        statusDisplay: isProgramUpcoming(instance.startedAt)
-                            ? 'Upcoming — starts ${formatDate(instance.startedAt)}'
-                            : 'In progress — started ${formatDate(instance.startedAt)}',
-                        chips: [
-                          if (instance.stats case final stats?) ...programStatsChips(stats),
-                        ],
-                        onTap: () => context.push(
-                          AppConstants.routeProgramInstanceDetail(instance.id),
-                        ),
-                      ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-          const _SectionLabel('Recent PRs'),
-          const SizedBox(height: 8),
-          prsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text(
-              'Failed to load PRs: $e',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-            data: (allPrs) {
-              // Same "current entry" as My PRs: latest by PR date, so a
-              // back-filled old PR doesn't jump to the top.
-              final prs = latestPrPerExercise(allPrs).take(5).toList();
-              if (prs.isEmpty) {
-                return DashboardEmptyStateCard(
-                  ctaStyle: EmptyStateCtaStyle.link,
-                  icon: Icons.emoji_events_outlined,
-                  title: 'No PRs yet.',
-                  message:
-                      'Log a personal best to start tracking your progress.',
-                  ctaLabel: 'Log your first PR',
-                  onCta: () => context.push(AppConstants.routeAddPr),
-                );
-              }
-              return ListGroup(
-                children: [
-                  for (final pr in prs)
-                    PrCard(
-                        exerciseName: pr.exerciseName,
-                        weightDisplay: formatWeightForPreference(
-                          pr.weightKg,
-                          unit,
-                        ),
-                        reps: pr.reps,
-                        dateDisplay: formatDate(pr.date),
-                        notes: pr.notes,
-                        notesMaxLines: 2,
-                        estimatedOneRepMaxDisplay: estimatedOneRepMaxLabel(
-                          pr,
-                          formula,
-                          unit,
-                        ),
-                        // The badge only marks the shown entry when it is
-                        // also the lift's all-time best (same rule as PR
-                        // history), so an older, heavier PR suppresses it.
-                        allTimeBest: allTimeBest(
-                              [
-                                for (final other in allPrs)
-                                  if (other.exerciseId == pr.exerciseId) other,
-                              ],
+          // Until every section has answered, a page with nothing to show yet
+          // could still turn out to be a first run: one spinner, rather than
+          // four labelled ones that getting started then replaces.
+          if (!allSettled && !sections.any((s) => s.value?.isNotEmpty ?? false))
+            const Padding(
+              padding: EdgeInsets.only(top: 48),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else ...[
+            if (firstRun) ...[
+              GettingStarted(hasPrograms: hasPrograms),
+              const SizedBox(height: 32),
+            ],
+            // Empty unless the user has an import running, ready or failed.
+            const AiImportJobsSection(),
+            if (shows(inProgressWorkoutsAsync)) ...[
+              const _SectionLabel('Workouts in progress'),
+              const SizedBox(height: 8),
+              if (inProgressWorkoutsAsync.retrying) workoutsFailure else inProgressWorkoutsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, _) => workoutsFailure,
+                data: (workouts) {
+                  if (workouts.isEmpty) {
+                    return _EmptySection(
+                      key: const Key('dashboard_empty_workouts'),
+                      message: 'Nothing in progress',
+                      actionLabel: hasWorkouts ? 'Browse workouts' : 'New workout',
+                      onTap: () => hasWorkouts
+                          ? context.go(AppConstants.routeWorkouts)
+                          : context.push(AppConstants.routeWorkoutNew),
+                    );
+                  }
+                  return ListGroup(
+                    children: [
+                      for (final workout in workouts)
+                        WorkoutInProgressCard(
+                            title: workout.title,
+                            statusDisplay: workout.status == 'paused'
+                                ? 'Paused'
+                                : 'In progress',
+                            isLive: workout.status != 'paused',
+                            programLabel: workout.programName ?? 'Standalone',
+                            isStandalone: workout.programName == null,
+                            // Ticks live for an in-progress workout and renders
+                            // frozen for a paused one — ElapsedTimer handles both.
+                            statusTrailing: ElapsedTimer(
+                              startedAt: workout.startedAt!,
+                              totalPausedSeconds: workout.totalPausedSeconds,
+                              pausedAt: workout.pausedAt,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: NomorexTokens.of(context).palette.fg1,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                            ),
+                            onTap: () => context.push(
+                              AppConstants.routeWorkoutDetail(workout.id),
+                            ),
+                          ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+            if (shows(instancesAsync)) ...[
+              const _SectionLabel('Current programs'),
+              const SizedBox(height: 8),
+              if (instancesAsync.retrying) runsFailure else instancesAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, _) => runsFailure,
+                data: (instances) {
+                  if (instances.isEmpty) {
+                    return _EmptySection(
+                      key: const Key('dashboard_empty_programs'),
+                      message: 'No program started',
+                      actionLabel: hasPrograms ? 'Start a program' : 'New program',
+                      onTap: () => hasPrograms
+                          ? context.go(AppConstants.routePrograms)
+                          : context.push(AppConstants.routeProgramNew),
+                    );
+                  }
+                  return ListGroup(
+                    children: [
+                      for (final instance in instances)
+                        ProgramInstanceCard(
+                            programName: instance.programName ?? 'Program',
+                            statusDisplay: isProgramUpcoming(instance.startedAt)
+                                ? 'Upcoming — starts ${formatDate(instance.startedAt)}'
+                                : 'In progress — started ${formatDate(instance.startedAt)}',
+                            chips: [
+                              if (instance.stats case final stats?) ...programStatsChips(stats),
+                            ],
+                            onTap: () => context.push(
+                              AppConstants.routeProgramInstanceDetail(instance.id),
+                            ),
+                          ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+            if (shows(prsAsync)) ...[
+              const _SectionLabel('Recent PRs'),
+              const SizedBox(height: 8),
+              if (prsAsync.retrying) prsFailure else prsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, _) => prsFailure,
+                data: (allPrs) {
+                  // Same "current entry" as My PRs: latest by PR date, so a
+                  // back-filled old PR doesn't jump to the top.
+                  final prs = latestPrPerExercise(allPrs).take(5).toList();
+                  if (prs.isEmpty) {
+                    return _EmptySection(
+                      key: const Key('dashboard_empty_prs'),
+                      message: 'No PRs yet',
+                      actionLabel: 'Add a PR',
+                      onTap: () => context.push(AppConstants.routeAddPr),
+                    );
+                  }
+                  return ListGroup(
+                    children: [
+                      for (final pr in prs)
+                        PrCard(
+                            exerciseName: pr.exerciseName,
+                            weightDisplay: formatWeightForPreference(
+                              pr.weightKg,
+                              unit,
+                            ),
+                            reps: pr.reps,
+                            dateDisplay: formatDate(pr.date),
+                            notes: pr.notes,
+                            notesMaxLines: 2,
+                            estimatedOneRepMaxDisplay: estimatedOneRepMaxLabel(
+                              pr,
                               formula,
-                            )?.id ==
-                            pr.id,
-                        onTap: () => context.push(
-                          AppConstants.routePrHistory(pr.exerciseId),
-                        ),
-                      ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-          const _SectionLabel('Recent workouts'),
-          const SizedBox(height: 8),
-          finishedWorkoutsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text(
-              'Failed to load workouts: $e',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-            data: (allFinished) {
-              final recent = allFinished.take(5).toList();
-              if (recent.isEmpty) {
-                return const DashboardEmptyStateCard(
-                  icon: Icons.history,
-                  title: 'No completed workouts yet.',
-                  message: "Finish a workout and it'll show up here.",
-                );
-              }
-              return ListGroup(
-                children: [
-                  for (final workout in recent)
-                    RecentWorkoutCard(
-                        title: workout.title,
-                        completedDisplay:
-                            'Completed ${formatDate(workout.finishedAt!.toLocal())}',
-                        programLabel: workout.programName ?? 'Standalone',
-                        isStandalone: workout.programName == null,
-                        onTap: () => context.push(
-                          AppConstants.routeWorkoutDetail(workout.id),
-                        ),
-                      ),
-                ],
-              );
-            },
-          ),
+                              unit,
+                            ),
+                            // The badge only marks the shown entry when it is
+                            // also the lift's all-time best (same rule as PR
+                            // history), so an older, heavier PR suppresses it.
+                            allTimeBest: allTimeBest(
+                                  [
+                                    for (final other in allPrs)
+                                      if (other.exerciseId == pr.exerciseId) other,
+                                  ],
+                                  formula,
+                                )?.id ==
+                                pr.id,
+                            onTap: () => context.push(
+                              AppConstants.routePrHistory(pr.exerciseId),
+                            ),
+                          ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+            if (shows(finishedWorkoutsAsync)) ...[
+              const _SectionLabel('Recent workouts'),
+              const SizedBox(height: 8),
+              if (finishedWorkoutsAsync.retrying) historyFailure else finishedWorkoutsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, _) => historyFailure,
+                data: (allFinished) {
+                  final recent = allFinished.take(5).toList();
+                  if (recent.isEmpty) {
+                    return const _EmptySection(
+                      key: Key('dashboard_empty_history'),
+                      message: 'Finished workouts show up here',
+                    );
+                  }
+                  return ListGroup(
+                    children: [
+                      for (final workout in recent)
+                        RecentWorkoutCard(
+                            title: workout.title,
+                            completedDisplay:
+                                'Completed ${formatDate(workout.finishedAt!.toLocal())}',
+                            programLabel: workout.programName ?? 'Standalone',
+                            isStandalone: workout.programName == null,
+                            onTap: () => context.push(
+                              AppConstants.routeWorkoutDetail(workout.id),
+                            ),
+                          ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ],
         ],
       ),
     );
@@ -325,49 +356,96 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(label.toUpperCase(), style: NomorexTokens.of(context).eyebrow);
+    // A heading for screen readers, so they can jump section to section.
+    return Semantics(
+      header: true,
+      child: Text(label.toUpperCase(), style: NomorexTokens.of(context).eyebrow),
+    );
   }
 }
 
-/// Shown above the section list only when the user has no data anywhere on
-/// the dashboard yet, so a brand-new sign-in doesn't read as 4 stacked
-/// empty sections with no framing. The orange is in the eyebrow only — no
-/// orange fill or border on the card.
-class _DashboardWelcomeBanner extends StatelessWidget {
-  const _DashboardWelcomeBanner();
+/// A section with nothing in it yet: one line in the section's own group, so
+/// it takes a row's height rather than a card's. With an action, the whole row
+/// is the button.
+class _EmptySection extends StatelessWidget {
+  const _EmptySection({super.key, required this.message, this.actionLabel, this.onTap})
+    : assert((actionLabel == null) == (onTap == null));
+
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tokens = NomorexTokens.of(context);
     final palette = tokens.palette;
-    final emphasis = TextStyle(color: palette.fg1, fontWeight: FontWeight.w500);
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('GET STARTED', style: tokens.eyebrow.copyWith(color: palette.primaryText)),
-            const SizedBox(height: 6),
-            Text('Welcome to NoMoreX', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 6),
-            Text.rich(
-              TextSpan(
-                style: NomorexTokens.of(context).bodySmall,
-                children: [
-                  const TextSpan(text: 'Log a workout, hit a '),
-                  TextSpan(text: 'new PR', style: emphasis),
-                  const TextSpan(text: ', or start a '),
-                  TextSpan(text: 'program', style: emphasis),
-                  const TextSpan(text: '. Your dashboard fills in as you go.'),
-                ],
-              ),
-            ),
+    final label = actionLabel;
+    final row = GroupableTile(
+      onTap: onTap,
+      // 14 rather than the row default 12, so the row is a 48px target.
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Expanded(child: Text(message, style: tokens.bodySmall.copyWith(color: palette.fg3))),
+          if (label != null) ...[
+            const SizedBox(width: 12),
+            Text(label, style: theme.textTheme.titleSmall?.copyWith(color: palette.fg1)),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, color: tokens.fg3, size: 20),
           ],
-        ),
+        ],
       ),
+    );
+    // One node for the row, so a screen reader reads "Nothing in progress,
+    // New workout" as one button and can activate it.
+    return ListGroup(
+      children: [label == null ? row : MergeSemantics(child: Semantics(button: true, child: row))],
+    );
+  }
+}
+
+/// A section, or the whole page, that failed to load: what failed and a way to
+/// try again, never the raw error (which names the backend and means nothing
+/// to a lifter). Riverpod retries a failed load on its own for a while; the
+/// row says so, and Retry skips the wait.
+class _LoadFailure extends StatelessWidget {
+  const _LoadFailure({super.key, required this.message, required this.retrying, required this.onRetry});
+
+  final String message;
+  final bool retrying;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = NomorexTokens.of(context);
+    return ListGroup(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
+          child: Row(
+            children: [
+              Icon(Icons.error_outline, size: 18, color: theme.colorScheme.error),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(message, style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.error)),
+                    Text(
+                      retrying ? 'Trying again…' : 'Check your connection, then retry.',
+                      style: tokens.bodySmall.copyWith(color: tokens.fg3),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              TextButton(onPressed: onRetry, child: const Text('Retry')),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

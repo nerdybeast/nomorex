@@ -367,13 +367,11 @@ class _Running extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final tokens = NomorexTokens.of(context);
     final workoutsAsync = ref.watch(inProgressWorkoutsProvider);
     final instancesAsync = ref.watch(currentProgramInstancesProvider);
     final workouts = workoutsAsync.value ?? const <Workout>[];
     final instances = instancesAsync.value ?? const <ProgramInstance>[];
-    final loaded = workoutsAsync.hasValue && instancesAsync.hasValue;
 
     final items = [
       for (final workout in workouts)
@@ -413,8 +411,11 @@ class _Running extends ConsumerWidget {
         ),
     ];
 
+    // Nothing running, nothing shown: Home already says how to start, and an
+    // empty block here would say it a second time on every screen.
+    if (items.isEmpty) return const SizedBox.shrink();
+
     if (collapsed) {
-      if (items.isEmpty) return const SizedBox.shrink();
       return Padding(
         padding: const EdgeInsets.only(top: 10),
         child: DecoratedBox(
@@ -430,9 +431,6 @@ class _Running extends ConsumerWidget {
       );
     }
 
-    // Nothing until both lists load, so the empty line never flashes up
-    // before a running session appears.
-    if (!loaded && items.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: Column(
@@ -442,16 +440,7 @@ class _Running extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
             child: Text('RUNNING', style: tokens.eyebrow.copyWith(color: tokens.palette.fg3)),
           ),
-          if (items.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                'Nothing running. Start a program or workout and it shows up here.',
-                style: theme.textTheme.bodySmall?.copyWith(color: tokens.palette.fg3),
-              ),
-            )
-          else
-            ...items,
+          ...items,
         ],
       ),
     );

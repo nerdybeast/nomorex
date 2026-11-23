@@ -86,7 +86,9 @@ class DashboardEmptyStateCard extends StatelessWidget {
                         minimumSize: const Size(0, NomorexSizes.controlHeightSm),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         textStyle: NomorexTokens.of(context).buttonSmall,
-                      ).copyWith(overlayColor: const WidgetStatePropertyAll(Colors.transparent)),
+                      // bg-3 on hover, press and keyboard focus, like every text button;
+                      // a transparent overlay left focus invisible.
+                      ).copyWith(overlayColor: WidgetStatePropertyAll(palette.bg3)),
                       child: Text(label),
                     ),
                   EmptyStateCtaStyle.button => OutlinedButton(

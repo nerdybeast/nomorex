@@ -72,13 +72,10 @@ class PrCard extends StatelessWidget {
                       dateDisplay,
                       style: theme.textTheme.bodySmall?.copyWith(color: palette.fg3),
                     ),
-                    if (allTimeBest) ...[
-                      const SizedBox(height: 6),
-                      const _AllTimeBestPill(key: Key('pr_card_all_time_best')),
-                    ],
                   ],
                 ),
               ),
+              const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -116,6 +113,13 @@ class PrCard extends StatelessWidget {
                 style: tokens.weightSm.copyWith(color: palette.info),
               ),
             ),
+          ],
+          // Below the row and its estimate (which stays with the load), not in
+          // the name column: the pill can't wrap, and on a narrow phone a long
+          // name beside a "lbs / kg" load leaves that column too thin for it.
+          if (allTimeBest) ...[
+            const SizedBox(height: 6),
+            const _AllTimeBestPill(key: Key('pr_card_all_time_best')),
           ],
           // Full-width rather than tucked into the left column, so a long
           // note wraps across the whole row and the weight/reps column
