@@ -14,6 +14,7 @@ import '../models/workout.dart';
 import '../providers/workouts_provider.dart';
 import '../utils/can_archive_workout.dart';
 import '../utils/confirm_delete_workout_permanently.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 /// Training's Workouts view: search, the Archived toggle and the list. It has
 /// no app bar of its own; `TrainingScreen` supplies one, calling [refresh] and
@@ -71,8 +72,8 @@ class _WorkoutsViewState extends ConsumerState<WorkoutsView> {
         ),
         Expanded(
           child: _showArchived
-              ? _WorkoutList(key: const ValueKey('archived'), workoutsAsync: archivedAsync, archived: true, query: _searchQuery)
-              : _WorkoutList(key: const ValueKey('active'), workoutsAsync: activeAsync, archived: false, query: _searchQuery),
+              ? _WorkoutList(key: const ValueKey('archived'), workoutsAsync: archivedAsync, archived: true, query: _searchQuery, onRetry: () => ref.invalidate(archivedWorkoutsProvider))
+              : _WorkoutList(key: const ValueKey('active'), workoutsAsync: activeAsync, archived: false, query: _searchQuery, onRetry: () => ref.invalidate(workoutsProvider)),
         ),
       ],
     );
@@ -80,7 +81,16 @@ class _WorkoutsViewState extends ConsumerState<WorkoutsView> {
 }
 
 class _WorkoutList extends StatelessWidget {
-  const _WorkoutList({super.key, required this.workoutsAsync, required this.archived, required this.query});
+  const _WorkoutList({
+    super.key,
+    required this.workoutsAsync,
+    required this.archived,
+    required this.query,
+    required this.onRetry,
+  });
+
+  /// Reloads whichever list this is, after a failed load.
+  final VoidCallback onRetry;
 
   final AsyncValue<List<Workout>> workoutsAsync;
   final bool archived;
@@ -88,10 +98,13 @@ class _WorkoutList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return workoutsAsync.when(
+    return workoutsAsync.whenLoaded(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+      error: (_, _) => LoadFailureView(
+        title: archived ? "Couldn't load your archived workouts" : "Couldn't load your workouts",
+        retrying: workoutsAsync.retrying,
+        onRetry: onRetry,
+      ),
       data: (workouts) {
         if (workouts.isEmpty) {
           return ListView(

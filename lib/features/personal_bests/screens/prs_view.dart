@@ -12,6 +12,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/weight_converter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 /// Training's PRs view: search and a card per lift. It has no app bar of its
 /// own; `TrainingScreen` supplies one, calling [refresh] and [isRefreshing]
@@ -61,17 +62,12 @@ class _PrsViewState extends ConsumerState<PrsView> {
             ),
           ),
           Expanded(
-            child: prsAsync.when(
+            child: prsAsync.whenLoaded(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Text(
-                    'Failed to load PRs: $e',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
-                ),
+              error: (_, _) => LoadFailureView(
+                title: "Couldn't load your PRs",
+                retrying: prsAsync.retrying,
+                onRetry: () => ref.invalidate(personalBestsProvider),
               ),
               data: (_) {
                 if (grouped.isEmpty) {

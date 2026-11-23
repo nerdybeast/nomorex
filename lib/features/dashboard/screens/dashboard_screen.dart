@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../ai/providers/ai_import_jobs_provider.dart';
 import '../../ai/widgets/ai_import_jobs_section.dart';
 import '../../../shared/widgets/list_group.dart';
+import '../../../shared/widgets/load_failure.dart';
 import '../../../shared/widgets/pr_card.dart';
 import '../../personal_bests/utils/all_time_best.dart';
 import '../../personal_bests/utils/estimated_pr_label.dart';
@@ -87,25 +88,23 @@ class DashboardScreen extends ConsumerWidget {
       ref.invalidate(aiImportJobsProvider);
     }
 
-    // A failed section's row. Checked before `when()`: while Riverpod retries
-    // a failed load the state is a reload that still holds the error, and
-    // `when()` would show a spinner until the retries run out.
-    final workoutsFailure = _LoadFailure(
+    // A failed section's row; `whenLoaded` shows it while Riverpod retries too.
+    final workoutsFailure = LoadFailureRow(
       message: "Couldn't load workouts in progress",
       retrying: inProgressWorkoutsAsync.retrying,
       onRetry: () => ref.read(inProgressWorkoutsProvider.notifier).refresh(),
     );
-    final runsFailure = _LoadFailure(
+    final runsFailure = LoadFailureRow(
       message: "Couldn't load current programs",
       retrying: instancesAsync.retrying,
       onRetry: () => ref.read(currentProgramInstancesProvider.notifier).refresh(),
     );
-    final prsFailure = _LoadFailure(
+    final prsFailure = LoadFailureRow(
       message: "Couldn't load PRs",
       retrying: prsAsync.retrying,
       onRetry: () => ref.read(personalBestsProvider.notifier).refresh(),
     );
-    final historyFailure = _LoadFailure(
+    final historyFailure = LoadFailureRow(
       message: "Couldn't load recent workouts",
       retrying: finishedWorkoutsAsync.retrying,
       onRetry: () => ref.read(finishedWorkoutsProvider.notifier).refresh(),
@@ -139,7 +138,7 @@ class DashboardScreen extends ConsumerWidget {
         padding: shellListPadding(context),
         children: [
           if (pageFailed) ...[
-            _LoadFailure(
+            LoadFailureRow(
               key: const Key('dashboard_load_failure'),
               message: "Couldn't load Home",
               retrying: sections.any((s) => s.retrying),
@@ -165,7 +164,7 @@ class DashboardScreen extends ConsumerWidget {
             if (shows(inProgressWorkoutsAsync)) ...[
               const _SectionLabel('Workouts in progress'),
               const SizedBox(height: 8),
-              if (inProgressWorkoutsAsync.retrying) workoutsFailure else inProgressWorkoutsAsync.when(
+              inProgressWorkoutsAsync.whenLoaded(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, _) => workoutsFailure,
                 data: (workouts) {
@@ -217,7 +216,7 @@ class DashboardScreen extends ConsumerWidget {
             if (shows(instancesAsync)) ...[
               const _SectionLabel('Current programs'),
               const SizedBox(height: 8),
-              if (instancesAsync.retrying) runsFailure else instancesAsync.when(
+              instancesAsync.whenLoaded(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, _) => runsFailure,
                 data: (instances) {
@@ -255,7 +254,7 @@ class DashboardScreen extends ConsumerWidget {
             if (shows(prsAsync)) ...[
               const _SectionLabel('Recent PRs'),
               const SizedBox(height: 8),
-              if (prsAsync.retrying) prsFailure else prsAsync.when(
+              prsAsync.whenLoaded(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, _) => prsFailure,
                 data: (allPrs) {
@@ -312,7 +311,7 @@ class DashboardScreen extends ConsumerWidget {
             if (shows(finishedWorkoutsAsync)) ...[
               const _SectionLabel('Recent workouts'),
               const SizedBox(height: 8),
-              if (finishedWorkoutsAsync.retrying) historyFailure else finishedWorkoutsAsync.when(
+              finishedWorkoutsAsync.whenLoaded(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, _) => historyFailure,
                 data: (allFinished) {
@@ -401,51 +400,6 @@ class _EmptySection extends StatelessWidget {
     // New workout" as one button and can activate it.
     return ListGroup(
       children: [label == null ? row : MergeSemantics(child: Semantics(button: true, child: row))],
-    );
-  }
-}
-
-/// A section, or the whole page, that failed to load: what failed and a way to
-/// try again, never the raw error (which names the backend and means nothing
-/// to a lifter). Riverpod retries a failed load on its own for a while; the
-/// row says so, and Retry skips the wait.
-class _LoadFailure extends StatelessWidget {
-  const _LoadFailure({super.key, required this.message, required this.retrying, required this.onRetry});
-
-  final String message;
-  final bool retrying;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final tokens = NomorexTokens.of(context);
-    return ListGroup(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
-          child: Row(
-            children: [
-              Icon(Icons.error_outline, size: 18, color: theme.colorScheme.error),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(message, style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.error)),
-                    Text(
-                      retrying ? 'Trying again…' : 'Check your connection, then retry.',
-                      style: tokens.bodySmall.copyWith(color: tokens.fg3),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              TextButton(onPressed: onRetry, child: const Text('Retry')),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

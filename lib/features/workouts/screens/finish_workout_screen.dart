@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/workout_detail_provider.dart';
 import '../widgets/elapsed_timer.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 // By the time this screen is reached, WorkoutDetailScreen has already paused
 // the workout (via the Finish button), freezing the clock server-side — so
@@ -110,9 +111,13 @@ class _FinishWorkoutScreenState extends ConsumerState<FinishWorkoutScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Finish workout')),
-      body: detail.when(
+      body: detail.whenLoaded(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+        error: (_, _) => LoadFailureView(
+          title: "Couldn't load this workout",
+          retrying: detail.retrying,
+          onRetry: () => ref.invalidate(workoutDetailProvider(widget.workoutId)),
+        ),
         data: (workout) {
           if (!_initializedNotes) {
             _notesController.text = workout.sessionNotes ?? '';

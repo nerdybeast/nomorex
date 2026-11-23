@@ -22,6 +22,7 @@ import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/auto_save_field.dart';
 import '../widgets/add_day_dialog.dart';
 import 'edit/program_edit_actions.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 // SetEditor is shared with the workouts feature, so its "Add sets (%)"
 // callback speaks ParsedSet regardless of caller; convert 1:1 to this
@@ -86,7 +87,6 @@ class _ProgramEditScreenState extends ConsumerState<ProgramEditScreen>
   Widget build(BuildContext context) {
     final detail = ref.watch(programDetailProvider(programId));
     final unit = ref.watch(unitPreferenceProvider);
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -98,9 +98,13 @@ class _ProgramEditScreenState extends ConsumerState<ProgramEditScreen>
           ),
         ],
       ),
-      body: detail.when(
+      body: detail.whenLoaded(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+        error: (_, _) => LoadFailureView(
+          title: "Couldn't load this program",
+          retrying: detail.retrying,
+          onRetry: () => ref.invalidate(programDetailProvider(programId)),
+        ),
         data: (program) {
           final notifier = ref.read(programDetailProvider(programId).notifier);
           return ListView(

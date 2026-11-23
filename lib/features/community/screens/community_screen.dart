@@ -10,6 +10,7 @@ import '../../../shared/widgets/responsive_layout.dart';
 import '../providers/community_programs_provider.dart';
 import '../providers/community_workouts_provider.dart';
 import '../widgets/community_cards.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 class CommunityScreen extends ConsumerStatefulWidget {
   const CommunityScreen({super.key});
@@ -121,9 +122,13 @@ class _WorkoutsTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final workoutsAsync = ref.watch(communityWorkoutsProvider);
 
-    return workoutsAsync.when(
+    return workoutsAsync.whenLoaded(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+      error: (_, _) => LoadFailureView(
+          title: "Couldn't load community workouts",
+          retrying: workoutsAsync.retrying,
+          onRetry: () => ref.invalidate(communityWorkoutsProvider),
+        ),
       data: (page) {
         final workouts = page.items;
         if (workouts.isEmpty) {
@@ -180,9 +185,13 @@ class _ProgramsTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final programsAsync = ref.watch(communityProgramsProvider);
 
-    return programsAsync.when(
+    return programsAsync.whenLoaded(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+      error: (_, _) => LoadFailureView(
+          title: "Couldn't load community programs",
+          retrying: programsAsync.retrying,
+          onRetry: () => ref.invalidate(communityProgramsProvider),
+        ),
       data: (page) {
         final programs = page.items;
         if (programs.isEmpty) {

@@ -18,6 +18,7 @@ import '../models/program_instance.dart';
 import '../providers/program_instances_list_provider.dart';
 import '../providers/programs_provider.dart';
 import '../utils/program_progress.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 /// Training's Programs view: search, the Archived toggle and the list. It has
 /// no app bar of its own; `TrainingScreen` supplies one, calling [refresh] and
@@ -75,8 +76,8 @@ class _ProgramsViewState extends ConsumerState<ProgramsView> {
         ),
         Expanded(
           child: _showArchived
-              ? _ProgramList(key: const ValueKey('archived'), programsAsync: archivedAsync, archived: true, query: _searchQuery)
-              : _ProgramList(key: const ValueKey('active'), programsAsync: activeAsync, archived: false, query: _searchQuery),
+              ? _ProgramList(key: const ValueKey('archived'), programsAsync: archivedAsync, archived: true, query: _searchQuery, onRetry: () => ref.invalidate(archivedProgramsProvider))
+              : _ProgramList(key: const ValueKey('active'), programsAsync: activeAsync, archived: false, query: _searchQuery, onRetry: () => ref.invalidate(programsProvider)),
         ),
       ],
     );
@@ -84,7 +85,16 @@ class _ProgramsViewState extends ConsumerState<ProgramsView> {
 }
 
 class _ProgramList extends StatelessWidget {
-  const _ProgramList({super.key, required this.programsAsync, required this.archived, required this.query});
+  const _ProgramList({
+    super.key,
+    required this.programsAsync,
+    required this.archived,
+    required this.query,
+    required this.onRetry,
+  });
+
+  /// Reloads whichever list this is, after a failed load.
+  final VoidCallback onRetry;
 
   final AsyncValue<List<Program>> programsAsync;
   final bool archived;
@@ -92,11 +102,13 @@ class _ProgramList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return programsAsync.when(
+    return programsAsync.whenLoaded(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) =>
-          Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+      error: (_, _) => LoadFailureView(
+        title: archived ? "Couldn't load your archived programs" : "Couldn't load your programs",
+        retrying: programsAsync.retrying,
+        onRetry: onRetry,
+      ),
       data: (programs) {
         if (programs.isEmpty) {
           return ListView(

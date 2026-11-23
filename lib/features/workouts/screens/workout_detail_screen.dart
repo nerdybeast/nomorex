@@ -26,6 +26,7 @@ import '../widgets/elapsed_timer.dart';
 import '../widgets/live_set_row.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../shell/widgets/breadcrumb_title.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 class WorkoutDetailScreen extends ConsumerWidget {
   const WorkoutDetailScreen({super.key, required this.workoutId});
@@ -38,7 +39,6 @@ class WorkoutDetailScreen extends ConsumerWidget {
     final maxesByName = ref.watch(oneRepMaxByNameProvider).asData?.value ?? const {};
     final unit = ref.watch(unitPreferenceProvider);
     final notifier = ref.read(workoutDetailProvider(workoutId).notifier);
-    final colorScheme = Theme.of(context).colorScheme;
     final workout = detail.asData?.value;
     // An archived workout opens read-only: restoring is the only action.
     final showEditIcon =
@@ -72,9 +72,13 @@ class WorkoutDetailScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: detail.when(
+      body: detail.whenLoaded(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+        error: (_, _) => LoadFailureView(
+          title: "Couldn't load this workout",
+          retrying: detail.retrying,
+          onRetry: () => ref.invalidate(workoutDetailProvider(workoutId)),
+        ),
         data: (workout) => ListView(
           padding: contentPadding(context),
           children: [

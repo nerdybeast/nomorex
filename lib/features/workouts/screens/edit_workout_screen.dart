@@ -13,6 +13,7 @@ import '../utils/can_archive_workout.dart';
 import '../widgets/exercise_editor_card.dart';
 import '../widgets/set_editor.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 class EditWorkoutScreen extends ConsumerStatefulWidget {
   const EditWorkoutScreen({super.key, required this.workoutId});
@@ -59,7 +60,6 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen>
     final workoutForArchive = detail.asData?.value;
     final showArchiveIcon = workoutForArchive != null && canArchiveWorkout(workoutForArchive);
 
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -81,9 +81,13 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen>
           ),
         ],
       ),
-      body: detail.when(
+      body: detail.whenLoaded(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+        error: (_, _) => LoadFailureView(
+          title: "Couldn't load this workout",
+          retrying: detail.retrying,
+          onRetry: () => ref.invalidate(workoutDetailProvider(workoutId)),
+        ),
         data: (workout) {
           final notifier = ref.read(workoutDetailProvider(workoutId).notifier);
           return CustomScrollView(

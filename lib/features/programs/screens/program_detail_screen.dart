@@ -27,6 +27,7 @@ import '../widgets/program_stats_chips.dart';
 import '../widgets/start_program_dialog.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../shell/widgets/breadcrumb_title.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 /// Read-only rollup of an authored program (mirrors WorkoutDetailScreen's
 /// read affordances), plus the "Start Program" call to action that
@@ -90,9 +91,14 @@ class ProgramDetailScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: detail.when(
+      body: detail.whenLoaded(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => _LoadError(onRetry: () => ref.invalidate(programDetailProvider(programId))),
+        error: (_, _) => LoadFailureView(
+          title: "Couldn't load this program",
+          retryKey: const Key('program_detail_retry'),
+          retrying: detail.retrying,
+          onRetry: () => ref.invalidate(programDetailProvider(programId)),
+        ),
         data: (program) => ListView(
           padding: contentPadding(context),
           children: [
@@ -488,45 +494,6 @@ class _DescriptionState extends State<_Description> {
           ],
         );
       },
-    );
-  }
-}
-
-/// A program that failed to load: what happened in plain words, and a way to
-/// try again. The raw error isn't shown: it means nothing to a lifter.
-class _LoadError extends StatelessWidget {
-  const _LoadError({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text("Couldn't load this program", style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              'Check your connection and try again.',
-              textAlign: TextAlign.center,
-              style: NomorexTokens.of(context).bodySmall,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              key: const Key('program_detail_retry'),
-              style: NomorexTokens.of(context).secondaryButtonStyle.copyWith(
-                    minimumSize: const WidgetStatePropertyAll(Size(160, NomorexSizes.controlHeightLg)),
-                  ),
-              onPressed: onRetry,
-              child: const Text('Try again'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

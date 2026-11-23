@@ -18,6 +18,7 @@ import '../models/program_set.dart';
 import '../providers/program_detail_provider.dart';
 import '../utils/program_day_brief.dart';
 import '../../shell/widgets/breadcrumb_title.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 /// Read-only preview of a single program day, reached by tapping a day on a
 /// program (yours or a Community one) — once a program runs, the same tap
@@ -47,9 +48,14 @@ class ProgramDayDetailScreen extends ConsumerWidget {
         // The program's name for context; the day itself leads the page.
         title: BreadcrumbTitle(title: detail.asData?.value.name ?? ''),
       ),
-      body: detail.when(
+      body: detail.whenLoaded(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => _LoadError(onRetry: () => ref.invalidate(programDetailProvider(programId))),
+        error: (_, _) => LoadFailureView(
+          title: "Couldn't load this day",
+          retryKey: const Key('program_day_retry'),
+          retrying: detail.retrying,
+          onRetry: () => ref.invalidate(programDetailProvider(programId)),
+        ),
         data: (program) {
           final week = program.weeks.firstWhere((w) => w.days.any((d) => d.id == dayId));
           final day = week.days.firstWhere((d) => d.id == dayId);
@@ -736,39 +742,6 @@ class _QuietState extends StatelessWidget {
           const SizedBox(height: 4),
           Text(message, style: NomorexTokens.of(context).bodySmall),
         ],
-      ),
-    );
-  }
-}
-
-class _LoadError extends StatelessWidget {
-  const _LoadError({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = NomorexTokens.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text("Couldn't load this day", style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text('Check your connection and try again.', textAlign: TextAlign.center, style: tokens.bodySmall),
-            const SizedBox(height: 16),
-            FilledButton(
-              key: const Key('program_day_retry'),
-              style: tokens.secondaryButtonStyle.copyWith(
-                minimumSize: const WidgetStatePropertyAll(Size(160, NomorexSizes.controlHeightLg)),
-              ),
-              onPressed: onRetry,
-              child: const Text('Try again'),
-            ),
-          ],
-        ),
       ),
     );
   }
