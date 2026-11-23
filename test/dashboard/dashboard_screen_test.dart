@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nomorex/features/ai/models/ai_import_limits.dart';
+import 'package:nomorex/features/ai/providers/ai_import_intake_provider.dart';
 import 'package:nomorex/features/dashboard/screens/dashboard_screen.dart';
 import 'package:nomorex/features/workouts/widgets/elapsed_timer.dart';
 import 'package:nomorex/features/personal_bests/models/personal_best.dart';
@@ -10,6 +14,7 @@ import 'package:nomorex/features/programs/models/program_instance.dart';
 import 'package:nomorex/features/programs/providers/program_instances_list_provider.dart';
 import 'package:nomorex/features/programs/utils/program_stats.dart';
 import 'package:nomorex/core/constants/app_constants.dart';
+import 'package:nomorex/core/theme/app_theme.dart';
 import 'package:nomorex/features/programs/models/program.dart';
 import 'package:nomorex/features/programs/providers/programs_provider.dart';
 import 'package:nomorex/features/workouts/models/workout.dart';
@@ -18,6 +23,9 @@ import 'package:nomorex/features/workouts/providers/finished_workouts_provider.d
 import 'package:nomorex/features/workouts/providers/in_progress_workouts_provider.dart';
 import 'package:nomorex/features/profile/providers/profile_provider.dart';
 import 'package:nomorex/shared/widgets/pr_card.dart';
+import 'package:nomorex/shared/widgets/program_instance_card.dart';
+import 'package:nomorex/shared/widgets/recent_workout_card.dart';
+import 'package:nomorex/shared/widgets/workout_in_progress_card.dart';
 
 class _StubPersonalBestsNotifier extends PersonalBestsNotifier {
   @override
@@ -118,6 +126,38 @@ class _StubProgramsNotifier extends ProgramsNotifier {
   Future<List<Program>> build() async => programs;
 }
 
+class _FailingPersonalBestsNotifier extends PersonalBestsNotifier {
+  _FailingPersonalBestsNotifier([this.onRefresh]);
+  final VoidCallback? onRefresh;
+  @override
+  Future<List<PersonalBest>> build() async => throw Exception('PostgrestException: offline');
+  @override
+  Future<void> refresh() async => onRefresh?.call();
+}
+
+class _FailingFinishedWorkoutsNotifier extends FinishedWorkoutsNotifier {
+  @override
+  Future<List<Workout>> build() async => throw Exception('PostgrestException: offline');
+}
+
+/// One PR, so the dashboard isn't a first run and every other section shows
+/// its own empty state.
+final _onePr = PersonalBest(
+  id: 'pr1',
+  userId: 'u1',
+  exerciseId: 'e1',
+  exerciseName: 'Back Squat',
+  weightKg: 100,
+  reps: 1,
+  date: DateTime(2026, 8, 14),
+  updatedAt: DateTime(2026, 8, 14),
+);
+
+class _PendingPersonalBestsNotifier extends PersonalBestsNotifier {
+  @override
+  Future<List<PersonalBest>> build() => Completer<List<PersonalBest>>().future;
+}
+
 void main() {
   testWidgets('shows empty state when no programs are in progress', (
     tester,
@@ -126,7 +166,7 @@ void main() {
       ProviderScope(
         overrides: [
           personalBestsProvider.overrideWith(
-            () => _StubPersonalBestsNotifier(),
+            () => _StubPersonalBestsWithPrsNotifier([_onePr]),
           ),
           currentProgramInstancesProvider.overrideWith(
             () => _EmptyProgramInstancesNotifier(),
@@ -143,7 +183,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('No programs currently in progress.'), findsOneWidget);
+    expect(find.text('No program started'), findsOneWidget);
   });
 
   testWidgets('shows a card for an active program instance', (tester) async {
@@ -181,7 +221,7 @@ void main() {
     expect(find.textContaining('In progress'), findsOneWidget);
     // The card navigates to the instance detail screen, so it carries the
     // app-wide "this row goes somewhere" chevron.
-    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    expect(find.descendant(of: find.byType(ProgramInstanceCard), matching: find.byIcon(Icons.chevron_right)), findsOneWidget);
   });
 
   testWidgets('a program in progress shows its completed-of-total counts', (
@@ -268,7 +308,7 @@ void main() {
       ProviderScope(
         overrides: [
           personalBestsProvider.overrideWith(
-            () => _StubPersonalBestsNotifier(),
+            () => _StubPersonalBestsWithPrsNotifier([_onePr]),
           ),
           currentProgramInstancesProvider.overrideWith(
             () => _EmptyProgramInstancesNotifier(),
@@ -285,7 +325,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('No workouts currently in progress.'), findsOneWidget);
+    expect(find.text('Nothing in progress'), findsOneWidget);
   });
 
   testWidgets('shows a card for an in-progress workout', (tester) async {
@@ -327,7 +367,7 @@ void main() {
     expect(find.text('Push Day'), findsOneWidget);
     expect(find.textContaining('In progress'), findsOneWidget);
     expect(find.byType(ElapsedTimer), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    expect(find.descendant(of: find.byType(WorkoutInProgressCard), matching: find.byIcon(Icons.chevron_right)), findsOneWidget);
   });
 
   testWidgets('shows a card for a paused workout', (tester) async {
@@ -377,7 +417,7 @@ void main() {
       ProviderScope(
         overrides: [
           personalBestsProvider.overrideWith(
-            () => _StubPersonalBestsNotifier(),
+            () => _StubPersonalBestsWithPrsNotifier([_onePr]),
           ),
           currentProgramInstancesProvider.overrideWith(
             () => _EmptyProgramInstancesNotifier(),
@@ -397,12 +437,12 @@ void main() {
     // The taller empty-state cards push the last section below the default
     // test viewport's cache extent, so it isn't built until scrolled into view.
     await tester.dragUntilVisible(
-      find.text('No completed workouts yet.'),
+      find.text('Finished workouts show up here'),
       find.byType(ListView),
       const Offset(0, -300),
     );
 
-    expect(find.text('No completed workouts yet.'), findsOneWidget);
+    expect(find.text('Finished workouts show up here'), findsOneWidget);
   });
 
   testWidgets('shows up to 5 recent workouts, most recently completed first', (
@@ -459,7 +499,7 @@ void main() {
     expect(find.text('Workout 1'), findsOneWidget);
     expect(find.text('Workout 0'), findsNothing);
     // Every recent-workout card navigates to the workout, so each gets a chevron.
-    expect(find.byIcon(Icons.chevron_right), findsNWidgets(5));
+    expect(find.descendant(of: find.byType(RecentWorkoutCard), matching: find.byIcon(Icons.chevron_right)), findsNWidgets(5));
   });
 
   testWidgets('shows the note on a recent PR, clipped to two lines', (
@@ -571,7 +611,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The card navigates, so it carries the chevron.
-    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    expect(find.descendant(of: find.byType(PrCard), matching: find.byIcon(Icons.chevron_right)), findsOneWidget);
 
     await tester.tap(find.byType(PrCard));
     await tester.pumpAndSettle();
@@ -623,34 +663,145 @@ void main() {
     expect(finishedWorkoutsRefreshed, isTrue);
   });
 
-  testWidgets('shows the welcome banner when all four sections are empty', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          personalBestsProvider.overrideWith(
-            () => _StubPersonalBestsNotifier(),
-          ),
-          currentProgramInstancesProvider.overrideWith(
-            () => _EmptyProgramInstancesNotifier(),
-          ),
-          inProgressWorkoutsProvider.overrideWith(
-            () => _EmptyInProgressWorkoutsNotifier(),
-          ),
-          finishedWorkoutsProvider.overrideWith(
-            () => _EmptyFinishedWorkoutsNotifier(),
+  group('first run: getting started replaces the empty sections', () {
+    Future<void> pump(
+      WidgetTester tester, {
+      bool importEnabled = true,
+      List<Program> programs = const [],
+      bool prsFail = false,
+      Size size = const Size(800, 600),
+    }) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final router = GoRouter(
+        initialLocation: '/shell/home',
+        routes: [
+          GoRoute(path: '/shell/home', builder: (_, _) => const DashboardScreen()),
+          for (final (path, label) in [
+            (AppConstants.routeAiImport, 'import-screen'),
+            (AppConstants.routeCommunity, 'community-tab'),
+            (AppConstants.routeProgramNew, 'new-program'),
+            (AppConstants.routePrograms, 'programs-tab'),
+            (AppConstants.routeAddPr, 'add-pr-screen'),
+          ])
+            GoRoute(path: path, builder: (_, _) => Text(label)),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          // A failing section stays failed rather than retrying behind the test.
+          retry: (_, _) => null,
+          overrides: [
+            personalBestsProvider.overrideWith(
+              () => prsFail ? _FailingPersonalBestsNotifier() : _StubPersonalBestsNotifier(),
+            ),
+            currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+            inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
+            finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+            programsProvider.overrideWith(() => _StubProgramsNotifier(programs)),
+            aiImportLimitsProvider.overrideWith(
+              (ref) async => AiImportLimits(
+                maxImages: 10,
+                maxPdfPages: 10,
+                maxImageBytes: 1,
+                maxPdfBytes: 1,
+                enabled: importEnabled,
+              ),
+            ),
+          ],
+          // The app's theme, not stock Material: its full-width buttons are
+          // what a Row around the main action has to cope with.
+          child: MaterialApp.router(theme: AppTheme.dark(), routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> tapKey(WidgetTester tester, String key) async {
+      await tester.ensureVisible(find.byKey(Key(key)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(Key(key)));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('leads with importing a program, and hides the empty sections', (tester) async {
+      await pump(tester);
+
+      expect(find.text('Welcome to NoMoreX'), findsOneWidget);
+      final primary = find.byKey(const Key('get_started_primary'));
+      expect(find.descendant(of: primary, matching: find.text('Import a program')), findsOneWidget);
+      expect(find.text('No program started'), findsNothing);
+      expect(find.text('RECENT PRS'), findsNothing);
+
+      await tapKey(tester, 'get_started_primary');
+      expect(find.text('import-screen'), findsOneWidget);
+    });
+
+    testWidgets('offers Community, building a program and entering maxes', (tester) async {
+      await pump(tester);
+      await tapKey(tester, 'get_started_community');
+      expect(find.text('community-tab'), findsOneWidget);
+
+      await pump(tester);
+      await tapKey(tester, 'get_started_build');
+      expect(find.text('new-program'), findsOneWidget);
+
+      await pump(tester);
+      await tapKey(tester, 'get_started_maxes');
+      expect(find.text('add-pr-screen'), findsOneWidget);
+    });
+
+    testWidgets('with imports switched off, Community becomes the main action', (tester) async {
+      await pump(tester, importEnabled: false);
+
+      final primary = find.byKey(const Key('get_started_primary'));
+      expect(find.descendant(of: primary, matching: find.text('Find a program in Community')), findsOneWidget);
+      expect(find.text('Import a program'), findsNothing);
+      // Not offered twice.
+      expect(find.byKey(const Key('get_started_community')), findsNothing);
+
+      await tapKey(tester, 'get_started_primary');
+      expect(find.text('community-tab'), findsOneWidget);
+    });
+
+    testWidgets('an owner of programs is offered to start one, not build one', (tester) async {
+      await pump(
+        tester,
+        programs: [
+          Program(
+            id: 'p1',
+            userId: 'u1',
+            name: 'Block 1',
+            createdAt: DateTime(2026, 1, 1),
+            updatedAt: DateTime(2026, 1, 1),
           ),
         ],
-        child: const MaterialApp(home: DashboardScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
 
-    expect(find.text('Welcome to NoMoreX'), findsOneWidget);
+      expect(find.byKey(const Key('get_started_build')), findsNothing);
+      await tapKey(tester, 'get_started_programs');
+      expect(find.text('programs-tab'), findsOneWidget);
+    });
+
+    testWidgets('a section that failed to load still shows its error', (tester) async {
+      // Tall enough that every section is built without scrolling.
+      await pump(tester, prsFail: true, size: const Size(800, 1600));
+
+      expect(find.text('Welcome to NoMoreX'), findsOneWidget);
+      expect(find.text("Couldn't load PRs"), findsOneWidget);
+      // Only the failed section joins getting started, not the empty ones.
+      expect(find.text('Nothing in progress'), findsNothing);
+    });
+
+    testWidgets('fits a phone without overflowing', (tester) async {
+      await pump(tester, size: const Size(360, 740));
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const Key('get_started_maxes')), findsOneWidget);
+    });
   });
 
-  testWidgets('hides the welcome banner when at least one section has data', (
+  testWidgets('getting started is gone once any section has data', (
     tester,
   ) async {
     final instance = ProgramInstance(
@@ -684,6 +835,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Welcome to NoMoreX'), findsNothing);
+    expect(find.byKey(const Key('get_started_primary')), findsNothing);
+    // Titled after its nav item, not "Dashboard".
+    expect(find.widgetWithText(AppBar, 'Home'), findsOneWidget);
+    expect(find.text('CURRENT PROGRAMS'), findsOneWidget);
   });
 
   testWidgets('tapping the Recent PRs empty-state CTA opens Add PR', (
@@ -710,7 +865,16 @@ void main() {
             () => _StubPersonalBestsNotifier(),
           ),
           currentProgramInstancesProvider.overrideWith(
-            () => _EmptyProgramInstancesNotifier(),
+            () => _StubProgramInstancesNotifier([
+              ProgramInstance(
+                id: 'pi1',
+                programId: 'p1',
+                programName: 'Strong Like Bull',
+                userId: 'u1',
+                startedAt: DateTime(2026, 1, 1),
+                status: 'active',
+              ),
+            ]),
           ),
           inProgressWorkoutsProvider.overrideWith(
             () => _EmptyInProgressWorkoutsNotifier(),
@@ -725,16 +889,16 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.dragUntilVisible(
-      find.text('Log your first PR'),
+      find.text('Add a PR'),
       find.byType(ListView),
       const Offset(0, -300),
     );
     // dragUntilVisible stops as soon as any part of the label is on screen,
     // which can leave the button's center (where tap() aims) off the bottom.
-    await tester.ensureVisible(find.text('Log your first PR'));
+    await tester.ensureVisible(find.text('Add a PR'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Log your first PR'));
+    await tester.tap(find.text('Add a PR'));
     await tester.pumpAndSettle();
 
     expect(find.text('add-pr-screen'), findsOneWidget);
@@ -773,7 +937,7 @@ void main() {
           ProviderScope(
             overrides: [
               personalBestsProvider.overrideWith(
-                () => _StubPersonalBestsNotifier(),
+                () => _StubPersonalBestsWithPrsNotifier([_onePr]),
               ),
               currentProgramInstancesProvider.overrideWith(
                 () => _EmptyProgramInstancesNotifier(),
@@ -825,12 +989,12 @@ void main() {
         (tester) async {
           await pump(tester);
 
-          expect(find.text('Create your first workout'), findsOneWidget);
+          expect(find.text('New workout'), findsOneWidget);
           expect(find.text('Browse workouts'), findsNothing);
-          expect(find.text('Create your first program'), findsOneWidget);
-          expect(find.text('Browse programs'), findsNothing);
+          expect(find.text('New program'), findsOneWidget);
+          expect(find.text('Start a program'), findsNothing);
 
-          await tapText(tester, 'Create your first workout');
+          await tapText(tester, 'New workout');
           expect(find.text('new-workout'), findsOneWidget);
         },
       );
@@ -839,7 +1003,7 @@ void main() {
         tester,
       ) async {
         await pump(tester);
-        await tapText(tester, 'Create your first program');
+        await tapText(tester, 'New program');
         expect(find.text('new-program'), findsOneWidget);
       });
 
@@ -849,9 +1013,9 @@ void main() {
         await pump(tester, workouts: [workout], programs: [program]);
 
         expect(find.text('Browse workouts'), findsOneWidget);
-        expect(find.text('Create your first workout'), findsNothing);
-        expect(find.text('Browse programs'), findsOneWidget);
-        expect(find.text('Create your first program'), findsNothing);
+        expect(find.text('New workout'), findsNothing);
+        expect(find.text('Start a program'), findsOneWidget);
+        expect(find.text('New program'), findsNothing);
 
         await tapText(tester, 'Browse workouts');
         expect(find.text('workouts-tab'), findsOneWidget);
@@ -974,5 +1138,136 @@ void main() {
     final cards = tester.widgetList<PrCard>(find.byType(PrCard)).toList();
     expect(cards.map((c) => c.exerciseName), ['Tall Clean', 'Upright Row']);
     expect(cards.first.weightDisplay, '60 kg');
+  });
+
+  group('load failures', () {
+    Future<void> pump(
+      WidgetTester tester, {
+      required PersonalBestsNotifier Function() prs,
+      FinishedWorkoutsNotifier Function()? finished,
+      Duration? Function(int, Object)? retry,
+    }) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          // A failing section stays failed rather than retrying behind the test.
+          retry: retry ?? (_, _) => null,
+          overrides: [
+            personalBestsProvider.overrideWith(prs),
+            currentProgramInstancesProvider.overrideWith(
+              () => _StubProgramInstancesNotifier([
+                ProgramInstance(
+                  id: 'pi1',
+                  programId: 'p1',
+                  programName: 'Strong Like Bull',
+                  userId: 'u1',
+                  startedAt: DateTime(2026, 1, 1),
+                  status: 'active',
+                ),
+              ]),
+            ),
+            inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
+            finishedWorkoutsProvider.overrideWith(finished ?? () => _EmptyFinishedWorkoutsNotifier()),
+          ],
+          child: MaterialApp(theme: AppTheme.dark(), home: const DashboardScreen()),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+    }
+
+    testWidgets('while Riverpod retries, the row says so instead of spinning', (tester) async {
+      await pump(
+        tester,
+        prs: () => _FailingPersonalBestsNotifier(),
+        retry: (count, _) => count < 1 ? const Duration(seconds: 5) : null,
+      );
+
+      expect(find.text("Couldn't load PRs"), findsOneWidget);
+      expect(find.text('Trying again…'), findsOneWidget);
+
+      // The one retry fails too, and the row settles on its final message.
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pump();
+      expect(find.text('Trying again…'), findsNothing);
+      expect(find.text('Check your connection, then retry.'), findsOneWidget);
+    });
+
+    testWidgets('one failed section says what failed, never the raw error, and retries', (tester) async {
+      var retried = 0;
+      await pump(tester, prs: () => _FailingPersonalBestsNotifier(() => retried++));
+
+      expect(find.text("Couldn't load PRs"), findsOneWidget);
+      expect(find.textContaining('PostgrestException'), findsNothing);
+      // The rest of the page is unaffected.
+      expect(find.text('Strong Like Bull'), findsOneWidget);
+
+      await tester.tap(find.text('Retry'));
+      await tester.pump();
+      expect(retried, 1);
+    });
+
+    testWidgets('several failures become one notice for the page', (tester) async {
+      await pump(
+        tester,
+        prs: () => _FailingPersonalBestsNotifier(),
+        finished: () => _FailingFinishedWorkoutsNotifier(),
+      );
+
+      expect(find.byKey(const Key('dashboard_load_failure')), findsOneWidget);
+      expect(find.text("Couldn't load PRs"), findsNothing);
+      expect(find.text("Couldn't load recent workouts"), findsNothing);
+      expect(find.text('RECENT PRS'), findsNothing);
+      expect(find.text('Retry'), findsOneWidget);
+      expect(find.text('Strong Like Bull'), findsOneWidget);
+    });
+  });
+
+  group('accessibility and loading', () {
+    Future<void> pump(WidgetTester tester, {PersonalBestsNotifier Function()? prs}) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            personalBestsProvider.overrideWith(prs ?? () => _StubPersonalBestsWithPrsNotifier([_onePr])),
+            currentProgramInstancesProvider.overrideWith(() => _EmptyProgramInstancesNotifier()),
+            inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
+            finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
+          ],
+          child: MaterialApp(theme: AppTheme.dark(), home: const DashboardScreen()),
+        ),
+      );
+    }
+
+    testWidgets('an empty row is one button a screen reader can activate', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pump(tester);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSemantics(find.text('Nothing in progress')),
+        isSemantics(label: 'Nothing in progress\nNew workout', isButton: true, hasTapAction: true),
+      );
+      handle.dispose();
+    });
+
+    testWidgets('section labels are headings', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pump(tester);
+      await tester.pumpAndSettle();
+
+      expect(tester.getSemantics(find.text('RECENT PRS')), isSemantics(isHeader: true));
+      handle.dispose();
+    });
+
+    testWidgets('until every section answers, one spinner and no section labels', (tester) async {
+      await pump(tester, prs: () => _PendingPersonalBestsNotifier());
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('WORKOUTS IN PROGRESS'), findsNothing);
+      expect(find.text('Welcome to NoMoreX'), findsNothing);
+    });
   });
 }

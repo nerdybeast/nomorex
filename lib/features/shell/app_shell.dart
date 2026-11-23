@@ -72,7 +72,7 @@ class AppShell extends ConsumerWidget {
                         onTap: () => shell.goBranch(i),
                       ),
                     ),
-                  // "New" sits in the bar as a sixth item rather than a FAB, so
+                  // "New" sits in the bar as a fourth item rather than a FAB, so
                   // nothing floats over page content.
                   Expanded(
                     child: _NavItem(
@@ -140,7 +140,7 @@ class _NavItem extends StatelessWidget {
               color: selected ? palette.primaryText : palette.fg3,
             ),
             const SizedBox(height: 4),
-            // Six items share the bar: on a narrow phone "Community" would
+            // Four items share the bar: on a narrow phone "Community" would
             // wrap and overflow, so a label shrinks to one line instead.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),

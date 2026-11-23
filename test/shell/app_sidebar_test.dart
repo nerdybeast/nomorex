@@ -265,13 +265,12 @@ void main() {
     expect(find.text('Admin page'), findsOneWidget);
   });
 
-  testWidgets('Running says so when nothing is running', (tester) async {
+  testWidgets('Running is hidden when nothing is running', (tester) async {
     _setWidth(tester, 1280);
     await _pump(tester);
     await tester.pumpAndSettle();
 
-    expect(_inSidebar('RUNNING'), findsOneWidget);
-    expect(find.textContaining('Nothing running'), findsOneWidget);
+    expect(_inSidebar('RUNNING'), findsNothing);
   });
 
   testWidgets('Running shows a live session and today in a program run, and opens them', (tester) async {
@@ -312,7 +311,7 @@ void main() {
     expect(_inSidebar('Push day'), findsOneWidget);
     expect(_inSidebar('ZT 6 Week Program'), findsOneWidget);
     expect(find.textContaining('Week 1'), findsOneWidget);
-    expect(find.textContaining('Nothing running'), findsNothing);
+    expect(_inSidebar('RUNNING'), findsOneWidget);
 
     await tester.tap(_inSidebar('ZT 6 Week Program'));
     await tester.pump();
