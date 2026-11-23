@@ -9,6 +9,7 @@ import '../providers/finished_workouts_provider.dart';
 import '../utils/workout_timer.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../shell/widgets/breadcrumb_title.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 class WorkoutHistoryScreen extends ConsumerStatefulWidget {
   const WorkoutHistoryScreen({super.key, this.initialGroupId});
@@ -30,13 +31,16 @@ class _WorkoutHistoryScreenState extends ConsumerState<WorkoutHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final historyAsync = ref.watch(finishedWorkoutsProvider);
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const BreadcrumbTitle(title: 'Workout history')),
-      body: historyAsync.when(
+      body: historyAsync.whenLoaded(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+        error: (_, _) => LoadFailureView(
+          title: "Couldn't load your workout history",
+          retrying: historyAsync.retrying,
+          onRetry: () => ref.invalidate(finishedWorkoutsProvider),
+        ),
         data: (all) {
           if (all.isEmpty) {
             return const Center(child: Text("You haven't completed any workouts yet."));

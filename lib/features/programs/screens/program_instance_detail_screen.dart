@@ -18,6 +18,7 @@ import '../widgets/program_day_card.dart';
 import '../widgets/program_stats_chips.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../shell/widgets/breadcrumb_title.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 /// A running (or upcoming) program: the same week/day layout as the
 /// template browse screen, but each day is highlighted if it's today and
@@ -78,18 +79,26 @@ class ProgramInstanceDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: BreadcrumbTitle(title: 'Program', current: instanceAsync.asData?.value.programName),
       ),
-      body: instanceAsync.when(
+      body: instanceAsync.whenLoaded(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+        error: (_, _) => LoadFailureView(
+          title: "Couldn't load this program run",
+          retrying: instanceAsync.retrying,
+          onRetry: () => ref.invalidate(programInstanceDetailProvider(instanceId)),
+        ),
         data: (instance) {
           final programAsync = ref.watch(programDetailProvider(instance.programId));
           final workoutIds =
               ref.watch(programInstanceWorkoutsProvider(instanceId)).asData?.value ?? const {};
           final upcoming = isProgramUpcoming(instance.startedAt);
 
-          return programAsync.when(
+          return programAsync.whenLoaded(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+            error: (_, _) => LoadFailureView(
+          title: "Couldn't load this program",
+          retrying: programAsync.retrying,
+          onRetry: () => ref.invalidate(programDetailProvider(instance.programId)),
+        ),
             data: (program) => ListView(
               padding: contentPadding(context),
               children: [

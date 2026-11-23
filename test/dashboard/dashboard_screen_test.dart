@@ -1192,7 +1192,7 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
       await tester.pump();
       expect(find.text('Trying again…'), findsNothing);
-      expect(find.text('Check your connection, then retry.'), findsOneWidget);
+      expect(find.text('Check your connection and try again.'), findsOneWidget);
     });
 
     testWidgets('one failed section says what failed, never the raw error, and retries', (tester) async {
@@ -1204,7 +1204,7 @@ void main() {
       // The rest of the page is unaffected.
       expect(find.text('Strong Like Bull'), findsOneWidget);
 
-      await tester.tap(find.text('Retry'));
+      await tester.tap(find.text('Try again'));
       await tester.pump();
       expect(retried, 1);
     });
@@ -1220,7 +1220,7 @@ void main() {
       expect(find.text("Couldn't load PRs"), findsNothing);
       expect(find.text("Couldn't load recent workouts"), findsNothing);
       expect(find.text('RECENT PRS'), findsNothing);
-      expect(find.text('Retry'), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
       expect(find.text('Strong Like Bull'), findsOneWidget);
     });
   });

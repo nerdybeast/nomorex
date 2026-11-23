@@ -8,6 +8,7 @@ import '../providers/finished_program_instances_provider.dart';
 import '../widgets/program_stats_chips.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../shell/widgets/breadcrumb_title.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 /// Program runs the user has completed or abandoned, most recent first —
 /// the Programs-page counterpart of the Workout history screen.
@@ -17,13 +18,16 @@ class ProgramHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final historyAsync = ref.watch(finishedProgramInstancesProvider);
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const BreadcrumbTitle(title: 'Program history')),
-      body: historyAsync.when(
+      body: historyAsync.whenLoaded(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: colorScheme.error))),
+        error: (_, _) => LoadFailureView(
+          title: "Couldn't load your program history",
+          retrying: historyAsync.retrying,
+          onRetry: () => ref.invalidate(finishedProgramInstancesProvider),
+        ),
         data: (instances) {
           if (instances.isEmpty) {
             return const Center(child: Text("You haven't completed any programs yet."));

@@ -47,7 +47,35 @@ class _StubPersonalBestsNotifier extends PersonalBestsNotifier {
   Future<List<PersonalBest>> build() async => _items;
 }
 
+class _FailingPersonalBestsNotifier extends PersonalBestsNotifier {
+  static int builds = 0;
+  @override
+  Future<List<PersonalBest>> build() async {
+    builds++;
+    throw Exception('PostgrestException: offline');
+  }
+}
+
 void main() {
+  testWidgets('a failed load says so plainly, and Try again reloads', (tester) async {
+    _FailingPersonalBestsNotifier.builds = 0;
+    await tester.pumpWidget(
+      ProviderScope(
+        retry: (_, _) => null,
+        overrides: [personalBestsProvider.overrideWith(() => _FailingPersonalBestsNotifier())],
+        child: const MaterialApp(home: Scaffold(body: PrsView())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't load your PRs"), findsOneWidget);
+    expect(find.textContaining('PostgrestException'), findsNothing);
+
+    await tester.tap(find.text('Try again'));
+    await tester.pumpAndSettle();
+    expect(_FailingPersonalBestsNotifier.builds, 2);
+  });
+
   testWidgets('no PRs shows an empty-state card with a log-first-PR action', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

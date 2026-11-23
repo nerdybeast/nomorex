@@ -16,6 +16,7 @@ import '../../programs/widgets/start_program_dialog.dart';
 import '../providers/community_program_detail_provider.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../shell/widgets/breadcrumb_title.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 /// Read-only preview of another user's public program, mirroring
 /// [CommunityWorkoutDetailScreen]. The program itself is never editable here;
@@ -43,10 +44,12 @@ class CommunityProgramDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: detail.when(
+      body: detail.whenLoaded(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: colorScheme.error)),
+        error: (_, _) => LoadFailureView(
+          title: "Couldn't load this program",
+          retrying: detail.retrying,
+          onRetry: () => ref.invalidate(communityProgramDetailProvider(programId)),
         ),
         data: (program) {
           final weeks = program.weeks.length;

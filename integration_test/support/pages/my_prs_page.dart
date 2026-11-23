@@ -30,7 +30,7 @@ class MyPrsPage {
     while (DateTime.now().isBefore(deadline)) {
       await tester.pump(const Duration(milliseconds: 100));
       if (empty.evaluate().isNotEmpty || cards.evaluate().isNotEmpty) {
-        expect(find.textContaining('Failed to load PRs'), findsNothing);
+        expect(find.text("Couldn't load your PRs"), findsNothing);
         return;
       }
     }

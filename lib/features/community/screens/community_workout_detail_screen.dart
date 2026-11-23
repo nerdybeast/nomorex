@@ -20,6 +20,7 @@ import '../../../shared/models/one_rep_max.dart';
 import '../providers/community_workout_detail_provider.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../shell/widgets/breadcrumb_title.dart';
+import '../../../shared/widgets/load_failure.dart';
 
 class CommunityWorkoutDetailScreen extends ConsumerWidget {
   const CommunityWorkoutDetailScreen({super.key, required this.workoutId});
@@ -48,10 +49,12 @@ class CommunityWorkoutDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: detail.when(
+      body: detail.whenLoaded(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text('Error: $e', style: TextStyle(color: colorScheme.error)),
+        error: (_, _) => LoadFailureView(
+          title: "Couldn't load this workout",
+          retrying: detail.retrying,
+          onRetry: () => ref.invalidate(communityWorkoutDetailProvider(workoutId)),
         ),
         data: (workout) => ListView(
           padding: contentPadding(context, top: 20, bottom: 20),
