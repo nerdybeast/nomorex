@@ -153,11 +153,11 @@ void main() {
     await _pump(tester, '/shell/training/programs');
     await tester.enterText(find.byKey(const Key('programs_search')), 'zzz');
     await tester.pumpAndSettle();
-    expect(find.text('No programs match your search.'), findsOneWidget);
+    expect(find.text('No programs match "zzz".'), findsOneWidget);
 
     await _choose(tester, TrainingView.workouts);
     await _choose(tester, TrainingView.programs);
-    expect(find.text('No programs match your search.'), findsOneWidget);
+    expect(find.text('No programs match "zzz".'), findsOneWidget);
   });
 
   testWidgets('history in the app bar follows the view, and PRs has none', (tester) async {
@@ -222,6 +222,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Old Block'), findsOneWidget);
     expect(find.text('ZT 6 Week Program'), findsNothing);
-    expect(find.text('Search archived programs...'), findsOneWidget);
+    expect(find.text('Search archived programs…'), findsOneWidget);
   });
 }

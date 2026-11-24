@@ -215,4 +215,90 @@ void main() {
       expect((s.workouts, s.completedWorkouts), (3, 2));
     });
   });
+
+  group('runToday', () {
+    final weeks = [
+      const StatsWeek([
+        StatsDay(id: 'a', dayOffset: 0, isRest: false),
+        StatsDay(id: 'b', dayOffset: 1, isRest: true),
+        StatsDay(id: 'c', dayOffset: 2, isRest: false),
+      ]),
+      const StatsWeek([StatsDay(id: 'd', dayOffset: 7, isRest: false)]),
+    ];
+    final start = DateTime(2026, 11, 2);
+
+    test('finds the week and the day dated today', () {
+      final t = runToday(weeks, start, now: DateTime(2026, 11, 4, 18))!;
+      expect(t.weekIndex, 0);
+      expect(t.weekCount, 2);
+      expect(t.day!.id, 'c');
+      expect(t.dayInWeek, 3);
+    });
+
+    test('a date the week has no day for keeps the week, with no day', () {
+      final t = runToday(weeks, start, now: DateTime(2026, 11, 6))!;
+      expect(t.weekIndex, 0);
+      expect(t.day, isNull);
+    });
+
+    test('the second week starts seven days in', () {
+      final t = runToday(weeks, start, now: DateTime(2026, 11, 9))!;
+      expect(t.weekIndex, 1);
+      expect(t.day!.id, 'd');
+      expect(t.dayInWeek, 1);
+    });
+
+    test('is null before the start and after the last week', () {
+      expect(runToday(weeks, start, now: DateTime(2026, 11, 1)), isNull);
+      expect(runToday(weeks, start, now: DateTime(2026, 11, 16)), isNull);
+    });
+
+    test('a DST change does not move the day', () {
+      // US DST ended on Nov 1, 2026; a run started the day before.
+      final t = runToday(weeks, DateTime(2026, 10, 31), now: DateTime(2026, 11, 2))!;
+      expect(t.day!.id, 'c');
+    });
+  });
+
+  group('daysPerWeekLabel', () {
+    StatsWeek week(int training, {int rest = 0}) => StatsWeek([
+      for (var i = 0; i < training; i++) StatsDay(id: 't$i', dayOffset: i, isRest: false),
+      for (var i = 0; i < rest; i++) StatsDay(id: 'r$i', dayOffset: training + i, isRest: true),
+    ]);
+
+    test('one count when every week matches', () {
+      expect(daysPerWeekLabel([week(5, rest: 2), week(5, rest: 2)]), '5 days/wk');
+      expect(daysPerWeekLabel([week(1, rest: 6)]), '1 day/wk');
+    });
+
+    test('a range when weeks differ, ignoring weeks with no training', () {
+      expect(daysPerWeekLabel([week(4), week(6), week(0, rest: 7), const StatsWeek([])]), '4–6 days/wk');
+    });
+
+    test('null with no training days', () {
+      expect(daysPerWeekLabel([week(0, rest: 7)]), isNull);
+      expect(daysPerWeekLabel(const []), isNull);
+    });
+  });
+
+  group('daysUntilNextTraining', () {
+    final weeks = [
+      const StatsWeek([
+        StatsDay(id: 'a', dayOffset: 0, isRest: false),
+        StatsDay(id: 'b', dayOffset: 1, isRest: true),
+        StatsDay(id: 'c', dayOffset: 2, isRest: true),
+        StatsDay(id: 'd', dayOffset: 3, isRest: false),
+      ]),
+    ];
+    final start = DateTime(2026, 11, 2);
+
+    test('counts days to the next training day, skipping rest days', () {
+      expect(daysUntilNextTraining(weeks, start, now: DateTime(2026, 11, 3)), 2);
+      expect(daysUntilNextTraining(weeks, start, now: DateTime(2026, 11, 4)), 1);
+    });
+
+    test('is null once no training day is left', () {
+      expect(daysUntilNextTraining(weeks, start, now: DateTime(2026, 11, 5)), isNull);
+    });
+  });
 }

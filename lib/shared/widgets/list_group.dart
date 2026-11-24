@@ -24,10 +24,15 @@ class GroupableTile extends StatelessWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     this.color,
     this.margin,
+    this.excludeFromSemantics = false,
   });
 
   final Widget child;
   final VoidCallback? onTap;
+
+  /// Leaves the tap out of the semantics tree, for a row that announces
+  /// itself as one button with its own `Semantics(onTap:)` (`SummaryCard`).
+  final bool excludeFromSemantics;
   final EdgeInsetsGeometry padding;
 
   /// Optional fill, e.g. primary-subtle for today's program day.
@@ -41,6 +46,7 @@ class GroupableTile extends StatelessWidget {
     final palette = NomorexTokens.of(context).palette;
     final content = InkWell(
       onTap: onTap,
+      excludeFromSemantics: excludeFromSemantics,
       hoverColor: palette.bg3,
       highlightColor: palette.bg3,
       splashColor: Colors.transparent,
@@ -80,7 +86,8 @@ class ListGroupHeader extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title.toUpperCase(), style: tokens.eyebrow),
+                  // A heading, so a screen reader can jump between groups.
+                  Semantics(header: true, child: Text(title.toUpperCase(), style: tokens.eyebrow)),
                   if (subtitle != null)
                     Text(
                       subtitle!,

@@ -8,7 +8,7 @@ import 'program.dart';
 const kProgramInstanceSelect =
     '*, programs(name, program_weeks(id, position, week_number, '
     'program_days(id, position, is_rest_day, program_sessions(id, position)))), '
-    'workouts(id, program_day_id, program_session_id, status)';
+    'workouts(id, title, program_day_id, program_session_id, status)';
 
 /// One user's "run" of a program, created when they hit Start. Owns the
 /// batch of materialized workouts (`workouts.program_instance_id`).
@@ -23,6 +23,8 @@ class ProgramInstance {
     this.completedAt,
     this.structure,
     this.workoutStatusByKey = const {},
+    this.workoutIdByKey = const {},
+    this.workoutTitleByKey = const {},
   });
 
   final String id;
@@ -42,6 +44,13 @@ class ProgramInstance {
   /// Each materialized workout's key (`workoutKey`: its session, or its day
   /// when it has none) -> its status.
   final Map<String, String> workoutStatusByKey;
+
+  /// Each materialized workout's key (as in [workoutStatusByKey]) -> its id.
+  final Map<String, String> workoutIdByKey;
+
+  /// Each materialized workout's key -> its title: the day's ("Day 3"), or
+  /// "Day 1 · AM" on a split day (see `start_program`).
+  final Map<String, String> workoutTitleByKey;
 
   bool get isActive => status == 'active';
 
@@ -69,6 +78,59 @@ class ProgramInstance {
       asOf: ended ? end.toLocal() : DateTime.now(),
       ended: ended,
     );
+  }
+
+  /// Where the run stands today (see [runToday]), or null when [structure]
+  /// wasn't loaded, the run hasn't started or its last week has passed.
+  RunToday? get today {
+    final weeks = structure;
+    return weeks == null ? null : runToday(weeks, startedAt);
+  }
+
+  /// The workout to open for today: the first of today's sessions not yet
+  /// finished, or the first one when all are. Null on a rest day, outside
+  /// the run, or when today has no program day.
+  String? get todaysWorkoutId {
+    final day = today?.day;
+    if (day == null || day.isRest) return null;
+    final open = day.keys.where((k) => workoutStatusByKey[k] != 'finished');
+    final key = open.isNotEmpty ? open.first : day.keys.first;
+    return workoutIdByKey[key];
+  }
+
+  /// The title of [todaysWorkoutId]'s workout ("Day 3", "Day 1 · AM").
+  String? get todaysWorkoutTitle {
+    final id = todaysWorkoutId;
+    if (id == null) return null;
+    for (final e in workoutIdByKey.entries) {
+      if (e.value == id) return workoutTitleByKey[e.key];
+    }
+    return null;
+  }
+
+  /// The run has started and its last week is behind it, but nobody has
+  /// marked it complete: it's still active, with nothing left on the
+  /// calendar.
+  bool get scheduleFinished {
+    final weeks = structure;
+    if (weeks == null || !isActive) return false;
+    final now = DateTime.now();
+    final started = !DateTime(startedAt.year, startedAt.month, startedAt.day)
+        .isAfter(DateTime(now.year, now.month, now.day));
+    return started && runToday(weeks, startedAt) == null;
+  }
+
+  /// Days until the run's next training day after today (1 = tomorrow), or
+  /// null when none is left or [structure] wasn't loaded.
+  int? get daysToNextSession {
+    final weeks = structure;
+    return weeks == null ? null : daysUntilNextTraining(weeks, startedAt);
+  }
+
+  /// Whether every one of today's workouts is finished.
+  bool get todaysWorkoutsDone {
+    final day = today?.day;
+    return day != null && !day.isRest && day.keys.every((k) => workoutStatusByKey[k] == 'finished');
   }
 
   /// Whether [day] earns a check mark (see [isDayChecked]).
@@ -103,6 +165,14 @@ class ProgramInstance {
       workoutStatusByKey: {
         for (final w in rawWorkouts ?? const [])
           ?workoutKey(w as Map<String, dynamic>): w['status'] as String,
+      },
+      workoutIdByKey: {
+        for (final w in rawWorkouts ?? const [])
+          ?workoutKey(w as Map<String, dynamic>): w['id'] as String,
+      },
+      workoutTitleByKey: {
+        for (final w in rawWorkouts ?? const [])
+          if ((w as Map<String, dynamic>)['title'] case final String title) ?workoutKey(w): title,
       },
     );
   }

@@ -1,7 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
@@ -16,7 +15,6 @@ import '../models/program_week.dart';
 import '../providers/program_detail_provider.dart';
 import '../providers/program_instance_workouts_provider.dart';
 import '../providers/program_instances_list_provider.dart';
-import '../providers/program_instances_provider.dart';
 import '../providers/programs_provider.dart';
 import '../utils/program_day_summary.dart';
 import '../utils/program_progress.dart';
@@ -24,7 +22,7 @@ import '../utils/program_stats.dart';
 import '../widgets/program_day_card.dart';
 import '../widgets/program_run_status.dart';
 import '../widgets/program_stats_chips.dart';
-import '../widgets/start_program_dialog.dart';
+import '../utils/start_program_flow.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../shell/widgets/breadcrumb_title.dart';
 import '../../../shared/widgets/load_failure.dart';
@@ -35,34 +33,6 @@ import '../../../shared/widgets/load_failure.dart';
 class ProgramDetailScreen extends ConsumerWidget {
   const ProgramDetailScreen({super.key, required this.programId});
   final String programId;
-
-  Future<void> _startProgram(BuildContext context, WidgetRef ref, int? lastDayOffset, int workoutCount) async {
-    final startDate =
-        await showStartProgramDialog(context, lastDayOffset: lastDayOffset, workoutCount: workoutCount);
-    if (startDate == null || !context.mounted) return;
-
-    try {
-      final instanceId =
-          await ref.read(programInstancesProvider.notifier).startProgram(programId, startDate);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Program started')),
-      );
-      context.pushReplacement(AppConstants.routeProgramInstanceDetail(instanceId));
-    } catch (e, st) {
-      // The raw error goes to Sentry, not the screen: it means nothing to a
-      // lifter, and it can carry database details.
-      await Sentry.captureException(e, stackTrace: st);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text("Couldn't start the program. Check your connection and try again."),
-        action: SnackBarAction(
-          label: 'Retry',
-          onPressed: () => _startProgram(context, ref, lastDayOffset, workoutCount),
-        ),
-      ));
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -165,19 +135,14 @@ class ProgramDetailScreen extends ConsumerWidget {
                 ),
               ] else ...[
                 FilledButton.icon(
-                  onPressed: () => _startProgram(
-                    context,
-                    ref,
-                    program.lastDayOffset,
-                    _workoutCount(program),
-                  ),
+                  onPressed: () => startProgramFlow(context, ref, program, replaceRoute: true),
                   icon: const Icon(Icons.play_arrow),
                   label: const Text('Start program'),
                 ),
                 const SizedBox(height: 8),
                 // Starting commits a lot: say so before the dialog does.
                 Text(
-                  'Schedules ${pluralize(_workoutCount(program), 'workout')} from the date you pick.',
+                  'Schedules ${pluralize(programWorkoutCount(program), 'workout')} from the date you pick.',
                   key: const Key('program_start_hint'),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(color: NomorexTokens.of(context).fg3),
@@ -195,9 +160,6 @@ class ProgramDetailScreen extends ConsumerWidget {
 }
 
 /// Training days: each non-rest day becomes one workout when started.
-int _workoutCount(Program program) =>
-    templateStats(program.weeks.map(StatsWeek.fromWeek).toList()).workouts;
-
 /// Today's day of a running program, above everything else it's about to
 /// do: the day (with its TODAY pill) and its lifts, tapping straight into the scheduled
 /// workout. Nothing shows outside the run's dates or for a rest day with

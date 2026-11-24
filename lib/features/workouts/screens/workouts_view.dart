@@ -53,20 +53,24 @@ class _WorkoutsViewState extends ConsumerState<WorkoutsView> {
                 child: TextField(
                   key: const Key('workouts_search'),
                   decoration: InputDecoration(
-                    hintText: _showArchived ? 'Search archived workouts...' : 'Search workouts...',
+                    hintText: _showArchived ? 'Search archived workouts…' : 'Search workouts…',
                     prefixIcon: const Icon(Icons.search),
                     isDense: true,
                   ),
                   onChanged: (v) => setState(() => _searchQuery = v),
                 ),
               ),
-              const SizedBox(width: 8),
-              ArchivedToggle(
-                key: const Key('archived_toggle'),
-                selected: _showArchived,
-                count: archivedAsync.asData?.value.length,
-                onChanged: (v) => setState(() => _showArchived = v),
-              ),
+              // Nothing to switch to while nothing is archived; it comes back
+              // with the first archived workout (and stays while it's on).
+              if (archivedAsync.asData?.value.isNotEmpty != false || _showArchived) ...[
+                const SizedBox(width: 8),
+                ArchivedToggle(
+                  key: const Key('archived_toggle'),
+                  selected: _showArchived,
+                  count: archivedAsync.asData?.value.length,
+                  onChanged: (v) => setState(() => _showArchived = v),
+                ),
+              ],
             ],
           ),
         ),

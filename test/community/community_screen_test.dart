@@ -165,7 +165,7 @@ void main() {
     expect(find.text('1 exercise'), findsOneWidget);
   });
 
-  testWidgets('a program card shows its description, weeks and training days', (tester) async {
+  testWidgets('a program card shows its description, weeks and days a week', (tester) async {
     ProgramDay day(String id, {bool rest = false}) => ProgramDay(
           id: id,
           programWeekId: 'p1-w0',
@@ -197,7 +197,7 @@ void main() {
 
     expect(find.text('Two weeks of heavy squats.'), findsOneWidget);
     expect(find.text('1 week'), findsOneWidget);
-    expect(find.text('2 training days'), findsOneWidget);
+    expect(find.text('2 days/wk'), findsOneWidget);
   });
 
   testWidgets('lists public workouts attributed to their owner', (tester) async {

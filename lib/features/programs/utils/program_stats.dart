@@ -189,3 +189,74 @@ ProgramStats runStats(
 /// `ProgramDay.workoutKeys`.
 String? workoutKey(Map<String, dynamic> workoutRow) =>
     (workoutRow['program_session_id'] ?? workoutRow['program_day_id']) as String?;
+
+/// Where a run stands on one date: the week it's in and, when that date is
+/// one of the program's days, the day.
+class RunToday {
+  const RunToday({required this.weekIndex, required this.weekCount, this.day, this.dayInWeek});
+
+  /// 0-based.
+  final int weekIndex;
+  final int weekCount;
+
+  /// The program day dated today; null on a date the week has no day for
+  /// (a short or empty week).
+  final StatsDay? day;
+
+  /// [day]'s place in its week, 1-based ("Day 3"); null with [day].
+  final int? dayInWeek;
+}
+
+/// Where a run started on [startedAt] stands on [now] (default today), or
+/// null before it starts and after its last week. Days are matched by
+/// `dayOffset`, the same date math as `programDayDate`.
+RunToday? runToday(List<StatsWeek> weeks, DateTime startedAt, {DateTime? now}) {
+  final today = now ?? DateTime.now();
+  // UTC dates so a DST change can't make a day 23 or 25 hours long.
+  final offset = DateTime.utc(today.year, today.month, today.day)
+      .difference(DateTime.utc(startedAt.year, startedAt.month, startedAt.day))
+      .inDays;
+  if (offset < 0) return null;
+  final weekIndex = offset ~/ kMaxDaysPerWeek;
+  if (weekIndex >= weeks.length) return null;
+  final days = weeks[weekIndex].days;
+  for (var i = 0; i < days.length; i++) {
+    if (days[i].dayOffset == offset) {
+      return RunToday(weekIndex: weekIndex, weekCount: weeks.length, day: days[i], dayInWeek: i + 1);
+    }
+  }
+  return RunToday(weekIndex: weekIndex, weekCount: weeks.length);
+}
+
+/// How many days a week a program trains, for a row with no description:
+/// "5 days/wk", or "4–6 days/wk" when its weeks differ. Counts the weeks that
+/// have any training day, so a deload or empty week doesn't drag it down to
+/// zero. Null when the program has no training days yet.
+String? daysPerWeekLabel(List<StatsWeek> weeks) {
+  final counts = [
+    for (final w in weeks)
+      if (w.days.where((d) => !d.isRest).length case final n when n > 0) n,
+  ];
+  if (counts.isEmpty) return null;
+  final low = counts.reduce((a, b) => a < b ? a : b);
+  final high = counts.reduce((a, b) => a > b ? a : b);
+  if (low == high) return '$low ${low == 1 ? 'day' : 'days'}/wk';
+  return '$low–$high days/wk';
+}
+
+/// Days from [now] (default today) to the next training day of a run
+/// started on [startedAt] (1 = tomorrow), or null when none is left. For a
+/// rest day's "next session tomorrow".
+int? daysUntilNextTraining(List<StatsWeek> weeks, DateTime startedAt, {DateTime? now}) {
+  final today = now ?? DateTime.now();
+  final offset = DateTime.utc(today.year, today.month, today.day)
+      .difference(DateTime.utc(startedAt.year, startedAt.month, startedAt.day))
+      .inDays;
+  int? next;
+  for (final w in weeks) {
+    for (final d in w.days) {
+      if (!d.isRest && d.dayOffset > offset && (next == null || d.dayOffset < next)) next = d.dayOffset;
+    }
+  }
+  return next == null ? null : next - offset;
+}
