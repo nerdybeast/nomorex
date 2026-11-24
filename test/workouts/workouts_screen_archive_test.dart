@@ -148,12 +148,10 @@ void main() {
     expect(calls, ['delete c']);
   });
 
-  testWidgets('an empty Archived tab invites archiving', (tester) async {
+  testWidgets('with nothing archived there is no Archived toggle', (tester) async {
     await _pump(tester, active: [_workout('a')]);
     await tester.pumpAndSettle();
-    await _openArchived(tester);
 
-    expect(find.text('No archived workouts'), findsOneWidget);
-    expect(find.text('Workouts you archive show up here.'), findsOneWidget);
+    expect(find.byKey(const Key('archived_toggle')), findsNothing);
   });
 }

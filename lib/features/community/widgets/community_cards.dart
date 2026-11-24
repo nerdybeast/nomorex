@@ -3,6 +3,7 @@ import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/owner_name.dart';
 import '../../../shared/widgets/summary_card.dart';
 import '../../programs/models/program.dart';
+import '../../programs/utils/program_stats.dart';
 import '../../workouts/models/workout.dart';
 
 class CommunityProgramCard extends StatelessWidget {
@@ -13,10 +14,8 @@ class CommunityProgramCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trainingDays = countTrainingDays(
-      program.weeks.map((w) => w.days.map((d) => d.isRestDay)),
-    );
     final description = program.description?.trim();
+    final daysPerWeek = daysPerWeekLabel([for (final w in program.weeks) StatsWeek.fromWeek(w)]);
     return SummaryCard(
       icon: Icons.checklist_outlined,
       title: program.name,
@@ -27,8 +26,8 @@ class CommunityProgramCard extends StatelessWidget {
       onTap: onTap,
       chips: [
         SummaryInfoChip(Icons.calendar_view_week_outlined, pluralize(program.weeks.length, 'week')),
-        if (trainingDays > 0)
-          SummaryInfoChip(Icons.fitness_center_outlined, pluralize(trainingDays, 'training day')),
+        // How many days a week it asks for, as on the Programs list.
+        if (daysPerWeek != null) SummaryInfoChip(Icons.today_outlined, daysPerWeek),
         SummaryInfoChip(Icons.event_outlined, formatDate(program.createdAt)),
       ],
     );

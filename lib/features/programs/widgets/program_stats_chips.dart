@@ -27,3 +27,22 @@ List<SummaryInfoChip> programStatsChips(ProgramStats stats) {
     ],
   ];
 }
+
+/// The facts on a Programs list row, which are about choosing a program
+/// rather than tracking one: how long it is and how many days a week it asks
+/// for ([daysPerWeek], see `daysPerWeekLabel`), plus, for a run, how many of
+/// its workouts are done.
+///
+/// No day count: it includes rest days, so a 6-week program read "37 days",
+/// which looked like an error next to its workouts. [showWeeks] is false
+/// when the run's status line already says "Week 2 of 6".
+List<SummaryInfoChip> programListChips(ProgramStats stats, {String? daysPerWeek, bool showWeeks = true}) => [
+  if (showWeeks) SummaryInfoChip(Icons.calendar_view_week_outlined, pluralize(stats.weeks, 'week')),
+  if (daysPerWeek != null) SummaryInfoChip(Icons.today_outlined, daysPerWeek),
+  if (stats.isRun && stats.workouts > 0)
+    SummaryInfoChip(
+      Icons.fitness_center_outlined,
+      // As on Home; "done" made it wrap on a phone.
+      '${stats.completedWorkouts} of ${pluralize(stats.workouts, 'workout')}',
+    ),
+];

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../personal_bests/screens/prs_view.dart';
 import '../../programs/screens/programs_view.dart';
@@ -118,17 +119,19 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
               onPressed: () => context.push(AppConstants.routeProfile),
             ),
         ],
-        bottom: TabBar(
-          key: const Key('training_view_switcher'),
-          controller: _tabController,
-          tabs: [
-            for (final v in TrainingView.values)
-              Tab(key: Key('training_view_${v.segment}'), text: v.label),
-          ],
-          onTap: (i) {
-            final next = TrainingView.values[i];
-            if (next != view) context.go(next.route);
-          },
+        bottom: _CappedTabBar(
+          tabBar: TabBar(
+            key: const Key('training_view_switcher'),
+            controller: _tabController,
+            tabs: [
+              for (final v in TrainingView.values)
+                Tab(key: Key('training_view_${v.segment}'), text: v.label),
+            ],
+            onTap: (i) {
+              final next = TrainingView.values[i];
+              if (next != view) context.go(next.route);
+            },
+          ),
         ),
       ),
       body: IndexedStack(
@@ -144,6 +147,49 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen>
                 TrainingView.prs => const PrsView(),
               },
         ],
+      ),
+    );
+  }
+}
+
+/// The Training switcher at its specified width: full width on a phone, and
+/// beside the sidebar at most 420px, its labels packed from the page
+/// content's left edge, so three short labels don't float hundreds of pixels
+/// apart. The hairline
+/// under it still spans the page.
+class _CappedTabBar extends StatelessWidget implements PreferredSizeWidget {
+  const _CappedTabBar({required this.tabBar});
+
+  final TabBar tabBar;
+
+  @override
+  Size get preferredSize => tabBar.preferredSize;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isMobile(context)) return tabBar;
+    // Tabs sized to their labels and packed from the start, so "Programs"
+    // begins on the content's left edge instead of centered in a 140px cell.
+    final packed = TabBar(
+      key: tabBar.key,
+      controller: tabBar.controller,
+      tabs: tabBar.tabs,
+      onTap: tabBar.onTap,
+      isScrollable: true,
+      tabAlignment: TabAlignment.start,
+      padding: EdgeInsets.zero,
+      labelPadding: const EdgeInsets.only(right: 32),
+    );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: NomorexTokens.of(context).palette.borderSubtle)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: contentInset(context)),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 420), child: packed),
+        ),
       ),
     );
   }

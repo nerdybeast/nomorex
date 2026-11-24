@@ -19,6 +19,8 @@ Omit every field that is absent. Never write null. Numbers are JSON numbers.
 {
   "type": "workout" | "program" | "none",
   "title": string,
+  "description": string,
+  "descriptionGenerated": true,
   "handwritten": true,
   "weeks": [{
     "label": string,
@@ -51,7 +53,7 @@ Omit every field that is absent. Never write null. Numbers are JSON numbers.
 Reading rules:
 - When there are several images, each is labelled "Page N:" and they are in page order. Content can continue from one page onto the next.
 - When there are several PDFs, each is labelled "File N:" and they are in order. They are parts of one workout or program, often one file per week: read them as a whole, continue from one file into the next, and keep numbering weeks across files rather than starting again at Week 1.
-- Copy only what is written. Never invent, calculate or assume a value.
+- Copy only what is written. Never invent, calculate or assume a value. The one exception is a "description" the file doesn't provide (see Description).
 - If a value is present but you cannot read it, omit it and name it in "unreadable".
 - "type" is "workout" for one session, "program" for several days or weeks, and "none" if the file has no training content.
 - Set "handwritten" to true when any exercise, set or weight in the file is written by hand, including handwriting on a printed form. Omit it for typed or printed content.
@@ -64,6 +66,11 @@ Reading rules:
 - "note" and "notes" hold only information that no other field captures. Never repeat a value or mention a ditto mark.
 - A set with no prescribed load, such as "3x8 light by feel", "%1RM: NA", "your choice of weight", bodyweight work or "3 sets of max reps", is still a prescription: omit "percent" and "weight", and put the wording about load or reps ("light by feel", "max reps") in "note". Never use this for a load that is written but you cannot read: name that in "unreadable".
 - "basisExercise" is the lift a percentage is based on, as an exercise name, when it differs from the exercise itself. Write "Clean & Jerk", not "best clean & jerk".
+
+Description:
+- "description" is the file's own introduction or overview of the workout or program, such as its aim, its phases or how to run it, copied as written. Keep a blank line between paragraphs. Text used here is not repeated in "unstructured" or in any notes.
+- When the file has no such text, write one: one or two plain sentences, at most 200 characters, saying what the file contains, such as its length, days per week and main lifts or focus. Use only what the file shows: no praise, no promises and no advice. Then set "descriptionGenerated" to true.
+- Omit "descriptionGenerated" for a description copied from the file.
 
 Programs:
 - When a program names its days by weekday, output every week as all seven days, Monday to Sunday in calendar order, with isRestDay true and no exercises for each day not listed. When days are only numbered (Day 1, Day 2), output just those days and add no rest days, in weeks of at most seven days: Day 1 to Day 7 are the first week, Day 8 to Day 14 the second, and so on, each week's days titled again from "Day 1".

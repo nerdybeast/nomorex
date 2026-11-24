@@ -397,15 +397,17 @@ Related rows go in one bordered `ListGroup` (`bg-1`, 10px radius, `border-subtle
 
 ### Summary Card
 The row for a workout or program, read top to bottom in priority order:
-- a 32px icon tile (`bg-2`, `border-default`, 6px radius, 18px `fg-2` icon);
+- a 32px icon tile (`bg-2`, `border-default`, 6px radius, 18px `fg-2` icon). A program row's tile carries the program's length instead ("6wk" in `weight-xs`, `fg-2`), with a 2px `fg-2` bar along its foot for the weeks a run has done, so near-identical names still read apart;
 - the name in title-3 (15/600), the thing the row is scanned for;
-- the run state right under it (a running program shows the 8px status dot, orange with a `primary-subtle` halo while in progress and `fg-3` while upcoming, then "In progress · started Nov 1" in caption, state word in `fg-1`);
+- the run state right under it (a running program shows the 8px status dot, orange with a `primary-subtle` halo while in progress and `fg-3` while upcoming or once its schedule has finished, then where it is in caption, "Week 2 of 6", or "Week 2 of 6 · Rest day · next session tomorrow", state word in `fg-1`; after the last week a `fg-2` check replaces the dot, "Schedule finished");
 - an optional `fg-3` caption and badge;
 - a 13px `fg-2` description, clamped to two lines;
-- the facts chips (weeks, days, workouts) 8px below;
+- the facts chips 8px below, each a 14px `fg-3` icon and caption: what a program asks for ("5 days/wk"; its length is on the tile) or, for a run, the workouts done ("8 of 36 workouts"), never a day count that includes rest days;
 - a `fg-3` chevron or the overflow menu.
 
-The Programs list leaves out the created date: the program screen shows it, and the list is sorted by it. Archived rows mute the title to `fg-2` and swap in the archive icon.
+The whole row is one button to a screen reader, named by what it says; the trailing menu or Restore sits beside it as its own control.
+
+The Programs list leaves out the created date: the program screen shows it. It lists current programs first under a CURRENT eyebrow (their rows open the run, and drop the description), then the LIBRARY, most recently run first. A current program's row can end in a foot, under a hairline from the text column: "Today · Day 3" on a training day, or "Complete program" once its schedule is over, each named for its program to a screen reader. One foot takes the page's orange (today's training first); while any program is current, New program is the secondary button. Archived rows mute the title to `fg-2` and swap in the archive icon.
 
 ### Program Weeks
 A program's screen lists its weeks as collapsible sections. Each heading is "Week 1 · <label>" in title-3 (15/600), so the open week's days carry the weight. Under it sits a caption summary ("6 days · 5 workouts") and an `expand_more` chevron that turns to open. Only the week that matters opens: the week holding today for a running program, otherwise week 1. An "Expand all" / "Collapse all" text button sits above the first week. Each day row names its lifts ("Back squat · Clean · Bench  +3 more", `exercisePreview()`), clamped to two lines, and a live run marks today's day with the `primary-subtle` wash and TODAY pill. A live run also leads with that day as its own row above "View progress", tapping straight into the scheduled workout. An unstarted program says what Start does underneath it ("Schedules 30 workouts from the date you pick."). The description above is `fg-2` and clamps at four lines, with a `primary-text` "Show more".

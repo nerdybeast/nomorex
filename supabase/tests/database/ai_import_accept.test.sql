@@ -5,7 +5,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(56);
+select plan(59);
 
 create temp table t on commit drop as
 select (select id from auth.users where email = 'a@a.com') as owner,
@@ -33,6 +33,8 @@ select pg_temp.new_job('10000000-0000-4000-8000-000000000006', 'workout');
 select pg_temp.new_job('10000000-0000-4000-8000-000000000007', 'workout');
 select pg_temp.new_job('10000000-0000-4000-8000-000000000008', 'program');
 select pg_temp.new_job('10000000-0000-4000-8000-000000000009', 'program');
+select pg_temp.new_job('10000000-0000-4000-8000-000000000010', 'workout');
+select pg_temp.new_job('10000000-0000-4000-8000-000000000011', 'program');
 
 -- A custom exercise belonging to another user, which must never be linked.
 insert into public.exercises (id, name, is_predefined, user_id)
@@ -539,6 +541,55 @@ select throws_ok(
 reset role;
 select is((select status from public.ai_import_jobs where id = '10000000-0000-4000-8000-000000000006'::uuid),
   'ready', 'a refused accept leaves the job alone');
+
+-- ---------------------------------------------------------------------------
+-- Description
+-- ---------------------------------------------------------------------------
+
+select set_config('request.jwt.claims',
+  json_build_object('sub', (select owner from t), 'role', 'authenticated')::text, true);
+
+create temp table described_workout on commit drop as
+select ((public.ai_import_accept(
+  '10000000-0000-4000-8000-000000000010'::uuid,
+  $json${
+    "title": "Pgtap described workout",
+    "description": "  Heavy singles.\n\nRest as needed.  ",
+    "descriptionGenerated": true,
+    "weeks": [{"days": [{"isRestDay": false, "notes": "Warm up well", "exercises": []}]}],
+    "unstructured": [{"originalText": "Finisher: sled"}]
+  }$json$::jsonb,
+  '2026-11-09'::date
+) ->> 'workout_id')::uuid) as id;
+grant select on described_workout to authenticated;
+
+select is((select notes from public.workouts where id = (select id from described_workout)),
+  E'Heavy singles.\n\nRest as needed.\n\nWarm up well\nFinisher: sled',
+  'a workout''s description leads its notes, as its own paragraph');
+
+create temp table described_program on commit drop as
+select ((public.ai_import_accept(
+  '10000000-0000-4000-8000-000000000011'::uuid,
+  $json${
+    "title": "Pgtap described program",
+    "description": "A 2-week squat block.",
+    "weeks": [
+      {"days": [{"isRestDay": false, "exercises": []}]},
+      {"days": [{"isRestDay": false, "exercises": []}]}
+    ],
+    "unstructured": [{"location": "Week 9", "originalText": "Deload if tired"}]
+  }$json$::jsonb,
+  '2026-11-09'::date
+) ->> 'program_id')::uuid) as id;
+grant select on described_program to authenticated;
+
+select is((select description from public.programs where id = (select id from described_program)),
+  E'A 2-week squat block.\n\nWeek 9: Deload if tired',
+  'a program''s description comes first, then content that could not be placed');
+
+select is((select description from public.programs where id = (select id from p)),
+  E'Week 9: Deload if tired\nCoach: Sam',
+  'an import with no description saves as before');
 
 select * from finish();
 rollback;

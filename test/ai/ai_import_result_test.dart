@@ -48,6 +48,21 @@ void main() {
   });
 
   group('buildReviewedPayload', () {
+    test('carries the description as edited, and none when cleared', () {
+      final raw = {...workoutResult(), 'description': 'From the sheet.'};
+      expect(AiImportResult.fromJson(raw).description, 'From the sheet.');
+      expect(
+        buildReviewedPayload(raw, title: 'x', description: ' Edited. ', fixes: const {}, unit: 'kg')['description'],
+        'Edited.',
+      );
+      expect(buildReviewedPayload(raw, title: 'x', description: '', fixes: const {}, unit: 'kg')['description'], isNull);
+      expect(
+        buildReviewedPayload(raw, title: 'x', fixes: const {}, unit: 'kg')['description'],
+        'From the sheet.',
+        reason: 'no edit leaves the stored one',
+      );
+    });
+
     Map<String, dynamic> exerciseNamed(Map<String, dynamic> payload, String name, {int week = 0, int day = 0}) =>
         ((payload['weeks'] as List)[week]['days'] as List)[day]['exercises'].firstWhere((e) => e['name'] == name)
             as Map<String, dynamic>;

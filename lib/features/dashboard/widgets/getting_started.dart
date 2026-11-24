@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/responsive_layout.dart';
+import '../../../shared/widgets/start_option_tile.dart';
 import '../../ai/providers/ai_import_intake_provider.dart';
 import '../../shell/nav_section.dart';
 
@@ -34,7 +35,7 @@ class GettingStarted extends ConsumerWidget {
     final theme = Theme.of(context);
     final tokens = NomorexTokens.of(context);
 
-    final community = _StartOption(
+    final community = StartOptionTile(
       key: const Key('get_started_community'),
       icon: NavSection.community.icon,
       title: 'Find a program in Community',
@@ -91,21 +92,21 @@ class GettingStarted extends ConsumerWidget {
           children: [
             if (importEnabled) community,
             hasPrograms
-                ? _StartOption(
+                ? StartOptionTile(
                     key: const Key('get_started_programs'),
                     icon: Icons.checklist_outlined,
                     title: 'Start one of your programs',
                     detail: 'Choose a start date and each training day becomes a workout.',
                     onTap: () => context.go(AppConstants.routePrograms),
                   )
-                : _StartOption(
+                : StartOptionTile(
                     key: const Key('get_started_build'),
                     icon: Icons.checklist_outlined,
                     title: 'Build your own program',
                     detail: 'Lay out the weeks, days and sets yourself.',
                     onTap: () => context.push(AppConstants.routeProgramNew),
                   ),
-            _StartOption(
+            StartOptionTile(
               key: const Key('get_started_maxes'),
               icon: Icons.emoji_events_outlined,
               title: 'Enter your maxes',
@@ -115,68 +116,6 @@ class GettingStarted extends ConsumerWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-/// One way in: icon tile, what it is, why, and a chevron. The whole row is the
-/// target, so there's no separate button inside it.
-class _StartOption extends StatelessWidget {
-  const _StartOption({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.detail,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String detail;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = NomorexTokens.of(context);
-    final palette = tokens.palette;
-    // One node per row: its title and detail read as one button's label.
-    return MergeSemantics(
-      child: Semantics(
-        button: true,
-        child: GroupableTile(
-          onTap: onTap,
-          child: Row(
-            children: [
-              Container(
-                width: NomorexSizes.iconTileSize,
-                height: NomorexSizes.iconTileSize,
-                decoration: BoxDecoration(
-                  color: palette.bg2,
-                  border: Border.all(color: palette.borderDefault),
-                  borderRadius: BorderRadius.circular(NomorexSizes.radiusMd),
-                ),
-                child: ExcludeSemantics(child: Icon(icon, color: palette.fg2, size: 18)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(color: palette.fg1),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(detail, style: tokens.bodySmall),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(Icons.chevron_right, color: tokens.fg3, size: 20),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
