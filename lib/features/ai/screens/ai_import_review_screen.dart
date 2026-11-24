@@ -103,6 +103,7 @@ class _ReviewBody extends ConsumerStatefulWidget {
 
 class _ReviewBodyState extends ConsumerState<_ReviewBody> {
   late final TextEditingController _title = TextEditingController(text: widget.result.title ?? '');
+  late final TextEditingController _description = TextEditingController(text: widget.result.description ?? '');
   late final List<ExerciseToCheck> _toCheck = widget.result.exercisesToCheck;
   late final bool _needsUnit = widget.result.needsUnit;
   final Map<String, ExerciseFix> _fixes = {};
@@ -118,6 +119,7 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
   @override
   void dispose() {
     _title.dispose();
+    _description.dispose();
     super.dispose();
   }
 
@@ -127,7 +129,13 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
       _error = null;
     });
     try {
-      final reviewed = buildReviewedPayload(_result.raw, title: _title.text, fixes: _fixes, unit: _unit);
+      final reviewed = buildReviewedPayload(
+        _result.raw,
+        title: _title.text,
+        description: _description.text,
+        fixes: _fixes,
+        unit: _unit,
+      );
       final saved = await ref.read(aiImportReviewProvider(widget.review.jobId).notifier).accept(reviewed);
       if (!mounted) return;
       final location = saved.programId != null
@@ -229,6 +237,7 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
     final rows = <WidgetBuilder>[
       (_) => _summary(),
       (_) => _titleField(),
+      (_) => _descriptionField(),
       if (_needsUnit) (_) => _unitChoice(),
       if (_toCheck.isNotEmpty) (_) => _exercisesToCheck(),
       if (_result.unstructured.isNotEmpty) (_) => _unstructured(),
@@ -299,6 +308,31 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
       decoration: InputDecoration(
         labelText: 'Title',
         hintText: _result.isProgram ? 'Imported program' : 'Imported workout',
+        counterText: '',
+      ),
+    ),
+  );
+
+  /// What the import saves as the program's description, or as the first
+  /// paragraph of the workout's notes. Says so when the AI wrote it, since
+  /// it wasn't in the file.
+  Widget _descriptionField() => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: TextField(
+      key: const Key('ai_import_review_description'),
+      controller: _description,
+      enabled: !_busy,
+      minLines: 2,
+      maxLines: 6,
+      maxLength: 2000,
+      textCapitalization: TextCapitalization.sentences,
+      decoration: InputDecoration(
+        labelText: 'Description',
+        alignLabelWithHint: true,
+        helperText: _result.descriptionGenerated
+            ? "Written by AI from what it read; your file didn't have one. Edit or clear it."
+            : null,
+        helperMaxLines: 2,
         counterText: '',
       ),
     ),

@@ -100,6 +100,14 @@ export interface ImportResult {
   schemaVersion: 2;
   type: ImportType;
   title?: string;
+  /**
+   * The file's own introduction, or when it has none one the model wrote
+   * from what it read ([descriptionGenerated]). A program saves it as its
+   * description; a workout as the first paragraph of its notes.
+   */
+  description?: string;
+  /** [description] was written by the model, not copied from the file. */
+  descriptionGenerated?: true;
   weeks: ImportWeek[];
   unstructured: UnstructuredItem[];
   flags: {
@@ -602,6 +610,7 @@ export function normalizeResult(
   const allExercises = weeks.flatMap((w) => w.days).flatMap(dayExercises);
   const allSets = allExercises.flatMap((e) => e.sets);
   const title = asText(raw.title);
+  const description = asText(raw.description);
   return {
     kind: 'ok',
     detectedType,
@@ -609,6 +618,8 @@ export function normalizeResult(
       schemaVersion: 2,
       type,
       ...(title ? { title: title.slice(0, 200) } : {}),
+      ...(description ? { description } : {}),
+      ...(description && raw.descriptionGenerated === true ? { descriptionGenerated: true as const } : {}),
       weeks,
       unstructured,
       flags: {

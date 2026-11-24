@@ -460,3 +460,29 @@ Deno.test('one name: active official, then retired official, then the oldest cus
   assertEquals(pick([custom, retired]), 'old');
   assertEquals(pick([newerCustom, custom]), 'mine');
 });
+
+Deno.test("keeps the file's own description, unmarked", () => {
+  const r = ok({ ...workout([{ sets: 3, reps: 5 }]), description: '  Heavy day.\n\nKeep rest short.  ' });
+  assertEquals(r.description, 'Heavy day.\n\nKeep rest short.');
+  assertEquals(r.descriptionGenerated, undefined);
+});
+
+Deno.test('marks a description the model wrote', () => {
+  const r = ok({ ...workout([{ sets: 3, reps: 5 }]), description: 'Squat day.', descriptionGenerated: true });
+  assertEquals(r.description, 'Squat day.');
+  assertEquals(r.descriptionGenerated, true);
+});
+
+Deno.test('a blank or missing description is left out, and so is its mark', () => {
+  const blank = ok({ ...workout([{ sets: 3, reps: 5 }]), description: '   ', descriptionGenerated: true });
+  assertEquals('description' in blank, false);
+  assertEquals('descriptionGenerated' in blank, false);
+  assertEquals('description' in ok(workout([{ sets: 3, reps: 5 }])), false);
+});
+
+Deno.test('a description alone is not training content', () => {
+  assertEquals(
+    normalizeResult({ type: 'none', description: 'A cat photo.' }, CATALOG).kind,
+    'no_workout_found',
+  );
+});

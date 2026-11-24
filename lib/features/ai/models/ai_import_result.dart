@@ -16,11 +16,15 @@ class AiImportResult {
     required this.handwritten,
     required this.raw,
     this.title,
+    this.description,
+    this.descriptionGenerated = false,
   });
 
   factory AiImportResult.fromJson(Map<String, dynamic> json) => AiImportResult(
     type: json['type'] == 'program' ? 'program' : 'workout',
     title: _text(json['title']),
+    description: _text(json['description']),
+    descriptionGenerated: json['descriptionGenerated'] == true,
     weeks: [for (final w in _objects(json['weeks'])) ImportWeek.fromJson(w)],
     unstructured: [for (final u in _objects(json['unstructured'])) UnstructuredItem.fromJson(u)],
     handwritten: (json['flags'] as Map?)?['handwritten'] == true,
@@ -30,6 +34,14 @@ class AiImportResult {
   /// `workout` or `program`: what the user asked for, else what was found.
   final String type;
   final String? title;
+
+  /// The file's own introduction, or one the model wrote when it had none
+  /// ([descriptionGenerated]). Results stored before descriptions have none.
+  final String? description;
+
+  /// [description] was written by the model rather than copied from the file.
+  final bool descriptionGenerated;
+
   final List<ImportWeek> weeks;
 
   /// Content that couldn't be turned into sets, in its original wording.
@@ -303,6 +315,7 @@ class CreateCustomExercise extends ExerciseFix {
 Map<String, dynamic> buildReviewedPayload(
   Map<String, dynamic> raw, {
   required String title,
+  String? description,
   required Map<String, ExerciseFix> fixes,
   String? unit,
 }) {
@@ -347,9 +360,12 @@ Map<String, dynamic> buildReviewedPayload(
   ];
 
   final trimmed = title.trim();
+  final described = description?.trim();
   return {
     ...raw,
     'title': trimmed.isEmpty ? null : trimmed,
+    // As the user left it: cleared means none. Null leaves the stored one.
+    if (described != null) 'description': described.isEmpty ? null : described,
     'weeks': [
       for (final week in _objects(raw['weeks']))
         {

@@ -1,5 +1,5 @@
 import { assertEquals } from 'jsr:@std/assert@1';
-import { catalogLines } from './prompt.ts';
+import { catalogLines, SYSTEM_PROMPT } from './prompt.ts';
 
 Deno.test('the catalog lists active exercises with their aliases, and leaves retired ones out', () => {
   assertEquals(
@@ -11,4 +11,10 @@ Deno.test('the catalog lists active exercises with their aliases, and leaves ret
     ]),
     ['Clean & Jerk (also: C&J, Clean and Jerk)', 'Back Squat', 'Dude Pulls'],
   );
+});
+
+Deno.test('the prompt asks for a description, copied or else written and marked', () => {
+  for (const phrase of ['"description": string', '"descriptionGenerated": true', 'at most 200 characters']) {
+    if (!SYSTEM_PROMPT.includes(phrase)) throw new Error(`prompt is missing ${phrase}`);
+  }
 });

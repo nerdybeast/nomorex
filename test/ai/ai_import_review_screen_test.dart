@@ -176,6 +176,29 @@ void main() {
       expect(jobs.filesRemoved, ['u1/import-j1'], reason: 'the uploads are deleted once saved');
     });
 
+    testWidgets('an AI-written description is labelled, and saves as edited', (tester) async {
+      await pump(
+        tester,
+        readyReview({...programResult(), 'description': 'A squat block.', 'descriptionGenerated': true}),
+      );
+
+      expect(find.text('A squat block.'), findsOneWidget, reason: 'the description field');
+      expect(find.textContaining('Written by AI'), findsOneWidget);
+
+      await tester.enterText(find.byKey(const Key('ai_import_review_description')), 'Coach Sam\'s block.');
+      await tapKey(tester, 'ai_import_review_accept');
+      expect(server.accepted.single['description'], "Coach Sam's block.");
+    });
+
+    testWidgets("a description copied from the file isn't labelled, and clearing it saves none", (tester) async {
+      await pump(tester, readyReview({...programResult(), 'description': 'From the sheet.'}));
+
+      expect(find.textContaining('Written by AI'), findsNothing);
+      await tester.enterText(find.byKey(const Key('ai_import_review_description')), '  ');
+      await tapKey(tester, 'ai_import_review_accept');
+      expect(server.accepted.single['description'], isNull);
+    });
+
     testWidgets('a file deletion that fails doesn\'t fail the save', (tester) async {
       await pump(tester, readyReview(programResult()));
       jobs.removeError = Exception('storage down');
