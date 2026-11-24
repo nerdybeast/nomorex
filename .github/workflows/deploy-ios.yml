@@ -283,3 +283,53 @@ jobs:
           if [ -n "${KEYCHAIN_PATH:-}" ]; then
             security delete-keychain "$KEYCHAIN_PATH" || true
           fi
+
+  # Fills in the build's "What to Test" in TestFlight from the PRs it ships:
+  # every PR merged since the last successful run of this workflow, title plus
+  # the first section of its description (scripts/testflight_whats_new.py).
+  # Its own Linux job because it mostly waits for Apple to list the build.
+  # The build has shipped by now, so a failure here only warns (the run still
+  # counts as successful, which keeps the next build's range from repeating
+  # these PRs).
+  whats-to-test:
+    name: Set TestFlight "What to Test"
+    needs: [determine-version, testflight]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      actions: read        # finding the last successful deploy
+      pull-requests: read  # the PRs in the shipped range
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Write notes from the shipped PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/testflight_whats_new.py notes --sha "$GITHUB_SHA" > "$RUNNER_TEMP/whats-new.txt"
+          {
+            echo '### TestFlight "What to Test"'
+            echo '```'
+            cat "$RUNNER_TEMP/whats-new.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set notes on the build
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+        run: |
+          export ASC_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
+          echo "$APP_STORE_CONNECT_API_KEY_P8" | base64 --decode > "$ASC_KEY_PATH"
+          chmod 600 "$ASC_KEY_PATH"
+          trap 'rm -f "$ASC_KEY_PATH"' EXIT
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet 'pyjwt[crypto]==2.10.1'
+          "$RUNNER_TEMP/venv/bin/python" scripts/testflight_whats_new.py upload \
+            --notes-file "$RUNNER_TEMP/whats-new.txt" \
+            --bundle-id com.nomorex.app.beta \
+            --version "${{ needs.determine-version.outputs.build-name }}" \
+            --build-number "${{ needs.determine-version.outputs.build-number }}"
