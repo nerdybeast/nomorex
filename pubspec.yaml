@@ -48,6 +48,13 @@ dependencies:
   firebase_analytics: ^13.0.1
 
   material_ui: ^1.11.0
+  genkit: ^1.0.3
+  genkit_anthropic: ^1.0.3
+  genkit_openai: ^1.0.3
+  genkit_google_genai: ^1.2.0
+  genkit_chrome: ^0.2.3
+  flutter_secure_storage: ^11.2.0
+  schemantic: ^1.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -79,6 +86,7 @@ flutter:
   assets:
     - assets/fonts/Inter/OFL.txt
     - assets/fonts/JetBrainsMono/OFL.txt
+    - assets/spike/
 
   fonts:
     - family: Inter

@@ -78,3 +78,8 @@ googleServices {
 flutter {
     source = "../.."
 }
+
+// SPIKE (#183): Gemini Nano through the ML Kit GenAI Prompt API.
+dependencies {
+    implementation("com.google.mlkit:genai-prompt:1.0.0-beta5")
+}

@@ -1,0 +1,217 @@
+{
+ "title": "Hammer Block - 4 Day Oly Strength",
+ "days": [
+  {
+   "title": "Day 1 - Squat / Snatch",
+   "exercises": [
+    {
+     "name": "Snatch",
+     "sets": 5,
+     "reps": "2",
+     "load": "70%"
+    },
+    {
+     "name": "Snatch pull",
+     "sets": 4,
+     "reps": "3",
+     "load": "90%"
+    },
+    {
+     "name": "Back squat",
+     "sets": 5,
+     "reps": "5",
+     "load": "75%"
+    },
+    {
+     "name": "Pause front squat",
+     "sets": 3,
+     "reps": "3",
+     "load": "65%"
+    },
+    {
+     "name": "Romanian deadlift",
+     "sets": 3,
+     "reps": "8",
+     "load": "RPE 7"
+    },
+    {
+     "name": "Pull-up",
+     "sets": 3,
+     "reps": "8",
+     "load": ""
+    },
+    {
+     "name": "Plank",
+     "sets": 3,
+     "reps": "45s",
+     "load": ""
+    },
+    {
+     "name": "Back extension",
+     "sets": 3,
+     "reps": "12",
+     "load": ""
+    }
+   ]
+  },
+  {
+   "title": "Day 2 - Press / Clean",
+   "exercises": [
+    {
+     "name": "Power clean",
+     "sets": 5,
+     "reps": "2",
+     "load": "72%"
+    },
+    {
+     "name": "Clean pull",
+     "sets": 4,
+     "reps": "3",
+     "load": "95%"
+    },
+    {
+     "name": "Bench press",
+     "sets": 5,
+     "reps": "5",
+     "load": "72.5%"
+    },
+    {
+     "name": "Push press",
+     "sets": 4,
+     "reps": "4",
+     "load": "70%"
+    },
+    {
+     "name": "Barbell row",
+     "sets": 4,
+     "reps": "8",
+     "load": "RPE 8"
+    },
+    {
+     "name": "Dip",
+     "sets": 3,
+     "reps": "10",
+     "load": ""
+    },
+    {
+     "name": "Farmer carry",
+     "sets": 3,
+     "reps": "40m",
+     "load": ""
+    },
+    {
+     "name": "Hanging leg raise",
+     "sets": 3,
+     "reps": "10",
+     "load": ""
+    }
+   ]
+  },
+  {
+   "title": "Day 3 - Jerk / Front squat",
+   "exercises": [
+    {
+     "name": "Split jerk",
+     "sets": 6,
+     "reps": "2",
+     "load": "75%"
+    },
+    {
+     "name": "Jerk dip",
+     "sets": 3,
+     "reps": "3",
+     "load": "100%"
+    },
+    {
+     "name": "Front squat",
+     "sets": 5,
+     "reps": "3",
+     "load": "80%"
+    },
+    {
+     "name": "Snatch-grip deadlift",
+     "sets": 3,
+     "reps": "4",
+     "load": "85%"
+    },
+    {
+     "name": "Overhead squat",
+     "sets": 3,
+     "reps": "3",
+     "load": "60%"
+    },
+    {
+     "name": "Chin-up",
+     "sets": 3,
+     "reps": "6",
+     "load": ""
+    },
+    {
+     "name": "Ab wheel",
+     "sets": 3,
+     "reps": "10",
+     "load": ""
+    },
+    {
+     "name": "Face pull",
+     "sets": 3,
+     "reps": "15",
+     "load": ""
+    }
+   ]
+  },
+  {
+   "title": "Day 4 - Classic lifts",
+   "exercises": [
+    {
+     "name": "Snatch",
+     "sets": 6,
+     "reps": "1",
+     "load": "80%"
+    },
+    {
+     "name": "Clean and jerk",
+     "sets": 6,
+     "reps": "1",
+     "load": "78%"
+    },
+    {
+     "name": "Back squat",
+     "sets": 3,
+     "reps": "2",
+     "load": "85%"
+    },
+    {
+     "name": "Deadlift",
+     "sets": 3,
+     "reps": "3",
+     "load": "80%"
+    },
+    {
+     "name": "Hang power snatch",
+     "sets": 3,
+     "reps": "3",
+     "load": "60%"
+    },
+    {
+     "name": "Good morning",
+     "sets": 3,
+     "reps": "8",
+     "load": "RPE 6"
+    },
+    {
+     "name": "Side plank",
+     "sets": 3,
+     "reps": "30s",
+     "load": ""
+    },
+    {
+     "name": "Calf raise",
+     "sets": 3,
+     "reps": "15",
+     "load": ""
+    }
+   ]
+  }
+ ]
+}
