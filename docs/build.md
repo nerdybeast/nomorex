@@ -334,6 +334,19 @@ Production will get its own deploy workflow rather than reusing this one.
 1.4.2 builds 312, 313, ...), which TestFlight accepts because the build number
 always goes up.
 
+**What to Test.** After the upload, the `whats-to-test` job fills in the
+build's "What to Test" text (en-US) through the App Store Connect API, using
+the same API key. The text lists every PR merged since the last successful run
+of this workflow, newest first: each PR's title, then the first section of its
+description (Summary / What changes) as plain text. Descriptions are added only
+while the text stays under Apple's 4,000-character limit, so titles are always
+there. The job waits up to 30 minutes for Apple to list the build, and a
+failure only warns, since the build has already shipped. Preview the text
+locally with `python3 scripts/testflight_whats_new.py notes --repo
+nerdybeast/nomorex --sha <commit> --since <last shipped commit>`. Because the
+text comes from the PR description, the description's opening section is what
+testers read, so keep it user-facing.
+
 **Signing uses two certificates.** Both `xcodebuild archive` and
 `xcodebuild -exportArchive` run with `-allowProvisioningUpdates` and an App
 Store Connect API key, so Xcode creates/refreshes provisioning profiles itself
