@@ -118,7 +118,10 @@ trap 'rm -f "$log"' EXIT
 FLAVOR_ARGS=()
 if [[ "$DEVICE" == "macos" ]]; then FLAVOR_ARGS=(--flavor local); fi
 
-flutter test "$TARGET" -d "$DEVICE" ${FLAVOR_ARGS[@]+"${FLAVOR_ARGS[@]}"} "${DART_DEFINES[@]}" > >(tee "$log") 2>&1 &
+# The expanded reporter prints every test and any error raised outside one in
+# full. In CI, flutter test otherwise picks the GitHub reporter, which folds
+# such an error away and leaves only a failed exit code.
+flutter test "$TARGET" -d "$DEVICE" --reporter expanded ${FLAVOR_ARGS[@]+"${FLAVOR_ARGS[@]}"} "${DART_DEFINES[@]}" > >(tee "$log") 2>&1 &
 pid=$!
 (
   sleep "$TIMEOUT"
