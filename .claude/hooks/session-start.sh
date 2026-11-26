@@ -68,15 +68,17 @@ else
 fi
 export PATH="$PATH:$FLUTTER_DIR/bin"
 
-# libsecret came after the first cached setups too: flutter_secure_storage (AI
-# keys, #185) links it, so the Linux desktop app (E2E) doesn't build without it.
-if dpkg -s libsecret-1-dev >/dev/null 2>&1; then
+# These came after the first cached setups too: flutter_secure_storage (AI
+# keys, #185) links libsecret, so the Linux desktop app (E2E) doesn't build
+# without it, and needs an unlocked keyring to run (scripts/with-keyring.sh).
+KEYRING_PKGS=(libsecret-1-dev dbus gnome-keyring)
+if dpkg -s "${KEYRING_PKGS[@]}" >/dev/null 2>&1; then
   :
-elif $SUDO apt-get install -y -q libsecret-1-dev >/dev/null 2>&1 ||
-  { $SUDO apt-get update -q >/dev/null 2>&1 && $SUDO apt-get install -y -q libsecret-1-dev >/dev/null 2>&1; }; then
-  note "libsecret-1-dev installed (setup cache predates it)"
+elif $SUDO apt-get install -y -q "${KEYRING_PKGS[@]}" >/dev/null 2>&1 ||
+  { $SUDO apt-get update -q >/dev/null 2>&1 && $SUDO apt-get install -y -q "${KEYRING_PKGS[@]}" >/dev/null 2>&1; }; then
+  note "${KEYRING_PKGS[*]} installed (setup cache predates them)"
 else
-  note "WARNING: libsecret-1-dev install failed — the Linux E2E build will fail until it's installed"
+  note "WARNING: installing ${KEYRING_PKGS[*]} failed — Linux E2E won't build or run until they're installed"
 fi
 
 # The Dart MCP server came after the first cached setups too. Claude Code
