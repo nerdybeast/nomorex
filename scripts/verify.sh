@@ -72,8 +72,15 @@ fi
 
 if [[ "$RUN_E2E" == true ]]; then
   if need_docker; then
-    # Linux desktop needs a display; xvfb provides it (as in CI).
-    stage "E2E (integration_test)" xvfb-run -a ./scripts/e2e.sh linux --reset
+    if [[ "$(uname)" == Darwin ]]; then
+      # Local Mac: the macOS desktop target, which needs no virtual display.
+      stage "E2E (integration_test)" ./scripts/e2e.sh --reset
+    elif command -v xvfb-run >/dev/null 2>&1; then
+      # Linux desktop needs a display; xvfb provides it (as in CI).
+      stage "E2E (integration_test)" xvfb-run -a ./scripts/e2e.sh linux --reset
+    else
+      skip "E2E" "xvfb-run not installed — NOT proven"
+    fi
   else
     skip "E2E" "Docker unavailable — NOT proven"
   fi
