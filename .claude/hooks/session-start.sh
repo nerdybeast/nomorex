@@ -68,6 +68,17 @@ else
 fi
 export PATH="$PATH:$FLUTTER_DIR/bin"
 
+# libsecret came after the first cached setups too: flutter_secure_storage (AI
+# keys, #185) links it, so the Linux desktop app (E2E) doesn't build without it.
+if dpkg -s libsecret-1-dev >/dev/null 2>&1; then
+  :
+elif $SUDO apt-get install -y -q libsecret-1-dev >/dev/null 2>&1 ||
+  { $SUDO apt-get update -q >/dev/null 2>&1 && $SUDO apt-get install -y -q libsecret-1-dev >/dev/null 2>&1; }; then
+  note "libsecret-1-dev installed (setup cache predates it)"
+else
+  note "WARNING: libsecret-1-dev install failed — the Linux E2E build will fail until it's installed"
+fi
+
 # The Dart MCP server came after the first cached setups too. Claude Code
 # launches MCP servers alongside this hook, so building it here can't rescue
 # this session's first connect, but it makes `/mcp` -> reconnect instant
