@@ -6,6 +6,9 @@ import 'package:nomorex/core/theme/app_theme.dart';
 import 'package:nomorex/features/ai/models/ai_import_limits.dart';
 import 'package:nomorex/features/ai/providers/ai_import_intake_provider.dart';
 import 'package:nomorex/features/shell/app_shell.dart';
+import 'package:nomorex/features/ai/core/ai_key_store.dart';
+import '../ai/core/ai_fakes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// The phone shell's bottom bar and its New sheet. The sidebar's New menu is in
 /// app_sidebar_test.
@@ -36,6 +39,9 @@ Future<void> _pump(WidgetTester tester, {bool importEnabled = true}) {
   );
   return tester.pumpWidget(ProviderScope(
     overrides: [
+      // A device that can store keys counts as able to import (it offers
+      // the settings), so "switched off" here also means it can't.
+      aiKeyStoreProvider.overrideWithValue(FakeAiKeyStore(failing: !importEnabled)),
       aiImportLimitsProvider.overrideWith(
         (ref) async => AiImportLimits(
           maxImages: 10,
@@ -51,6 +57,9 @@ Future<void> _pump(WidgetTester tester, {bool importEnabled = true}) {
 }
 
 void main() {
+  // The AI settings read the provider choice from preferences.
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   Future<void> openSheet(WidgetTester tester, {bool importEnabled = true}) async {
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1;

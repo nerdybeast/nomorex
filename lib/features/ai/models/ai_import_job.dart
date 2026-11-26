@@ -15,6 +15,7 @@ class AiImportJob {
     this.detectedType,
     this.failureCode,
     this.finishedAt,
+    this.provider = 'hosted',
   });
 
   factory AiImportJob.fromJson(Map<String, dynamic> json) => AiImportJob(
@@ -26,10 +27,12 @@ class AiImportJob {
     detectedType: json['detected_type'] as String?,
     failureCode: json['failure_code'] as String?,
     finishedAt: json['finished_at'] == null ? null : DateTime.parse(json['finished_at'] as String),
+    provider: json['provider'] as String? ?? 'hosted',
   );
 
   /// The columns [AiImportJob.fromJson] reads.
-  static const columns = 'id, import_id, status, started_at, requested_type, detected_type, failure_code, finished_at';
+  static const columns = 'id, import_id, status, started_at, requested_type, detected_type, failure_code, finished_at, '
+      'provider';
 
   final String id;
   final String importId;
@@ -41,6 +44,10 @@ class AiImportJob {
   final String? detectedType;
   final String? failureCode;
   final DateTime? finishedAt;
+
+  /// Who read it: `hosted` (the `ai` function), or the app itself with the
+  /// lifter's own key (`anthropic`, `openai`, `gemini`) or on device.
+  final String provider;
 
   /// `workout` or `program`: what the user asked for, else what was found.
   String? get type => requestedType ?? detectedType;

@@ -7,6 +7,7 @@ import 'package:nomorex/features/ai/widgets/ai_import_job_alerts.dart';
 import 'package:nomorex/features/ai/widgets/ai_import_jobs_section.dart';
 
 import 'ai_import_job_fakes.dart';
+import 'package:nomorex/features/ai/providers/ai_import_alerts_provider.dart';
 
 void main() {
   late FakeJobServer server;
@@ -163,6 +164,17 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Review page'), findsOneWidget);
       expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('a run whose review the import screen opened itself never alerts', (tester) async {
+      // Another import still processing keeps the subscription that hears it.
+      final container = await pump(tester, [testJob('b', 'processing')]);
+      container.read(importAlertSnackBarsProvider).suppress('a');
+      await serverChanges(tester, [testJob('b', 'processing'), testJob('a', 'ready')]);
+      // Not pumpAndSettle: the processing row's spinner never settles.
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.text('Workout ready to review'), findsOneWidget, reason: 'still on the Home card');
     });
 
     testWidgets('alerts when an import fails, linking to Home', (tester) async {

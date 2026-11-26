@@ -1,6 +1,9 @@
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:genkit/genkit.dart';
 import 'package:nomorex/features/ai/core/ai_key_store.dart';
 import 'package:nomorex/features/ai/core/ai_provider.dart';
+import 'package:nomorex/features/ai/utils/import_file_cache.dart';
+import 'package:nomorex/features/ai/utils/import_file_cache_memory.dart';
 
 /// Keys held in memory. [failing] makes every call fail the way a Linux
 /// device with no keyring does.
@@ -47,3 +50,12 @@ ModelResponse textResponse(String text, {FinishReason finishReason = FinishReaso
   finishReason: finishReason,
   message: Message(role: Role.model, content: [TextPart(text: text)]),
 );
+
+/// What any test touching AI needs instead of the device: keys in memory
+/// ([keys], none by default, so imports take the hosted path or offer the
+/// settings) and imports cached in memory. Tests also need
+/// `SharedPreferences.setMockInitialValues`.
+List<Override> aiDeviceOverrides({FakeAiKeyStore? keys, ImportFileCache? cache}) => [
+  aiKeyStoreProvider.overrideWithValue(keys ?? FakeAiKeyStore()),
+  importFileCacheProvider.overrideWithValue(cache ?? MemoryImportFileCache()),
+];

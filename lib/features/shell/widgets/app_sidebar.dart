@@ -6,7 +6,6 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../admin/providers/current_roles_provider.dart';
-import '../../ai/providers/ai_import_intake_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../programs/models/program_instance.dart';
@@ -16,6 +15,7 @@ import '../../workouts/models/workout.dart';
 import '../../workouts/providers/in_progress_workouts_provider.dart';
 import '../../workouts/widgets/elapsed_timer.dart';
 import '../nav_section.dart';
+import '../../ai/providers/ai_import_path_provider.dart';
 
 /// Everyone is on the free plan today. When paid tiers exist this comes from
 /// the account, and a paid plan shows in `primaryText` instead of `info`.
@@ -172,7 +172,7 @@ class _NewButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = NomorexTokens.of(context);
     final palette = tokens.palette;
-    final importEnabled = ref.watch(aiImportLimitsProvider.select((l) => l.value?.enabled ?? false));
+    final importEnabled = ref.watch(aiImportAvailableProvider);
 
     final items = <Widget>[
       for (final action in kNewItemActions)

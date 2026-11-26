@@ -18,6 +18,9 @@ import 'package:nomorex/shared/widgets/dashboard_empty_state_card.dart';
 import 'package:nomorex/features/ai/models/ai_import_limits.dart';
 import 'package:nomorex/features/ai/providers/ai_import_intake_provider.dart';
 import 'package:nomorex/features/programs/providers/finished_program_instances_provider.dart';
+import 'package:nomorex/features/ai/core/ai_key_store.dart';
+import '../ai/core/ai_fakes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _StubProgramsNotifier extends ProgramsNotifier {
   _StubProgramsNotifier(this._programs);
@@ -145,6 +148,9 @@ Future<void> _pumpList(
     archivedProgramsProvider.overrideWith(() => _StubArchivedProgramsNotifier(const [])),
     currentProgramInstancesProvider.overrideWith(() => _StubRunsNotifier(runs)),
     finishedProgramInstancesProvider.overrideWith(() => _StubFinishedRunsNotifier(finished)),
+    // A device that can store keys counts as able to import (it offers
+    // the settings), so "switched off" here also means it can't.
+    aiKeyStoreProvider.overrideWithValue(FakeAiKeyStore(failing: !importEnabled)),
     aiImportLimitsProvider.overrideWith(
       (ref) async => AiImportLimits(
         maxImages: 10,
@@ -176,6 +182,9 @@ Program _program(String id, String name, {String? description}) => Program(
 );
 
 void main() {
+  // The AI settings read the provider choice from preferences.
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   testWidgets(
     'a program row shows weeks and days a week, never a day count that includes rest days',
     (tester) async {

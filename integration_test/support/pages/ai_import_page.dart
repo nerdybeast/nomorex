@@ -16,6 +16,7 @@ class AiImportPage {
   static final notice = find.byKey(const Key('ai_import_notice'));
   static final chooseImages = find.byKey(const Key('ai_import_choose_images'));
   static final choosePdf = find.byKey(const Key('ai_import_choose_pdf'));
+  static final useOwnKey = find.byKey(const Key('ai_import_use_own_key'));
   static final _noticeOrFiles = find.byWidgetPredicate(
     (w) => w.key == const Key('ai_import_notice') || w.key == const Key('ai_import_choose_images'),
   );
@@ -52,6 +53,20 @@ class AiImportPage {
     await waitFor(tester, chooseImages);
     expect(choosePdf, findsOneWidget);
     expect(notice, findsNothing);
+  }
+
+  /// True when this device already has a key saved, so the screen reads with
+  /// it rather than offering the hosted path. A developer's Mac can, since
+  /// the keychain outlives the app; CI never does.
+  bool get usingOwnKey => find.textContaining('using your key').evaluate().isNotEmpty;
+
+  /// Follows "Have your own AI key? Set it up" from the file choices to the
+  /// AI assistant settings, waiting on [settingsLoaded].
+  Future<void> openOwnKeySettings(Finder settingsLoaded) async {
+    await waitFor(tester, useOwnKey);
+    await tester.tap(useOwnKey);
+    await waitFor(tester, settingsLoaded);
+    await tester.pumpAndSettle();
   }
 
   Future<void> close() async {

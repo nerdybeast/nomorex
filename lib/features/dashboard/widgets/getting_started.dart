@@ -6,15 +6,16 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../../shared/widgets/start_option_tile.dart';
-import '../../ai/providers/ai_import_intake_provider.dart';
 import '../../shell/nav_section.dart';
+import '../../ai/providers/ai_import_path_provider.dart';
 
 /// Home for an account with nothing on the dashboard yet: one main action and
 /// the other ways in, instead of a column of empty sections.
 ///
 /// The main action is importing a program, the fastest way to something
 /// runnable for an athlete who already has one on paper. While imports are
-/// switched off (`ai_import_limits.enabled`) it falls back to Community, so
+/// unavailable (no key can be stored here and the hosted alpha is off) it
+/// falls back to Community, so
 /// the page always has exactly one orange fill.
 class GettingStarted extends ConsumerWidget {
   const GettingStarted({super.key, required this.hasPrograms});
@@ -24,13 +25,11 @@ class GettingStarted extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final limits = ref.watch(aiImportLimitsProvider);
-    // Wait for the switch rather than flashing the fallback first. A failed
-    // read counts as off, the same as the New menu.
-    if (limits.isLoading && !limits.hasValue) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    final importEnabled = limits.value?.enabled ?? false;
+    final path = ref.watch(aiImportPathProvider);
+    // Wait for the settings and the hosted switch rather than flashing the
+    // fallback first.
+    if (path == null) return const Center(child: CircularProgressIndicator());
+    final importEnabled = path != ImportPath.unavailable;
 
     final theme = Theme.of(context);
     final tokens = NomorexTokens.of(context);

@@ -11,6 +11,8 @@ import 'package:nomorex/features/exercises/providers/exercises_provider.dart';
 
 import 'ai_import_job_fakes.dart';
 import 'ai_import_review_fixtures.dart';
+import 'package:nomorex/features/ai/utils/import_file_cache.dart';
+import 'package:nomorex/features/ai/providers/ai_import_intake_provider.dart';
 
 /// What the fake server was asked to do.
 class ReviewServer {
@@ -56,20 +58,44 @@ class FakeExercises extends ExercisesNotifier {
   ];
 }
 
-AiImportReview readyReview(Map<String, dynamic> payload, {String status = 'ready'}) => AiImportReview(
-  jobId: 'j1',
-  importId: 'import-j1',
-  status: status,
-  type: payload['type'] as String,
-  result: status == 'ready' ? AiImportResult.fromJson(payload) : null,
-  acceptedWorkoutId: status == 'accepted' ? 'w-old' : null,
-);
+AiImportReview readyReview(Map<String, dynamic> payload, {String status = 'ready', String provider = 'hosted'}) =>
+    AiImportReview(
+      jobId: 'j1',
+      importId: 'import-j1',
+      status: status,
+      provider: provider,
+      type: payload['type'] as String,
+      result: status == 'ready' ? AiImportResult.fromJson(payload) : null,
+      acceptedWorkoutId: status == 'accepted' ? 'w-old' : null,
+    );
+
+/// Re-runs from this device's copy without reading anything.
+class _RerunIntake extends AiImportIntakeNotifier {
+  final reruns = <(String, String)>[];
+
+  @override
+  ImportIntakeState build() => const ImportIntakeState();
+
+  @override
+  Future<bool> rerunFromCache(String importId, String requestedType) async {
+    reruns.add((importId, requestedType));
+    return true;
+  }
+}
 
 void main() {
   late ReviewServer server;
   late FakeJobServer jobs;
 
-  Future<void> pump(WidgetTester tester, AiImportReview? review, {Size size = const Size(900, 3200)}) async {
+  late _RerunIntake intake;
+
+  Future<void> pump(
+    WidgetTester tester,
+    AiImportReview? review, {
+    Size size = const Size(900, 3200),
+    CachedImport? cached,
+  }) async {
+    intake = _RerunIntake();
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -87,6 +113,7 @@ void main() {
           path: '/ai-import/review/:jobId',
           builder: (_, s) => AiImportReviewScreen(jobId: s.pathParameters['jobId']!),
         ),
+        GoRoute(path: '/ai-import', builder: (_, _) => const Scaffold(body: Text('Import screen'))),
         GoRoute(
           path: '/workouts/:id',
           builder: (_, s) => Scaffold(body: Text('Workout ${s.pathParameters['id']}')),
@@ -103,6 +130,8 @@ void main() {
           ...jobOverrides(jobs, FakeSubscriber()),
           aiImportReviewProvider('j1').overrideWith(() => FakeReviewNotifier(server)),
           exercisesProvider.overrideWith(FakeExercises.new),
+          cachedImportProvider('import-j1').overrideWith((ref) async => cached),
+          aiImportIntakeProvider.overrideWith(() => intake),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -332,6 +361,30 @@ void main() {
 
       expect(find.text("You've reached today's import limit."), findsOneWidget);
       expect(find.text('Week 1'), findsOneWidget);
+    });
+
+    testWidgets("a run with the lifter's key re-runs from this device's copy", (tester) async {
+      await pump(
+        tester,
+        readyReview(programResult(), provider: 'gemini'),
+        cached: CachedImport(importId: 'import-j1', provider: 'gemini', pages: const [], jobId: 'j1'),
+      );
+      expect(find.text('Uses your Gemini key again'), findsOneWidget);
+
+      await tapKey(tester, 'ai_import_review_rerun');
+      expect(find.textContaining('with Gemini, using your key'), findsOneWidget);
+      await tester.tap(find.text('Re-run'));
+      await tester.pumpAndSettle();
+
+      expect(intake.reruns, [('import-j1', 'workout')]);
+      expect(server.reruns, isEmpty, reason: 'never the hosted path');
+      expect(find.text('Import screen'), findsOneWidget);
+    });
+
+    testWidgets("a run with the lifter's key can't be re-run once this device lacks the files", (tester) async {
+      await pump(tester, readyReview(programResult(), provider: 'gemini'));
+      expect(find.byKey(const Key('ai_import_review_rerun')), findsNothing);
+      expect(find.byKey(const Key('ai_import_review_accept')), findsOneWidget);
     });
 
     testWidgets('cancelling the re-run does nothing', (tester) async {

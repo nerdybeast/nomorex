@@ -1,3 +1,5 @@
+import '../utils/import_file_check.dart' show kImportMaxTotalBytes;
+
 /// The file caps from the single `ai_import_limits` row. The server enforces
 /// them; the app reads them so it can refuse a file before uploading it and
 /// name the limit in the message.
@@ -7,6 +9,7 @@ class AiImportLimits {
     required this.maxPdfPages,
     required this.maxImageBytes,
     required this.maxPdfBytes,
+    this.maxTotalBytes = kImportMaxTotalBytes,
     this.maxJobSeconds = 180,
     this.enabled = true,
   });
@@ -24,6 +27,10 @@ class AiImportLimits {
   final int maxPdfPages;
   final int maxImageBytes;
   final int maxPdfBytes;
+
+  /// All files together. Not in the hosted row (it protects the edge
+  /// function's memory); a local run takes its provider's.
+  final int maxTotalBytes;
 
   /// How long a job can possibly run. A job still processing after this is
   /// dead (the worker was killed), even before the cleanup sweep marks it.

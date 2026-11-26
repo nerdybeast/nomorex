@@ -85,16 +85,17 @@ class NewItemAction {
 }
 
 /// What "New" offers, in order. Both menus (the sidebar's and the phone bar's
-/// New sheet) add [kAiImportAction] after these while imports are switched on.
+/// New sheet) add [kAiImportAction] after these while imports are available.
 const kNewItemActions = [
   NewItemAction('New personal best', Icons.emoji_events_outlined, AppConstants.routeAddPr),
   NewItemAction('New workout', Icons.fitness_center_outlined, AppConstants.routeWorkoutNew),
   NewItemAction('New program', Icons.checklist_outlined, AppConstants.routeProgramNew),
 ];
 
-/// The AI import entry at the end of both "New" menus. Shown only while
-/// `ai_import_limits.enabled` is true, so the admin off switch also takes the
-/// feature out of the app.
+/// The AI import entry at the end of both "New" menus. Shown while
+/// `aiImportAvailableProvider` is true: whenever a key can be added on this
+/// device or the hosted alpha is switched on. The admin off switch now only
+/// stops the hosted path; with no key, the import screen offers the settings.
 const kAiImportAction = NewItemAction(
   'Import from photos or PDFs',
   Icons.document_scanner_outlined,

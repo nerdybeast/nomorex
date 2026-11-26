@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
-import '../ai/providers/ai_import_intake_provider.dart';
 import 'nav_section.dart';
+import '../ai/providers/ai_import_path_provider.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
@@ -44,9 +44,9 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isMobile = MediaQuery.sizeOf(context).width < AppConstants.kMobileBreakpoint;
     final colorScheme = Theme.of(context).colorScheme;
-    // Watched rather than read on tap: the limits load lazily, so a read at
-    // tap time could still be loading and leave import out.
-    final importEnabled = ref.watch(aiImportLimitsProvider.select((l) => l.value?.enabled ?? false));
+    // Watched rather than read on tap: the settings and the hosted switch load
+    // lazily, so a read at tap time could still be loading and leave import out.
+    final importEnabled = ref.watch(aiImportAvailableProvider);
 
     if (isMobile) {
       return Scaffold(

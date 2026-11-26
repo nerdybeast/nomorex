@@ -18,6 +18,14 @@ class ImportAlertSnackBars {
     controller.closed.whenComplete(() => _open.remove(entry));
   }
 
+  final _opened = <String>{};
+
+  /// Marks [jobId] as opened already, so it never alerts: the import screen
+  /// opens a run's review itself as soon as the result is saved.
+  void suppress(String jobId) => _opened.add(jobId);
+
+  bool isSuppressed(String jobId) => _opened.contains(jobId);
+
   /// Closes [jobId]'s alert if it's the one on screen. A queued one can't be
   /// closed (ScaffoldMessenger only closes the current snackbar), so it still
   /// shows for its duration.

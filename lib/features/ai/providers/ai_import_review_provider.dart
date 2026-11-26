@@ -25,6 +25,7 @@ class AiImportReview {
     this.result,
     this.acceptedWorkoutId,
     this.acceptedProgramId,
+    this.provider = 'hosted',
   });
 
   factory AiImportReview.fromJson(Map<String, dynamic> json) {
@@ -40,12 +41,13 @@ class AiImportReview {
       result: payload is Map ? AiImportResult.fromJson(Map<String, dynamic>.from(payload)) : null,
       acceptedWorkoutId: json['accepted_workout_id'] as String?,
       acceptedProgramId: json['accepted_program_id'] as String?,
+      provider: json['provider'] as String? ?? 'hosted',
     );
   }
 
   static const columns =
-      'id, import_id, status, requested_type, detected_type, accepted_workout_id, accepted_program_id, '
-      'ai_import_results(payload)';
+      'id, import_id, status, provider, requested_type, detected_type, accepted_workout_id, '
+      'accepted_program_id, ai_import_results(payload)';
 
   final String jobId;
   final String importId;
@@ -57,6 +59,13 @@ class AiImportReview {
   final AiImportResult? result;
   final String? acceptedWorkoutId;
   final String? acceptedProgramId;
+
+  /// `hosted`, or the provider the app read it with (see `AiImportJob.provider`).
+  final String provider;
+
+  /// Read in the app with the lifter's key, so a re-run needs this device's
+  /// copy of the files rather than the uploaded ones.
+  bool get ranOnDevice => provider != 'hosted';
 }
 
 /// Where an accepted import was saved. Exactly one is set.
@@ -81,6 +90,7 @@ class AiImportReviewNotifier extends _$AiImportReviewNotifier {
     final saved = await acceptImport(jobId, reviewed, today);
     ref.read(analyticsProvider).logEvent(AnalyticsEvents.aiImportAccepted, {
       'content_type': saved.programId != null ? 'program' : 'workout',
+      'provider': state.value?.provider ?? 'hosted',
     });
     // Saved, so the uploaded files aren't needed again.
     if (state.value?.importId case final importId?) {
@@ -94,11 +104,17 @@ class AiImportReviewNotifier extends _$AiImportReviewNotifier {
     return saved;
   }
 
-  /// Reads the same files again as [type]. Uses one of the user's imports,
+  /// Reads the same uploaded files again as [type] on the hosted path (a run
+  /// with the lifter's own key re-runs through `rerunFromCache` on the
+  /// import screen instead). Uses one of the user's imports,
   /// and replaces this job, whose result is deleted. Returns the new job ID.
   Future<String> rerunAs(String importId, String type) async {
     final newJobId = await startImport(importId, type);
-    ref.read(analyticsProvider).logEvent(AnalyticsEvents.aiImportStarted, {'requested_type': type, 'rerun': 1});
+    ref.read(analyticsProvider).logEvent(AnalyticsEvents.aiImportStarted, {
+      'requested_type': type,
+      'rerun': 1,
+      'provider': 'hosted',
+    });
     ref.invalidate(aiImportJobsProvider);
     return newJobId;
   }

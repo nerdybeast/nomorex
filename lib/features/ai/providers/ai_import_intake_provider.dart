@@ -1,21 +1,38 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:genkit/genkit.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:import_pipeline/import_pipeline.dart'
+    show CatalogExercise, ImportFile, ImportFileProblem, ImportFileRejected, ImportRunCutOff, ImportRunInvalidOutput,
+        ImportRunNoWorkout, ImportRunOk, ImportRunOutcome, ImportType, runImport;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../auth/providers/auth_provider.dart';
+import '../../exercises/providers/exercises_provider.dart';
+import '../core/ai_provider.dart';
+import '../core/ai_provider_exception.dart';
+import '../core/ai_task.dart';
+import '../core/genkit_provider.dart';
+import '../core/model_router_provider.dart';
 import '../models/ai_import_limits.dart';
+import '../models/import_page.dart';
+import '../utils/import_file_cache.dart';
 import '../utils/genkit_call.dart';
 import '../utils/import_file_check.dart';
 import '../utils/import_file_picker.dart';
 import '../utils/import_image_prep.dart';
 import '../utils/import_messages.dart';
 import 'ai_import_jobs_provider.dart';
+import 'ai_import_path_provider.dart';
 import '../../analytics/analytics.dart';
 import '../../analytics/providers/analytics_provider.dart';
+
+export '../models/import_page.dart';
 
 part 'ai_import_intake_provider.g.dart';
 
@@ -38,21 +55,35 @@ Future<AiImportLimits> aiImportLimits(Ref ref) async {
   return AiImportLimits.fromJson(row);
 }
 
-/// One file in an import, ready to upload.
-class ImportPage {
-  const ImportPage({required this.type, required this.bytes, this.name, this.pdfPages});
+/// Where an import is. The hosted path checks, uploads and starts; a local
+/// run reads in the app ([reading]), then stores the result ([saving]), and
+/// stops at [failed] when it can't finish, with the files kept to try again.
+enum ImportIntakePhase { selecting, preparing, checking, uploading, starting, reading, saving, failed, started }
 
-  final ImportFileType type;
-  final Uint8List bytes;
+/// What the lifter can do about a failed local run, besides discarding it.
+enum ImportFailureAction {
+  /// Read the same files again.
+  tryAgain,
 
-  /// The file's name, when the platform gave one. Shown for PDFs.
-  final String? name;
+  /// The key was refused: open the AI assistant settings.
+  checkKey,
 
-  /// A PDF's page count, or null when it can't be told (and for images).
-  final int? pdfPages;
+  /// Out of credit or quota: try later, or choose another provider.
+  switchProvider,
+
+  /// Nothing to do but discard (no workout found in the files).
+  none,
 }
 
-enum ImportIntakePhase { selecting, preparing, checking, uploading, starting, started }
+/// Why a local run stopped, worded for the lifter. Never the provider's own
+/// error.
+class ImportFailure {
+  const ImportFailure(this.title, this.message, {this.action = ImportFailureAction.tryAgain});
+
+  final String title;
+  final String message;
+  final ImportFailureAction action;
+}
 
 class ImportIntakeState {
   const ImportIntakeState({
@@ -61,6 +92,11 @@ class ImportIntakeState {
     this.uploaded = 0,
     this.error,
     this.jobId,
+    this.importId,
+    this.provider,
+    this.requestedType,
+    this.readingSince,
+    this.failure,
   });
 
   final List<ImportPage> pages;
@@ -72,8 +108,25 @@ class ImportIntakeState {
   /// The last refusal or failure, worded for the user.
   final String? error;
 
-  /// Set once the import has started.
+  /// Set once the import has started (hosted) or its result is saved (local).
   final String? jobId;
+
+  /// A local run's import, set from its first try so retries and the cached
+  /// files share it.
+  final String? importId;
+
+  /// The provider reading a local run, from its first try. Null on the
+  /// hosted path.
+  final CloudAiProvider? provider;
+
+  /// `workout` or `program` when the lifter asked for one (a re-run).
+  final String? requestedType;
+
+  /// When the model call started, for the elapsed time.
+  final DateTime? readingSince;
+
+  /// Why the last local run stopped, while [phase] is failed.
+  final ImportFailure? failure;
 
   /// An import is all PDFs or all images, never a mix.
   bool get isPdf => pages.isNotEmpty && pages.every((p) => p.type == ImportFileType.pdf);
@@ -84,8 +137,13 @@ class ImportIntakeState {
 
   /// Whether every PDF's page count is known, so [pdfPageTotal] is exact.
   bool get pdfPagesKnown => isPdf && pages.every((p) => p.pdfPages != null);
-  bool get isBusy => phase != ImportIntakePhase.selecting && phase != ImportIntakePhase.started;
-  bool get canCancel => phase == ImportIntakePhase.checking || phase == ImportIntakePhase.uploading;
+  bool get isBusy =>
+      phase != ImportIntakePhase.selecting && phase != ImportIntakePhase.started && phase != ImportIntakePhase.failed;
+  bool get canCancel =>
+      phase == ImportIntakePhase.checking || phase == ImportIntakePhase.uploading || phase == ImportIntakePhase.reading;
+
+  /// A local run in flight.
+  bool get isRunningLocally => phase == ImportIntakePhase.reading || phase == ImportIntakePhase.saving;
   int get totalBytes => pages.fold(0, (sum, p) => sum + p.bytes.length);
 
   /// Every change replaces [error]: a message only describes the last action.
@@ -95,12 +153,33 @@ class ImportIntakeState {
     int? uploaded,
     String? error,
     String? jobId,
+    DateTime? readingSince,
+    ImportFailure? failure,
   }) => ImportIntakeState(
     pages: pages ?? this.pages,
     phase: phase ?? this.phase,
     uploaded: uploaded ?? this.uploaded,
     error: error,
     jobId: jobId ?? this.jobId,
+    importId: importId,
+    provider: provider,
+    requestedType: requestedType,
+    readingSince: readingSince ?? this.readingSince,
+    failure: failure,
+  );
+
+  /// A local run of [pages], about to start.
+  ImportIntakeState reading({
+    required String importId,
+    required CloudAiProvider provider,
+    String? requestedType,
+  }) => ImportIntakeState(
+    pages: pages,
+    phase: ImportIntakePhase.reading,
+    importId: importId,
+    provider: provider,
+    requestedType: requestedType,
+    readingSince: DateTime.now(),
   );
 }
 
@@ -112,6 +191,7 @@ class ImportIntakeState {
 @riverpod
 class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
   bool _cancelRequested = false;
+  CancellationController? _localRun;
 
   @override
   ImportIntakeState build() {
@@ -138,7 +218,7 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
 
   Future<void> chooseImages() async {
     if (await _blockedFromAddingImages()) return;
-    final limits = await ref.read(aiImportLimitsProvider.future);
+    final limits = await ref.read(aiImportIntakeLimitsProvider.future);
     final List<XFile> picked;
     try {
       picked = await ref.read(importFilePickerProvider).pickImages(limit: limits.maxImages - state.pages.length);
@@ -156,7 +236,7 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
       state = state.next(error: await _mixMessage('Remove the images to add PDFs.'));
       return;
     }
-    final limits = await ref.read(aiImportLimitsProvider.future);
+    final limits = await ref.read(aiImportIntakeLimitsProvider.future);
     if (state.pages.length >= limits.maxPdfPages) {
       state = state.next(error: 'PDFs can have up to ${limits.maxPdfPages} pages in total.');
       return;
@@ -178,7 +258,7 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
       state = state.next(error: await _mixMessage('Remove the PDFs to add images.'));
       return true;
     }
-    final limits = await ref.read(aiImportLimitsProvider.future);
+    final limits = await ref.read(aiImportIntakeLimitsProvider.future);
     if (state.pages.length >= limits.maxImages) {
       state = state.next(error: 'An import can have up to ${limits.maxImages} images.');
       return true;
@@ -187,7 +267,7 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
   }
 
   Future<String> _mixMessage(String fix) async {
-    final limits = await ref.read(aiImportLimitsProvider.future);
+    final limits = await ref.read(aiImportIntakeLimitsProvider.future);
     return 'An import is either PDFs or up to ${limits.maxImages} images, not both. $fix';
   }
 
@@ -199,7 +279,7 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
       state = state.next(error: await _mixMessage('Remove the PDFs to add images.'));
       return;
     }
-    final limits = await ref.read(aiImportLimitsProvider.future);
+    final limits = await ref.read(aiImportIntakeLimitsProvider.future);
     final room = limits.maxImages - state.pages.length;
     String? error;
     var accepted = picked;
@@ -235,9 +315,9 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
         };
         continue;
       }
-      if (total + bytes.length > kImportMaxTotalBytes) {
+      if (total + bytes.length > limits.maxTotalBytes) {
         error =
-            'An import can be up to ${formatMegabytes(kImportMaxTotalBytes)} in total. '
+            'An import can be up to ${formatMegabytes(limits.maxTotalBytes)} in total. '
             '${_fileName(file, capitalize: true)} wasn\'t added.';
         continue;
       }
@@ -261,7 +341,7 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
       state = state.next(error: await _mixMessage('Remove the images to add PDFs.'));
       return;
     }
-    final limits = await ref.read(aiImportLimitsProvider.future);
+    final limits = await ref.read(aiImportIntakeLimitsProvider.future);
     final sizeLimit = 'PDFs can be up to ${formatMegabytes(limits.maxPdfBytes)}';
     final pageLimit = 'PDFs can have up to ${limits.maxPdfPages} pages in total';
     final sorted = [...picked]..sort((a, b) => compareNatural(a.name, b.name));
@@ -314,9 +394,9 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
             : '$pageLimit, and ${_fileName(file)} would make ${pageTotal + count}. It wasn\'t added.';
         continue;
       }
-      if (total + bytes.length > kImportMaxTotalBytes) {
+      if (total + bytes.length > limits.maxTotalBytes) {
         error =
-            'An import can be up to ${formatMegabytes(kImportMaxTotalBytes)} in total. '
+            'An import can be up to ${formatMegabytes(limits.maxTotalBytes)} in total. '
             '${_fileName(file, capitalize: true)} wasn\'t added.';
         continue;
       }
@@ -349,15 +429,26 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
   // Uploading
   // ---------------------------------------------------------------------------
 
-  /// Asks to stop an upload. The file in flight finishes (Storage uploads
-  /// can't be aborted), then everything uploaded so far is deleted.
+  /// Asks to stop an upload or a local run. An upload's file in flight
+  /// finishes (Storage uploads can't be aborted), then everything uploaded so
+  /// far is deleted. A local run's model call is aborted, and the files stay
+  /// chosen.
   void cancel() {
-    if (state.canCancel) _cancelRequested = true;
+    if (!state.canCancel) return;
+    _cancelRequested = true;
+    _localRun?.cancel('cancelled by the lifter');
+  }
+
+  /// Starts the import on whichever path is open: in the app with the
+  /// lifter's key ([runLocally]) when one is set, else the hosted alpha.
+  Future<void> submit({String? requestedType}) async {
+    if (ref.read(modelForTaskProvider(AiTask.import)) != null) return runLocally(requestedType: requestedType);
+    return submitHosted(requestedType: requestedType);
   }
 
   /// Checks the user may import, uploads every file, then starts the import.
   /// Any failure before the start deletes what was uploaded.
-  Future<void> submit({String? requestedType}) async {
+  Future<void> submitHosted({String? requestedType}) async {
     if (state.pages.isEmpty || state.isBusy) return;
     _cancelRequested = false;
     // Finish (and clean up) even if the screen closes mid-upload.
@@ -432,6 +523,7 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
       ref.read(analyticsProvider).logEvent(AnalyticsEvents.aiImportStarted, {
         'requested_type': requestedType ?? 'auto',
         'rerun': 0,
+        'provider': 'hosted',
       });
       state = ImportIntakeState(phase: ImportIntakePhase.started, jobId: jobId);
       // Home and the Realtime watcher pick the new job up from here.
@@ -467,8 +559,318 @@ class AiImportIntakeNotifier extends _$AiImportIntakeNotifier {
   }
 
   // ---------------------------------------------------------------------------
+  // Running in the app, with the lifter's own key
+  // ---------------------------------------------------------------------------
+
+  /// Reads the chosen files with the lifter's own provider, stores the result
+  /// with `ai_import_save_result` and ends at [ImportIntakePhase.started] with
+  /// the job to review. The files are kept on this device first, so a run that
+  /// fails, is cancelled or is cut short by the app closing can be tried
+  /// again, and a saved one re-run as the other type.
+  ///
+  /// A retry keeps the first try's import, provider choice aside: a new key
+  /// or provider chosen since is used.
+  Future<void> runLocally({String? requestedType}) async {
+    if (state.pages.isEmpty || state.isBusy) return;
+    final route = ref.read(modelForTaskProvider(AiTask.import));
+    final cloud = route?.cloud;
+    if (route == null || cloud == null) {
+      state = state.next(phase: ImportIntakePhase.selecting, error: 'Add an AI key to import.');
+      return;
+    }
+    if (currentUserId() == null) {
+      state = state.next(error: 'Sign in to import files.');
+      return;
+    }
+    requestedType ??= state.requestedType;
+    final importId = state.importId ?? newImportId();
+    final rerun = state.jobId != null;
+    state = state.reading(importId: importId, provider: cloud, requestedType: requestedType);
+    _cancelRequested = false;
+    final controller = _localRun = CancellationController();
+    // Finish (and save) even if the screen closes mid-run.
+    final link = ref.keepAlive();
+    try {
+      await _keepAwake(true);
+      await _cacheQuietly(
+        CachedImport(importId: importId, provider: cloud.id, pages: state.pages, requestedType: requestedType),
+      );
+      ref.read(analyticsProvider).logEvent(AnalyticsEvents.aiImportStarted, {
+        'requested_type': requestedType ?? 'auto',
+        'rerun': rerun ? 1 : 0,
+        'provider': cloud.id,
+      });
+      final outcome = await readFiles(
+        modelName: route.modelName,
+        provider: cloud,
+        pages: state.pages,
+        requestedType: requestedType,
+        cancel: controller.token,
+      );
+      if (controller.isCancelled) throw AiProviderException(AiErrorCode.cancelled, provider: cloud);
+      switch (outcome) {
+        case ImportRunOk(:final result, :final detectedType, :final usage):
+          state = state.next(phase: ImportIntakePhase.saving);
+          final jobId = await saveResult(
+            importId: importId,
+            detectedType: detectedType.name,
+            result: result,
+            provider: cloud,
+            requestedType: requestedType,
+            model: route.modelName,
+            inputTokens: usage?.inputTokens,
+            outputTokens: usage?.outputTokens,
+          );
+          await _cacheQuietly(
+            CachedImport(
+              importId: importId,
+              provider: cloud.id,
+              pages: state.pages,
+              requestedType: requestedType,
+              jobId: jobId,
+            ),
+          );
+          state = ImportIntakeState(
+            phase: ImportIntakePhase.started,
+            jobId: jobId,
+            importId: importId,
+            provider: cloud,
+          );
+          ref.invalidate(aiImportJobsProvider);
+        case ImportRunNoWorkout():
+          _fail(
+            ImportFailure(
+              "We couldn't find a workout or program",
+              '${cloud.label} read the files but found no training in them. Check they are the right files.',
+              action: ImportFailureAction.none,
+            ),
+          );
+        case ImportRunInvalidOutput():
+          _fail(
+            ImportFailure(
+              "The import didn't finish",
+              "${cloud.label}'s answer couldn't be read. Trying again usually works.",
+            ),
+          );
+        case ImportRunCutOff():
+          _fail(
+            ImportFailure(
+              'Too much to read in one go',
+              'There was more in these files than ${cloud.label} can answer at once. '
+                  'Try fewer pages, such as one block or a few weeks at a time.',
+              action: ImportFailureAction.none,
+            ),
+          );
+      }
+    } on ImportFileRejected catch (e) {
+      _fail(ImportFailure("These files can't be read", _rejectionMessage(e, cloud), action: ImportFailureAction.none));
+    } on PostgrestException catch (e) {
+      debugPrint('[ai_import] saving the result failed: ${e.code} ${e.message}');
+      _fail(
+        e.message.startsWith('too_many_pending')
+            ? const ImportFailure(
+                'Too many imports waiting',
+                'You have 20 imports waiting for review. Review or discard one on Home, then try again.',
+              )
+            : const ImportFailure(
+                "The import couldn't be saved",
+                'It was read, but saving it failed. Check your connection and try again.',
+              ),
+      );
+    } catch (e) {
+      final error = controller.isCancelled
+          ? AiProviderException(AiErrorCode.cancelled, provider: cloud)
+          : aiExceptionFrom(e, provider: cloud);
+      if (error.code == AiErrorCode.cancelled) {
+        // Back to the chosen files. Nothing was saved, so nothing is kept.
+        await _removeCachedQuietly(importId);
+        state = ImportIntakeState(pages: state.pages);
+      } else {
+        debugPrint('[ai_import] local run failed: $error');
+        _fail(importFailureFor(error, cloud));
+      }
+    } finally {
+      _localRun = null;
+      await _keepAwake(false);
+      link.close();
+    }
+  }
+
+  /// Offers a run that never finished: the app was closed while it was
+  /// reading. Does nothing once files are chosen or a run is under way.
+  Future<void> restoreUnfinished() async {
+    if (state.pages.isNotEmpty || state.isBusy || state.phase == ImportIntakePhase.started) return;
+    final CachedImport? cached;
+    try {
+      cached = await ref.read(importFileCacheProvider).unfinished();
+    } catch (e) {
+      debugPrint('[ai_import] reading cached imports failed: $e');
+      return;
+    }
+    if (cached == null || state.pages.isNotEmpty || state.isBusy) return;
+    final provider = CloudAiProvider.fromId(cached.provider);
+    final count = cached.pages.length;
+    final what = cached.isPdf ? (count == 1 ? 'PDF' : '$count PDFs') : (count == 1 ? 'photo' : '$count photos');
+    state = ImportIntakeState(
+      pages: cached.pages,
+      phase: ImportIntakePhase.failed,
+      importId: cached.importId,
+      provider: provider,
+      requestedType: cached.requestedType,
+      failure: ImportFailure(
+        'The import stopped',
+        'NoMoreX was closed while ${provider?.label ?? 'the AI'} was reading. Your $what '
+            '${count == 1 ? 'is' : 'are'} still on this device, so you can try again.',
+      ),
+    );
+  }
+
+  /// Reads a saved import's files again as [requestedType], from this
+  /// device's copy. Returns false, changing nothing, when the device no longer
+  /// has them. The new result replaces the import's current one.
+  Future<bool> rerunFromCache(String importId, String requestedType) async {
+    if (state.isBusy) return false;
+    // The screen that asks isn't watching this provider yet.
+    final link = ref.keepAlive();
+    try {
+      final CachedImport? cached;
+      try {
+        cached = await ref.read(importFileCacheProvider).load(importId);
+      } catch (_) {
+        return false;
+      }
+      if (cached == null || state.isBusy) return false;
+      state = ImportIntakeState(
+        pages: cached.pages,
+        importId: cached.importId,
+        provider: CloudAiProvider.fromId(cached.provider),
+        requestedType: requestedType,
+        jobId: cached.jobId,
+      );
+      unawaited(runLocally(requestedType: requestedType));
+      return true;
+    } finally {
+      link.close();
+    }
+  }
+
+  /// From a failed or interrupted run back to its files, to change them
+  /// before trying again. The run keeps its import, so the cached copy is
+  /// replaced on the next try.
+  void backToFiles() {
+    if (state.phase != ImportIntakePhase.failed) return;
+    state = state.next(phase: ImportIntakePhase.selecting);
+  }
+
+  /// Gives up on a failed or interrupted run: its files leave this device.
+  Future<void> discardRun() async {
+    if (state.isBusy) return;
+    final importId = state.importId;
+    state = const ImportIntakeState();
+    if (importId != null) await _removeCachedQuietly(importId);
+  }
+
+  void _fail(ImportFailure failure) => state = state.next(phase: ImportIntakePhase.failed, failure: failure);
+
+  Future<void> _cacheQuietly(CachedImport import) async {
+    try {
+      await ref.read(importFileCacheProvider).save(import);
+    } catch (e) {
+      // The run goes ahead; only a retry after the app closes is lost.
+      debugPrint('[ai_import] caching the files failed: $e');
+    }
+  }
+
+  Future<void> _removeCachedQuietly(String importId) async {
+    try {
+      await ref.read(importFileCacheProvider).remove(importId);
+    } catch (e) {
+      debugPrint('[ai_import] removing cached files failed: $e');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Network calls, split out so tests can override them
   // ---------------------------------------------------------------------------
+
+  /// Reads [pages] with [modelName] through the import pipeline, retrying
+  /// provider outages the way `generateWithRoute` does.
+  Future<ImportRunOutcome> readFiles({
+    required String modelName,
+    required CloudAiProvider provider,
+    required List<ImportPage> pages,
+    required CancellationToken cancel,
+    String? requestedType,
+  }) async {
+    final ai = await ref.read(genkitProvider.future);
+    final exercises = await ref.read(exercisesProvider.future);
+    return runImport(
+      ai,
+      modelName: modelName,
+      files: [for (final p in pages) ImportFile(p.bytes, name: p.name)],
+      catalog: [
+        for (final e in exercises)
+          CatalogExercise(
+            id: e.id,
+            name: e.name,
+            aliases: e.aliases,
+            isPredefined: e.isPredefined,
+            retiredAt: e.retiredAt?.toIso8601String(),
+            createdAt: e.createdAt?.toUtc().toIso8601String(),
+          ),
+      ],
+      requestedType: ImportType.values.where((t) => t.name == requestedType).firstOrNull,
+      cancel: cancel,
+      use: [
+        retry(
+          maxRetries: 3,
+          statuses: const [StatusCode.unavailable, StatusCode.deadlineExceeded, StatusCode.internal],
+          initialDelay: const Duration(seconds: 2),
+          maxDelay: const Duration(seconds: 20),
+        ),
+      ],
+    ).timeout(const Duration(minutes: 6));
+  }
+
+  /// Stores the result as a `ready` job and returns its ID.
+  Future<String> saveResult({
+    required String importId,
+    required String detectedType,
+    required Map<String, dynamic> result,
+    required CloudAiProvider provider,
+    String? requestedType,
+    String? model,
+    int? inputTokens,
+    int? outputTokens,
+  }) async {
+    final jobId = await Supabase.instance.client.rpc(
+      'ai_import_save_result',
+      params: {
+        'p_import_id': importId,
+        'p_detected_type': detectedType,
+        'p_result': result,
+        'p_provider': provider.id,
+        'p_requested_type': requestedType,
+        'p_model': model,
+        'p_input_tokens': inputTokens,
+        'p_output_tokens': outputTokens,
+      },
+    );
+    return jobId as String;
+  }
+
+  /// Keeps the screen on while the model reads: a phone that locks mid-run
+  /// suspends the app, and the request with it.
+  Future<void> keepScreenOn(bool on) => on ? WakelockPlus.enable() : WakelockPlus.disable();
+
+  Future<void> _keepAwake(bool on) async {
+    try {
+      await keepScreenOn(on);
+    } catch (e) {
+      debugPrint('[ai_import] wakelock: $e');
+    }
+  }
+
 
   String? currentUserId() => ref.read(currentAuthUserProvider)?.id;
 
@@ -515,4 +917,48 @@ String newImportId([Random? random]) {
   final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-'
       '${hex.substring(16, 20)}-${hex.substring(20)}';
+}
+
+/// What the lifter sees when a local run fails with [error]. The wording
+/// follows the mockups' "other causes" note; the provider's error never shows.
+ImportFailure importFailureFor(AiProviderException error, CloudAiProvider provider) {
+  final name = provider.label;
+  return switch (error.code) {
+    AiErrorCode.invalidKey => ImportFailure(
+      "$name didn't accept your key",
+      'Check the key in AI assistant settings, then try again. Your files are still on this device.',
+      action: ImportFailureAction.checkKey,
+    ),
+    AiErrorCode.billing => ImportFailure(
+      'Your $name quota is used up for now',
+      'Your $name account is out of credit or over its usage limit. Try again later, '
+          'or choose another provider in AI assistant settings.',
+      action: ImportFailureAction.switchProvider,
+    ),
+    AiErrorCode.rateLimited => ImportFailure('$name is busy', 'Try again in a minute.'),
+    AiErrorCode.network => const ImportFailure(
+      "You're offline",
+      'Your files are saved on this device. Try again when you\'re back online.',
+    ),
+    AiErrorCode.tooLong => ImportFailure(
+      'Too much to read in one go',
+      'There was more in these files than $name can take at once. '
+          'Try fewer pages, such as one block or a few weeks at a time.',
+      action: ImportFailureAction.none,
+    ),
+    _ => ImportFailure("The import didn't finish", error.message),
+  };
+}
+
+String _rejectionMessage(ImportFileRejected e, CloudAiProvider provider) {
+  final name = e.file?.name == null ? 'One of the files' : '"${e.file!.name}"';
+  return switch (e.problem) {
+    ImportFileProblem.tooLarge || ImportFileProblem.tooLargeInTotal =>
+      'These files are larger than ${provider.label} takes in one import. Remove some and try again.',
+    ImportFileProblem.tooMany || ImportFileProblem.tooManyPages =>
+      'That\'s more pages than ${provider.label} takes in one import. Remove some and try again.',
+    ImportFileProblem.encrypted => '$name is password protected. Remove the password and try again.',
+    ImportFileProblem.mixed => 'An import is either PDFs or images, not both.',
+    _ => '$name isn\'t a JPEG, PNG, WebP or PDF.',
+  };
 }

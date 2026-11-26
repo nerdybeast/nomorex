@@ -9,6 +9,7 @@ import 'package:nomorex/features/auth/providers/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../support/call_counter.dart';
+import 'core/ai_fakes.dart';
 
 User testUser(String id) => User(
   id: id,
@@ -123,6 +124,7 @@ List<Override> jobOverrides(
   aiImportJobsProvider.overrideWith(() => FakeJobsNotifier(server)),
   aiImportJobSubscriberProvider.overrideWithValue(subscriber.fn),
   aiImportLimitsProvider.overrideWith((ref) async => limits),
+  ...aiDeviceOverrides(),
 ];
 
 /// The import screen's up-front check, answering the given check until the notice is
