@@ -43,8 +43,11 @@ enum ModelTier {
 const Map<CloudAiProvider, Map<ModelTier, String>> kCloudModels = {
   CloudAiProvider.anthropic: {ModelTier.fast: 'claude-haiku-5-5', ModelTier.standard: 'claude-sonnet-5-5'},
   CloudAiProvider.openai: {ModelTier.fast: 'gpt-5.4-mini', ModelTier.standard: 'gpt-5.5'},
-  // Flash for both: it's on Gemini's free tier, which is most lifters' reason to pick Gemini.
-  CloudAiProvider.gemini: {ModelTier.fast: 'gemini-flash-latest', ModelTier.standard: 'gemini-flash-latest'},
+  // One model for both: it's on Gemini's free tier, which is most lifters' reason to pick
+  // Gemini. It must be one the plugin calls through generateContent: other names (the
+  // -latest aliases, gemini-3.5-flash-lite) go to Google's Interactions API, which browsers
+  // can't reach (no CORS). model_router_test.dart checks this.
+  CloudAiProvider.gemini: {ModelTier.fast: 'gemini-3.5-flash', ModelTier.standard: 'gemini-3.5-flash'},
 };
 
 /// The Genkit namespace each plugin registers its models under.

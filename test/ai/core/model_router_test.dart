@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+// ignore: implementation_imports, the only way to ask how the plugin routes a model.
+import 'package:genkit_google_genai/src/google_api_client.dart';
 import 'package:nomorex/features/ai/core/ai_provider.dart';
 import 'package:nomorex/features/ai/core/ai_task.dart';
 
@@ -52,6 +54,15 @@ void main() {
       expect(routeTask(AiTask.import, cloud: CloudAiProvider.openai)!.modelName, startsWith('openai/'));
       expect(routeTask(AiTask.import, cloud: CloudAiProvider.gemini)!.modelName, startsWith('googleai/'));
     });
+  });
+
+  test('every Gemini model goes through generateContent, which browsers can reach', () {
+    // The plugin sends other models to Google's Interactions API, which has no
+    // CORS headers, so on web every call fails before reaching the model.
+    final plugin = GoogleGenAiPluginImpl(apiKey: 'test');
+    for (final model in kCloudModels[CloudAiProvider.gemini]!.values) {
+      expect(plugin.usesInteractions(model), isFalse, reason: '$model would not work on web');
+    }
   });
 
   test('provider ids match what ai_import_save_result accepts', () {
