@@ -8,7 +8,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(35);
+select plan(39);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures, written as superuser with fixed ids.
@@ -218,6 +218,41 @@ select is(
   (select count(*)::int from public.workouts
    where user_id = (select a from u) and id not in (select priv_workout from u union all select pub_workout from u union all select live_workout from u)),
   0, 'b''s calls created no workout owned by a');
+
+-- ---------------------------------------------------------------------------
+-- AI imports the app saved itself (#184)
+-- ---------------------------------------------------------------------------
+
+insert into public.ai_import_jobs (id, user_id, import_id, status, provider, detected_type,
+                                   counts_toward_limits, finished_at)
+select '00000000-0000-4000-8000-00000000d030'::uuid, a, '00000000-0000-4000-8000-00000000d031'::uuid,
+       'ready', 'gemini', 'workout', false, now() from u;
+insert into public.ai_import_results (job_id, user_id, payload)
+select '00000000-0000-4000-8000-00000000d030'::uuid, a, '{"title": "a''s import"}'::jsonb from u;
+
+select set_config('request.jwt.claims', json_build_object('sub', (select b from u), 'role', 'authenticated')::text, true);
+set local role authenticated;
+
+select throws_like(
+  $$ select public.ai_import_accept('00000000-0000-4000-8000-00000000d030'::uuid, '{}'::jsonb, current_date) $$,
+  'not_found:%', 'b cannot accept a''s saved import');
+select throws_like(
+  $$ select public.ai_import_discard('00000000-0000-4000-8000-00000000d030'::uuid) $$,
+  'not_found:%', 'b cannot discard a''s saved import');
+-- Import ids are scoped by user: b reusing a's makes a separate import of b's.
+select public.ai_import_save_result('00000000-0000-4000-8000-00000000d031'::uuid,
+  'program', '{}'::jsonb, 'openai');
+
+reset role;
+select results_eq(
+  $$ select status, provider, (select payload from public.ai_import_results r where r.job_id = j.id)
+     from public.ai_import_jobs j where j.id = '00000000-0000-4000-8000-00000000d030' $$,
+  $$ values ('ready'::text, 'gemini'::text, '{"title": "a''s import"}'::jsonb) $$,
+  'b''s accept, discard and save left a''s saved import exactly as it was');
+select is(
+  (select count(*)::int from public.ai_import_jobs
+   where import_id = '00000000-0000-4000-8000-00000000d031' and user_id = (select b from u)),
+  1, 'b''s save with a''s import id made b''s own job');
 
 select * from finish();
 rollback;

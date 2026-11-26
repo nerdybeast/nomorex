@@ -5,7 +5,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(59);
+select plan(63);
 
 create temp table t on commit drop as
 select (select id from auth.users where email = 'a@a.com') as owner,
@@ -590,6 +590,47 @@ select is((select description from public.programs where id = (select id from de
 select is((select description from public.programs where id = (select id from p)),
   E'Week 9: Deload if tired\nCoach: Sam',
   'an import with no description saves as before');
+
+-- ---------------------------------------------------------------------------
+-- Results the app ran itself (#184) accept like hosted ones
+-- ---------------------------------------------------------------------------
+
+create temp table saved on commit drop as
+select public.ai_import_save_result(gen_random_uuid(), 'workout', '{}'::jsonb, 'gemini') as workout_job,
+       public.ai_import_save_result(gen_random_uuid(), 'program', '{}'::jsonb, 'on_device') as program_job,
+       public.ai_import_save_result(gen_random_uuid(), 'workout', '{}'::jsonb, 'anthropic') as discard_job;
+grant select on saved to authenticated;
+
+create temp table saved_accepts on commit drop as
+select
+  ((public.ai_import_accept((select workout_job from saved),
+    $json${"title": "Pgtap own-key workout",
+           "weeks": [{"days": [{"isRestDay": false, "exercises": []}]}]}$json$::jsonb,
+    '2026-11-09'::date) ->> 'workout_id')::uuid) as workout_id,
+  ((public.ai_import_accept((select program_job from saved),
+    $json${"title": "Pgtap on-device program",
+           "weeks": [{"days": [{"isRestDay": false, "exercises": []}]}]}$json$::jsonb,
+    '2026-11-09'::date) ->> 'program_id')::uuid) as program_id;
+grant select on saved_accepts to authenticated;
+
+select ok(
+  (select is_imported and is_copy and user_id = (select owner from t)
+   from public.workouts where id = (select workout_id from saved_accepts)),
+  'a workout saved by the app is accepted as an imported copy');
+select ok(
+  (select is_imported and is_copy and user_id = (select owner from t)
+   from public.programs where id = (select program_id from saved_accepts)),
+  'a program saved by the app is accepted as an imported copy');
+select results_eq(
+  $$ select status, provider from public.ai_import_jobs
+     where id in ((select workout_job from saved), (select program_job from saved))
+     order by provider $$,
+  $$ values ('accepted'::text, 'gemini'::text), ('accepted'::text, 'on_device'::text) $$,
+  'both jobs are marked accepted and keep their provider');
+
+select public.ai_import_discard((select discard_job from saved));
+select is((select status from public.ai_import_jobs where id = (select discard_job from saved)),
+  'discarded', 'a job saved by the app can be discarded');
 
 select * from finish();
 rollback;
