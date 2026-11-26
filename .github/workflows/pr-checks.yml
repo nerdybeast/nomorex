@@ -65,6 +65,11 @@ jobs:
       - name: Test
         run: flutter test --coverage --branch-coverage
 
+      # Pure Dart, so the root `flutter test` doesn't run it.
+      - name: Test the import pipeline package
+        working-directory: packages/import_pipeline
+        run: dart pub get && dart analyze --fatal-infos && dart test
+
       - name: Write coverage to job summary
         uses: livewing/lcov-job-summary@v1.3.0
         with:
