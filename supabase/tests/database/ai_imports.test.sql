@@ -5,7 +5,7 @@
 --   supabase test db        # local stack only; never --linked
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(77);
+select plan(89);
 
 -- ---------------------------------------------------------------------------
 -- Helpers and fixtures
@@ -351,6 +351,94 @@ select is((select public.ai_import_check() ->> 'reason'), 'failure_limit',
   'uncounted failures have their own cap, and re-runs do not erase them');
 select throws_like($$ select public.ai_import_start(gen_random_uuid()) $$,
   'failure_limit:%', 'the uncounted-failure cap refuses a start');
+
+-- ---------------------------------------------------------------------------
+-- Results the app ran itself (#184): own key or on device
+-- ---------------------------------------------------------------------------
+
+reset role;
+delete from public.ai_import_jobs where user_id = (select owner_id from t);
+-- Hosted imports switched off, a cap of one, and no notice accepted: none of
+-- them applies to a run that never used the project's account.
+update public.ai_import_limits set enabled = false, daily_limit = 1, monthly_limit = 1,
+  uncounted_failure_daily_limit = 100, max_job_seconds = 180;
+delete from public.ai_import_consents where user_id = (select owner_id from t);
+
+select pg_temp.act_as((select owner_id from t));
+create temp table saved on commit drop as
+select public.ai_import_save_result('20000000-0000-4000-8000-000000000010'::uuid,
+  'program', '{"weeks": []}'::jsonb, 'anthropic', null, 'claude-test', 100, 200) as id;
+grant select on saved to authenticated;
+
+select results_eq(
+  format($$ select status, provider, detected_type, requested_type, counts_toward_limits,
+                   finished_at is not null, model, input_tokens, output_tokens
+            from public.ai_import_jobs where id = %L $$, (select id from saved)),
+  $$ values ('ready'::text, 'anthropic'::text, 'program'::text, null::text, false, true,
+             'claude-test'::text, 100, 200) $$,
+  'a saved result is a ready job that does not count, with no notice and imports switched off');
+select is((select payload from public.ai_import_results where job_id = (select id from saved)),
+  '{"weeks": []}'::jsonb, 'the saved result is stored for review');
+select is(public.ai_import_claim((select id from saved)) ->> 'status', 'ready',
+  'a saved result can be claimed for accepting');
+
+select public.ai_import_save_result(gen_random_uuid(), 'workout', '{}'::jsonb, 'on_device');
+select results_eq(
+  $$ select (public.ai_import_check() ->> 'daily_used')::int,
+            (public.ai_import_check() ->> 'monthly_used')::int $$,
+  $$ values (0, 0) $$,
+  'saved results leave the hosted caps alone');
+
+select throws_like(
+  $$ select public.ai_import_save_result(gen_random_uuid(), 'workout', '{}'::jsonb, 'hosted') $$,
+  'invalid_input:%', 'a hosted run cannot be saved from the app');
+select throws_like(
+  $$ select public.ai_import_save_result(gen_random_uuid(), 'workout', '{}'::jsonb, 'nonsense') $$,
+  'invalid_input:%', 'an unknown provider is refused');
+select throws_like(
+  $$ select public.ai_import_save_result(gen_random_uuid(), 'nonsense', '{}'::jsonb, 'gemini') $$,
+  'invalid_input:%', 'a result needs a detected type');
+select throws_like(
+  $$ select public.ai_import_save_result(gen_random_uuid(), 'workout', '[]'::jsonb, 'gemini') $$,
+  'invalid_input:%', 'a result must be an object');
+
+-- Re-run as the other type.
+create temp table resaved on commit drop as
+select public.ai_import_save_result('20000000-0000-4000-8000-000000000010'::uuid,
+  'program', '{"title": "again"}'::jsonb, 'openai', 'workout') as id;
+grant select on resaved to authenticated;
+select results_eq(
+  format($$ select (select status from public.ai_import_jobs where id = %L),
+                   (select count(*)::int from public.ai_import_results where job_id = %L),
+                   (select requested_type from public.ai_import_jobs where id = %L) $$,
+         (select id from saved), (select id from saved), (select id from resaved)),
+  $$ values ('replaced'::text, 0, 'workout'::text) $$,
+  'saving the same import again replaces its open run');
+
+select public.ai_import_discard((select id from resaved));
+select throws_like(
+  $$ select public.ai_import_save_result('20000000-0000-4000-8000-000000000010'::uuid,
+       'workout', '{}'::jsonb, 'gemini') $$,
+  'import_closed:%', 'a discarded import cannot be saved again');
+
+reset role;
+select throws_ok(
+  format($$ insert into public.ai_import_jobs (user_id, import_id, provider, status)
+            values (%L, gen_random_uuid(), 'gemini', 'ready') $$, (select owner_id from t)),
+  '23514', null, 'only hosted runs can count toward the caps');
+
+-- 20 unreviewed in all, counting the on-device one above.
+insert into public.ai_import_jobs (user_id, import_id, status, provider, counts_toward_limits, finished_at)
+select owner_id, gen_random_uuid(), 'ready', 'gemini', false, now()
+from t, generate_series(1, 19);
+select pg_temp.act_as((select owner_id from t));
+select throws_like(
+  $$ select public.ai_import_save_result(gen_random_uuid(), 'workout', '{}'::jsonb, 'gemini') $$,
+  'too_many_pending:%', 'unreviewed results are capped');
+
+reset role;
+update public.ai_import_limits set enabled = true, monthly_limit = 100;
+insert into public.ai_import_consents (user_id) select owner_id from t;
 
 -- ---------------------------------------------------------------------------
 -- Storage
