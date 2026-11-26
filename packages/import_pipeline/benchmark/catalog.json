@@ -1,0 +1,706 @@
+[
+ {
+  "id": "fe889bc5-274c-4593-881e-5c9e462f3ed2",
+  "name": "Arnold Press",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "98b9ba07-0ed4-4c9c-9314-aa92cee18ffd",
+  "name": "Back Extension",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "de60e674-6d02-4ecd-9b7c-c1bdc5e73a20",
+  "name": "Back Squat",
+  "aliases": [
+   "Squat"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "f089d36c-08d7-4342-93fd-2cbdd60922f3",
+  "name": "Ball Slam",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "5dc9a93b-5115-436e-8c2b-e1e0ecc017f2",
+  "name": "Banded TKE",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "08585203-624a-4e17-9573-b7b6f033ef5b",
+  "name": "Banded Walk",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "cd850935-6abe-428e-944f-f6425ba0582f",
+  "name": "Bench Press",
+  "aliases": [
+   "Bench"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "589c3aff-cc2a-4789-81eb-5e17b9948497",
+  "name": "Bent Row",
+  "aliases": [
+   "Bent Over Row",
+   "Barbell Row"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "99ce44f6-6655-4ff9-aeb0-78ab399a243c",
+  "name": "Bicep Curl",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "e0f205dd-955b-47c2-9b5b-407f949ed33f",
+  "name": "Block Clean",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "e77440e1-5b7f-4f51-b79d-d075632a8ca4",
+  "name": "Block Clean and Jerk",
+  "aliases": [
+   "Block Clean & Jerk"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "a0c2f052-cf6d-4812-b07c-18003ac31fdd",
+  "name": "Block Power Clean",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "c97aad08-6325-42e4-865e-38dbcea60397",
+  "name": "Block Pull",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "e4ccbaf7-3eee-4f0a-9b1c-ff7cfb7d1884",
+  "name": "Block Snatch",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "0f1d8024-abc5-4e71-bb8f-affd6d01bc36",
+  "name": "Box Jump",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "f2b56a74-e2de-4b62-9ea2-ad01a6eec67a",
+  "name": "Box Squat",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "9efc7d16-ab57-4695-942e-4111d96577fb",
+  "name": "Broad Jump",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "f8c4ef5b-ca86-4b1c-bf72-b61b5a256322",
+  "name": "Bulgarian Split Squat",
+  "aliases": [
+   "BSS",
+   "Rear Foot Elevated Split Squat"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "543a3c97-dcd4-49fb-9f02-46e9b50da428",
+  "name": "Chest Supported Back Flye",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "5953284a-682f-4fa8-b0d9-555d7906a565",
+  "name": "Clean",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "a8b3b1c5-7bc3-4c38-a902-8715334b7b15",
+  "name": "Clean & Jerk",
+  "aliases": [
+   "C&J",
+   "Clean and Jerk"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "0f05357b-8347-4766-bbb7-2242c93719c1",
+  "name": "Clean + Front Squat + Jerk",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "79fc03e3-850b-406d-9d90-441eae27aef6",
+  "name": "Clean Deadlift",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "2c8ac6bf-61b7-4cb0-b1c0-f43a9caa1156",
+  "name": "Clean Deadlift + Below Knee Clean + Clean",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "08f843d2-8fb9-4bf9-88ef-c43f5b1c8c75",
+  "name": "Clean Lift Off",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "fe6af60b-489c-4408-a320-6c741c420498",
+  "name": "Clean Pull",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "1e187608-e495-4905-8823-5d1012a0d2c6",
+  "name": "Close Grip Bench",
+  "aliases": [
+   "Close Grip Bench Press"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "f02ec656-4bef-4b6f-8bdd-adf12ba5a244",
+  "name": "Deadlift",
+  "aliases": [
+   "Conventional Deadlift"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "b146823a-0069-4f56-a6a5-4123b09c3dcc",
+  "name": "Depth Jump",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "a362350d-d9f0-4ed9-a68d-949efe37cd5f",
+  "name": "Dumbbell Bench Press",
+  "aliases": [
+   "DB Bench Press"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "36816594-f1db-43c3-8e0f-32839289dd2d",
+  "name": "Dumbbell Seated Overhead Press",
+  "aliases": [
+   "DB Seated Overhead Press"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "42517c14-f417-491f-ba9e-9eaf54a0eac3",
+  "name": "Dumbbell Single Arm Row",
+  "aliases": [
+   "Single Arm Dumbbell Row",
+   "DB Row"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "784a829d-29a0-4037-b081-8305ffe477c6",
+  "name": "Farmer Carry",
+  "aliases": [
+   "Farmer's Carry",
+   "Farmer's Walk",
+   "Farmers Walk"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "e56c66d0-ace5-47e9-9e66-3005c42782e0",
+  "name": "French Press",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "a0b4dc27-ff27-4750-9342-e8e9b24e9be1",
+  "name": "Front Raise",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "3a139db1-01c2-45fc-b5a4-3b7c3bfbe0a4",
+  "name": "Front Squat",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "60cfa053-e06c-4398-8ab4-452195f8cc63",
+  "name": "Front Squat + Jerk",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "41825f81-f336-4e0e-bf46-9c18716d5bd4",
+  "name": "GHD Sit-Up",
+  "aliases": [
+   "GHD Sit Up"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "d2616422-2d20-466a-909d-57e2043032a7",
+  "name": "Glute Bridge",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "a80a2b6e-9299-425f-a058-f308c0fecf86",
+  "name": "Goblet Squat Jump",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "4e656d84-97ab-40f2-b8ae-5dd45a117690",
+  "name": "Hamstring Curl",
+  "aliases": [
+   "Leg Curl"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "67c20cd8-af01-4d56-9bea-eb748aada816",
+  "name": "Handstand Hold",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "ca5d4d79-fb89-48a4-bfe7-f6f304bfbf65",
+  "name": "Hang Below Knee Pull",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "5b0e242c-e738-4206-867a-05caef5b7187",
+  "name": "Hang Clean",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "d5534dff-342e-40f9-918c-dcee6f6542e8",
+  "name": "Hang Kettlebell Snatch",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "7524cc35-ec40-4627-8111-cc89a6c73327",
+  "name": "Hang Power Clean",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "b9d0c241-9d4d-492f-80a6-bc9acb851be9",
+  "name": "Hang Power Snatch",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "d6d610b3-5fb4-4930-badb-aae344e51d67",
+  "name": "Hang Snatch",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "1fba412e-1f3c-45f7-b069-6843d95b3b07",
+  "name": "Hanging Leg Raise",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "00d98c35-5a41-4603-958b-a8bf4347d044",
+  "name": "Heaving Hang Power Clean",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "e9c01c11-1b76-4f67-9cfa-0ad6ae6ac296",
+  "name": "Heaving Hang Power Clean + Split Jerk",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "9fe58d3f-533f-4386-adf1-5dffd3fcb3e9",
+  "name": "Hi-Lo Carry",
+  "aliases": [
+   "Hi Lo Carry"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "23c8cea4-a913-4a02-836d-b940aecfef15",
+  "name": "High Pull",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "f50d42ca-1b78-449c-b480-b6cfbbe36f3a",
+  "name": "Jerk",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "d0b5bf0f-2f3a-47f6-a6a4-ce1fb7a10e49",
+  "name": "Jumping Lunge",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "e4e52fd4-18b9-42fe-8488-5d236c5f2704",
+  "name": "Kettlebell Swing",
+  "aliases": [
+   "KB Swing"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "d0f6868f-9de1-45d3-ad89-3b4599e091b6",
+  "name": "Lateral Raise",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "6a242e4f-00dd-4d2d-95ae-735bd195d4d2",
+  "name": "Leg Press",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "5b5cbd33-809b-4bf4-8327-78297e0af42e",
+  "name": "Leg Raise",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "978b9a4a-f26f-47ca-bfa8-1bb12e33b794",
+  "name": "Muscle Snatch",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "19e9d3b8-bb87-4f51-aa31-2f8200b2463c",
+  "name": "Muscle Snatch + Overhead Squat",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "c23a11ef-b708-4288-86b5-b9be4a24ec7f",
+  "name": "Narrow Stance Squat",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "8a325e24-5d0b-4697-92eb-820c25e12a7e",
+  "name": "Overhead Carry",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "9817f4a6-ae00-43c4-9e5f-1ee20e3223e4",
+  "name": "Overhead Press",
+  "aliases": [
+   "OHP"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "a450ccda-fcfc-4983-9f05-b73b66f63b58",
+  "name": "Overhead Squat",
+  "aliases": [
+   "OHS"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "f9082f67-9a52-425b-9e74-c27c0eb4114f",
+  "name": "Pause Squat",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "5a4b2c0f-882a-4389-bc4e-7fc299f4121b",
+  "name": "Plank",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "193ba671-08ac-4081-8a8a-8a63ba74bc5d",
+  "name": "Power Clean",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "b563e036-4d8c-4520-80c2-609d6294e009",
+  "name": "Power Clean + Below Knee Power Clean",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "84e27cd2-a147-4be8-8e54-0cc2d5b51b78",
+  "name": "Power Clean + Hang Clean and Jerk",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "50ff5d36-7c7f-4496-83ec-a717d20681e9",
+  "name": "Power Clean + Power Jerk",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "76c74c44-33d2-4753-a7a9-50d2b93473eb",
+  "name": "Power Clean + Push Press",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "e45c9e29-06f7-488b-824e-e10f937c4658",
+  "name": "Power Clean + Split Jerk",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "5c604425-83d2-491a-980c-6ff54624427b",
+  "name": "Power Clean and Jerk",
+  "aliases": [
+   "Power Clean & Jerk"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "f93646de-0bf7-408e-9fe8-83651b4d1aa2",
+  "name": "Power Jerk",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "6feafb48-850c-45f9-8826-1e82792de56a",
+  "name": "Power Snatch",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "8b3a5022-b1c2-4ecb-ba9e-1719f0e82fac",
+  "name": "Pull-Down",
+  "aliases": [
+   "Lat Pulldown",
+   "Pulldown"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "12ce6c6f-396d-4cbb-9bb2-bbb8a3640466",
+  "name": "Pull-Up",
+  "aliases": [
+   "Pull Up",
+   "Pullup"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "2da64a37-a847-4219-92e7-2e3bcc97baaf",
+  "name": "Push Press",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "2f4340b2-e3de-4e88-b64a-a25b039ac1b8",
+  "name": "Push-Up",
+  "aliases": [
+   "Push Up",
+   "Pushup"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "4e98c555-f08f-43f2-bd28-198b7ebcbe9c",
+  "name": "Ring Row",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "5f1da568-35ce-4bd9-b676-385ac067e1f5",
+  "name": "Romanian Deadlift",
+  "aliases": [
+   "RDL"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "d5eecbf4-0cbf-4ec0-9f57-9a21616bf4aa",
+  "name": "Russian Twist",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "37efb8f8-3f9b-42c3-a8aa-09b20a89128d",
+  "name": "Side Plank",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "169e037c-d0ad-48c8-9a74-a3da4255366a",
+  "name": "Single Leg Squat",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "aa08fd26-c4ca-45cb-a4cb-a943531051eb",
+  "name": "Sit-Up",
+  "aliases": [
+   "Sit Up",
+   "Situp"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "c0da928f-7991-472c-b1d3-5a2500401e29",
+  "name": "Skater Hop",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "578fc902-bfd7-4056-bfa2-7de58bc78d66",
+  "name": "Skull Crusher",
+  "aliases": [
+   "Skullcrusher"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "c0f3156a-de29-406d-a0f4-e634609cdbb0",
+  "name": "Sled Push",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "ae870cef-31da-4f70-9bc1-9fc7c4a9933a",
+  "name": "Snatch",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "5408ee72-db7c-4b10-ae4e-fabe0f88f8b1",
+  "name": "Snatch + Overhead Squat",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "324f79ef-a2a1-4c0d-b361-59ba7fce8d69",
+  "name": "Snatch Balance + Overhead Squat",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "60278b40-8264-4e2e-a0f6-113066e4c11a",
+  "name": "Snatch Deadlift",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "075df41d-37a2-4d03-b51f-2a52e512947a",
+  "name": "Snatch Grip Push Press",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "57630149-f0b7-4aa2-a309-42866b56da8d",
+  "name": "Snatch Grip Push Press + Overhead Squat",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "1dd9ad68-e494-47db-ac37-fbaa0fde798c",
+  "name": "Snatch Pull",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "6841359a-5c9a-49d1-838b-87280134685f",
+  "name": "Sots Press",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "3a83edbd-c178-4951-abd3-728cd2d426a7",
+  "name": "Split Jerk",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "96fe72d9-f3d5-4b83-8ef7-8e641dd959e8",
+  "name": "Sprints",
+  "aliases": [
+   "Sprint"
+  ],
+  "is_predefined": true
+ },
+ {
+  "id": "12004d6e-16d9-4829-8636-6b3ed0dc868d",
+  "name": "Squat Jump",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "9c9ff6ab-cd93-4e99-adf8-3b097c285fc3",
+  "name": "Standing Side Crunch",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "9bfe0fe9-48d9-4b3a-aa3f-7a6b1e2f9d4d",
+  "name": "Strict Press",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "27be60c2-6cad-4eda-8516-9711ab447064",
+  "name": "Suitcase Carry",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "be022e06-3312-4563-b33f-1b6e436f2392",
+  "name": "Sumo Deadlift",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "11f36063-b05c-48b6-9ad6-a746589e469d",
+  "name": "Tall Clean",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "9d52a4b4-2b6f-4404-8556-a1584e1a6d53",
+  "name": "Upright Row",
+  "aliases": [],
+  "is_predefined": true
+ },
+ {
+  "id": "35a996ea-c1be-40f6-8081-5a1ff09614a8",
+  "name": "Walking Lunge",
+  "aliases": [],
+  "is_predefined": true
+ }
+]

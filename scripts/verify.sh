@@ -55,6 +55,7 @@ need_docker() { docker info >/dev/null 2>&1; }
 stage "generated files up to date" ./scripts/check-generated.sh
 stage "flutter analyze" flutter analyze
 stage "flutter test" flutter test
+stage "import_pipeline package (dart test)" bash -c 'cd packages/import_pipeline && dart pub get >/dev/null && dart analyze --fatal-infos && dart test'
 
 if [[ "$RUN_DB" == true ]]; then
   if need_docker; then

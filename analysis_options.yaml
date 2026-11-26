@@ -24,6 +24,9 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    # Analyzed in its own CI step after its own `dart pub get`; from the root
+    # its dependencies (package:test) don't resolve.
+    - packages/**
 
 linter:
   # The lint rules applied to this project can be customized in the

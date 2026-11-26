@@ -49,6 +49,8 @@ dependencies:
 
   material_ui: ^1.11.0
   genkit: ^1.0.3
+  import_pipeline:
+    path: packages/import_pipeline
   genkit_anthropic: ^1.0.3
   genkit_openai: ^1.0.3
   genkit_google_genai: ^1.2.0

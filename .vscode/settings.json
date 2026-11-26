@@ -1,3 +1,6 @@
 {
-  "deno.enablePaths": ["supabase/functions"]
+  "deno.enablePaths": [
+    "supabase/functions"
+  ],
+  "cmake.sourceDirectory": "/Users/michael/Projects/nomorex/windows"
 }

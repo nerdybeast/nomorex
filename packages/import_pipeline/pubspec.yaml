@@ -1,0 +1,20 @@
+name: import_pipeline
+description: >-
+  Reads a workout or program out of files with a Genkit model and normalizes
+  the result for NoMoreX's import review. Pure Dart, so the app and the
+  benchmark tool share it.
+publish_to: none
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  genkit: ^1.0.3
+
+dev_dependencies:
+  args: ^2.7.0
+  genkit_anthropic: ^1.0.3
+  genkit_google_genai: ^1.2.0
+  genkit_openai: ^1.0.3
+  lints: ^6.0.0
+  test: ^1.26.0
