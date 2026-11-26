@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
+import 'features/ai/screens/ai_assistant_screen.dart';
 import 'features/ai/screens/ai_import_screen.dart';
 import 'features/ai/screens/ai_import_review_screen.dart';
 import 'features/ai/widgets/ai_import_job_alerts.dart';
@@ -119,6 +120,12 @@ GoRouter router(Ref ref) {
           GoRoute(
             path: AppConstants.routeProfile,
             builder: (_, _) => const ProfileScreen(),
+            routes: [
+              GoRoute(
+                path: 'ai-assistant',
+                builder: (_, _) => const AiAssistantScreen(),
+              ),
+            ],
           ),
           GoRoute(
             path: AppConstants.routeAdmin,

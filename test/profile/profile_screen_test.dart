@@ -148,6 +148,12 @@ void main() {
     });
   });
 
+  testWidgets('offers the AI assistant settings to everyone', (tester) async {
+    await _pump(tester, const Profile(id: 'u1', unitPreference: 'both', oneRepMaxFormula: OneRepMaxFormula.brzycki));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile_ai_assistant_button')), findsOneWidget);
+  });
+
   testWidgets('shows the user id, email, and member-since date', (tester) async {
     await _pump(tester, const Profile(
         id: 'u1',

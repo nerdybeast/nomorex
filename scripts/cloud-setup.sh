@@ -84,9 +84,12 @@ chain_flutter() {
 
 # --- Chain B: apt, then Playwright (both want the apt lock) -------------------
 
-# libsecret-1-dev: flutter_secure_storage (AI keys, #185) links it on Linux.
+# libsecret-1-dev, dbus, gnome-keyring: flutter_secure_storage (AI keys, #185)
+# links libsecret on Linux, and needs an unlocked keyring at run time
+# (scripts/with-keyring.sh).
 APT_PKGS=(clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
-          libstdc++-12-dev libcurl4-openssl-dev libsecret-1-dev xvfb curl ca-certificates)
+          libstdc++-12-dev libcurl4-openssl-dev libsecret-1-dev dbus gnome-keyring
+          xvfb curl ca-certificates)
 install_apt_deps() {
   local missing=()
   for p in "${APT_PKGS[@]}"; do

@@ -43,8 +43,11 @@ enum ModelTier {
 const Map<CloudAiProvider, Map<ModelTier, String>> kCloudModels = {
   CloudAiProvider.anthropic: {ModelTier.fast: 'claude-haiku-5-5', ModelTier.standard: 'claude-sonnet-5-5'},
   CloudAiProvider.openai: {ModelTier.fast: 'gpt-5.4-mini', ModelTier.standard: 'gpt-5.5'},
-  // Flash for both: it's on Gemini's free tier, which is most lifters' reason to pick Gemini.
-  CloudAiProvider.gemini: {ModelTier.fast: 'gemini-flash-latest', ModelTier.standard: 'gemini-flash-latest'},
+  // One model for both: it's on Gemini's free tier, which is most lifters' reason to pick
+  // Gemini. It must be one the plugin calls through generateContent: other names (the
+  // -latest aliases, gemini-3.5-flash-lite) go to Google's Interactions API, which browsers
+  // can't reach (no CORS). model_router_test.dart checks this.
+  CloudAiProvider.gemini: {ModelTier.fast: 'gemini-3.5-flash', ModelTier.standard: 'gemini-3.5-flash'},
 };
 
 /// The Genkit namespace each plugin registers its models under.
@@ -73,21 +76,27 @@ enum OnDeviceAvailability {
 /// model, set by the platform plugin (Stages 7 and 8) when it's [ready].
 @immutable
 class OnDeviceStatus {
-  const OnDeviceStatus(this.availability, {this.modelName});
+  const OnDeviceStatus(this.availability, {this.modelName, this.downloadProgress});
 
   static const unsupported = OnDeviceStatus(OnDeviceAvailability.unsupported);
 
   final OnDeviceAvailability availability;
   final String? modelName;
 
+  /// 0 to 1 while [OnDeviceAvailability.downloading], when the platform says.
+  final double? downloadProgress;
+
   bool get isReady => availability == OnDeviceAvailability.ready && modelName != null;
 
   @override
   bool operator ==(Object other) =>
-      other is OnDeviceStatus && other.availability == availability && other.modelName == modelName;
+      other is OnDeviceStatus &&
+      other.availability == availability &&
+      other.modelName == modelName &&
+      other.downloadProgress == downloadProgress;
 
   @override
-  int get hashCode => Object.hash(availability, modelName);
+  int get hashCode => Object.hash(availability, modelName, downloadProgress);
 }
 
 /// Which model runs a task. [provider] is the id stored with an import
@@ -129,12 +138,14 @@ AiRoute? routeTask(AiTask task, {CloudAiProvider? cloud, OnDeviceStatus onDevice
   if (task.onDevice && onDevice.isReady) {
     return AiRoute(provider: AiRoute.onDeviceId, modelName: onDevice.modelName!);
   }
-  if (task.cloud && cloud != null) {
-    return AiRoute(
-      provider: cloud.id,
-      modelName: '${kCloudNamespaces[cloud]}/${kCloudModels[cloud]![task.tier]}',
-      cloud: cloud,
-    );
-  }
+  if (task.cloud && cloud != null) return cloudRoute(cloud, task.tier);
   return null;
 }
+
+/// [cloud]'s model for [tier]. Use [routeTask] for features; this is for the
+/// settings screen's key check, which isn't a task.
+AiRoute cloudRoute(CloudAiProvider cloud, ModelTier tier) => AiRoute(
+  provider: cloud.id,
+  modelName: '${kCloudNamespaces[cloud]}/${kCloudModels[cloud]![tier]}',
+  cloud: cloud,
+);

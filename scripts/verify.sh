@@ -77,7 +77,7 @@ if [[ "$RUN_E2E" == true ]]; then
       stage "E2E (integration_test)" ./scripts/e2e.sh --reset
     elif command -v xvfb-run >/dev/null 2>&1; then
       # Linux desktop needs a display; xvfb provides it (as in CI).
-      stage "E2E (integration_test)" xvfb-run -a ./scripts/e2e.sh linux --reset
+      stage "E2E (integration_test)" xvfb-run -a ./scripts/with-keyring.sh ./scripts/e2e.sh linux --reset
     else
       skip "E2E" "xvfb-run not installed — NOT proven"
     fi
