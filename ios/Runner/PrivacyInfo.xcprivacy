@@ -16,6 +16,12 @@
   per-install device ID (IDFV / app instance ID) and coarse location derived
   from the IP address. The app never calls setUserId, so none of it carries
   the account's identity, and advertising ID and ad personalization are off.
+
+  Not collected: AI import with the lifter's own key (#188). The photos and
+  PDFs go from the device straight to the provider the lifter chose (Google,
+  Anthropic or OpenAI), under the lifter's own account with it, and the key
+  stays in the device's keychain; neither reaches NoMoreX. What was read is
+  stored in the account as fitness data, which is declared below.
 -->
 <plist version="1.0">
 <dict>
