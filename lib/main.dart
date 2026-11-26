@@ -6,6 +6,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 import 'core/environment/app_environment.dart';
+import 'core/telemetry/sentry_scrub.dart';
 import 'features/analytics/analytics.dart';
 
 Future<void> main() async {
@@ -35,6 +36,10 @@ Future<void> main() async {
         // Opt-in since sentry_flutter 10; keeps the iOS/macOS capture of
         // failed native HTTP requests that v9 enabled by default.
         options.captureNativeFailedRequests = true;
+        // Lifters' own AI keys go to their providers straight from the app,
+        // so keep them out of anything reported.
+        options.beforeSend = scrubEvent;
+        options.beforeBreadcrumb = scrubBreadcrumb;
       },
       appRunner: () async {
         // Analytics only; a failure is reported and the app runs without it.
