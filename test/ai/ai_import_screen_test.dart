@@ -16,6 +16,8 @@ import 'package:nomorex/features/auth/providers/auth_provider.dart';
 import '../support/call_counter.dart';
 
 import 'ai_import_job_fakes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'core/ai_fakes.dart';
 
 const _limits = AiImportLimits(maxImages: 8, maxPdfPages: 10, maxImageBytes: 7000000, maxPdfBytes: 20000000);
 
@@ -64,6 +66,7 @@ Future<_StubIntake> _pump(WidgetTester tester, ImportIntakeState initial, {bool 
       overrides: [
         currentAuthUserProvider.overrideWithValue(null),
         aiImportLimitsProvider.overrideWith((ref) async => _limits),
+        ...aiDeviceOverrides(),
         importFilePickerProvider.overrideWithValue(_FakePicker(canTakePhoto: canTakePhoto)),
         aiImportIntakeProvider.overrideWith(() => intake),
         aiImportGateProvider.overrideWith(() => FakeGate(const AiImportCheck(allowed: true))),
@@ -80,6 +83,8 @@ Future<_StubIntake> _pump(WidgetTester tester, ImportIntakeState initial, {bool 
 bool _enabled(WidgetTester tester, String key) => tester.widget<ButtonStyleButton>(find.byKey(Key(key))).enabled;
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   testWidgets('states the limits and offers images and PDFs', (tester) async {
     await _pump(tester, const ImportIntakeState());
 

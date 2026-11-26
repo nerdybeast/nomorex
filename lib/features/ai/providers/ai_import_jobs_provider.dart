@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/providers/auth_provider.dart';
 import '../models/ai_import_job.dart';
+import '../utils/import_file_cache.dart';
 import 'ai_import_intake_provider.dart';
 
 part 'ai_import_jobs_provider.g.dart';
@@ -45,10 +46,18 @@ class AiImportJobsNotifier extends _$AiImportJobsNotifier {
     await future;
   }
 
-  /// Deletes an accepted or discarded import's uploaded files, under the
-  /// user's session. Never throws: whatever is left, the daily cleanup
-  /// (`ai-import-cleanup`) deletes on its next run.
+  /// Deletes an accepted or discarded import's files: the ones uploaded for
+  /// the hosted path, under the user's session, and the ones kept on this
+  /// device for a run with the lifter's own key. Never throws: whatever is
+  /// left upstream, the daily cleanup (`ai-import-cleanup`) deletes on its
+  /// next run.
   Future<void> removeImportFiles(String importId) async {
+    try {
+      await ref.read(importFileCacheProvider).remove(importId);
+      ref.invalidate(cachedImportProvider(importId));
+    } catch (e) {
+      debugPrint('[ai_import] removing cached files failed: $e');
+    }
     final userId = ref.read(currentAuthUserProvider)?.id;
     if (userId == null) return;
     try {

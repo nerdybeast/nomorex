@@ -63,6 +63,7 @@ class _AiImportJobAlertsState extends ConsumerState<AiImportJobAlerts> {
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) return;
     for (final job in alerts) {
+      if (ref.read(importAlertSnackBarsProvider).isSuppressed(job.id)) continue;
       final ready = job.state(DateTime.now(), maxJobSeconds) == AiImportJobState.ready;
       final thing = switch (job.type) {
         'program' => 'program',

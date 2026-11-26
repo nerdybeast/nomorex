@@ -26,9 +26,9 @@ import '../utils/start_program_flow.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../../shared/widgets/start_option_tile.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../ai/providers/ai_import_intake_provider.dart';
 import '../../shell/nav_section.dart';
 import '../providers/finished_program_instances_provider.dart';
+import '../../ai/providers/ai_import_path_provider.dart';
 
 /// The run whose row foot gets the page's one orange fill: the first with
 /// a workout today not yet finished (Today's workout), else the first whose
@@ -322,7 +322,7 @@ class _AddProgramGroup extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final importEnabled = ref.watch(aiImportLimitsProvider).asData?.value.enabled ?? false;
+    final importEnabled = ref.watch(aiImportAvailableProvider);
     return ListGroup(
       key: const Key('programs_add'),
       header: const ListGroupHeader(title: 'Add a program'),

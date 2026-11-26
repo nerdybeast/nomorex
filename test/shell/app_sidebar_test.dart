@@ -18,6 +18,8 @@ import 'package:nomorex/features/workouts/models/workout.dart';
 import 'package:nomorex/features/workouts/providers/in_progress_workouts_provider.dart';
 import 'package:nomorex/shared/widgets/responsive_layout.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nomorex/features/ai/core/ai_key_store.dart';
+import '../ai/core/ai_fakes.dart';
 
 class _Workouts extends InProgressWorkoutsNotifier {
   _Workouts(this.items);
@@ -94,6 +96,9 @@ Future<void> _pump(WidgetTester tester, {
       inProgressWorkoutsProvider.overrideWith(() => _Workouts(workouts)),
       currentProgramInstancesProvider.overrideWith(() => _Instances(instances)),
       currentUserRolesProvider.overrideWith((ref) async => roles),
+      // A device that can store keys counts as able to import (it offers
+      // the settings), so "switched off" here also means it can't.
+      aiKeyStoreProvider.overrideWithValue(FakeAiKeyStore(failing: !importEnabled)),
       aiImportLimitsProvider.overrideWith(
         (ref) async => AiImportLimits(
           maxImages: 10,

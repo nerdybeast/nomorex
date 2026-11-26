@@ -13,6 +13,8 @@ import 'package:nomorex/features/ai/utils/import_file_check.dart';
 import 'package:nomorex/features/ai/utils/import_file_picker.dart';
 import 'package:nomorex/features/auth/providers/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'core/ai_fakes.dart';
 
 const _user = User(
   id: 'u1',
@@ -113,6 +115,8 @@ class _FakeIntake extends AiImportIntakeNotifier {
 }
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   late _FakePicker picker;
   late _FakeIntake intake;
   late ProviderContainer container;
@@ -124,6 +128,7 @@ void main() {
       overrides: [
         currentAuthUserProvider.overrideWithValue(_user),
         aiImportLimitsProvider.overrideWith((ref) async => _limits),
+        ...aiDeviceOverrides(),
         importFilePickerProvider.overrideWithValue(picker),
         aiImportIntakeProvider.overrideWith(() => intake),
       ],

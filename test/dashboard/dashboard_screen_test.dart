@@ -26,6 +26,9 @@ import 'package:nomorex/shared/widgets/pr_card.dart';
 import 'package:nomorex/shared/widgets/program_instance_card.dart';
 import 'package:nomorex/shared/widgets/recent_workout_card.dart';
 import 'package:nomorex/shared/widgets/workout_in_progress_card.dart';
+import 'package:nomorex/features/ai/core/ai_key_store.dart';
+import '../ai/core/ai_fakes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _StubPersonalBestsNotifier extends PersonalBestsNotifier {
   @override
@@ -159,6 +162,9 @@ class _PendingPersonalBestsNotifier extends PersonalBestsNotifier {
 }
 
 void main() {
+  // The AI settings read the provider choice from preferences.
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   testWidgets('shows empty state when no programs are in progress', (
     tester,
   ) async {
@@ -648,6 +654,7 @@ void main() {
               () => finishedWorkoutsRefreshed = true,
             ),
           ),
+          aiKeyStoreProvider.overrideWithValue(FakeAiKeyStore()),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -700,6 +707,9 @@ void main() {
             inProgressWorkoutsProvider.overrideWith(() => _EmptyInProgressWorkoutsNotifier()),
             finishedWorkoutsProvider.overrideWith(() => _EmptyFinishedWorkoutsNotifier()),
             programsProvider.overrideWith(() => _StubProgramsNotifier(programs)),
+            // A device that can store keys counts as able to import (it offers
+            // the settings), so "switched off" here also means it can't.
+            aiKeyStoreProvider.overrideWithValue(FakeAiKeyStore(failing: !importEnabled)),
             aiImportLimitsProvider.overrideWith(
               (ref) async => AiImportLimits(
                 maxImages: 10,

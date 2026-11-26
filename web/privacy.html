@@ -16,8 +16,9 @@
     ios/Runner/PrivacyInfo.xcprivacy, the Sentry user context
     (sentryUserSync in lib/features/auth/providers/auth_provider.dart), the
     analytics events (AnalyticsEvents in lib/features/analytics/analytics.dart), the
-    AI import notice (lib/features/ai/screens/ai_import_screen.dart), and the
-    App Store / Play data-disclosure answers.
+    AI import notices (lib/features/ai/screens/ai_import_screen.dart: the
+    hosted one and, for an import with the user's own key, one per provider),
+    and the App Store / Play data-disclosure answers.
   -->
   <style>
     /* Sleek Orange v3 (DESIGN.md). Inter is the app's own bundled copy, which
@@ -102,7 +103,7 @@
 <body>
 <main>
   <h1>NoMoreX Privacy Policy</h1>
-  <p class="meta">Last updated: November 13, 2026</p>
+  <p class="meta">Last updated: November 26, 2026</p>
 
   <p>
     NoMoreX is a strength-training log. You record personal bests, build workouts and programs, and log your
@@ -178,9 +179,10 @@
     applies to the device you change it on.
   </p>
 
-  <h3>Files you upload for AI import</h3>
+  <h3>Files you use for AI import</h3>
   <p>
-    Only if you use AI import: the photos or PDFs you choose, and what was read from them. See
+    Only if you use AI import: what was read from the photos or PDFs you choose and, when NoMoreX reads them for
+    you, the files themselves. When you import with your own AI key, your files and your key never reach us. See
     <a href="#ai-import">AI import</a>.
   </p>
 
@@ -188,7 +190,8 @@
   <p>
     NoMoreX has no advertising and doesn't track you across other companies' apps or websites. We don't collect your
     contacts, your precise location, or health data from Apple Health or Google Health Connect. Photos you import
-    have their location data removed on your device before they're uploaded.
+    have their location data removed on your device before they're uploaded or sent to an AI provider. AI keys you
+    add stay on your device.
   </p>
 
   <h2 id="use">2. How we use it</h2>
@@ -198,7 +201,8 @@
     <li>To show what you choose to publish to other users (see <a href="#public">below</a>).</li>
     <li>To find and fix crashes and errors.</li>
     <li>To understand which features are used, in aggregate, so we know what to improve.</li>
-    <li>To run AI import when you ask for it, and to enforce its usage limits.</li>
+    <li>To run AI import when you ask for it, to keep what was read until you review it, and to enforce the usage
+      limits of imports NoMoreX reads for you.</li>
   </ul>
   <p>
     We don't sell your information, share it for advertising, or use it to build an advertising profile.
@@ -223,8 +227,31 @@
 
   <h2 id="ai-import">4. AI import</h2>
   <p>
-    AI import reads a workout or program from photos or PDFs you choose. It's optional, and the app asks you to
-    accept a notice before your first import.
+    AI import reads a workout or program from photos or PDFs you choose. It's optional, and the app shows you a
+    notice before your first import. It works in one of two ways.
+  </p>
+
+  <h3 id="ai-import-own-key">With your own AI key</h3>
+  <p>
+    You can add your own key for Google's Gemini, Anthropic's Claude or OpenAI's ChatGPT in the app under Profile →
+    AI assistant. Imports then run like this:
+  </p>
+  <ul>
+    <li>Your key is stored only on your device, in its secure storage (on the web, in that browser). It's never
+      sent to NoMoreX, and you can remove it at any time.</li>
+    <li>Your files go from your device straight to the provider you chose, which reads them under your own account
+      with that provider and its terms, not ours. NoMoreX never receives the files. Check your provider's terms for
+      how it handles them: on Gemini's free tier, for example, Google may use them to improve its products.</li>
+    <li>Your files stay on your device until you save or discard the import, so you can try again if it doesn't
+      finish or read them again as the other type. On the web they're kept only until the page is closed.</li>
+    <li>What was read is stored in your NoMoreX account so you can review it, and is deleted after 7 days if you
+      haven't saved it. We also record which provider and model read it, and how much processing it used.</li>
+    <li>You review what was read before anything is saved to your account.</li>
+  </ul>
+
+  <h3 id="ai-import-hosted">Read by NoMoreX</h3>
+  <p>
+    While NoMoreX offers it, you can also import without a key of your own, and you accept a separate notice first:
   </p>
   <ul>
     <li>Your files are uploaded to our storage and sent to Anthropic, whose AI model, Claude, reads them to find
@@ -251,11 +278,16 @@
     <li><strong>Sentry</strong>: crash and error reports.</li>
     <li><strong>Google (Google Analytics for Firebase)</strong>: usage analytics, unless you turn it off. Advertising
       features, advertising identifiers and ad personalization are switched off.</li>
-    <li><strong>Anthropic</strong>: reads the files you upload for AI import, and only when you use it.</li>
+    <li><strong>Anthropic</strong>: reads the files you upload for AI import when NoMoreX reads them for you, and
+      only when you use it.</li>
     <li><strong>GitHub</strong>: hosts the web app and this page.</li>
     <li><strong>Apple and Google</strong>: distribute the apps through the App Store and Google Play under their own
       privacy policies.</li>
   </ul>
+  <p>
+    An AI provider you add your own key for isn't one of our service providers: it works for you, under your
+    account with it (see <a href="#ai-import-own-key">With your own AI key</a>).
+  </p>
   <p>
     If you use NoMoreX from outside the United States, your information is transferred to and stored in the
     United States.
@@ -273,7 +305,9 @@
   <ul>
     <li><strong>Account, profile and training data</strong>: until you delete it in the app or delete your
       account.</li>
-    <li><strong>AI import files and results</strong>: as described in <a href="#ai-import">AI import</a>.</li>
+    <li><strong>AI import files and results</strong>: as described in <a href="#ai-import">AI import</a>. Files
+      kept on your device for an import with your own key are deleted when you save or discard it, and are gone if
+      you uninstall the app.</li>
     <li><strong>Crash reports</strong>: up to 30 days, then deleted by
       Sentry.</li>
     <li><strong>Usage analytics</strong>: individual events are deleted by Google after at most 14 months; what we

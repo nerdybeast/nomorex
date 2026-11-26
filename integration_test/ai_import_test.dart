@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
 import 'support/harness.dart';
+import 'support/pages/ai_assistant_page.dart';
 import 'support/pages/ai_import_page.dart';
 import 'support/pages/shell_page.dart';
 
@@ -36,6 +37,29 @@ void main() {
       await importFlow.open();
       await importFlow.expectFileChoices();
       await importFlow.close();
+    });
+
+    // The test user has no key (this suite never saves one), so imports take
+    // the hosted path seed.sql switches on; the screen offers the settings
+    // for a key of their own. Stops there: nothing is saved or tested.
+    testWidgets('import without a key leads to the AI assistant settings', (tester) async {
+      await bootSignedIn(tester);
+      final shell = ShellPage(tester);
+      final importFlow = AiImportPage(tester);
+      await shell.waitUntilLoaded();
+
+      await shell.goToPrograms();
+      await importFlow.open();
+      if (importFlow.noticeShown) await importFlow.acceptNotice();
+      await importFlow.expectFileChoices();
+      if (importFlow.usingOwnKey) {
+        // A key saved on this machine outside the suite: the link isn't
+        // offered, and that's the path working as intended.
+        await importFlow.close();
+        return;
+      }
+      await importFlow.openOwnKeySettings(AiAssistantPage.imports);
+      expect(AiAssistantPage.imports, findsOneWidget);
     });
   });
 }

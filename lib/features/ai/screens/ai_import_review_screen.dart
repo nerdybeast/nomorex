@@ -14,8 +14,11 @@ import '../../../shared/widgets/list_group.dart';
 import '../../exercises/providers/exercises_provider.dart';
 import '../../exercises/widgets/exercise_picker.dart';
 import '../../workouts/utils/set_resolver.dart';
+import '../core/ai_provider.dart';
 import '../models/ai_import_result.dart';
+import '../providers/ai_import_intake_provider.dart';
 import '../providers/ai_import_review_provider.dart';
+import '../utils/import_file_cache.dart';
 import '../utils/genkit_call.dart';
 import '../utils/import_messages.dart';
 
@@ -153,16 +156,24 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
     }
   }
 
+  /// Who reads a re-run with the lifter's own key, for the wording.
+  String get _rerunProviderName =>
+      CloudAiProvider.fromId(widget.review.provider)?.label ?? 'your AI';
+
   Future<void> _rerun() async {
+    final local = widget.review.ranOnDevice;
     final confirmed = await showConfirmDialog(
       context,
       title: 'Read it as a $_other?',
-      message:
-          'The files are read again as a $_other. This uses one of your imports, '
-          'and what was read this time is replaced.',
+      message: local
+          ? 'The files are read again as a $_other with $_rerunProviderName, using your key, '
+                'and what was read this time is replaced.'
+          : 'The files are read again as a $_other. This uses one of your imports, '
+                'and what was read this time is replaced.',
       confirmLabel: 'Re-run',
     );
     if (!confirmed || !mounted) return;
+    if (local) return _rerunOnDevice();
     setState(() {
       _busy = true;
       _error = null;
@@ -191,6 +202,27 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
         });
       }
     }
+  }
+
+  /// Reads this device's copy of the files again, on the import screen, which
+  /// shows the progress and opens the new review when it's done.
+  Future<void> _rerunOnDevice() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final started = await ref
+        .read(aiImportIntakeProvider.notifier)
+        .rerunFromCache(widget.review.importId, _other);
+    if (!mounted) return;
+    if (!started) {
+      setState(() {
+        _busy = false;
+        _error = "This device no longer has the files, so it can't read them again.";
+      });
+      return;
+    }
+    context.pushReplacement(AppConstants.routeAiImport);
   }
 
   Future<void> _discard() async {
@@ -280,18 +312,27 @@ class _ReviewBodyState extends ConsumerState<_ReviewBody> {
           const SizedBox(height: 4),
           Text('Check what was read against your files, then save it.', style: muted),
           const SizedBox(height: 8),
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            children: [
-              TextButton(
-                key: const Key('ai_import_review_rerun'),
-                onPressed: _busy ? null : _rerun,
-                child: Text('Read it as a $_other instead'),
-              ),
-              Text('Uses one of your imports', style: theme.textTheme.bodySmall?.copyWith(color: muted?.color)),
-            ],
-          ),
+          // A run with the lifter's own key re-runs from this device's copy
+          // of the files, so it's offered only while the device has them.
+          if (!widget.review.ranOnDevice ||
+              ref.watch(cachedImportProvider(widget.review.importId)).value != null)
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              children: [
+                TextButton(
+                  key: const Key('ai_import_review_rerun'),
+                  onPressed: _busy ? null : _rerun,
+                  child: Text('Read it as a $_other instead'),
+                ),
+                Text(
+                  widget.review.ranOnDevice
+                      ? 'Uses your $_rerunProviderName key again'
+                      : 'Uses one of your imports',
+                  style: theme.textTheme.bodySmall?.copyWith(color: muted?.color),
+                ),
+              ],
+            ),
         ],
       ),
     );

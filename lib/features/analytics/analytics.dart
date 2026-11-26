@@ -50,10 +50,12 @@ abstract final class AnalyticsEvents {
   /// program. Params: `content_type` = `workout` | `program`, `started` = 1 | 0.
   static const communityCopy = 'community_copy';
 
-  /// Params: `requested_type` = `auto` | `workout` | `program`, `rerun` = 1 | 0.
+  /// Params: `requested_type` = `auto` | `workout` | `program`, `rerun` = 1 | 0,
+  /// `provider` = `hosted` | `anthropic` | `openai` | `gemini` (who read it).
   static const aiImportStarted = 'ai_import_started';
 
-  /// Params: `content_type` = `workout` | `program`.
+  /// Params: `content_type` = `workout` | `program`, `provider` as for
+  /// [aiImportStarted].
   static const aiImportAccepted = 'ai_import_accepted';
 }
 

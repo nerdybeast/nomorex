@@ -9,7 +9,9 @@ import '../providers/admin_ai_imports_provider.dart';
 import '../utils/admin_error.dart';
 import '../widgets/admin_gate.dart';
 
-/// Turns AI imports on or off for every user (`ai_import_limits.enabled`).
+/// Turns the hosted AI imports (read on the project's account) on or off for
+/// every user (`ai_import_limits.enabled`). Imports with a lifter's own key
+/// don't depend on it.
 class AdminAiImportsScreen extends ConsumerWidget {
   const AdminAiImportsScreen({super.key});
 
@@ -18,8 +20,9 @@ class AdminAiImportsScreen extends ConsumerWidget {
       final confirmed = await showConfirmDialog(
         context,
         title: 'Turn off AI imports?',
-        message: 'Nobody will be able to start a new import, and the import button '
-            'disappears from Workouts and Programs. Imports already running still finish.',
+        message: "Nobody will be able to start an import on NoMoreX's account. Lifters with their own AI key "
+            'can still import, and everyone else is offered the AI assistant settings to add one. '
+            'Imports already running still finish.',
         confirmLabel: 'Turn off',
       );
       if (!confirmed) return;
@@ -56,8 +59,8 @@ class AdminAiImportsScreen extends ConsumerWidget {
                           key: const Key('admin_ai_imports_switch'),
                           title: 'AI imports',
                           subtitle: value.enabled
-                              ? 'On. Everyone can import workouts and programs from photos and PDFs.'
-                              : 'Off. Nobody can start an import.',
+                              ? "On. Lifters without their own AI key import on NoMoreX's account."
+                              : "Off. Nobody can start an import on NoMoreX's account.",
                           value: value.enabled,
                           onChanged: saving ? null : (enabled) => _change(context, ref, enabled),
                         ),

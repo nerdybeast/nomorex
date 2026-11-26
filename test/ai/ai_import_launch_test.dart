@@ -9,10 +9,13 @@ import 'package:nomorex/features/ai/screens/ai_import_screen.dart';
 import 'package:nomorex/features/ai/widgets/ai_import_jobs_section.dart';
 
 import 'ai_import_job_fakes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// The launch surface (#88): the entry point, the one-time notice and every
 /// message a user can meet when they can't import or an import fails.
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   late FakeGate gate;
 
   /// A screen that links to the import screen, as the "New" menus do (their
