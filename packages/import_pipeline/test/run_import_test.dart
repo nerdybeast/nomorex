@@ -108,7 +108,7 @@ void main() {
   test("sets each provider's own output cap", () {
     expect(importConfigFor('anthropic/claude-sonnet-5-5'), {'maxTokens': kImportMaxOutputTokens});
     expect(importConfigFor('openai/gpt-5.5'), {'maxTokens': kImportMaxOutputTokens * 2});
-    expect(importConfigFor('googleai/gemini-flash-latest'), {'maxOutputTokens': kImportMaxOutputTokens});
+    expect(importConfigFor('googleai/gemini-3.5-flash'), {'maxOutputTokens': kImportMaxOutputTokens});
   });
 
   test('sends the system prompt, the files and the catalog, and normalizes the reply', () async {

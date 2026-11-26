@@ -32,7 +32,7 @@ void main() {
 
   test('each provider has limits, Gemini a smaller total for its inline request cap', () {
     expect(importFileLimitsFor('anthropic/claude-sonnet-5-5').maxTotalBytes, 24000000);
-    expect(importFileLimitsFor('googleai/gemini-flash-latest').maxTotalBytes, lessThan(15000000));
+    expect(importFileLimitsFor('googleai/gemini-3.5-flash').maxTotalBytes, lessThan(15000000));
     expect(importFileLimitsFor('unknown/model'), same(kDefaultImportFileLimits));
   });
 }

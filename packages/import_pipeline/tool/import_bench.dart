@@ -18,7 +18,7 @@ import 'package:import_pipeline/src/benchmark.dart';
 const _defaults = {
   'anthropic': ('ANTHROPIC_API_KEY', 'anthropic/claude-sonnet-5-5'),
   'openai': ('OPENAI_API_KEY', 'openai/gpt-5.5'),
-  'gemini': ('GEMINI_API_KEY', 'googleai/gemini-flash-latest'),
+  'gemini': ('GEMINI_API_KEY', 'googleai/gemini-3.5-flash'),
 };
 
 Future<void> main(List<String> args) async {
