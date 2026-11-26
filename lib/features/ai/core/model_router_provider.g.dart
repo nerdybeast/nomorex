@@ -8,23 +8,30 @@ part of 'model_router_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Whether the on-device model can run. `unsupported` everywhere until the
-/// Apple Intelligence (Stage 7) and Gemini Nano / Chrome (Stage 8) plugins
-/// report their status here.
+/// Whether the on-device model can run, or null when this build has no way to
+/// ask: null everywhere until the Apple Intelligence (Stage 7) and Gemini Nano
+/// / Chrome (Stage 8) plugins report here. Null is not `unsupported`: the
+/// device may well have a model the app can't use yet, so the settings screen
+/// says nothing rather than "this device can't run one".
 
 @ProviderFor(onDeviceAvailability)
 final onDeviceAvailabilityProvider = OnDeviceAvailabilityProvider._();
 
-/// Whether the on-device model can run. `unsupported` everywhere until the
-/// Apple Intelligence (Stage 7) and Gemini Nano / Chrome (Stage 8) plugins
-/// report their status here.
+/// Whether the on-device model can run, or null when this build has no way to
+/// ask: null everywhere until the Apple Intelligence (Stage 7) and Gemini Nano
+/// / Chrome (Stage 8) plugins report here. Null is not `unsupported`: the
+/// device may well have a model the app can't use yet, so the settings screen
+/// says nothing rather than "this device can't run one".
 
 final class OnDeviceAvailabilityProvider
-    extends $FunctionalProvider<OnDeviceStatus, OnDeviceStatus, OnDeviceStatus>
-    with $Provider<OnDeviceStatus> {
-  /// Whether the on-device model can run. `unsupported` everywhere until the
-  /// Apple Intelligence (Stage 7) and Gemini Nano / Chrome (Stage 8) plugins
-  /// report their status here.
+    extends
+        $FunctionalProvider<OnDeviceStatus?, OnDeviceStatus?, OnDeviceStatus?>
+    with $Provider<OnDeviceStatus?> {
+  /// Whether the on-device model can run, or null when this build has no way to
+  /// ask: null everywhere until the Apple Intelligence (Stage 7) and Gemini Nano
+  /// / Chrome (Stage 8) plugins report here. Null is not `unsupported`: the
+  /// device may well have a model the app can't use yet, so the settings screen
+  /// says nothing rather than "this device can't run one".
   OnDeviceAvailabilityProvider._()
     : super(
         from: null,
@@ -41,25 +48,25 @@ final class OnDeviceAvailabilityProvider
 
   @$internal
   @override
-  $ProviderElement<OnDeviceStatus> $createElement($ProviderPointer pointer) =>
+  $ProviderElement<OnDeviceStatus?> $createElement($ProviderPointer pointer) =>
       $ProviderElement(pointer);
 
   @override
-  OnDeviceStatus create(Ref ref) {
+  OnDeviceStatus? create(Ref ref) {
     return onDeviceAvailability(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(OnDeviceStatus value) {
+  Override overrideWithValue(OnDeviceStatus? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<OnDeviceStatus>(value),
+      providerOverride: $SyncValueProvider<OnDeviceStatus?>(value),
     );
   }
 }
 
 String _$onDeviceAvailabilityHash() =>
-    r'1a8caa4019105500697993f89ee56453eff76060';
+    r'9238d2971104b7c7e6f515c9bff1ada8cc2267b2';
 
 /// Which model runs [task] right now, or null when nothing can: the feature
 /// hides itself then. Also null while the settings are still loading, so a
@@ -129,7 +136,7 @@ final class ModelForTaskProvider
   }
 }
 
-String _$modelForTaskHash() => r'52b6249b9ff6f106b57a0236b0e84f0521e4e3d4';
+String _$modelForTaskHash() => r'a91b6c3b330b2ef5134c1844f462f4f0b1a8ad8e';
 
 /// Which model runs [task] right now, or null when nothing can: the feature
 /// hides itself then. Also null while the settings are still loading, so a

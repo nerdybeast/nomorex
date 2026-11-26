@@ -153,6 +153,16 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   const _AnalyticsSwitch(),
                   const SizedBox(height: 28),
+                  Text('AI ASSISTANT', style: NomorexTokens.of(context).eyebrow),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    key: const Key('profile_ai_assistant_button'),
+                    style: NomorexTokens.of(context).secondaryButtonStyle,
+                    icon: const Icon(Icons.auto_awesome_outlined),
+                    label: const Text('AI assistant'),
+                    onPressed: () => context.push(AppConstants.routeAiAssistant),
+                  ),
+                  const SizedBox(height: 28),
                   if (isAdmin) ...[
                     Text('ADMIN', style: NomorexTokens.of(context).eyebrow),
                     const SizedBox(height: 12),

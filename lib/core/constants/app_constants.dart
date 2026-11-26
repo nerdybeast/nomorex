@@ -21,6 +21,7 @@ class AppConstants {
   static const String routeLanding = '/';
   static const String routeLogin = '/login';
   static const String routeProfile = '/profile';
+  static const String routeAiAssistant = '/profile/ai-assistant';
   // Admin hub and its sections, reached from Profile. Admins only: the route
   // redirects everyone else (adminRouteRedirect).
   static const String routeAdmin = '/admin';

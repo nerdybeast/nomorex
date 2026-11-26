@@ -14,6 +14,7 @@
 // so none depends on another's data.
 import 'package:integration_test/integration_test.dart';
 
+import 'ai_assistant_test.dart' as ai_assistant;
 import 'ai_import_test.dart' as ai_import;
 import 'app_test.dart' as app;
 import 'community_copy_test.dart' as community_copy;
@@ -26,6 +27,7 @@ void main() {
   app.main();
   personal_best.main();
   ai_import.main();
+  ai_assistant.main();
   community_copy.main();
   program_sessions.main();
 }

@@ -124,9 +124,9 @@ void main() {
     }
   });
 
-  test('on device is unsupported until Stages 7 and 8', () {
+  test('on device is unknown until Stages 7 and 8', () {
     final container = containerWith(FakeAiKeyStore());
-    expect(container.read(onDeviceAvailabilityProvider), OnDeviceStatus.unsupported);
+    expect(container.read(onDeviceAvailabilityProvider), isNull, reason: 'this build cannot ask yet');
     expect(container.read(modelForTaskProvider(AiTask.suggestTitle)), isNull);
   });
 }
