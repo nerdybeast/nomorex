@@ -70,10 +70,15 @@ jobs:
         working-directory: packages/import_pipeline
         run: dart pub get && dart analyze --fatal-infos && dart test
 
-      # A plugin package with its own tests, which the root `flutter test`
-      # doesn't run. Its Swift is compiled by build-ios.
+      # Plugin packages with their own tests, which the root `flutter test`
+      # doesn't run. Their Swift is compiled by build-ios.
       - name: Test the Apple Intelligence plugin package
         working-directory: packages/genkit_apple_intelligence
+        run: flutter pub get && flutter analyze --fatal-infos && flutter test
+
+      # Same for Gemini Nano's; build-android compiles its Kotlin.
+      - name: Test the ML Kit GenAI plugin package
+        working-directory: packages/genkit_mlkit_genai
         run: flutter pub get && flutter analyze --fatal-infos && flutter test
 
       - name: Write coverage to job summary

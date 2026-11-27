@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # Fails if any committed generated file is out of date with its source: the
-# build_runner *.g.dart files, and the Pigeon bridge of
-# packages/genkit_apple_intelligence (Dart and Swift).
+# build_runner *.g.dart files, and the Pigeon bridges of the plugin packages
+# (Dart, Swift and Kotlin).
 #
 # Generated files are committed, so a provider or annotation edited without
 # rerunning build_runner leaves its .g.dart stale. Nothing else notices: the
@@ -22,14 +22,15 @@ cd "$(dirname "$0")/.."
 dart run build_runner clean >/dev/null
 dart run build_runner build --delete-conflicting-outputs
 
-# Pigeon: regenerated from pigeon/messages.dart in the plugin package.
-(cd packages/genkit_apple_intelligence && flutter pub get >/dev/null && dart run pigeon --input pigeon/messages.dart)
+# Pigeon: each plugin package's bridge, from its pigeon/messages.dart.
+source scripts/lib/pigeon.sh
+regenerate_pigeon
 
-changed=$(git status --porcelain -- '*.g.dart' '*.g.swift')
+changed=$(git status --porcelain -- '*.g.dart' '*.g.swift' '*.g.kt')
 if [ -n "$changed" ]; then
   echo "Generated files are out of date with their sources:"
   echo "$changed"
-  git --no-pager diff --stat -- '*.g.dart' '*.g.swift'
+  git --no-pager diff --stat -- '*.g.dart' '*.g.swift' '*.g.kt'
   echo
   echo "Run: ./scripts/gen.sh"
   echo "then commit the generated changes."
