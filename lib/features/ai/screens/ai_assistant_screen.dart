@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:schemantic/schemantic.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/external_link.dart';
@@ -9,9 +10,12 @@ import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/responsive_layout.dart';
 import '../../shell/widgets/breadcrumb_title.dart';
+import '../core/ai_generate.dart';
 import '../core/ai_provider.dart';
+import '../core/ai_provider_exception.dart';
 import '../core/ai_settings_provider.dart';
 import '../core/ai_task.dart';
+import '../core/genkit_provider.dart';
 import '../core/model_router_provider.dart';
 import '../providers/ai_key_check_provider.dart';
 import '../utils/ai_provider_info.dart';
@@ -134,6 +138,9 @@ class _OnDeviceGroup extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Text(body, style: tokens.bodySmall),
                     ?below,
+                    // Debug builds only: a real request, to check the model
+                    // on a device (#189's "Done when").
+                    if (kDebugMode && status.isReady) const _TryOnDevice(),
                   ],
                 ),
               ),
@@ -564,6 +571,84 @@ class _Pill extends StatelessWidget {
           Icon(icon, size: 14, color: tokens.palette.fg2),
           const SizedBox(width: 4),
           Text(label, style: tokens.bodySmall.copyWith(fontSize: 12, height: 1)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Debug builds only: asks the on-device model for a workout name as
+/// structured output, and shows the reply, its token counts and the time.
+class _TryOnDevice extends ConsumerStatefulWidget {
+  const _TryOnDevice();
+
+  @override
+  ConsumerState<_TryOnDevice> createState() => _TryOnDeviceState();
+}
+
+class _TryOnDeviceState extends ConsumerState<_TryOnDevice> {
+  bool _running = false;
+  String? _result;
+
+  static final _titleSchema = SchemanticType.from<Map<String, dynamic>>(
+    jsonSchema: {
+      'type': 'object',
+      'properties': {
+        'title': {'type': 'string', 'description': 'A short workout name, at most 40 characters'},
+      },
+      'required': ['title'],
+    },
+    parse: (json) => Map<String, dynamic>.from(json as Map),
+  );
+
+  Future<void> _run() async {
+    setState(() {
+      _running = true;
+      _result = null;
+    });
+    final route = ref.read(modelForTaskProvider(AiTask.suggestTitle));
+    final watch = Stopwatch()..start();
+    String result;
+    try {
+      if (route == null) throw AiProviderException(AiErrorCode.unavailable);
+      final ai = await ref.read(genkitProvider.future);
+      final reply = await generateWithRoute(
+        ai,
+        route,
+        system: 'You name strength training workouts.',
+        prompt: 'Name this workout: Back Squat 5x5 @ 80%, Romanian Deadlift 3x8, Walking Lunge 3x12.',
+        outputSchema: _titleSchema,
+        config: {'maxOutputTokens': 64},
+      );
+      final usage = reply.usage;
+      result =
+          '${reply.output} · ${usage?.inputTokens ?? '?'} in / ${usage?.outputTokens ?? '?'} out · '
+          '${watch.elapsedMilliseconds} ms';
+    } on AiProviderException catch (e) {
+      result = '${e.message} (${e.code.name}: ${e.cause})';
+    }
+    if (mounted) {
+      setState(() {
+        _running = false;
+        _result = result;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextButton(
+            key: const Key('ai_on_device_try'),
+            onPressed: _running ? null : _run,
+            child: Text(_running ? 'Asking…' : 'Try it (debug)'),
+          ),
+          if (_result case final result?)
+            SelectableText(result, key: const Key('ai_on_device_try_result'), style: NomorexTokens.of(context).bodySmall),
         ],
       ),
     );

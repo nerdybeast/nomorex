@@ -1,14 +1,18 @@
 import 'package:genkit/genkit.dart';
+import 'package:genkit_apple_intelligence/genkit_apple_intelligence.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'ai_key_store.dart';
 import 'ai_settings_provider.dart';
+import 'model_router_provider.dart';
 import 'plugins/cloud_plugins.dart';
 
 part 'genkit_provider.g.dart';
 
 /// The app's Genkit instance, with the plugin for the chosen cloud provider
-/// when its key is saved. On-device plugins join it in Stages 7 and 8.
+/// when its key is saved, and the on-device model where it's ready: Apple
+/// Intelligence on iOS and macOS (Stage 7); Gemini Nano and Chrome's join in
+/// Stage 8.
 ///
 /// Rebuilt whenever the provider or a key changes, because plugins take the
 /// key when they're created. Widget tests override this with a Genkit that
@@ -32,6 +36,10 @@ Future<Genkit> genkit(Ref ref) async {
   // No prompt folder and never the dev reflection server: this runs on
   // lifters' devices.
   final ai = Genkit(plugins: plugins, promptDir: null, isDevEnv: false);
+  final apple = await ref.watch(appleModelStatusProvider.future);
+  if (apple?.availability == AppleModelAvailability.available) {
+    defineAppleIntelligenceModel(ai, status: apple!, api: ref.read(appleIntelligenceProvider));
+  }
   ref.onDispose(ai.shutdown);
   return ai;
 }

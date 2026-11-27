@@ -623,6 +623,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.3"
+  genkit_apple_intelligence:
+    dependency: "direct main"
+    description:
+      path: "packages/genkit_apple_intelligence"
+      relative: true
+    source: path
+    version: "0.1.0"
   genkit_google_genai:
     dependency: "direct main"
     description:
@@ -1665,5 +1672,5 @@ packages:
     source: hosted
     version: "2.1.1"
 sdks:
-  dart: ">=3.13.0 <4.0.0"
+  dart: ">=3.14.0 <4.0.0"
   flutter: ">=3.47.0"

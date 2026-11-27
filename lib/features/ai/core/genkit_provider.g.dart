@@ -9,7 +9,9 @@ part of 'genkit_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// The app's Genkit instance, with the plugin for the chosen cloud provider
-/// when its key is saved. On-device plugins join it in Stages 7 and 8.
+/// when its key is saved, and the on-device model where it's ready: Apple
+/// Intelligence on iOS and macOS (Stage 7); Gemini Nano and Chrome's join in
+/// Stage 8.
 ///
 /// Rebuilt whenever the provider or a key changes, because plugins take the
 /// key when they're created. Widget tests override this with a Genkit that
@@ -19,7 +21,9 @@ part of 'genkit_provider.dart';
 final genkitProvider = GenkitProvider._();
 
 /// The app's Genkit instance, with the plugin for the chosen cloud provider
-/// when its key is saved. On-device plugins join it in Stages 7 and 8.
+/// when its key is saved, and the on-device model where it's ready: Apple
+/// Intelligence on iOS and macOS (Stage 7); Gemini Nano and Chrome's join in
+/// Stage 8.
 ///
 /// Rebuilt whenever the provider or a key changes, because plugins take the
 /// key when they're created. Widget tests override this with a Genkit that
@@ -29,7 +33,9 @@ final class GenkitProvider
     extends $FunctionalProvider<AsyncValue<Genkit>, Genkit, FutureOr<Genkit>>
     with $FutureModifier<Genkit>, $FutureProvider<Genkit> {
   /// The app's Genkit instance, with the plugin for the chosen cloud provider
-  /// when its key is saved. On-device plugins join it in Stages 7 and 8.
+  /// when its key is saved, and the on-device model where it's ready: Apple
+  /// Intelligence on iOS and macOS (Stage 7); Gemini Nano and Chrome's join in
+  /// Stage 8.
   ///
   /// Rebuilt whenever the provider or a key changes, because plugins take the
   /// key when they're created. Widget tests override this with a Genkit that
@@ -59,4 +65,4 @@ final class GenkitProvider
   }
 }
 
-String _$genkitHash() => r'9ad80c3d6f6444b832bfe23c0ee62e65b33c4667';
+String _$genkitHash() => r'6337614e87900effa148b2f60fcdbc883a802881';

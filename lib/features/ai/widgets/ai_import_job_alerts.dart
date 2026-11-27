@@ -8,6 +8,7 @@ import '../providers/ai_import_alerts_provider.dart';
 import '../providers/ai_import_intake_provider.dart';
 import '../providers/ai_import_jobs_provider.dart';
 import '../utils/import_alert_tracker.dart';
+import '../core/model_router_provider.dart';
 
 /// Wraps the whole app (`MaterialApp.router`'s `builder`) to keep import jobs
 /// current and to alert on any screen when one finishes.
@@ -45,6 +46,8 @@ class _AiImportJobAlertsState extends ConsumerState<AiImportJobAlerts> {
         ref.invalidate(aiImportJobsProvider);
         // Picks up the off switch, which shows or hides the entry points.
         ref.invalidate(aiImportLimitsProvider);
+        // Apple Intelligence may have been turned on or off in Settings.
+        ref.invalidate(appleModelStatusProvider);
       },
     );
   }
