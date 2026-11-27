@@ -89,6 +89,14 @@ class _OnDeviceGroup extends ConsumerWidget {
         const _Pill(icon: Icons.check, label: 'Ready'),
         null,
       ),
+      OnDeviceAvailability.downloadable => (
+        _deviceIcon,
+        label,
+        "Download it to get suggested names, descriptions and exercises$where, free and offline. It's a large "
+            'one-time download, so use Wi-Fi.',
+        null,
+        const _DownloadOnDevice(),
+      ),
       OnDeviceAvailability.downloading => (
         _deviceIcon,
         label,
@@ -649,6 +657,40 @@ class _TryOnDeviceState extends ConsumerState<_TryOnDevice> {
           ),
           if (_result case final result?)
             SelectableText(result, key: const Key('ai_on_device_try_result'), style: NomorexTokens.of(context).bodySmall),
+        ],
+      ),
+    );
+  }
+}
+
+/// Starts the on-device model download (Android and Chrome), which the lifter
+/// chooses because it's several GB. Shows why the last try failed.
+class _DownloadOnDevice extends ConsumerWidget {
+  const _DownloadOnDevice();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final download = ref.watch(onDeviceDownloadProvider);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FilledButton.icon(
+            key: const Key('ai_on_device_download'),
+            style: NomorexTokens.of(context).secondaryButtonStyle,
+            onPressed: download.running ? null : () => ref.read(onDeviceDownloadProvider.notifier).start(),
+            icon: const Icon(Icons.download_outlined),
+            label: const Text('Download'),
+          ),
+          if (download.error case final error?) ...[
+            const SizedBox(height: 6),
+            Text(
+              error,
+              key: const Key('ai_on_device_download_error'),
+              style: NomorexTokens.of(context).bodySmall.copyWith(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
         ],
       ),
     );

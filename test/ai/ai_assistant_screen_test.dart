@@ -13,14 +13,18 @@ import 'package:nomorex/features/ai/providers/ai_key_check_provider.dart';
 import 'package:nomorex/features/ai/screens/ai_assistant_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/call_counter.dart';
 import 'core/ai_fakes.dart';
 
 const phone = Size(390, 1600);
 const desktop = Size(1280, 1600);
 
 class Harness {
-  Harness({Map<CloudAiProvider, String>? keys, bool failingStore = false, this.checkError})
+  Harness({Map<CloudAiProvider, String>? keys, bool failingStore = false, this.checkError, this.download})
     : store = FakeAiKeyStore(keys: keys, failing: failingStore);
+
+  /// Replaces the on-device download, so nothing reaches a platform.
+  final FakeDownload? download;
 
   final FakeAiKeyStore store;
   AiProviderException? checkError;
@@ -40,6 +44,7 @@ class Harness {
         overrides: [
           aiKeyStoreProvider.overrideWithValue(store),
           onDeviceAvailabilityProvider.overrideWithValue(onDevice),
+          if (download case final download?) onDeviceDownloadProvider.overrideWith(() => download),
           aiKeyCheckerProvider.overrideWithValue((provider, key) async {
             checked.add((provider, key));
             if (checkError != null) throw checkError!;
@@ -206,6 +211,15 @@ void main() {
       expect(tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator)).value, 0.62);
     });
 
+    testWidgets('downloadable offers the download, which the lifter starts', (tester) async {
+      final download = FakeDownload();
+      await Harness(download: download).pump(tester, onDevice: const OnDeviceStatus(OnDeviceAvailability.downloadable));
+      expect(find.textContaining('large one-time download'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('ai_on_device_download')));
+      await tester.pump();
+      expect(download.starts.count, 1);
+    });
+
     testWidgets('turned off', (tester) async {
       await Harness().pump(tester, onDevice: const OnDeviceStatus(OnDeviceAvailability.disabled));
       expect(find.text('Gemini Nano is off'), findsOneWidget);
@@ -233,4 +247,14 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
   });
+}
+
+class FakeDownload extends OnDeviceDownloadNotifier {
+  final starts = CallCounter();
+
+  @override
+  OnDeviceDownload build() => const OnDeviceDownload();
+
+  @override
+  Future<void> start() async => starts();
 }

@@ -638,6 +638,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.0"
+  genkit_mlkit_genai:
+    dependency: "direct main"
+    description:
+      path: "packages/genkit_mlkit_genai"
+      relative: true
+    source: path
+    version: "0.1.0"
   genkit_openai:
     dependency: "direct main"
     description:

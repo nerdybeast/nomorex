@@ -1,0 +1,27 @@
+name: genkit_mlkit_genai
+description: A Genkit model for Gemini Nano through the ML Kit GenAI Prompt API on Android.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.14.0
+  flutter: '>=3.3.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  genkit: ^1.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  pigeon: ^29.0.1
+  schemantic: ^1.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.nomorex.genkit_mlkit_genai
+        pluginClass: GenkitMlkitGenaiPlugin

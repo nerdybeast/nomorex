@@ -10,8 +10,8 @@ part of 'genkit_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// The app's Genkit instance, with the plugin for the chosen cloud provider
 /// when its key is saved, and the on-device model where it's ready: Apple
-/// Intelligence on iOS and macOS (Stage 7); Gemini Nano and Chrome's join in
-/// Stage 8.
+/// Intelligence on iOS and macOS, Gemini Nano on Android, Chrome's built-in AI
+/// on the web.
 ///
 /// Rebuilt whenever the provider or a key changes, because plugins take the
 /// key when they're created. Widget tests override this with a Genkit that
@@ -22,8 +22,8 @@ final genkitProvider = GenkitProvider._();
 
 /// The app's Genkit instance, with the plugin for the chosen cloud provider
 /// when its key is saved, and the on-device model where it's ready: Apple
-/// Intelligence on iOS and macOS (Stage 7); Gemini Nano and Chrome's join in
-/// Stage 8.
+/// Intelligence on iOS and macOS, Gemini Nano on Android, Chrome's built-in AI
+/// on the web.
 ///
 /// Rebuilt whenever the provider or a key changes, because plugins take the
 /// key when they're created. Widget tests override this with a Genkit that
@@ -34,8 +34,8 @@ final class GenkitProvider
     with $FutureModifier<Genkit>, $FutureProvider<Genkit> {
   /// The app's Genkit instance, with the plugin for the chosen cloud provider
   /// when its key is saved, and the on-device model where it's ready: Apple
-  /// Intelligence on iOS and macOS (Stage 7); Gemini Nano and Chrome's join in
-  /// Stage 8.
+  /// Intelligence on iOS and macOS, Gemini Nano on Android, Chrome's built-in AI
+  /// on the web.
   ///
   /// Rebuilt whenever the provider or a key changes, because plugins take the
   /// key when they're created. Widget tests override this with a Genkit that
@@ -65,4 +65,4 @@ final class GenkitProvider
   }
 }
 
-String _$genkitHash() => r'6337614e87900effa148b2f60fcdbc883a802881';
+String _$genkitHash() => r'6d0c600e4c3ef36bc74b8e212f4f51804bf1384b';
