@@ -56,6 +56,7 @@ stage "generated files up to date" ./scripts/check-generated.sh
 stage "flutter analyze" flutter analyze
 stage "flutter test" flutter test
 stage "import_pipeline package (dart test)" bash -c 'cd packages/import_pipeline && dart pub get >/dev/null && dart analyze --fatal-infos && dart test'
+stage "genkit_apple_intelligence package (flutter test)" bash -c 'cd packages/genkit_apple_intelligence && flutter pub get >/dev/null && flutter analyze --fatal-infos && flutter test'
 
 if [[ "$RUN_DB" == true ]]; then
   if need_docker; then
