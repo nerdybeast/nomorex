@@ -124,8 +124,9 @@ void main() {
     }
   });
 
-  test('on device is unknown until Stages 7 and 8', () {
+  test('on device is unknown off Apple platforms until Stage 8', () async {
     final container = containerWith(FakeAiKeyStore());
+    expect(await container.read(appleModelStatusProvider.future), isNull, reason: 'tests run as Android');
     expect(container.read(onDeviceAvailabilityProvider), isNull, reason: 'this build cannot ask yet');
     expect(container.read(modelForTaskProvider(AiTask.suggestTitle)), isNull);
   });

@@ -1,0 +1,9 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - lib/src/messages.g.dart
+    - build/**
+
+formatter:
+  page_width: 120

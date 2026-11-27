@@ -8,30 +8,134 @@ part of 'model_router_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// The bridge to Apple's Foundation Models, as a provider so tests can fake it.
+
+@ProviderFor(appleIntelligence)
+final appleIntelligenceProvider = AppleIntelligenceProvider._();
+
+/// The bridge to Apple's Foundation Models, as a provider so tests can fake it.
+
+final class AppleIntelligenceProvider
+    extends
+        $FunctionalProvider<
+          AppleIntelligenceApi,
+          AppleIntelligenceApi,
+          AppleIntelligenceApi
+        >
+    with $Provider<AppleIntelligenceApi> {
+  /// The bridge to Apple's Foundation Models, as a provider so tests can fake it.
+  AppleIntelligenceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'appleIntelligenceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$appleIntelligenceHash();
+
+  @$internal
+  @override
+  $ProviderElement<AppleIntelligenceApi> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  AppleIntelligenceApi create(Ref ref) {
+    return appleIntelligence(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AppleIntelligenceApi value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AppleIntelligenceApi>(value),
+    );
+  }
+}
+
+String _$appleIntelligenceHash() => r'7ea429244251859ec2a88cf4e7ca51d4e7042f3d';
+
+/// Apple Intelligence's status on iOS and macOS, or null on other platforms.
+/// Re-read when the app resumes (`AiImportJobAlerts`), since the lifter may
+/// have turned Apple Intelligence on in Settings meanwhile.
+
+@ProviderFor(appleModelStatus)
+final appleModelStatusProvider = AppleModelStatusProvider._();
+
+/// Apple Intelligence's status on iOS and macOS, or null on other platforms.
+/// Re-read when the app resumes (`AiImportJobAlerts`), since the lifter may
+/// have turned Apple Intelligence on in Settings meanwhile.
+
+final class AppleModelStatusProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<AppleModelStatus?>,
+          AppleModelStatus?,
+          FutureOr<AppleModelStatus?>
+        >
+    with
+        $FutureModifier<AppleModelStatus?>,
+        $FutureProvider<AppleModelStatus?> {
+  /// Apple Intelligence's status on iOS and macOS, or null on other platforms.
+  /// Re-read when the app resumes (`AiImportJobAlerts`), since the lifter may
+  /// have turned Apple Intelligence on in Settings meanwhile.
+  AppleModelStatusProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'appleModelStatusProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$appleModelStatusHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<AppleModelStatus?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<AppleModelStatus?> create(Ref ref) {
+    return appleModelStatus(ref);
+  }
+}
+
+String _$appleModelStatusHash() => r'd35ebc277ff2b367c17c7263d761ced016c75d0c';
+
 /// Whether the on-device model can run, or null when this build has no way to
-/// ask: null everywhere until the Apple Intelligence (Stage 7) and Gemini Nano
-/// / Chrome (Stage 8) plugins report here. Null is not `unsupported`: the
-/// device may well have a model the app can't use yet, so the settings screen
-/// says nothing rather than "this device can't run one".
+/// ask: Android and the web until Stage 8 (Gemini Nano, Chrome), and while
+/// Apple's status loads. Null is not `unsupported`: the device may well have a
+/// model the app can't use yet, so the settings screen says nothing rather
+/// than "this device can't run one".
 
 @ProviderFor(onDeviceAvailability)
 final onDeviceAvailabilityProvider = OnDeviceAvailabilityProvider._();
 
 /// Whether the on-device model can run, or null when this build has no way to
-/// ask: null everywhere until the Apple Intelligence (Stage 7) and Gemini Nano
-/// / Chrome (Stage 8) plugins report here. Null is not `unsupported`: the
-/// device may well have a model the app can't use yet, so the settings screen
-/// says nothing rather than "this device can't run one".
+/// ask: Android and the web until Stage 8 (Gemini Nano, Chrome), and while
+/// Apple's status loads. Null is not `unsupported`: the device may well have a
+/// model the app can't use yet, so the settings screen says nothing rather
+/// than "this device can't run one".
 
 final class OnDeviceAvailabilityProvider
     extends
         $FunctionalProvider<OnDeviceStatus?, OnDeviceStatus?, OnDeviceStatus?>
     with $Provider<OnDeviceStatus?> {
   /// Whether the on-device model can run, or null when this build has no way to
-  /// ask: null everywhere until the Apple Intelligence (Stage 7) and Gemini Nano
-  /// / Chrome (Stage 8) plugins report here. Null is not `unsupported`: the
-  /// device may well have a model the app can't use yet, so the settings screen
-  /// says nothing rather than "this device can't run one".
+  /// ask: Android and the web until Stage 8 (Gemini Nano, Chrome), and while
+  /// Apple's status loads. Null is not `unsupported`: the device may well have a
+  /// model the app can't use yet, so the settings screen says nothing rather
+  /// than "this device can't run one".
   OnDeviceAvailabilityProvider._()
     : super(
         from: null,
@@ -66,7 +170,7 @@ final class OnDeviceAvailabilityProvider
 }
 
 String _$onDeviceAvailabilityHash() =>
-    r'9238d2971104b7c7e6f515c9bff1ada8cc2267b2';
+    r'c4804fb6bce40ec3890ff679350989158ba455b6';
 
 /// Which model runs [task] right now, or null when nothing can: the feature
 /// hides itself then. Also null while the settings are still loading, so a
