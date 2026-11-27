@@ -110,7 +110,11 @@ echo "==> Running $TARGET on $DEVICE"
 TIMEOUT="${E2E_TIMEOUT:-900}"
 FOREGROUND_ERROR="Failed to foreground app"
 log="$(mktemp)"
-trap 'rm -f "$log"' EXIT
+# The watchdog records a timeout in its own file. Appending a marker to $log
+# doesn't work: tee keeps writing at its own offset and overwrites it.
+timed_out="$(mktemp)"
+rm -f "$timed_out"
+trap 'rm -f "$log" "$timed_out"' EXIT
 
 # macOS has a flavor per environment (like iOS and Android); the suite runs as
 # local. Linux and web have no flavors. The ${...+...} form keeps an empty array
@@ -125,8 +129,9 @@ flutter test "$TARGET" -d "$DEVICE" --reporter expanded ${FLAVOR_ARGS[@]+"${FLAV
 pid=$!
 (
   sleep "$TIMEOUT"
-  echo "" >> "$log"
-  echo "==> TIMEOUT after ${TIMEOUT}s" | tee -a "$log"
+  touch "$timed_out"
+  echo ""
+  echo "==> TIMEOUT after ${TIMEOUT}s"
   pkill -TERM -P "$pid" 2>/dev/null || true
   kill -TERM "$pid" 2>/dev/null || true
 ) &
@@ -138,8 +143,13 @@ wait "$watchdog" 2>/dev/null || true
 # tee finishes writing after flutter exits; give it a moment before grepping.
 sleep 1
 
-if grep -q "==> TIMEOUT" "$log"; then
+if [[ -f "$timed_out" ]]; then
   status=124
+fi
+# flutter test can exit 0 after being stopped mid-run, so its own summary of a
+# failure counts too.
+if [[ "$status" -eq 0 ]] && grep -qE "Some tests failed|\(did not complete\)" "$log"; then
+  status=1
 fi
 
 echo ""
