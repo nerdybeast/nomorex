@@ -61,7 +61,11 @@ const Map<CloudAiProvider, String> kCloudNamespaces = {
 enum OnDeviceAvailability {
   ready,
 
-  /// The model is still downloading (Android and Chrome).
+  /// The device can run one, but it isn't downloaded yet (Android and Chrome).
+  /// It's several GB, so the lifter starts it from AI assistant.
+  downloadable,
+
+  /// The model is downloading (Android and Chrome), or Apple is preparing it.
   downloading,
 
   /// The device could run it, but the lifter turned it off (Apple
@@ -73,7 +77,8 @@ enum OnDeviceAvailability {
 }
 
 /// What the device offers. [modelName] is the Genkit name of the on-device
-/// model, set by the platform plugin (Stages 7 and 8) when it's [ready].
+/// model, set by the platform plugin (Apple Intelligence, Gemini Nano or
+/// Chrome's) when it's [ready].
 @immutable
 class OnDeviceStatus {
   const OnDeviceStatus(this.availability, {this.modelName, this.downloadProgress});

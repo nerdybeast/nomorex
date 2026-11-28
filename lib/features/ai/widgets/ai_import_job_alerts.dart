@@ -46,8 +46,9 @@ class _AiImportJobAlertsState extends ConsumerState<AiImportJobAlerts> {
         ref.invalidate(aiImportJobsProvider);
         // Picks up the off switch, which shows or hides the entry points.
         ref.invalidate(aiImportLimitsProvider);
-        // Apple Intelligence may have been turned on or off in Settings.
-        ref.invalidate(appleModelStatusProvider);
+        // Apple Intelligence may have been turned on in Settings, or a
+        // model download finished, while the app was away.
+        refreshOnDeviceStatus(ref);
       },
     );
   }
