@@ -1,12 +1,12 @@
 import '../../../core/utils/percent_range.dart';
 import '../../../core/utils/weight_converter.dart';
+import '../../../shared/models/editable_set_row.dart';
 import '../../../shared/models/set_type.dart';
 import '../../../shared/widgets/summary_card.dart';
 import '../../workouts/utils/set_resolver.dart';
 import '../models/program_day.dart';
 import '../models/program_exercise.dart';
 import '../models/program_session.dart';
-import '../models/program_set.dart';
 import '../models/program_week.dart';
 import 'program_day_brief.dart';
 
@@ -38,26 +38,29 @@ String weekSummary(ProgramWeek week) {
   return '${pluralize(week.days.length, 'day')} · ${pluralize(exercises, 'exercise')}';
 }
 
+/// [exercise]'s sets as the editors see them. The summaries below read these,
+/// so a workout's sets (`WorkoutSet.toEditableRow`) summarize the same way.
+List<EditableSetRow> _rows(ProgramExercise exercise) => [for (final s in exercise.sets) s.toEditableRow()];
+
 /// The sets a summary describes: the working sets, or all of them when the
 /// exercise has none (see [countedSets]).
-List<ProgramSet> _summarized(ProgramExercise exercise) => countedSets(exercise.sets, (s) => s.setType);
+List<EditableSetRow> _summarized(List<EditableSetRow> sets) => countedSets(sets, (s) => s.setType);
 
 /// The sets left out of [_summarized], as "2 warm-up" or "2 warm-up · 1
 /// cool-down"; null when every set is summarized.
-String? _extraSets(ProgramExercise exercise) {
-  if (_summarized(exercise).length == exercise.sets.length) return null;
+String? _extraSets(List<EditableSetRow> sets) {
+  if (_summarized(sets).length == sets.length) return null;
   final parts = [
     for (final type in [SetType.warmup, SetType.cooldown])
-      if (exercise.sets.where((s) => s.setType == type).length case final n when n > 0)
-        '$n ${type.label.toLowerCase()}',
+      if (sets.where((s) => s.setType == type).length case final n when n > 0) '$n ${type.label.toLowerCase()}',
   ];
   return parts.join(' · ');
 }
 
 /// "4 × 3" when every working set shares its reps, else "4 sets"; "No sets"
 /// when it has none.
-String _workingSetsSummary(ProgramExercise exercise) {
-  final sets = _summarized(exercise);
+String _workingSetsSummary(List<EditableSetRow> all) {
+  final sets = _summarized(all);
   if (sets.isEmpty) return 'No sets';
   final first = sets.first;
   final uniform = sets.every((s) => s.targetReps == first.targetReps && s.targetRepsMax == first.targetRepsMax);
@@ -67,8 +70,10 @@ String _workingSetsSummary(ProgramExercise exercise) {
 /// The exercise's working sets as "4 × 3" when they share their reps, else
 /// "4 sets", then any warm-ups and cool-downs: "4 × 3 · 2 warm-up". "No sets"
 /// when it has none.
-String exerciseSetsSummary(ProgramExercise exercise) =>
-    [_workingSetsSummary(exercise), ?_extraSets(exercise)].join(' · ');
+String exerciseSetsSummary(ProgramExercise exercise) {
+  final rows = _rows(exercise);
+  return [_workingSetsSummary(rows), ?_extraSets(rows)].join(' · ');
+}
 
 /// What the exercise is loaded with, as the prescription reads on a coach's
 /// sheet: "20 kg", "60–80 kg", "80%", "70–90%", "100% of Snatch",
@@ -76,8 +81,11 @@ String exerciseSetsSummary(ProgramExercise exercise) =>
 /// when it has no sets. Percentages stay percentages: the editor shows what
 /// was programmed, not the viewer's resolved load. Describes the working sets
 /// only, so lighter warm-ups don't widen the range.
-String? exerciseLoadSummary(ProgramExercise exercise, String unit) {
-  final sets = _summarized(exercise);
+String? exerciseLoadSummary(ProgramExercise exercise, String unit) =>
+    _loadSummary(exercise.exerciseName, _rows(exercise), unit);
+
+String? _loadSummary(String exerciseName, List<EditableSetRow> all, String unit) {
+  final sets = _summarized(all);
   if (sets.isEmpty) return null;
   final modes = sets.map((s) => s.weightMode).toSet();
   if (modes.length > 1) return 'mixed loads';
@@ -97,7 +105,7 @@ String? exerciseLoadSummary(ProgramExercise exercise, String unit) {
       final ofOther = bases.length == 1 &&
           sets.first.basisExerciseId != null &&
           basisName != null &&
-          basisName.toLowerCase() != exercise.exerciseName.toLowerCase();
+          basisName.toLowerCase() != exerciseName.toLowerCase();
       return ofOther ? '$pct of $basisName' : pct;
     case 'absolute':
       final kgs = [for (final s in sets) ?s.absoluteWeightKg];
@@ -110,5 +118,8 @@ String? exerciseLoadSummary(ProgramExercise exercise, String unit) {
 }
 
 /// "4 × 3 · 20 kg", or "4 × 3 · 20 kg · 2 warm-up": an exercise on one line.
-String exerciseLine(ProgramExercise exercise, String unit) =>
-    [_workingSetsSummary(exercise), ?exerciseLoadSummary(exercise, unit), ?_extraSets(exercise)].join(' · ');
+String exerciseLine(ProgramExercise exercise, String unit) => setsLine(exercise.exerciseName, _rows(exercise), unit);
+
+/// [exerciseLine] for any exercise's sets, a workout's included.
+String setsLine(String exerciseName, List<EditableSetRow> sets, String unit) =>
+    [_workingSetsSummary(sets), ?_loadSummary(exerciseName, sets, unit), ?_extraSets(sets)].join(' · ');

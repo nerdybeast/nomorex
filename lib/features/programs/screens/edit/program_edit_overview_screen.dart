@@ -10,6 +10,9 @@ import '../../../../shared/widgets/list_group.dart';
 import '../../../../shared/widgets/responsive_layout.dart';
 import '../../../../shared/widgets/summary_card.dart';
 import '../../../../shared/widgets/toggle_card.dart';
+import '../../../ai/utils/suggest_text.dart';
+import '../../../ai/widgets/suggest_button.dart';
+import '../../../profile/providers/profile_provider.dart';
 import '../../models/program.dart';
 import '../../models/program_day.dart';
 import '../../models/program_week.dart';
@@ -186,6 +189,7 @@ Future<void> _showDetailsSheet(BuildContext context, String programId) {
         final program = ref.watch(programDetailProvider(programId)).asData?.value;
         if (program == null) return const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()));
         final notifier = ref.read(programDetailProvider(programId).notifier);
+        final unit = ref.watch(unitPreferenceProvider);
         return Padding(
           padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + MediaQuery.viewInsetsOf(ctx).bottom),
           child: SingleChildScrollView(
@@ -198,6 +202,7 @@ Future<void> _showDetailsSheet(BuildContext context, String programId) {
                 AutoSaveField(
                   initialValue: program.name,
                   labelText: 'Name',
+                  suffixBuilder: programSuggestSuffix(SuggestField.title, program, unit, noun: 'name'),
                   onChanged: (v) {
                     final trimmed = v.trim();
                     if (trimmed.isNotEmpty) notifier.updateProgramMeta(name: trimmed);
@@ -208,6 +213,7 @@ Future<void> _showDetailsSheet(BuildContext context, String programId) {
                   initialValue: program.description,
                   labelText: 'Description',
                   maxLines: 4,
+                  suffixBuilder: programSuggestSuffix(SuggestField.description, program, unit, noun: 'description'),
                   onChanged: (v) => notifier.updateProgramMeta(description: v),
                 ),
                 const SizedBox(height: 16),
