@@ -5,6 +5,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/copy_errors.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/copied_from_badge.dart';
+import '../../ai/utils/suggest_text.dart';
+import '../../ai/widgets/suggest_button.dart';
 import '../../exercises/widgets/exercise_picker_sheet.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../../shared/widgets/toggle_card.dart';
@@ -127,6 +129,7 @@ class _ProgramEditScreenState extends ConsumerState<ProgramEditScreen>
               AutoSaveField(
                 initialValue: program.name,
                 labelText: 'Name',
+                suffixBuilder: programSuggestSuffix(SuggestField.title, program, unit, noun: 'name'),
                 onChanged: (v) {
                   final trimmed = v.trim();
                   if (trimmed.isNotEmpty) notifier.updateProgramMeta(name: trimmed);
@@ -137,6 +140,7 @@ class _ProgramEditScreenState extends ConsumerState<ProgramEditScreen>
                 initialValue: program.description,
                 labelText: 'Description',
                 maxLines: 3,
+                suffixBuilder: programSuggestSuffix(SuggestField.description, program, unit, noun: 'description'),
                 onChanged: (v) => notifier.updateProgramMeta(description: v),
               ),
               const SizedBox(height: 16),

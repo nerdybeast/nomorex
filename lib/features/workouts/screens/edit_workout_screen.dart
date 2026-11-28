@@ -6,7 +6,10 @@ import '../../profile/providers/profile_provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/copy_errors.dart';
+import '../../../shared/widgets/auto_save_field.dart';
 import '../../../shared/widgets/toggle_card.dart';
+import '../../ai/utils/suggest_text.dart';
+import '../../ai/widgets/suggest_button.dart';
 import '../providers/workout_detail_provider.dart';
 import '../providers/workouts_provider.dart';
 import '../utils/can_archive_workout.dart';
@@ -97,19 +100,21 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen>
                 padding: contentPadding(context),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    _AutoSaveField(
+                    AutoSaveField(
                       initialValue: workout.title,
                       labelText: 'Title (e.g. Day 1)',
+                      suffixBuilder: workoutSuggestSuffix(SuggestField.title, workout, unit, noun: 'title'),
                       onChanged: (v) {
                         final trimmed = v.trim();
                         if (trimmed.isNotEmpty) notifier.updateTitle(trimmed);
                       },
                     ),
                     const SizedBox(height: 16),
-                    _AutoSaveField(
+                    AutoSaveField(
                       initialValue: workout.notes,
                       labelText: 'Description',
                       maxLines: 3,
+                      suffixBuilder: workoutSuggestSuffix(SuggestField.description, workout, unit, noun: 'description'),
                       onChanged: notifier.updateDescription,
                     ),
                     const SizedBox(height: 16),
@@ -153,7 +158,7 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen>
                           highlighted: ex.id == highlightedExerciseId,
                           onDelete: () => notifier.removeExercise(ex.id),
                           children: [
-                            _AutoSaveField(
+                            AutoSaveField(
                               key: ValueKey(ex.id),
                               initialValue: ex.notes,
                               labelText: 'Notes (e.g. build to a heavy triple)',
@@ -201,76 +206,6 @@ class _EditWorkoutScreenState extends ConsumerState<EditWorkoutScreen>
           );
         },
       ),
-    );
-  }
-}
-
-// Tabbing or clicking away doesn't fire onFieldSubmitted (that only fires on
-// Enter/"done"), so a typed value would otherwise be silently dropped —
-// commit on blur too, same pattern as SetEditor's _NumberField.
-class _AutoSaveField extends StatefulWidget {
-  const _AutoSaveField({
-    super.key,
-    required this.initialValue,
-    required this.labelText,
-    required this.onChanged,
-    this.maxLines = 1,
-  });
-
-  final String? initialValue;
-  final String labelText;
-  final int maxLines;
-  final ValueChanged<String> onChanged;
-
-  @override
-  State<_AutoSaveField> createState() => _AutoSaveFieldState();
-}
-
-class _AutoSaveFieldState extends State<_AutoSaveField> {
-  late final _controller = TextEditingController(text: widget.initialValue);
-  final _focusNode = FocusNode();
-  late String _lastCommitted = widget.initialValue ?? '';
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus) _commit();
-    });
-  }
-
-  @override
-  void didUpdateWidget(_AutoSaveField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialValue != widget.initialValue &&
-        widget.initialValue != _controller.text) {
-      _controller.text = widget.initialValue ?? '';
-      _lastCommitted = widget.initialValue ?? '';
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _commit() {
-    if (_controller.text == _lastCommitted) return;
-    _lastCommitted = _controller.text;
-    widget.onChanged(_controller.text);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: _controller,
-      focusNode: _focusNode,
-      maxLines: widget.maxLines,
-      textCapitalization: TextCapitalization.sentences,
-      decoration: InputDecoration(labelText: widget.labelText),
-      onFieldSubmitted: (_) => _commit(),
     );
   }
 }

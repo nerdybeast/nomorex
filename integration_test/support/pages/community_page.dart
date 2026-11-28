@@ -89,6 +89,9 @@ class CommunityPage {
   Future<void> viewSavedCopy() async {
     final view = find.text('View');
     await waitFor(tester, view);
+    // The SnackBar is found as soon as it's built, while it's still sliding in
+    // (250 ms), and a tap then lands where it isn't yet: let it arrive first.
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(view);
     await tester.pumpAndSettle();
   }
